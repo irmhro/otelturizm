@@ -1,0 +1,64 @@
+@media (max-width: 900px) {
+    .route-modal-overlay {
+        align-items: center;
+        justify-content: center;
+        padding: max(12px, env(safe-area-inset-top, 0px)) 12px max(12px, env(safe-area-inset-bottom, 0px));
+    }
+
+    .route-modal-sheet {
+        width: 100%;
+        max-width: 100%;
+        max-height: calc(100dvh - 24px - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px));
+        border-radius: 18px;
+        margin-top: 0;
+    }
+
+    .route-modal-topbar {
+        padding: 14px 16px 12px;
+    }
+
+    .route-modal-topbar strong {
+        font-size: 17px;
+    }
+
+    .route-modal-close {
+        min-height: 38px;
+        padding: 0 12px;
+        font-size: 12px;
+    }
+
+    .route-modal-desc {
+        font-size: 12px;
+        padding: 0 16px 10px;
+    }
+
+    .route-modal-body {
+        padding: 0 16px 12px;
+    }
+
+    .route-modal-grid {
+        grid-template-columns: 1fr;
+        gap: 8px;
+    }
+
+    .route-modal-card {
+        min-height: 54px;
+        padding: 9px 11px;
+    }
+
+    .route-modal-icon {
+        width: 34px;
+        height: 34px;
+        font-size: 17px;
+    }
+
+    .route-modal-footer {
+        padding: 12px 16px 16px;
+    }
+
+    .route-modal-close--footer {
+        min-height: 50px;
+        border-radius: 14px;
+        font-size: 15px;
+    }
+}

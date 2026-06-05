@@ -25,8 +25,11 @@
         "sales" => SharedLocalizer["Nav.Panel.Sales"].Value,
         _ => SharedLocalizer["Nav.Account"].Value
     };
-    var currentLang = InternationalSeoPaths.ResolveCultureFromPath(Context.Request.Path.Value ?? "/");
-    var pathHasLocalePrefix = InternationalSeoPaths.HasLocalePathPrefix(Context.Request.Path.Value ?? "/");
+    var pathValue = Context.Request.Path.Value ?? "/";
+    var pathHasLocalePrefix = InternationalSeoPaths.HasLocalePathPrefix(pathValue);
+    var currentLang = pathHasLocalePrefix
+        ? InternationalSeoPaths.ResolveCultureFromPath(pathValue)
+        : "tr";
     var currentFlag = currentLang switch { "en" => "gb", "fr" => "fr", "de" => "de", "es" => "es", "ru" => "ru", _ => "tr" };
     var currentCurrency = (Context.Request.Cookies["ot_currency"] ?? "TRY").Trim().ToUpperInvariant();
     var hotelsListingPath = InternationalSeoPaths.BuildPublicPath(currentLang, InternationalSeoPaths.PageKindListing, null, null);
@@ -440,9 +443,7 @@
             document.documentElement.lang = defaultLanguage;
             document.documentElement.dir = 'ltr';
         }
-        const startupLanguage = pathHasLocalePrefix
-            ? normalizeLanguage(pathLangFromServer)
-            : defaultLanguage;
+        const startupLanguage = getPreferredLanguage();
         if (pathHasLocalePrefix && hasExplicitSelection()) {
             if (startupLanguage !== defaultLanguage) {
                 setGoogleTranslateCookie(startupLanguage);
@@ -452,7 +453,7 @@
         } else if (!pathHasLocalePrefix) {
             clearGoogleTranslateCookie();
         }
-        document.documentElement.lang = pathHasLocalePrefix ? pathLangFromServer : defaultLanguage;
+        document.documentElement.lang = startupLanguage;
         if (!pathHasLocalePrefix) {
             document.documentElement.dir = 'ltr';
         }
@@ -721,6 +722,30 @@
             }
         </div>
 
+        <div class="drawer-language-section">
+            <div class="drawer-section-title">@SharedLocalizer["Nav.LanguageSelection"].Value</div>
+            <div class="drawer-language-list">
+                <button type="button" class="drawer-language-btn" data-mobile-language-value="tr" aria-pressed="false">
+                    <span class="flag-icon flag-icon-tr"></span><span>Türkçe</span>
+                </button>
+                <button type="button" class="drawer-language-btn" data-mobile-language-value="en" aria-pressed="false">
+                    <span class="flag-icon flag-icon-gb"></span><span>English</span>
+                </button>
+                <button type="button" class="drawer-language-btn" data-mobile-language-value="fr" aria-pressed="false">
+                    <span class="flag-icon flag-icon-fr"></span><span>Français</span>
+                </button>
+                <button type="button" class="drawer-language-btn" data-mobile-language-value="de" aria-pressed="false">
+                    <span class="flag-icon flag-icon-de"></span><span>Deutsch</span>
+                </button>
+                <button type="button" class="drawer-language-btn" data-mobile-language-value="es" aria-pressed="false">
+                    <span class="flag-icon flag-icon-es"></span><span>Español</span>
+                </button>
+                <button type="button" class="drawer-language-btn" data-mobile-language-value="ru" aria-pressed="false">
+                    <span class="flag-icon flag-icon-ru"></span><span>Русский</span>
+                </button>
+            </div>
+        </div>
+
         <div class="drawer-quick-features">
             <a href="@drawerHotelsListingPath" class="feature-tile">
                 <i class="fas fa-hotel"></i>
@@ -755,30 +780,6 @@
         <div class="drawer-corp-row">
             <a asp-controller="Home" asp-action="Kurumsal" class="drawer-action ghost"><i class="fas fa-building"></i> @SharedLocalizer["Nav.Corporate"].Value</a>
             <a href="/firma" class="drawer-action ghost"><i class="fas fa-briefcase"></i> @SharedLocalizer["Nav.Firma"].Value</a>
-        </div>
-
-        <div class="drawer-language-section">
-            <div class="drawer-section-title">@SharedLocalizer["Nav.LanguageSelection"].Value</div>
-            <div class="drawer-language-list">
-                <button type="button" class="drawer-language-btn" data-mobile-language-value="tr" aria-pressed="false">
-                    <span class="flag-icon flag-icon-tr"></span><span>Türkçe</span>
-                </button>
-                <button type="button" class="drawer-language-btn" data-mobile-language-value="en" aria-pressed="false">
-                    <span class="flag-icon flag-icon-gb"></span><span>English</span>
-                </button>
-                <button type="button" class="drawer-language-btn" data-mobile-language-value="fr" aria-pressed="false">
-                    <span class="flag-icon flag-icon-fr"></span><span>Français</span>
-                </button>
-                <button type="button" class="drawer-language-btn" data-mobile-language-value="de" aria-pressed="false">
-                    <span class="flag-icon flag-icon-de"></span><span>Deutsch</span>
-                </button>
-                <button type="button" class="drawer-language-btn" data-mobile-language-value="es" aria-pressed="false">
-                    <span class="flag-icon flag-icon-es"></span><span>Español</span>
-                </button>
-                <button type="button" class="drawer-language-btn" data-mobile-language-value="ru" aria-pressed="false">
-                    <span class="flag-icon flag-icon-ru"></span><span>Русский</span>
-                </button>
-            </div>
         </div>
     </div>
 </div>

@@ -1,0 +1,8 @@
+ID|KATEGORI_ADI|SEO_SLUG|IKON|SIRALAMA|AKTIF_MI|OLUSTURULMA_TARIHI|GUNCELLENME_TARIHI
+--|------------|--------|----|--------|--------|------------------|------------------
+1|Rezervasyon|rezervasyon|fa-calendar-check|10|1|2026-05-31 08:11:04|2026-05-31 08:11:04
+2|Ödeme|odeme|fa-credit-card|20|1|2026-05-31 08:11:04|2026-05-31 08:11:04
+3|Hesap ve Güvenlik|hesap-ve-guvenlik|fa-user-lock|30|1|2026-05-31 08:11:04|2026-05-31 08:11:04
+4|Partner Operasyonu|partner-operasyonu|fa-hotel|40|1|2026-05-31 08:11:04|2026-05-31 08:11:04
+5|Firma İşlemleri|firma-islemleri|fa-building|50|1|2026-05-31 08:11:04|2026-05-31 08:11:04
+6|Kampanya ve Fiyat|kampanya-ve-fiyat|fa-tags|60|1|2026-05-31 08:11:04|2026-05-31 08:11:04

@@ -6,8 +6,9 @@
 
 @{
     ViewData["Title"] = Model.Name;
-    ViewData["PageCss"] = "otel-detay";
-    ViewData["PageCssMobile"] = "otel-detay.mobile";
+    ViewData["BodyClass"] = "oteldetay-page-shell anasayfa-page";
+    ViewData["PageCss"] = "oteldetay_masaustu";
+    ViewData["PageCssMobile"] = "oteldetay_mobil";
     ViewData["IncludeFeWorldTokens"] = true;
     ViewData["SuppressGlobalDraftBanner"] = true;
     var baseUrl = (Context.RequestServices.GetService(typeof(IConfiguration)) as IConfiguration)?["App:PublicBaseUrl"]?.TrimEnd('/')
@@ -84,7 +85,7 @@
         {
             RoomTypeId = 0,
             Name = "Standart Oda",
-            Specs = "2 Kisi",
+            Specs = "2 Kişi",
             Price = Model.LowestRoomPrice,
             CancellationText = "Ücretsiz iptal"
         }
@@ -124,7 +125,7 @@
     var featuredAmenityFallbacks = new List<otelturizmnew.Models.Oteller.HotelAmenityViewModel>
     {
         new() { Name = "24 Saat Resepsiyon", IconClass = "fa-clock" },
-        new() { Name = "Ucretsiz WiFi", IconClass = "fa-wifi" },
+        new() { Name = "Ücretsiz Wi-Fi", IconClass = "fa-wifi" },
         new() { Name = "Restoran", IconClass = "fa-utensils" },
         new() { Name = "Fitness Merkezi", IconClass = "fa-dumbbell" }
     };
@@ -200,7 +201,7 @@
         {
             weatherThemeClass = "weather-theme-snowy";
             weatherThemeTitle = "Serin ve kis dokulu hava";
-            weatherThemeSummary = "Dış planlarında daha sıcak giyinmek faydalı olur. Sıcak içecek ve iç mekan deneyimleri daha keyifli olabilir.";
+            weatherThemeSummary = "Dış planlarda daha sıcak giyinmek faydalı olur. Sıcak içecek ve iç mekan deneyimleri daha keyifli olabilir.";
             weatherAccentIcon = "fa-snowflake";
         }
     }
@@ -208,10 +209,10 @@
     string GetAmenitySubtext(string amenityName)
     {
         var value = amenityName.ToLowerInvariant();
-        if (value.Contains("havuz")) return "Ucretsiz kullanim";
+        if (value.Contains("havuz")) return "Ücretsiz kullanım";
         if (value.Contains("spa") || value.Contains("hamam") || value.Contains("sauna")) return "Hamam, sauna, masaj";
         if (value.Contains("restoran") || value.Contains("bar")) return "Gurme mutfak";
-        if (value.Contains("wifi") || value.Contains("wi-fi")) return "Tum odalarda";
+        if (value.Contains("wifi") || value.Contains("wi-fi")) return "Tüm odalarda";
         if (value.Contains("otopark")) return "Vale ve acik otopark";
         return "Tesis olanağı";
     }
@@ -227,7 +228,7 @@
 <link rel="stylesheet" href="~/assets/css/otel-detay-reservation.css" asp-append-version="true" />
 <link rel="stylesheet" href="~/assets/css/otel-detay-world.css" asp-append-version="true" />
 
-<div class="otel-detail-template-v41 otel-detail-tabler od-detail"
+<div class="oteldetay-page otel-detail-template-v41 otel-detail-tabler od-detail"
      data-i18n-room-selected="@i18nRoomSelected"
      data-i18n-room-reserve="@SharedLocalizer["Detail.Room.Reserve"].Value">
 <section class="detail-breadcrumb detail-breadcrumb-with-weather">
@@ -291,7 +292,7 @@
                 </div>
                 <button type="button" class="share-more-btn" data-share-platform="more">
                     <i class="fas fa-share-nodes"></i>
-                    Diger Platformlar
+                    Diğer platformlar
                 </button>
             </div>
         </div>
@@ -327,17 +328,17 @@
             <i class="@(Model.IsFavorite ? "fas" : "far") fa-heart" aria-hidden="true"></i>
             <span class="sr-only" data-favorite-label>@(Model.IsFavorite ? "Favoride" : "Favoriye Ekle")</span>
         </button>
-        <button type="button" class="gallery-main-trigger" data-gallery-index="0" data-slayt-trigger="hotel-gallery" aria-label="Galeriyi ac">
+        <button type="button" class="gallery-main-trigger" data-gallery-index="0" data-slayt-trigger="hotel-gallery" aria-label="Galeriyi aç">
             <img src="@mainImage" alt="@Model.Name" id="mainGalleryImage" fetchpriority="high" decoding="async" />
         </button>
 
         @if (gallery.Count > 1)
         {
             <div class="gallery-nav" aria-label="Galeri ok gezinme">
-                <button type="button" class="gallery-nav-btn gallery-nav-prev" data-gallery-nav="prev" aria-label="Onceki gorsel">
+                <button type="button" class="gallery-nav-btn gallery-nav-prev" data-gallery-nav="prev" aria-label="Önceki görsel">
                     <i class="fas fa-chevron-left" aria-hidden="true"></i>
                 </button>
-                <button type="button" class="gallery-nav-btn gallery-nav-next" data-gallery-nav="next" aria-label="Sonraki gorsel">
+                <button type="button" class="gallery-nav-btn gallery-nav-next" data-gallery-nav="next" aria-label="Sonraki görsel">
                     <i class="fas fa-chevron-right" aria-hidden="true"></i>
                 </button>
             </div>
@@ -393,8 +394,8 @@
                 <button type="button"
                         class="gallery-filmstrip-thumb @(imageIndex == 0 ? "active" : string.Empty)"
                         data-gallery-index="@imageIndex"
-                        aria-label="Otel gorsel @(imageIndex + 1)">
-                    <img src="@gallery[imageIndex]" alt="@Model.Name gorsel @(imageIndex + 1)" loading="lazy" decoding="async" />
+                        aria-label="Otel görsel @(imageIndex + 1)">
+                    <img src="@gallery[imageIndex]" alt="@Model.Name görsel @(imageIndex + 1)" loading="lazy" decoding="async" />
                 </button>
             }
         </div>
@@ -427,29 +428,59 @@
             }
             @if (gallery.Count > 1)
             {
+                <div class="gallery-mobile-nav" aria-label="Mobil galeri gezinme">
+                    <button type="button" class="gallery-mobile-nav-btn gallery-mobile-nav-btn--prev" data-gallery-mobile-nav="prev" aria-label="Önceki görsel">
+                        <i class="fas fa-chevron-left" aria-hidden="true"></i>
+                    </button>
+                    <button type="button" class="gallery-mobile-nav-btn gallery-mobile-nav-btn--next" data-gallery-mobile-nav="next" aria-label="Sonraki görsel">
+                        <i class="fas fa-chevron-right" aria-hidden="true"></i>
+                    </button>
+                </div>
+            }
+            @if (gallery.Count > 1)
+            {
             <p class="gallery-swipe-hint" aria-hidden="true"><i class="fas fa-hand-pointer"></i> @SharedLocalizer["Detail.Gallery.SwipeHint"].Value</p>
             }
             <div class="gallery-mobile-track" id="galleryMobileTrack">
                 @for (var imageIndex = 0; imageIndex < gallery.Count; imageIndex++)
                 {
-                    <button type="button" class="gallery-mobile-slide" data-image="@gallery[imageIndex]" data-gallery-index="@imageIndex" aria-label="Gorsel @(imageIndex + 1)">
+                    <button type="button" class="gallery-mobile-slide" data-image="@gallery[imageIndex]" data-gallery-index="@imageIndex" aria-label="Görsel @(imageIndex + 1)">
                         <img src="@gallery[imageIndex]" alt="@Model.Name mobil galeri @(imageIndex + 1)" />
                     </button>
                 }
             </div>
-            @if (gallery.Count > 1)
-            {
-            <div class="gallery-mobile-dots" id="galleryMobileDots" role="tablist" aria-label="Galeri gezinme">
-                @for (var imageIndex = 0; imageIndex < gallery.Count; imageIndex++)
+            <div class="gallery-mobile-footer">
+                @if (gallery.Count > 1)
                 {
-                    <button type="button"
-                            class="gallery-mobile-dot @(imageIndex == 0 ? "active" : string.Empty)"
-                            data-gallery-dot-index="@imageIndex"
-                            aria-label="Gorsel @(imageIndex + 1)"
-                            aria-selected="@(imageIndex == 0 ? "true" : "false")"></button>
+                    <div class="gallery-mobile-thumbs" id="galleryMobileThumbs" aria-label="Mobil galeri küçük görseller">
+                        @for (var imageIndex = 0; imageIndex < gallery.Count; imageIndex++)
+                        {
+                            <button type="button"
+                                    class="gallery-mobile-thumb @(imageIndex == 0 ? "active" : string.Empty)"
+                                    data-gallery-mobile-thumb-index="@imageIndex"
+                                    aria-label="Görsel @(imageIndex + 1)">
+                                <img src="@gallery[imageIndex]" alt="@Model.Name küçük görsel @(imageIndex + 1)" loading="lazy" decoding="async" />
+                            </button>
+                        }
+                    </div>
+
+                    <div class="gallery-mobile-dots" id="galleryMobileDots" role="tablist" aria-label="Galeri gezinme">
+                        @for (var imageIndex = 0; imageIndex < gallery.Count; imageIndex++)
+                        {
+                            <button type="button"
+                                    class="gallery-mobile-dot @(imageIndex == 0 ? "active" : string.Empty)"
+                                    data-gallery-dot-index="@imageIndex"
+                                    aria-label="Görsel @(imageIndex + 1)"
+                                    aria-selected="@(imageIndex == 0 ? "true" : "false")"></button>
+                        }
+                    </div>
                 }
+
+                <button type="button" class="gallery-mobile-all-photos" data-gallery-index="0" data-slayt-trigger="hotel-gallery" aria-label="Tüm fotoğrafları aç">
+                    <i class="far fa-images" aria-hidden="true"></i>
+                    <span>Tüm Fotoğraflar (@gallery.Count)</span>
+                </button>
             </div>
-            }
         </section>
     }
 
@@ -583,7 +614,7 @@
                             }
                         </small>
                     </span>
-                    <span class="weather-inline-badge">3 Gunluk</span>
+                    <span class="weather-inline-badge">3 günlük</span>
                 </button>
             </div>
         </div>
@@ -806,7 +837,7 @@
                     </button>
                 }
             </div>
-            <div class="amenities-list-clean od-amenities__grid" role="list" aria-label="Tesis ozellik listesi">
+            <div class="amenities-list-clean od-amenities__grid" role="list" aria-label="Tesis özellik listesi">
                 @foreach (var item in featuredAmenities)
                 {
                     <div class="amenities-list-item" role="listitem">
@@ -823,7 +854,7 @@
                 {
                     <button type="button" class="amenities-list-more" id="openAmenitiesModal">
                         <i class="fas fa-plus" aria-hidden="true"></i>
-                        Diger ozellikler (@hiddenAmenities.Count)
+                        Diğer özellikler (@hiddenAmenities.Count)
                     </button>
                 }
             </div>
@@ -848,34 +879,6 @@
                         }
                     </div>
                 </details>
-            }
-        </article>
-
-        <article class="content-card review-teaser-block" id="reviewsTeaser">
-            <div class="review-teaser-block__head">
-                <div>
-                    <h2>@SharedLocalizer["Detail.ReviewTeaser.Title"].Value</h2>
-                    @if (Model.ReviewCount <= 0)
-                    {
-                        <p>@SharedLocalizer["Detail.ReviewTeaser.None"].Value</p>
-                    }
-                    else
-                    {
-                        <p>@SharedLocalizer["Detail.ReviewTeaser.Count", Model.ReviewCount, Model.Rating.ToString("0.0")].Value</p>
-                    }
-                </div>
-                <a class="review-teaser-block__cta fe-world-touch-target" href="#reviewsSection">@SharedLocalizer["Detail.ReviewTeaser.SeeAll"].Value <i class="fas fa-arrow-right" aria-hidden="true"></i></a>
-            </div>
-            @if (Model.ReviewCount > 0 && sortedReviews.Count > 0)
-            {
-                var teaserReview = sortedReviews.First();
-                <blockquote class="review-teaser-block__quote">
-                    <div class="review-teaser-block__score" aria-label="@SharedLocalizer["Filter.Rating"].Value">
-                        <strong>@teaserReview.Score.ToString("0.0")</strong><span>/10</span>
-                    </div>
-                    <p>@FixMojibake(teaserReview.Text)</p>
-                    <footer>— @MaskName(teaserReview.Name) · @teaserReview.DateText</footer>
-                </blockquote>
             }
         </article>
 
@@ -953,7 +956,7 @@
                                 </div>
                                 @if (roomGalleryResolved.Count > 1)
                                 {
-                                    <div class="room-thumb-strip" aria-label="@room.Name gorselleri">
+                                    <div class="room-thumb-strip" aria-label="@room.Name görselleri">
                                         @for (var imageIndex = 0; imageIndex < Math.Min(roomGalleryResolved.Count, 6); imageIndex++)
                                         {
                                             <button type="button"
@@ -961,9 +964,9 @@
                                                     data-room-name="@room.Name"
                                                     data-room-id="@room.RoomTypeId"
                                                     data-room-gallery-start="@imageIndex"
-                                                    aria-label="@room.Name gorsel @(imageIndex + 1)">
+                                                    aria-label="@room.Name görsel @(imageIndex + 1)">
                                                 <img src="@roomGalleryResolved[imageIndex]"
-                                                     alt="@room.Name gorsel @(imageIndex + 1)"
+                                                     alt="@room.Name görsel @(imageIndex + 1)"
                                                      loading="lazy"
                                                      decoding="async"
                                                      onerror="this.onerror=null;this.src='@hotelImagePlaceholder';" />
@@ -1167,8 +1170,8 @@
                                 }
                                 else
                                 {
-                                    <strong>Fiyat Yok</strong>
-                                    <span class="room-price-unavailable">Bu oda icin aktif fiyat bulunamadi</span>
+                                    <strong>Fiyat yok</strong>
+                                    <span class="room-price-unavailable">Bu oda için aktif fiyat bulunamadı</span>
                                 }
                             </div>
                         </div>
@@ -1459,9 +1462,9 @@
                     <div class="booking-price-main">
                         @if (initialInclusiveNightly > 0m)
                         {
-                            <span class="booking-price-from">@SharedLocalizer["Detail.Booking.FromNight"].Value <strong id="bookingNightlyFrom">₺@initialInclusiveNightly.ToString("N0")</strong></span>
+                            <span class="booking-price-from">@SharedLocalizer["Detail.Booking.FromNight"].Value</span>
                         }
-                        <strong id="bookingPrice" class="booking-price-total">@(initialTotal > 0m ? $"₺{initialTotal:N0}" : (Model.LowestRoomPrice > 0m ? $"₺{Model.GuestInclusiveNightlyFromStoredNet(Model.LowestRoomPrice):N0}" : "Fiyat Yok"))</strong>
+                        <strong id="bookingPrice" class="booking-price-total">@(initialTotal > 0m ? $"₺{initialTotal:N0}" : (Model.LowestRoomPrice > 0m ? $"₺{Model.GuestInclusiveNightlyFromStoredNet(Model.LowestRoomPrice):N0}" : "Fiyat yok"))</strong>
                         <span class="booking-price-unit">@SharedLocalizer["Detail.Booking.Total"].Value · @SharedLocalizer["Detail.Room.TaxesIncluded"].Value</span>
                         <small class="booking-price-tax-note">@SharedLocalizer["Detail.Booking.TaxesNote"].Value</small>
                     </div>
@@ -1529,7 +1532,7 @@
                 </div>
 
                 <div class="guest-row">
-                    <span>Yetiskin</span>
+                    <span>Yetişkin</span>
                     <div class="guest-controls">
                         <button type="button" class="guest-btn" data-target="adult" data-action="minus">-</button>
                         <strong id="adultCount">@reservationForm.AdultCount</strong>
@@ -1539,7 +1542,7 @@
                 </div>
 
                 <div class="guest-row">
-                    <span>Cocuk</span>
+                    <span>Çocuk</span>
                     <div class="guest-controls">
                         <button type="button" class="guest-btn" data-target="child" data-action="minus">-</button>
                         <strong id="childCount">@reservationForm.ChildCount</strong>
@@ -1623,7 +1626,7 @@
                         </label>
                     </div>
                     <p class="booking-advanced-tip">
-                        Iptal, tarih ve oda kosullari secilen oda tipine gore rezervasyon adiminda tekrar onaylanir.
+                        İptal, tarih ve oda koşulları seçilen oda tipine göre rezervasyon adımında tekrar onaylanır.
                     </p>
                     <div class="booking-payment-note" id="bookingPaymentNote" hidden>
                         Online kart ödemesi rezervasyon kaydından sonra ödeme bağlantısı ile tamamlanacaktır. Havale seçtiyseniz dekont veya referans eklemeniz işlemi hızlandırır.
@@ -1663,7 +1666,7 @@
         <div class="mobile-booking-summary">
             @if (initialInclusiveNightly > 0m)
             {
-                <span class="mobile-booking-from">@SharedLocalizer["Detail.Booking.FromNight"].Value <strong id="mobileBookingNightly">₺@initialInclusiveNightly.ToString("N0")</strong></span>
+                <span class="mobile-booking-from">@SharedLocalizer["Detail.Booking.FromNight"].Value</span>
             }
             <span class="mobile-booking-label">@SharedLocalizer["Detail.Booking.Total"].Value</span>
             <strong id="mobileBookingPrice" class="mobile-booking-total">@(initialTotal > 0m ? $"₺{initialTotal:N0}" : (Model.LowestRoomPrice > 0m ? $"₺{Model.GuestInclusiveNightlyFromStoredNet(Model.LowestRoomPrice):N0}" : "—"))</strong>
@@ -1954,7 +1957,7 @@
         <div class="detail-modal-head">
             <div>
                 <span class="detail-modal-kicker">Tesis Olanaklari</span>
-                <h3 id="amenitiesModalTitle">Tum one cikan ozellikler</h3>
+                <h3 id="amenitiesModalTitle">Tüm öne çıkan özellikler</h3>
             </div>
             <button type="button" class="detail-modal-close" data-close-modal="amenitiesModal"><i class="fas fa-times"></i></button>
         </div>
@@ -2169,6 +2172,7 @@
             const roomDetailModalGrid = document.getElementById('roomDetailModalGrid');
             const galleryMobileTrack = document.getElementById('galleryMobileTrack');
             const galleryMobileDots = Array.from(document.querySelectorAll('[data-gallery-dot-index]'));
+            const galleryMobileThumbs = Array.from(document.querySelectorAll('[data-gallery-mobile-thumb-index]'));
             let adults = parseInt(document.getElementById('adultCountInput')?.value || '2', 10);
             let children = parseInt(document.getElementById('childCountInput')?.value || '0', 10);
             const roomCountInput = document.getElementById('roomCountInput');
@@ -2553,6 +2557,10 @@
                     const thumbIndex = parseInt(thumb.getAttribute('data-gallery-index') || '0', 10);
                     thumb.classList.toggle('active', thumbIndex === safeIndex);
                 });
+                galleryMobileThumbs.forEach(function (thumb) {
+                    const thumbIndex = parseInt(thumb.getAttribute('data-gallery-mobile-thumb-index') || '0', 10);
+                    thumb.classList.toggle('active', thumbIndex === safeIndex);
+                });
                 setActiveMobileDot(safeIndex);
             }
 
@@ -2646,6 +2654,30 @@
                     const index = parseInt(dot.getAttribute('data-gallery-dot-index') || '0', 10);
                     syncMainImage(index);
                     scrollMobileTrackTo(index);
+                });
+            });
+
+            galleryMobileThumbs.forEach(function (thumb) {
+                thumb.addEventListener('click', function () {
+                    const index = parseInt(thumb.getAttribute('data-gallery-mobile-thumb-index') || '0', 10);
+                    syncMainImage(index);
+                    scrollMobileTrackTo(index);
+                });
+            });
+
+            document.querySelectorAll('[data-gallery-mobile-nav]').forEach(function (button) {
+                button.addEventListener('click', function (event) {
+                    event.preventDefault();
+                    event.stopPropagation();
+                    if (!Array.isArray(galleryImages) || galleryImages.length < 2) {
+                        return;
+                    }
+
+                    const direction = button.getAttribute('data-gallery-mobile-nav');
+                    const delta = direction === 'prev' ? -1 : 1;
+                    const nextIndex = (activeGalleryIndex + delta + galleryImages.length) % galleryImages.length;
+                    syncMainImage(nextIndex);
+                    scrollMobileTrackTo(nextIndex);
                 });
             });
 
@@ -2832,24 +2864,10 @@
                         updateSelectRoomButtons();
                     }
 
-                    // Yeni davranış: Aynı oda tipinden birden fazla seçilebilsin diye her tıklamada yeni oda satırı ekle.
-                    // (Eski "hangi odaya uygula" akışı yerine, hızlı şekilde çoğaltma.)
                     if (roomId) {
-                        const first = nodes.length ? getRoomItemData(nodes[0]) : null;
-                        addRoomItem(first ? { roomTypeId: roomId, checkIn: first.checkIn, checkOut: first.checkOut } : { roomTypeId: roomId });
-                        const nextNodes = getRoomItemNodes();
-                        const newIndex = Math.max(0, nextNodes.length - 1);
-                        setActiveRoomIndex(newIndex);
-                        syncRoomsJsonAndHiddenFields();
-                        ensureGuestCapacity(true);
-                        refreshPriceQuote();
-                        if (isMobileBookingMode()) {
-                            openBookingSheet();
-                            setTimeout(scrollToBookingArea, 90);
-                        } else {
-                            scrollToBookingArea();
-                        }
-                        button.dataset.lastPickedRoomIndex = String(newIndex);
+                        const activeIndex = nodes.findIndex(function (node) { return node.classList.contains('is-active'); });
+                        const targetIndex = activeIndex >= 0 ? activeIndex : 0;
+                        applyRoomSelectionToIndex(targetIndex);
                         updateSelectRoomButtons();
                         return;
                     }
@@ -3821,9 +3839,13 @@
             function buildTaxAndTotalRows(quote) {
                 const vatR = typeof quote.vatRate === 'string' ? quote.vatRate : formatRatePct(quote.vatRate);
                 const accR = typeof quote.accommodationTaxRate === 'string' ? quote.accommodationTaxRate : formatRatePct(quote.accommodationTaxRate);
+                const dawnRow = Number(quote.dawnSurpriseDiscountAmount || 0) > 0
+                    ? '<div class="price-row price-row-tax price-row-dawn"><span>Şafak Sürprizi <small class="tax-rate-hint">%' + escapeHtml(String(quote.dawnSurprisePercent || 0)) + '</small></span><strong>-' + formatMoney(quote.dawnSurpriseDiscountAmount) + '</strong></div>'
+                    : '';
                 return '<div class="price-row price-row-tax"><span>KDV <small class="tax-rate-hint">%' + vatR + '</small></span><strong>' + formatMoney(quote.vatAmount || 0) + '</strong></div>' +
                     '<div class="price-row price-row-tax"><span>Konaklama Vergisi <small class="tax-rate-hint">%' + accR + '</small></span><strong>' + formatMoney(quote.accommodationTaxAmount || 0) + '</strong></div>' +
                     '<div class="price-row price-row-tax"><span>Vergi ve Harçlar</span><strong>' + formatMoney(quote.taxAmount) + '</strong></div>' +
+                    dawnRow +
                     '<div class="price-row total"><span>Toplam</span><strong>' + formatMoney(quote.totalAmount) + '</strong></div>';
             }
 
@@ -4071,10 +4093,16 @@
                                 const baseAmount = Number(row.basePrice || 0);
                                 const discountAmount = Number(row.discountPrice || 0);
                                 const isDiscounted = !!row.isDiscounted && discountAmount > 0 && baseAmount > discountAmount;
+                                const discountPercent = isDiscounted
+                                    ? Math.max(1, Math.min(95, Math.round(((baseAmount - discountAmount) / baseAmount) * 100)))
+                                    : 0;
+                                const stockText = Number(row.remainingRooms || 0) > 0
+                                    ? '<small class="nightly-stock">' + Number(row.remainingRooms || 0) + ' oda</small>'
+                                    : '';
                                 const amountHtml = isDiscounted
-                                    ? '<strong><small>' + formatMoney(baseAmount) + '</small>' + formatMoney(effectiveAmount) + '</strong>'
+                                    ? '<strong><small>' + formatMoney(baseAmount) + '</small>' + formatMoney(effectiveAmount) + '<em>%' + discountPercent + '</em></strong>'
                                     : '<strong>' + formatMoney(effectiveAmount) + '</strong>';
-                                return '<div class="nightly-breakdown-row' + (isDiscounted ? ' nightly-breakdown-row-discount' : '') + '"><span>' + escapeHtml(label) + '</span>' + amountHtml + '</div>';
+                                return '<div class="nightly-breakdown-row' + (isDiscounted ? ' nightly-breakdown-row-discount' : '') + '"><span>' + escapeHtml(label) + stockText + '</span>' + amountHtml + '</div>';
                             }).join('');
                             return '<div class="nightly-breakdown-room">' + header + rowsHtml + '</div>';
                         }).join('');

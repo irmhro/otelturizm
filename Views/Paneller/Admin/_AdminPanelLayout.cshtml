@@ -16,6 +16,8 @@
         }
     }
     var title = ViewData["Title"] as string ?? shell?.PanelTitle ?? "Admin Panel";
+    var currentAction = ViewContext.RouteData.Values["action"]?.ToString() ?? string.Empty;
+    var hideLayoutHeader = string.Equals(currentAction, "Dashboard", StringComparison.OrdinalIgnoreCase);
     var nonce = Context.Items["CspNonce"] as string;
     var rawUserId = Context.User.FindFirstValue(otelturizmnew.Constants.AuthClaimTypes.UserId) ?? Context.User.FindFirstValue(System.Security.Claims.ClaimTypes.NameIdentifier);
     var userId = long.TryParse(rawUserId, out var parsedUserId) ? parsedUserId : 0;
@@ -27,213 +29,133 @@
     string BuildThemeStyle()
     {
         var parts = new List<string>();
-        var primaryHex = !string.IsNullOrWhiteSpace(theme?.PrimaryHex) ? theme!.PrimaryHex : theme?.AccentHex;
-        var accentHex = !string.IsNullOrWhiteSpace(theme?.AccentHex) ? theme!.AccentHex : primaryHex;
-        // Ana renk sadece aksiyon/buton tonunu etkilemeli (Tabler global primary ezilmesin).
-        if (!string.IsNullOrWhiteSpace(accentHex)) parts.Add($"--partner-accent: {accentHex};");
+        var accentHex = !string.IsNullOrWhiteSpace(theme?.AccentHex) ? theme!.AccentHex : theme?.PrimaryHex;
+        if (!string.IsNullOrWhiteSpace(accentHex)) parts.Add($"--ap-primary-red: {accentHex};");
         if (!string.IsNullOrWhiteSpace(theme?.SidebarBgHex))
-            parts.Add($"--partner-sidebar-bg: {theme!.SidebarBgHex}; --partner-sidebar-bg-2: color-mix(in srgb, {theme.SidebarBgHex} 76%, #ffffff 24%);");
-        if (!string.IsNullOrWhiteSpace(theme?.FontFamily)) parts.Add($"--tblr-font-sans-serif: {theme!.FontFamily};");
+            parts.Add($"--ap-sidebar-bg: {theme!.SidebarBgHex};");
+        if (!string.IsNullOrWhiteSpace(theme?.FontFamily))
+            parts.Add($"--ap-font-sans: {theme!.FontFamily}, 'Inter', sans-serif;");
         return string.Join(" ", parts);
     }
 }
 <!DOCTYPE html>
-<html lang="tr" data-bs-theme="@(bsTheme == "auto" ? null : bsTheme)">
+<html lang="tr" dir="@dir">
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-    <title>@title - Otelturizm</title>
-    <link rel="stylesheet" href="~/assets/vendor/fonts/inter/inter-local.css" />
-    <link rel="stylesheet" href="~/assets/vendor/fontawesome/css/all.min.css" />
-    <link rel="stylesheet" href="~/paneltematabler/dist/css/tabler.min.css" asp-append-version="true" />
-    <link rel="stylesheet" href="~/paneltematabler/dist/css/tabler-vendors.min.css" asp-append-version="true" />
-    <link rel="stylesheet" href="~/assets/css/paneller/partner/tabler-bridge.css" asp-append-version="true" />
-    <link rel="stylesheet" href="~/assets/css/paneller/partner/shell.css" asp-append-version="true" />
-    <link rel="stylesheet" href="~/assets/css/paneller/partner/shell.mobile.css" asp-append-version="true" media="(max-width: 900px)" />
-    <link rel="stylesheet" href="~/assets/css/paneller/admin/admin-tabler-overrides.css" asp-append-version="true" />
-    <link rel="stylesheet" href="~/assets/css/paneller/admin/admin-tabler-overrides.mobile.css" asp-append-version="true" media="(max-width: 900px)" />
-    <link rel="stylesheet" href="~/assets/css/panel-admin-shell.css" asp-append-version="true" />
-    <link rel="stylesheet" href="~/assets/css/panel-admin-shell.mobile.css" asp-append-version="true" media="(max-width: 900px)" />
+    <title>@title - Otelturizm Admin</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="~/assets/vendor/fontawesome/css/all.min.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/assets/css/admin_panel_masaustu.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/assets/css/admin_panel_mobil.css" asp-append-version="true" media="(max-width: 991px)" />
     <link rel="stylesheet" href="~/assets/css/paneller/panel-toasts.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/assets/css/paneller/panel-form-ux.css" asp-append-version="true" />
-    <link rel="stylesheet" href="~/assets/css/paneller/panel-form-ux.mobile.css" asp-append-version="true" media="(max-width: 900px)" />
-    <link rel="stylesheet" href="~/assets/css/paneller/panel-toasts.mobile.css" asp-append-version="true" media="(max-width: 900px)" />
+    <link rel="stylesheet" href="~/assets/css/paneller/panel-form-ux.mobile.css" asp-append-version="true" media="(max-width: 991px)" />
+    <link rel="stylesheet" href="~/assets/css/paneller/panel-toasts.mobile.css" asp-append-version="true" media="(max-width: 991px)" />
     @if (!string.IsNullOrWhiteSpace(pageCssPath))
     {
         var pageCssMobileHref = !string.IsNullOrWhiteSpace(pageCssMobilePath)
             ? $"~/assets/css/{pageCssMobilePath}.css"
-            : $"~/assets/css/{pageCssPath}.mobile.css";
+            : pageCssPath.EndsWith("_masaustu", StringComparison.OrdinalIgnoreCase)
+                ? $"~/assets/css/{pageCssPath[..^"_masaustu".Length]}_mobil.css"
+                : $"~/assets/css/{pageCssPath}.mobile.css";
         <link rel="stylesheet" href="~/assets/css/@(pageCssPath).css" asp-append-version="true" />
-        <link rel="stylesheet" href="@pageCssMobileHref" asp-append-version="true" media="(max-width: 900px)" />
+        <link rel="stylesheet" href="@pageCssMobileHref" asp-append-version="true" media="(max-width: 991px)" />
     }
 </head>
-<body class="layout-fluid partner-panel-v2 admin-tabler-shell admin-panel-theme"
-      data-bs-theme="@(bsTheme == "auto" ? null : bsTheme)"
-      dir="@dir"
-      style="@BuildThemeStyle()">
-    <div class="page">
+<body class="admin-panel-shell" style="@BuildThemeStyle()">
+    <div class="admin-shell-container">
         @if (shell is not null)
         {
             <partial name="~/Views/Paneller/Admin/_AdminSidebar.cshtml" model="shell" />
+            <div class="admin-sidebar-backdrop" id="adminSidebarBackdrop" aria-hidden="true"></div>
         }
 
-        <div class="page-wrapper">
+        <div class="main-layout">
             @if (shell is not null)
             {
                 <partial name="~/Views/Paneller/Admin/_AdminTopNav.cshtml" model="shell" />
             }
 
-            <div class="page-body">
-                <div class="container-fluid">
-                    @if (shell is not null)
-                    {
-                        <div class="page-header d-print-none pb-3 mb-3 border-bottom border-secondary-subtle">
-                            <div class="row align-items-center">
-                                <div class="col">
-                                    <div class="page-pretitle text-primary small fw-bold text-uppercase ls-wide">Admin Panel</div>
-                                    <h1 class="page-title mb-1">@shell.PanelTitle</h1>
-                                    @if (!string.IsNullOrWhiteSpace(shell.PanelSubtitle))
-                                    {
-                                        <div class="text-muted">@shell.PanelSubtitle</div>
-                                    }
-                                </div>
-                            </div>
+            <main class="content-body">
+                @if (shell is not null && !hideLayoutHeader)
+                {
+                    <div class="ap-page-header d-print-none">
+                        <div>
+                            <div class="ap-page-pretitle">Admin Panel</div>
+                            <h1>@shell.PanelTitle</h1>
+                            @if (!string.IsNullOrWhiteSpace(shell.PanelSubtitle))
+                            {
+                                <p>@shell.PanelSubtitle</p>
+                            }
                         </div>
-                    }
-                    <partial name="~/Views/Paneller/Common/_PanelToasts.cshtml" />
-                    @RenderBody()
-                </div>
-            </div>
+                    </div>
+                }
+                <partial name="~/Views/Paneller/Common/_PanelToasts.cshtml" />
+                @RenderBody()
+            </main>
 
             @if (shell is not null)
             {
                 <partial name="~/Views/Paneller/Admin/_AdminFooter.cshtml" />
                 <partial name="~/Views/Paneller/Admin/_AdminMobileNav.cshtml" model="shell" />
-                <div class="offcanvas offcanvas-end" tabindex="-1" id="adminThemeSettings" aria-labelledby="adminThemeSettingsLabel">
-                    <div class="offcanvas-header">
-                        <h2 class="offcanvas-title" id="adminThemeSettingsLabel">Tema Ayarları</h2>
-                        <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Kapat"></button>
+
+                <div class="admin-theme-backdrop" id="adminThemeBackdrop" aria-hidden="true"></div>
+                <aside class="admin-theme-drawer" id="adminThemeSettings" aria-labelledby="adminThemeSettingsLabel" aria-hidden="true">
+                    <div class="admin-theme-drawer-header">
+                        <h2 id="adminThemeSettingsLabel">Tema Ayarları</h2>
+                        <button type="button" class="admin-theme-close" id="adminThemeClose" aria-label="Kapat"><i class="fas fa-times"></i></button>
                     </div>
-                    <div class="offcanvas-body">
+                    <div class="admin-theme-drawer-body">
                         <form method="post" action="/admin/tema/kaydet">
                             @Html.AntiForgeryToken()
                             <input type="hidden" name="returnUrl" value="@Context.Request.Path@Context.Request.QueryString" />
                             <input type="hidden" name="PrimaryHex" id="adminThemePrimaryHex" value="@(theme?.PrimaryHex ?? string.Empty)" />
                             <input type="hidden" name="AccentHex" id="adminThemeAccentHex" value="@(theme?.AccentHex ?? theme?.PrimaryHex ?? string.Empty)" />
                             <input type="hidden" name="SidebarBgHex" id="adminThemeSidebarBgHex" value="@(theme?.SidebarBgHex ?? string.Empty)" />
-                            <label class="form-label">Renk modu</label>
-                            <div class="form-selectgroup-boxes row g-2 mb-3">
-                                <label class="form-selectgroup-item col-6">
-                                    <input type="radio" name="BsTheme" value="light" class="form-selectgroup-input" @(string.Equals(bsTheme, "light", StringComparison.OrdinalIgnoreCase) ? "checked" : null) />
-                                    <span class="form-selectgroup-label d-flex align-items-center p-3"><i class="fas fa-sun me-2"></i>Açık</span>
+                            <label class="form-group"><span>Renk modu</span></label>
+                            <div class="ap-theme-options">
+                                <label class="ap-theme-option">
+                                    <input type="radio" name="BsTheme" value="light" @(string.Equals(bsTheme, "light", StringComparison.OrdinalIgnoreCase) ? "checked" : null) />
+                                    <span><i class="fas fa-sun"></i> Açık</span>
                                 </label>
-                                <label class="form-selectgroup-item col-6">
-                                    <input type="radio" name="BsTheme" value="dark" class="form-selectgroup-input" @(string.Equals(bsTheme, "dark", StringComparison.OrdinalIgnoreCase) ? "checked" : null) />
-                                    <span class="form-selectgroup-label d-flex align-items-center p-3"><i class="fas fa-moon me-2"></i>Koyu</span>
+                                <label class="ap-theme-option">
+                                    <input type="radio" name="BsTheme" value="dark" @(string.Equals(bsTheme, "dark", StringComparison.OrdinalIgnoreCase) ? "checked" : null) />
+                                    <span><i class="fas fa-moon"></i> Koyu</span>
                                 </label>
                             </div>
-                            <label class="form-label">Ana renk</label>
-                            <div class="d-flex flex-wrap gap-2 mb-3" data-color-palette="admin-primary">
-                                @foreach (var color in new[] { "#2563eb", "#0ea5e9", "#10b981", "#f59e0b", "#ef4444", "#8b5cf6", "#334155" })
+                            <label class="form-group"><span>Ana renk</span></label>
+                            <div class="ap-color-swatches" data-color-palette="admin-primary">
+                                @foreach (var color in new[] { "#DC2626", "#2563eb", "#0ea5e9", "#10b981", "#f59e0b", "#8b5cf6", "#334155" })
                                 {
-                                    <button type="button" class="btn btn-color-swatch" style="background:@color" data-color="@color" aria-label="@color"></button>
+                                    <button type="button" class="btn-color-swatch" style="background:@color" data-color="@color" aria-label="@color"></button>
                                 }
                             </div>
-                            <button type="submit" class="btn btn-primary w-100">Temayı Kaydet</button>
+                            <button type="submit" class="btn-primary" style="width:100%;justify-content:center;">Temayı Kaydet</button>
                         </form>
                     </div>
-                </div>
+                </aside>
             }
         </div>
     </div>
 
-    <script src="~/paneltematabler/dist/js/tabler.min.js" asp-append-version="true"></script>
     <script src="~/assets/js/panel-toasts.js" asp-append-version="true"></script>
-    <script nonce="@nonce">
-        (function () {
-            // Mobile sidebar open/close: :has() desteklemeyen tarayıcılarda overlay sorunu için fallback.
-            var sidebar = document.querySelector('.admin-tabler-shell .admin-sidebar-alias');
-            var collapse = document.getElementById('adminSidebarMenu');
-            if (!sidebar || !collapse) return;
-
-            function sync() {
-                if (collapse.classList.contains('show')) sidebar.classList.add('is-open');
-                else sidebar.classList.remove('is-open');
-            }
-
-            collapse.addEventListener('shown.bs.collapse', sync);
-            collapse.addEventListener('hidden.bs.collapse', sync);
-            sync();
-        })();
-    </script>
+    <script src="~/assets/js/admin_panel-shell.js" asp-append-version="true"></script>
     <script nonce="@nonce">
     (() => {
         const primaryInput = document.getElementById('adminThemePrimaryHex');
         const accentInput = document.getElementById('adminThemeAccentHex');
-        const sidebarInput = document.getElementById('adminThemeSidebarBgHex');
-        const body = document.body;
-        const root = document.documentElement;
-        const applyThemePreview = ({ mode, accent, sidebar }) => {
-            if (mode) { root.setAttribute('data-bs-theme', mode); body.setAttribute('data-bs-theme', mode); }
-            if (accent) root.style.setProperty('--partner-accent', accent);
-            if (sidebar) { root.style.setProperty('--partner-sidebar-bg', sidebar); root.style.setProperty('--partner-sidebar-bg-2', `color-mix(in srgb, ${sidebar} 76%, #ffffff 24%)`); }
-        };
-        document.querySelectorAll('[data-color-palette=\"admin-primary\"] [data-color]').forEach((btn) => {
+        document.querySelectorAll('[data-color-palette="admin-primary"] [data-color]').forEach((btn) => {
             btn.addEventListener('click', () => {
                 const hex = btn.getAttribute('data-color') || '';
                 if (primaryInput) primaryInput.value = hex;
                 if (accentInput) accentInput.value = hex;
-                applyThemePreview({
-                    mode: document.querySelector('#adminThemeSettings input[name=\"BsTheme\"]:checked')?.value || 'light',
-                    accent: hex,
-                    sidebar: sidebarInput?.value || ''
-                });
-            });
-        });
-        document.querySelectorAll('#adminThemeSettings input[name=\"BsTheme\"]').forEach((input) => {
-            input.addEventListener('change', () => {
-                const value = input.value || 'light';
-                const accent = accentInput?.value || primaryInput?.value || '';
-                applyThemePreview({ mode: value, accent, sidebar: sidebarInput?.value || '' });
+                document.documentElement.style.setProperty('--ap-primary-red', hex);
             });
         });
     })();
-    </script>
-    <script nonce="@nonce">
-        (function () {
-            document.querySelectorAll('.admin-tabler-shell [data-admin-nav-target]').forEach(function (button) {
-                button.addEventListener('click', function () {
-                    var selector = button.getAttribute('data-admin-nav-target');
-                    var target = selector ? document.querySelector(selector) : null;
-                    if (!target) return;
-                    var willOpen = !target.classList.contains('show');
-                    target.classList.toggle('show', willOpen);
-                    button.classList.toggle('collapsed', !willOpen);
-                    button.setAttribute('aria-expanded', willOpen ? 'true' : 'false');
-                });
-            });
-
-            var root = document.querySelector('.admin-tabler-shell .page-body');
-            if (!root) return;
-            root.querySelectorAll('input').forEach(function (el) {
-                var type = (el.getAttribute('type') || 'text').toLowerCase();
-                if (type === 'checkbox' || type === 'radio') {
-                    if (!el.classList.contains('form-check-input')) el.classList.add('form-check-input');
-                    return;
-                }
-                if (type === 'file') {
-                    if (!el.classList.contains('form-control')) el.classList.add('form-control');
-                    return;
-                }
-                if (!el.classList.contains('form-control')) el.classList.add('form-control');
-            });
-            root.querySelectorAll('select, textarea').forEach(function (el) {
-                if (!el.classList.contains('form-control')) el.classList.add('form-control');
-            });
-            root.querySelectorAll('table.admin-table').forEach(function (el) {
-                el.classList.add('table', 'table-striped', 'table-hover', 'text-nowrap');
-            });
-        })();
     </script>
     @RenderSection("Scripts", required: false)
 </body>

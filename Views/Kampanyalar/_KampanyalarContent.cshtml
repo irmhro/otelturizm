@@ -1,0 +1,103 @@
+@model otelturizmnew.Models.Kampanyalar.CampaignListingPageViewModel
+@{
+    var campaignTypes = Model.Campaigns
+        .Select(c => c.CampaignType)
+        .Where(x => !string.IsNullOrWhiteSpace(x))
+        .Distinct(StringComparer.CurrentCultureIgnoreCase)
+        .OrderBy(x => x, StringComparer.CurrentCultureIgnoreCase)
+        .ToList();
+}
+
+<div class="kmp-main">
+    <div class="container kmp-body">
+        <section class="eco-ribbon eco-ribbon-stack kmp-trust-strip" aria-label="@SharedLocalizer["Campaign.Stat.Active"].Value">
+            <div class="eco-meta"><span>🏷️</span> @SharedLocalizer["Nav.Campaigns"]</div>
+            <div class="eco-pills kmp-trust-pills">
+                <span class="eco-pill"><i class="fas fa-bolt" aria-hidden="true"></i> <strong>@Model.Campaigns.Count</strong> @SharedLocalizer["Campaign.Stat.Active"]</span>
+                <a class="eco-pill eco-pill--link" href="/oteller?etiket=kampanyaya-dahil-oteller"><i class="fas fa-percent" aria-hidden="true"></i> @SharedLocalizer["Campaign.Stat.DiscountedHotels"]</a>
+            </div>
+        </section>
+
+        <h1 class="section-headline kmp-page-title"><span class="headline-left">@SharedLocalizer["Nav.Campaigns"]</span></h1>
+
+        @if (Model.Campaigns.Count > 0)
+        {
+            <section class="kmp-filter-bar" aria-label="Kampanya arama ve filtre" data-kmp-filter>
+                <label class="kmp-filter-search">
+                    <i class="fas fa-search" aria-hidden="true"></i>
+                    <input type="search" class="kmp-filter-input" placeholder="Kampanya ara..." autocomplete="off" data-kmp-search aria-controls="kmp-grid" />
+                </label>
+                <div class="kmp-filter-chips" role="group" aria-label="Kampanya türü">
+                    <button type="button" class="kmp-filter-chip is-active" data-kmp-type="">Tümü</button>
+                    @foreach (var type in campaignTypes)
+                    {
+                        <button type="button" class="kmp-filter-chip" data-kmp-type="@type">@type</button>
+                    }
+                </div>
+                <p class="kmp-filter-result" data-kmp-result hidden></p>
+            </section>
+        }
+
+        <section class="kmp-grid" id="kmp-grid" aria-label="@SharedLocalizer["Nav.Campaigns"].Value">
+            @if (Model.Campaigns.Count == 0)
+            {
+                <div class="kmp-empty-state">
+                    <strong>@SharedLocalizer["Campaign.Empty.Title"]</strong>
+                    <p>@SharedLocalizer["Campaign.Empty.Description"]</p>
+                    <a class="btn-club-pro-outline" href="/oteller">@SharedLocalizer["Nav.Hotels"]</a>
+                </div>
+            }
+            else
+            {
+                @foreach (var campaign in Model.Campaigns)
+                {
+                    var listingUrl = $"/oteller?kampanya={Uri.EscapeDataString(campaign.Slug ?? string.Empty)}";
+                    var searchBlob = $"{campaign.CampaignName} {campaign.ShortDescription} {campaign.BadgeText} {campaign.PromoBadge} {campaign.CampaignType}".Trim();
+                    <article class="kmp-card"
+                             style="--kmp-accent:@campaign.ColorCode;"
+                             data-kmp-type="@campaign.CampaignType"
+                             data-kmp-search="@searchBlob">
+                        <a class="kmp-card__tap" href="@listingUrl" aria-label="@campaign.CampaignName @SharedLocalizer["Campaign.ListHotels"].Value">
+                            <div class="kmp-card__media @(string.IsNullOrWhiteSpace(campaign.HeroImageUrl) ? string.Empty : "has-image")">
+                                @if (!string.IsNullOrWhiteSpace(campaign.HeroImageUrl))
+                                {
+                                    <img src="@campaign.HeroImageUrl" alt="" loading="lazy" decoding="async" />
+                                }
+                                @if (!string.IsNullOrWhiteSpace(campaign.BadgeText))
+                                {
+                                    <span class="kmp-card__badge">@campaign.BadgeText</span>
+                                }
+                                @if (!string.IsNullOrWhiteSpace(campaign.PromoBadge))
+                                {
+                                    <span class="kmp-card__promo">@campaign.PromoBadge</span>
+                                }
+                            </div>
+                            <div class="kmp-card__body">
+                                <div class="kmp-card__head">
+                                    <h2>@campaign.CampaignName</h2>
+                                </div>
+                                <p class="kmp-card__desc">@campaign.ShortDescription</p>
+                                <div class="kmp-card__meta">
+                                    <span><i class="fas fa-tag" aria-hidden="true"></i> @campaign.CampaignType</span>
+                                    @if (campaign.HotelCount > 0)
+                                    {
+                                        <span><i class="fas fa-hotel" aria-hidden="true"></i> @campaign.HotelCount otel</span>
+                                    }
+                                </div>
+                                <span class="kmp-card__date"><i class="fas fa-calendar-check" aria-hidden="true"></i> @campaign.EndDateText</span>
+                            </div>
+                        </a>
+                        <div class="kmp-card__actions">
+                            <a class="btn-club-pro kmp-card__btn" href="@listingUrl">@SharedLocalizer["Campaign.ListHotels"]</a>
+                            <a class="btn-club-pro-outline kmp-card__btn" href="@campaign.Url">@SharedLocalizer["Campaign.ViewDetail"]</a>
+                        </div>
+                    </article>
+                }
+                <div class="kmp-empty-filter" data-kmp-empty hidden>
+                    <strong>Aramanıza uygun kampanya bulunamadı</strong>
+                    <p>Farklı bir anahtar kelime veya filtre deneyin.</p>
+                </div>
+            }
+        </section>
+    </div>
+</div>

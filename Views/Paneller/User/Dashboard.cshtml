@@ -2,120 +2,138 @@
 @{
     Layout = "~/Views/Paneller/User/_UserPanelLayout.cshtml";
     ViewData["Title"] = "Dashboard";
+
+    string MapStatusBadge(string tone) => tone switch
+    {
+        "danger" => "status-cancel",
+        "completed" or "ok" => "status-confirmed",
+        "info" => "status-info",
+        _ => "status-pending"
+    };
 }
 
-<div class="user-dashboard">
-    <section class="user-dashboard-hero">
+<section class="kullanici-panel-dashboard">
+    <div class="ap-page-header">
         <div>
-            <div class="page-pretitle">Kullanıcı Merkezi</div>
-            <h1 class="page-title">Rezervasyonlarını ve favorilerini tek ekrandan yönet</h1>
-            <p class="text-muted mb-0">Yaklaşan konaklamalar, favori oteller, mesajlar ve tasarruf bilgileri Tabler panel düzeninde toplandı.</p>
+            <div class="ap-page-pretitle">Misafir Portalı · Kişisel Kokpit</div>
+            <h1>Rezervasyonlarını ve favorilerini tek ekrandan yönet</h1>
+            <p>Yaklaşan konaklamalar, favori oteller, mesajlar ve tasarruf bilgileri canlı verilerle özetlenir.</p>
         </div>
-        <div class="user-hero-actions">
-            <a class="btn btn-primary btn-pill" href="/oteller"><i class="fas fa-magnifying-glass me-2"></i>Otel Ara</a>
-            <a class="btn btn-outline-primary btn-pill" href="/panel/user/rezervasyonlarim"><i class="fas fa-calendar-check me-2"></i>Rezervasyonlarım</a>
+        <div class="d-flex flex-wrap gap-2">
+            <a class="btn-primary-ap" href="/oteller"><i class="fas fa-magnifying-glass"></i> Otel Keşfet</a>
+            <a class="btn-outline-ap" href="/panel/user/rezervasyonlarim"><i class="fas fa-calendar-check"></i> Rezervasyonlarım</a>
         </div>
-    </section>
+    </div>
 
-    <section class="user-widget-strip" aria-label="Özet metrikler">
-        <article class="user-widget user-widget--primary">
-            <span class="user-widget-icon"><i class="fas fa-calendar-check"></i></span>
-            <div class="user-widget-copy">
-                <strong>@Model.TotalReservationCount</strong>
-                <span>Toplam Rezervasyon</span>
-                <small>Tüm zamanlar</small>
-            </div>
-        </article>
-        <article class="user-widget user-widget--warning">
-            <span class="user-widget-icon"><i class="fas fa-suitcase"></i></span>
-            <div class="user-widget-copy">
-                <strong>@Model.UpcomingReservationCount</strong>
-                <span>Yaklaşan Konaklama</span>
-                <small>Aktif planlar</small>
-            </div>
-        </article>
-        <article class="user-widget user-widget--danger">
-            <span class="user-widget-icon"><i class="fas fa-heart"></i></span>
-            <div class="user-widget-copy">
-                <strong>@Model.FavoriteCount</strong>
-                <span>Favori Otel</span>
-                <small>Kaydedilen tesisler</small>
-            </div>
-        </article>
-        <article class="user-widget user-widget--success">
-            <span class="user-widget-icon"><i class="fas fa-tag"></i></span>
-            <div class="user-widget-copy">
-                <strong>@Model.DiscountText</strong>
-                <span>Toplam Tasarruf</span>
-                <small>Rezervasyon indirimleri</small>
-            </div>
-        </article>
-        <article class="user-widget user-widget--info">
-            <span class="user-widget-icon"><i class="fas fa-envelope"></i></span>
-            <div class="user-widget-copy">
-                <strong>@Model.MessageCount</strong>
-                <span>Mesaj</span>
-                <small>Otel ve destek konuşmaları</small>
-            </div>
-        </article>
-    </section>
+    <div class="quick-actions-bar">
+        <a class="action-chip" href="/panel/user/rezervasyonlarim"><i class="fas fa-suitcase" style="color: var(--ap-info);"></i> Seyahatlerim</a>
+        <a class="action-chip" href="/panel/user/favorilerim"><i class="fas fa-heart" style="color: var(--ap-pink);"></i> Favori Oteller</a>
+        <a class="action-chip" href="/panel/user/mesajlarim"><i class="fas fa-envelope" style="color: var(--ap-warning);"></i> Mesajlar</a>
+        <a class="action-chip" href="/panel/user/puanlarim"><i class="fas fa-gem" style="color: var(--ap-purple);"></i> OtelPuan</a>
+    </div>
 
-    <section class="row row-cards">
-        <div class="col-12">
-            <div class="card user-table-card">
-                <div class="card-header">
-                    <h3 class="card-title">Yaklaşan / Son Rezervasyonlar</h3>
-                    <div class="card-actions">
-                        <a class="btn btn-outline-primary btn-sm" href="/panel/user/rezervasyonlarim">Tümünü Gör</a>
-                    </div>
+    <div class="kpi-grid-pro">
+        <a class="kpi-card-pro kpi-blue" href="/panel/user/rezervasyonlarim">
+            <div class="kpi-top">
+                <span class="kpi-title">Toplam Rezervasyon</span>
+                <div class="kpi-icon icon-blue"><i class="fas fa-calendar-check"></i></div>
+            </div>
+            <div class="kpi-value">@Model.TotalReservationCount</div>
+            <div class="kpi-bottom up"><i class="fas fa-clock"></i> Tüm zamanlar</div>
+        </a>
+        <a class="kpi-card-pro kpi-warning" href="/panel/user/rezervasyonlarim">
+            <div class="kpi-top">
+                <span class="kpi-title">Yaklaşan Konaklama</span>
+                <div class="kpi-icon icon-warning"><i class="fas fa-suitcase"></i></div>
+            </div>
+            <div class="kpi-value">@Model.UpcomingReservationCount</div>
+            <div class="kpi-bottom up"><i class="fas fa-route"></i> Aktif planlar</div>
+        </a>
+        <a class="kpi-card-pro kpi-pink" href="/panel/user/favorilerim">
+            <div class="kpi-top">
+                <span class="kpi-title">Favori Otel</span>
+                <div class="kpi-icon icon-pink"><i class="fas fa-heart"></i></div>
+            </div>
+            <div class="kpi-value">@Model.FavoriteCount</div>
+            <div class="kpi-bottom up"><i class="fas fa-bookmark"></i> Kayıtlı tesisler</div>
+        </a>
+        <a class="kpi-card-pro kpi-green" href="/panel/user/rezervasyonlarim">
+            <div class="kpi-top">
+                <span class="kpi-title">Toplam Tasarruf</span>
+                <div class="kpi-icon icon-green"><i class="fas fa-tag"></i></div>
+            </div>
+            <div class="kpi-value">@Model.DiscountText</div>
+            <div class="kpi-bottom up"><i class="fas fa-percent"></i> Rezervasyon indirimleri</div>
+        </a>
+        <a class="kpi-card-pro kpi-teal" href="/panel/user/mesajlarim">
+            <div class="kpi-top">
+                <span class="kpi-title">Mesaj</span>
+                <div class="kpi-icon icon-teal"><i class="fas fa-envelope"></i></div>
+            </div>
+            <div class="kpi-value">@Model.MessageCount</div>
+            <div class="kpi-bottom up"><i class="fas fa-comments"></i> Otel ve destek</div>
+        </a>
+    </div>
+
+    <div class="complex-grid">
+        <div class="panel-card">
+            <div class="panel-header">
+                <h3><i class="fas fa-calendar-check"></i> Yaklaşan / Son Rezervasyonlar</h3>
+                <a class="btn-outline-ap" style="height:28px;font-size:11px;padding:0 10px;" href="/panel/user/rezervasyonlarim">Tümünü Gör</a>
+            </div>
+            <form method="get" action="/panel/user" class="generic-form-grid" data-user-dashboard-filter-form>
+                <input type="hidden" name="favoriteSort" value="@Model.FavoriteSortFilter" />
+                <div class="form-group">
+                    <label>Giriş tarihi</label>
+                    <input class="form-control" type="date" name="reservationStartDate" value="@Model.ReservationStartDateText" />
                 </div>
-                <div class="card-body border-bottom">
-                    <form method="get" action="/panel/user" data-user-dashboard-filter-form>
-                        <input type="hidden" name="favoriteSort" value="@Model.FavoriteSortFilter" />
-                        <div class="row g-3 align-items-end">
-                            <div class="col-12 col-md-4 col-xl-2">
-                                <label class="form-label">Giriş tarihi</label>
-                                <input class="form-control" type="date" name="reservationStartDate" value="@Model.ReservationStartDateText" />
-                            </div>
-                            <div class="col-12 col-md-4 col-xl-2">
-                                <label class="form-label">Çıkış tarihi</label>
-                                <input class="form-control" type="date" name="reservationEndDate" value="@Model.ReservationEndDateText" />
-                            </div>
-                            <div class="col-12 col-md-4 col-xl-2">
-                                <label class="form-label">Durum</label>
-                                <select class="form-select" name="reservationStatus">
-                                    <option value="all" selected="@(Model.ReservationStatusFilter == "all")">Tüm durumlar</option>
-                                    <option value="completed" selected="@(Model.ReservationStatusFilter == "completed")">Tamamlandı</option>
-                                    <option value="pending" selected="@(Model.ReservationStatusFilter == "pending")">Bekliyor</option>
-                                    <option value="rejected" selected="@(Model.ReservationStatusFilter == "rejected")">Reddedildi</option>
-                                </select>
-                            </div>
-                            <div class="col-12 col-md-4 col-xl-2">
-                                <label class="form-label">Sayfa başı</label>
-                                <select class="form-select" name="reservationPageSize">
-                                    @foreach (var option in new[] { 5, 10, 15, 20 })
-                                    {
-                                        <option value="@option" selected="@(Model.ReservationPageSize == option)">@option</option>
-                                    }
-                                </select>
-                            </div>
-                            <div class="col-12 col-md-4 col-xl-2">
-                                <input type="hidden" name="reservationPage" value="1" />
-                                <button type="submit" class="btn btn-primary w-100"><i class="fas fa-filter me-2"></i>Filtrele</button>
-                            </div>
-                            <div class="col-12 col-md-4 col-xl-2">
-                                <a class="btn btn-outline-primary w-100" href="/panel/user">Temizle</a>
-                            </div>
+                <div class="form-group">
+                    <label>Çıkış tarihi</label>
+                    <input class="form-control" type="date" name="reservationEndDate" value="@Model.ReservationEndDateText" />
+                </div>
+                <div class="form-group">
+                    <label>Durum</label>
+                    <select class="form-control" name="reservationStatus">
+                        <option value="all" selected="@(Model.ReservationStatusFilter == "all")">Tüm durumlar</option>
+                        <option value="completed" selected="@(Model.ReservationStatusFilter == "completed")">Tamamlandı</option>
+                        <option value="pending" selected="@(Model.ReservationStatusFilter == "pending")">Bekliyor</option>
+                        <option value="rejected" selected="@(Model.ReservationStatusFilter == "rejected")">Reddedildi</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Sayfa başı</label>
+                    <select class="form-control" name="reservationPageSize">
+                        @foreach (var option in new[] { 5, 10, 15, 20 })
+                        {
+                            <option value="@option" selected="@(Model.ReservationPageSize == option)">@option</option>
+                        }
+                    </select>
+                </div>
+                <div class="form-actions" style="grid-column: 1 / -1;">
+                    <input type="hidden" name="reservationPage" value="1" />
+                    <a class="btn-outline-ap" href="/panel/user">Temizle</a>
+                    <button type="submit" class="btn-primary-ap"><i class="fas fa-filter"></i> Filtrele</button>
+                </div>
+            </form>
+            <div class="panel-body">
+                @if (Model.RecentReservations.Count == 0)
+                {
+                    <div class="panel-body-padded">
+                        <div class="ap-empty-state">
+                            <i class="fas fa-calendar-xmark"></i>
+                            <strong>Rezervasyon bulunmuyor</strong>
+                            <p>Otel arayarak ilk rezervasyonunu oluşturabilirsin.</p>
+                            <a class="btn-primary-ap" href="/oteller">Otel Ara</a>
                         </div>
-                    </form>
-                </div>
-                <div class="table-responsive">
-                    <table class="table table-vcenter table-hover user-table--cards">
+                    </div>
+                }
+                else
+                {
+                    <table class="pro-table">
                         <thead>
                             <tr>
                                 <th>Rezervasyon</th>
                                 <th>Otel</th>
-                                <th>Oda</th>
                                 <th>Konaklama</th>
                                 <th>Durum</th>
                                 <th class="text-end">Tutar</th>
@@ -123,174 +141,117 @@
                             </tr>
                         </thead>
                         <tbody>
-                        @if (Model.RecentReservations.Count == 0)
-                        {
-                            <tr>
-                                <td colspan="7">
-                                    <div class="empty">
-                                        <div class="empty-icon"><i class="fas fa-calendar-xmark"></i></div>
-                                        <p class="empty-title">Rezervasyon bulunmuyor</p>
-                                        <p class="empty-subtitle text-muted">Otel arayarak ilk rezervasyonunu oluşturabilirsin.</p>
-                                        <div class="empty-action">
-                                            <a class="btn btn-primary" href="/oteller">Otel Ara</a>
-                                        </div>
-                                    </div>
-                                </td>
-                            </tr>
-                        }
-                        else
-                        {
-                            foreach (var reservation in Model.RecentReservations)
+                            @foreach (var reservation in Model.RecentReservations)
                             {
-                                <tr class="user-reservation-row user-reservation-row--@reservation.StatusTone">
-                                    <td data-label="Rezervasyon">
-                                        <div class="fw-bold">@reservation.ReservationNo</div>
-                                        <div class="text-muted small">#@reservation.ReservationId</div>
-                                    </td>
-                                    <td data-label="Otel">
-                                        <div class="d-flex align-items-center gap-2">
-                                            @if (!string.IsNullOrWhiteSpace(reservation.ImageUrl))
-                                            {
-                                                <span class="avatar rounded" style="background-image:url('@reservation.ImageUrl')"></span>
-                                            }
-                                            else
-                                            {
-                                                <span class="avatar rounded bg-blue-lt text-blue"><i class="fas fa-hotel"></i></span>
-                                            }
-                                            <div class="min-w-0">
-                                                <div class="fw-bold text-truncate">@reservation.HotelName</div>
-                                                <div class="text-muted small">@reservation.District, @reservation.City</div>
-                                            </div>
+                                <tr>
+                                    <td>
+                                        <div class="item-info">
+                                            <span class="item-name">@reservation.ReservationNo</span>
+                                            <span class="item-meta">#@reservation.ReservationId · @reservation.RoomName</span>
                                         </div>
                                     </td>
-                                    <td data-label="Oda">
-                                        <div class="fw-bold">@reservation.RoomName</div>
-                                        <div class="text-muted small">@reservation.GuestText</div>
-                                    </td>
-                                    <td data-label="Konaklama">
-                                        <div class="fw-bold">@reservation.StayDateText</div>
-                                        <div class="text-muted small">@reservation.MealOrRoomText</div>
-                                    </td>
-                                    <td data-label="Durum">
-                                        <span class="user-status-pill user-status-pill--@reservation.StatusTone">@reservation.StatusText</span>
-                                    </td>
-                                    <td class="text-end fw-bold" data-label="Tutar">@reservation.TotalText</td>
-                                    <td class="text-end" data-label="Aksiyon">
-                                        <div class="btn-list justify-content-end flex-nowrap">
-                                            <a href="/oteller/@reservation.HotelSlug" class="btn btn-outline-primary btn-sm">Detay</a>
-                                            <a href="/panel/user/mesajlarim" class="btn btn-primary btn-sm">Mesaj</a>
+                                    <td>
+                                        <div class="item-info">
+                                            <span class="item-name">@reservation.HotelName</span>
+                                            <span class="item-meta">@reservation.District, @reservation.City</span>
                                         </div>
+                                    </td>
+                                    <td>
+                                        <div class="item-info">
+                                            <span class="item-name">@reservation.StayDateText</span>
+                                            <span class="item-meta">@reservation.GuestText · @reservation.MealOrRoomText</span>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <span class="status-badge @MapStatusBadge(reservation.StatusTone)">@reservation.StatusText</span>
+                                    </td>
+                                    <td class="text-end fw-bold">@reservation.TotalText</td>
+                                    <td class="text-end">
+                                        <a href="/oteller/@reservation.HotelSlug" class="btn-outline-ap" style="height:28px;font-size:11px;padding:0 10px;">Detay</a>
+                                        <a href="/panel/user/mesajlarim" class="btn-primary-ap" style="height:28px;font-size:11px;padding:0 10px;">Mesaj</a>
                                     </td>
                                 </tr>
                             }
-                        }
                         </tbody>
                     </table>
-                </div>
-                @if (Model.ReservationTotalPages > 1)
-                {
-                    <div class="card-footer d-flex align-items-center">
-                        <div class="text-muted">
-                            Toplam <strong>@Model.ReservationTotalCount</strong> kayıt · Sayfa <strong>@Model.ReservationPage</strong> / <strong>@Model.ReservationTotalPages</strong>
-                        </div>
-                        <div class="ms-auto btn-list">
-                            <a class="btn btn-outline-primary btn-sm @(Model.ReservationPage <= 1 ? "disabled" : string.Empty)"
-                               href="/panel/user?reservationStatus=@Model.ReservationStatusFilter&reservationStartDate=@Model.ReservationStartDateText&reservationEndDate=@Model.ReservationEndDateText&reservationPageSize=@Model.ReservationPageSize&reservationPage=@(Math.Max(1, Model.ReservationPage - 1))&favoriteSort=@Model.FavoriteSortFilter">
-                                <i class="fas fa-chevron-left me-1"></i>Önceki
-                            </a>
-                            <a class="btn btn-outline-primary btn-sm @(Model.ReservationPage >= Model.ReservationTotalPages ? "disabled" : string.Empty)"
-                               href="/panel/user?reservationStatus=@Model.ReservationStatusFilter&reservationStartDate=@Model.ReservationStartDateText&reservationEndDate=@Model.ReservationEndDateText&reservationPageSize=@Model.ReservationPageSize&reservationPage=@(Math.Min(Model.ReservationTotalPages, Model.ReservationPage + 1))&favoriteSort=@Model.FavoriteSortFilter">
-                                Sonraki<i class="fas fa-chevron-right ms-1"></i>
-                            </a>
-                        </div>
-                    </div>
                 }
             </div>
-        </div>
-    </section>
-
-    <section class="row row-cards">
-        <div class="col-12 col-xl-7">
-            <div class="card">
-                <div class="card-header">
-                    <h3 class="card-title">Favori Oteller</h3>
-                    <div class="card-actions user-favorite-actions">
-                        <form method="get" action="/panel/user/dashboard" data-user-dashboard-favorite-form>
-                            <input type="hidden" name="reservationStatus" value="@Model.ReservationStatusFilter" />
-                            <input type="hidden" name="reservationStartDate" value="@Model.ReservationStartDateText" />
-                            <input type="hidden" name="reservationEndDate" value="@Model.ReservationEndDateText" />
-                            <input type="hidden" name="reservationPageSize" value="@Model.ReservationPageSize" />
-                            <select class="form-select form-select-sm" name="favoriteSort" aria-label="Favori otel sıralama">
-                                <option value="newest" selected="@(Model.FavoriteSortFilter == "newest")">En yeni</option>
-                                <option value="oldest" selected="@(Model.FavoriteSortFilter == "oldest")">En eski</option>
-                                <option value="frequent" selected="@(Model.FavoriteSortFilter == "frequent")">Sık rezervasyon</option>
-                            </select>
-                        </form>
-                        <a class="btn btn-outline-primary btn-sm" href="/panel/user/favorilerim">@Model.FavoriteCount kayıt</a>
-                    </div>
+            @if (Model.ReservationTotalPages > 1)
+            {
+                <div class="form-actions">
+                    <span class="text-muted" style="font-size:12px;margin-right:auto;">
+                        Toplam <strong>@Model.ReservationTotalCount</strong> kayıt · Sayfa <strong>@Model.ReservationPage</strong> / <strong>@Model.ReservationTotalPages</strong>
+                    </span>
+                    <a class="btn-outline-ap @(Model.ReservationPage <= 1 ? "disabled" : string.Empty)"
+                       href="/panel/user?reservationStatus=@Model.ReservationStatusFilter&reservationStartDate=@Model.ReservationStartDateText&reservationEndDate=@Model.ReservationEndDateText&reservationPageSize=@Model.ReservationPageSize&reservationPage=@(Math.Max(1, Model.ReservationPage - 1))&favoriteSort=@Model.FavoriteSortFilter">
+                        <i class="fas fa-chevron-left"></i> Önceki
+                    </a>
+                    <a class="btn-outline-ap @(Model.ReservationPage >= Model.ReservationTotalPages ? "disabled" : string.Empty)"
+                       href="/panel/user?reservationStatus=@Model.ReservationStatusFilter&reservationStartDate=@Model.ReservationStartDateText&reservationEndDate=@Model.ReservationEndDateText&reservationPageSize=@Model.ReservationPageSize&reservationPage=@(Math.Min(Model.ReservationTotalPages, Model.ReservationPage + 1))&favoriteSort=@Model.FavoriteSortFilter">
+                        Sonraki <i class="fas fa-chevron-right"></i>
+                    </a>
                 </div>
-                <div class="list-group list-group-flush">
-                    @if (Model.FavoriteHotels.Count == 0)
-                    {
-                        <div class="list-group-item">
-                            <div class="empty">
-                                <div class="empty-icon"><i class="fas fa-heart"></i></div>
-                                <p class="empty-title">Henüz favori otelin yok</p>
-                                <p class="empty-subtitle text-muted">Beğendiğin tesisleri favorilerine ekleyerek burada takip edebilirsin.</p>
-                            </div>
-                        </div>
-                    }
-                    else
-                    {
-                        foreach (var hotel in Model.FavoriteHotels.Take(5))
+            }
+        </div>
+
+        <div class="panel-card">
+            <div class="panel-header">
+                <h3><i class="fas fa-heart" style="color:var(--ap-pink);"></i> Favori Oteller</h3>
+                <a class="btn-outline-ap" style="height:28px;font-size:11px;padding:0 10px;" href="/panel/user/favorilerim">@Model.FavoriteCount kayıt</a>
+            </div>
+            <div class="panel-body panel-body-padded">
+                <form method="get" action="/panel/user/dashboard" data-user-dashboard-favorite-form style="margin-bottom:12px;">
+                    <input type="hidden" name="reservationStatus" value="@Model.ReservationStatusFilter" />
+                    <input type="hidden" name="reservationStartDate" value="@Model.ReservationStartDateText" />
+                    <input type="hidden" name="reservationEndDate" value="@Model.ReservationEndDateText" />
+                    <input type="hidden" name="reservationPageSize" value="@Model.ReservationPageSize" />
+                    <div class="form-group">
+                        <label>Sıralama</label>
+                        <select class="form-control" name="favoriteSort" aria-label="Favori otel sıralama">
+                            <option value="newest" selected="@(Model.FavoriteSortFilter == "newest")">En yeni</option>
+                            <option value="oldest" selected="@(Model.FavoriteSortFilter == "oldest")">En eski</option>
+                            <option value="frequent" selected="@(Model.FavoriteSortFilter == "frequent")">Sık rezervasyon</option>
+                        </select>
+                    </div>
+                </form>
+
+                @if (Model.FavoriteHotels.Count == 0)
+                {
+                    <div class="ap-empty-state">
+                        <i class="fas fa-heart"></i>
+                        <strong>Henüz favori otelin yok</strong>
+                        <p>Beğendiğin tesisleri favorilerine ekleyerek burada takip edebilirsin.</p>
+                    </div>
+                }
+                else
+                {
+                    <div class="ap-action-stack">
+                        @foreach (var hotel in Model.FavoriteHotels.Take(5))
                         {
-                            <a class="list-group-item user-favorite-item" href="/oteller/@hotel.HotelSlug">
-                                <div class="row align-items-center">
-                                    <div class="col-auto">
-                                        @if (!string.IsNullOrWhiteSpace(hotel.ImageUrl))
-                                        {
-                                            <span class="avatar rounded" style="background-image:url('@hotel.ImageUrl')"></span>
-                                        }
-                                        else
-                                        {
-                                            <span class="avatar rounded bg-blue-lt text-blue"><i class="fas fa-hotel"></i></span>
-                                        }
-                                    </div>
-                                    <div class="col">
-                                        <strong>@hotel.HotelName</strong>
-                                        <div class="text-muted small">@hotel.District, @hotel.City</div>
-                                        <div class="text-muted small">@hotel.ReservationCountText@if (!string.IsNullOrWhiteSpace(hotel.AddedDateText)) { <span> · @hotel.AddedDateText</span> }</div>
-                                    </div>
-                                    <div class="col-auto">
-                                        <span class="badge bg-primary-lt text-primary">@hotel.RatingText</span>
-                                    </div>
+                            <a class="ap-action-tile" href="/oteller/@hotel.HotelSlug">
+                                <span><i class="fas fa-hotel"></i></span>
+                                <div>
+                                    <strong>@hotel.HotelName</strong>
+                                    <small>@hotel.District, @hotel.City · @hotel.RatingText@if (!string.IsNullOrWhiteSpace(hotel.AddedDateText)) { <span> · @hotel.AddedDateText</span> }</small>
                                 </div>
+                                <i class="fas fa-chevron-right"></i>
                             </a>
                         }
-                    }
-                </div>
-            </div>
-        </div>
+                    </div>
+                }
 
-        <div class="col-12 col-xl-5">
-            <div class="card user-offer-card">
-                <div class="card-body">
-                    <span class="badge bg-blue-lt text-blue mb-3">Özel Fırsat</span>
-                    <h3>Kişisel fırsatlarını akıllı şekilde takip et</h3>
-                    <p class="text-muted">Favorilerin, rezervasyon davranışın ve puan seviyene göre şekillenen kampanya önerilerini tek panelde topla.</p>
-                    <div class="user-offer-list">
-                        <div><i class="fas fa-bolt"></i><span>Hafta sonu hızlı fırsatları</span></div>
-                        <div><i class="fas fa-gem"></i><span>Puanla ekstra indirim</span></div>
-                    </div>
-                    <div class="btn-list mt-4">
-                        <a class="btn btn-primary" href="/panel/user/puanlarim">Fırsatları keşfet</a>
-                        <a class="btn btn-outline-primary" href="/panel/user/favorilerim">Favorilerden devam et</a>
+                <div class="ai-alert-box" style="margin-top:16px;">
+                    <div class="ai-alert-header"><span><i class="fas fa-bolt"></i> Kişisel Fırsatlar</span></div>
+                    <p class="ai-alert-text">Favorilerin, rezervasyon davranışın ve puan seviyene göre şekillenen kampanya önerilerini tek panelde topla.</p>
+                    <div class="d-flex flex-wrap gap-2" style="margin-top:10px;">
+                        <a class="btn-primary-ap" style="height:32px;font-size:12px;" href="/panel/user/puanlarim">Fırsatları keşfet</a>
+                        <a class="btn-outline-ap" style="height:32px;font-size:12px;" href="/panel/user/favorilerim">Favorilerden devam et</a>
                     </div>
                 </div>
             </div>
         </div>
-    </section>
-</div>
+    </div>
+</section>
 
 @section Scripts {
 @{

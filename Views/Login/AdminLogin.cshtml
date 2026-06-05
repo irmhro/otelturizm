@@ -1,37 +1,13 @@
 @{
     ViewData["Title"] = "Admin Giriş";
-    ViewData["HeaderContext"] = "auth";
 }
 
-<section class="admin-login-page">
-    <div class="admin-login-container">
-        <aside class="admin-login-sidebar">
-            <div class="sidebar-logo">
-                <img src="~/uploads/logo/logo.png" alt="Otelturizm" />
-                <div>
-                    <h2>Admin Paneli</h2>
-                    <p>Otelturizm Yönetim Sistemi</p>
-                </div>
-            </div>
-
-            <div class="security-features">
-                <div class="security-item"><i class="fas fa-shield-alt"></i> 256-bit SSL korumasi</div>
-                <div class="security-item"><i class="fas fa-mobile-alt"></i> 2 faktorlu kimlik dogrulama hazirligi</div>
-                <div class="security-item"><i class="fas fa-history"></i> Tum yonetici oturumlari kaydedilir</div>
-                <div class="security-item"><i class="fas fa-ban"></i> Yetki ve erisim loglari aktif izlenir</div>
-            </div>
-
-            <div class="sidebar-footer">
-                <i class="fas fa-lock"></i> Yetkisiz girisler yasal isleme tabidir.<br />
-                © @DateTime.Now.Year Otelturizm · AdminX
-            </div>
-        </aside>
-
-        <div class="admin-login-form-wrapper">
-            <div class="form-header">
-                <span class="admin-badge"><i class="fas fa-user-shield"></i> YONETICI GIRISI</span>
-                <h3>Hos geldiniz</h3>
-                <p>Guvenli yonetim paneline erismek icin kimlik bilgilerinizi girin.</p>
+<div class="auth-card auth-card-admin">
+    <div class="auth-layout">
+        <div class="auth-form-panel">
+            <div class="auth-form-header">
+                <h3><i class="fas fa-lock"></i> Yönetici Girişi</h3>
+                <p>Yetkili admin paneli erişimi için bilgilerinizi girin.</p>
             </div>
 
             @if (TempData["AdminLoginError"] is string loginError)
@@ -39,87 +15,75 @@
                 <div class="auth-alert">@loginError</div>
             }
 
-            <form class="admin-login-form" method="post" asp-controller="Auth" asp-action="AdminLogin">
+            <form class="auth-form" id="adminLoginForm" method="post" asp-controller="Auth" asp-action="AdminLogin">
                 @Html.AntiForgeryToken()
-
                 <div class="form-group">
-                    <label for="adminEmail">Yonetici E-postasi</label>
-                    <div class="input-wrapper">
-                        <i class="far fa-envelope"></i>
-                        <input id="adminEmail" name="adminEmail" type="email" class="form-control" placeholder="admin@otelturizm.com" required />
-                    </div>
+                    <label for="adminEmail">E-posta Adresiniz</label>
+                    <input id="adminEmail" name="adminEmail" type="email" class="form-control" placeholder="admin@otelturizm.com" required />
                 </div>
-
                 <div class="form-group">
-                    <label for="adminPassword">Sifre</label>
-                    <div class="input-wrapper">
-                        <i class="fas fa-lock"></i>
+                    <label for="adminPassword">Şifreniz</label>
+                    <div class="input-wrap password-wrapper">
                         <input id="adminPassword" name="adminPassword" type="password" class="form-control" placeholder="••••••••" required />
-                        <button type="button" class="toggle-password" data-toggle-target="adminPassword" aria-label="Sifreyi goster veya gizle">
-                            <i class="far fa-eye"></i>
-                        </button>
+                        <button type="button" class="toggle-password" data-toggle-target="adminPassword" aria-label="Şifreyi göster"><i class="far fa-eye"></i></button>
                     </div>
                 </div>
-
-                <div class="form-extra">
-                    <label class="checkbox-group">
+                <div class="form-row-meta">
+                    <label class="checkbox-inline">
                         <input type="checkbox" name="rememberMe" value="true" checked />
-                        <span>Bu cihazi 30 gun hatirla</span>
+                        <span>Bu cihazı 30 gün hatırla</span>
                     </label>
-                    <a asp-controller="Auth" asp-action="UserLogin" class="forgot-link">Normal kullanici girisine don</a>
+                    <a asp-controller="Auth" asp-action="UserLogin" class="text-link">Normal kullanıcı girişi</a>
                 </div>
-
-                <button type="submit" class="btn-login">
-                    <span>Guvenli Giris Yap</span>
-                    <i class="fas fa-arrow-right"></i>
-                </button>
+                <button type="submit" class="auth-submit-btn">Yönetici Girişi <i class="fas fa-arrow-right"></i></button>
             </form>
 
-            <div class="ip-warning">
+            <div class="auth-admin-note">
                 <i class="fas fa-info-circle"></i>
-                <p>
-                    Bu ekran sadece admin ve yonetici ekip kullanicilari icindir.
-                    Basarili giristen sonra dogrudan admin paneline yonlendirilirsiniz.
-                    <a asp-controller="Home" asp-action="Index">Ana siteye don</a>
-                </p>
+                Bu ekran sadece admin ve yönetici ekip kullanıcıları içindir. Başarılı girişten sonra doğrudan admin paneline yönlendirilirsiniz.
+                <a asp-controller="Home" asp-action="Index">Ana siteye dön</a>
             </div>
 
-            <div class="admin-login-footer-links">
-                <a asp-controller="Home" asp-action="Privacy">Gizlilik ve guvenlik</a>
-                <a asp-controller="Home" asp-action="Index">Otelturizm ana sayfa</a>
+            <div class="legal-note">
+                <span><i class="fas fa-lock"></i> SSL</span>
+                <span><i class="fas fa-database"></i> KVKK</span>
+                <span><i class="fas fa-shield-alt"></i> 256-bit</span>
             </div>
         </div>
+
+        <aside class="auth-info">
+            <div>
+                <div class="auth-info-logo">
+                    <partial name="~/Views/Anasayfa/_AnasayfaLogo.cshtml" />
+                    <small>Admin</small>
+                </div>
+                <span class="auth-info-badge">Yönetici</span>
+                <h2>Admin Paneli</h2>
+                <p class="tagline">Tüm sistemi tek noktadan yönetin, performansı anlık takip edin.</p>
+                <ul class="benefits-list">
+                    <li><i class="fas fa-chart-pie"></i> Genel istatistikler ve raporlar</li>
+                    <li><i class="fas fa-hotel"></i> Otel ve kullanıcı yönetimi</li>
+                    <li><i class="fas fa-calendar-alt"></i> Rezervasyon onay süreçleri</li>
+                    <li><i class="fas fa-coins"></i> Komisyon ve ödeme takibi</li>
+                    <li><i class="fas fa-headset"></i> Öncelikli destek hattı</li>
+                </ul>
+            </div>
+            <div class="trust-badges">
+                <span><i class="fas fa-shield-alt"></i> SSL</span>
+                <span><i class="fas fa-history"></i> Oturum logları</span>
+            </div>
+        </aside>
     </div>
-</section>
+</div>
 
 @section Scripts {
     @{
         var nonce = Context.Items["CspNonce"] as string;
     }
     <script nonce="@nonce">
-        (function () {
-            document.querySelectorAll('[data-toggle-target]').forEach(button => {
-                button.addEventListener('click', function () {
-                    const input = document.getElementById(this.dataset.toggleTarget);
-                    const icon = this.querySelector('i');
-                    if (!input || !icon) {
-                        return;
-                    }
-
-                    const isPassword = input.type === 'password';
-                    input.type = isPassword ? 'text' : 'password';
-                    icon.className = isPassword ? 'far fa-eye-slash' : 'far fa-eye';
-                });
-            });
-
-            const loginForm = document.querySelector('.admin-login-form');
-            loginForm?.addEventListener('submit', function () {
-                const submitButton = this.querySelector('.btn-login');
-                if (submitButton) {
-                    submitButton.disabled = true;
-                    submitButton.innerHTML = '<span>Giris dogrulaniyor</span><i class="fas fa-spinner fa-spin"></i>';
-                }
-            });
-        })();
+        document.getElementById('adminLoginForm')?.addEventListener('submit', function () {
+            const btn = this.querySelector('.auth-submit-btn');
+            if (btn) { btn.disabled = true; btn.innerHTML = 'Giriş doğrulanıyor <i class="fas fa-spinner fa-spin"></i>'; }
+        });
     </script>
 }

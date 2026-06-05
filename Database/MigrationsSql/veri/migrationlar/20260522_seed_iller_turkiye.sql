@@ -3,9 +3,7 @@ SET NOCOUNT ON;
 GO
 
 IF OBJECT_ID(N'dbo.ILLER', N'U') IS NULL RETURN;
-DELETE FROM [dbo].[MAHALLELER];
-DELETE FROM [dbo].[ILCELER];
-DELETE FROM [dbo].[ILLER];
+-- Idempotent seed: mevcut il/ilce/mahalle verisini silmez, MERGE ile gunceller/ekler.
 GO
 
 IF OBJECT_ID('tempdb..#il_seed') IS NOT NULL DROP TABLE #il_seed;

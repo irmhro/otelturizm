@@ -77,7 +77,9 @@ public class SessionSecurityService : ISessionSecurityService
         await using var connection = new SqlConnection(_connectionString);
         await connection.OpenAsync(cancellationToken);
 
-        const string sql = @"
+        var userAgentHashColumn = await ResolveUserAgentHashColumnAsync(connection, cancellationToken);
+
+        var sql = $@"
             MERGE kullanici_oturum_istatistikleri AS target
             USING (
                 SELECT
@@ -98,11 +100,11 @@ public class SessionSecurityService : ISessionSecurityService
                     [SON_OTURUM_BITISI] = @sessionEndedAt,
                     [SON_AKTIVITE_TARIHI] = @lastActivityAt,
                     [SON_IP_HASH] = @ipHash,
-                    son_user_agent_hash = @userAgentHash,
+                    [{userAgentHashColumn}] = @userAgentHash,
                     [GUNCELLENME_TARIHI] = CURRENT_TIMESTAMP
             WHEN NOT MATCHED THEN
                 INSERT
-                ([KULLANICI_ID], [HESAP_TIPI], [PARTNER_ID], [CIHAZ_ANAHTARI], [CIHAZ_ETIKETI], [BENI_HATIRLA_TERCIHI], [TOPLAM_ZIYARET_SAYISI], [TOPLAM_OTURUM_SURESI_SANIYE], [SON_OTURUM_BASLANGICI], [SON_OTURUM_BITISI], [SON_AKTIVITE_TARIHI], [SON_IP_HASH], son_user_agent_hash)
+                ([KULLANICI_ID], [HESAP_TIPI], [PARTNER_ID], [CIHAZ_ANAHTARI], [CIHAZ_ETIKETI], [BENI_HATIRLA_TERCIHI], [TOPLAM_ZIYARET_SAYISI], [TOPLAM_OTURUM_SURESI_SANIYE], [SON_OTURUM_BASLANGICI], [SON_OTURUM_BITISI], [SON_AKTIVITE_TARIHI], [SON_IP_HASH], [{userAgentHashColumn}])
                 VALUES
                 (@userId, @accountType, @partnerId, @deviceKey, @deviceLabel, @rememberMe, @visitIncrement, @durationIncrement, @sessionStartedAt, @sessionEndedAt, @lastActivityAt, @ipHash, @userAgentHash);";
 
@@ -121,6 +123,30 @@ public class SessionSecurityService : ISessionSecurityService
         command.Parameters.AddWithValue("@ipHash", ComputeSha256(httpContext.Connection.RemoteIpAddress?.ToString()));
         command.Parameters.AddWithValue("@userAgentHash", ComputeSha256(httpContext.Request.Headers.UserAgent.ToString()));
         await command.ExecuteNonQueryAsync(cancellationToken);
+    }
+
+    private static async Task<string> ResolveUserAgentHashColumnAsync(SqlConnection connection, CancellationToken cancellationToken)
+    {
+        const string sql = """
+            SELECT TOP (1) c.name
+            FROM sys.columns c
+            INNER JOIN sys.tables t ON t.object_id = c.object_id
+            INNER JOIN sys.schemas s ON s.schema_id = t.schema_id
+            WHERE s.name = 'dbo'
+              AND t.name IN ('KULLANICI_OTURUM_ISTATISTIKLERI','kullanici_oturum_istatistikleri')
+              AND c.name IN ('SON_KULLANICI_ARACISI_HASH','son_user_agent_hash','SON_USER_AGENT_HASH')
+            ORDER BY CASE
+                WHEN c.name = 'SON_KULLANICI_ARACISI_HASH' THEN 0
+                WHEN c.name = 'SON_USER_AGENT_HASH' THEN 1
+                ELSE 2
+            END;
+            """;
+
+        await using var command = new SqlCommand(sql, connection);
+        var scalar = await command.ExecuteScalarAsync(cancellationToken);
+        return scalar is string column && !string.IsNullOrWhiteSpace(column)
+            ? column
+            : "SON_KULLANICI_ARACISI_HASH";
     }
 
     private static string EnsurePersistentCookie(HttpContext context, string cookieName, string fallbackValue, DateTimeOffset expiresAt)

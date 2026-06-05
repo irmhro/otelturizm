@@ -1,0 +1,61 @@
+@model otelturizmnew.Models.Legal.ContractDetailPageViewModel
+@{
+    Layout = "~/Views/Shared/_PublicPremiumPageLayout.cshtml";
+    ViewData["Title"] = Model.Title;
+    ViewData["BodyClass"] = "sozlesme-page anasayfa-page";
+    ViewData["PageCss"] = "sozlesme";
+}
+
+<div class="container sozlesme-shell">
+    <header class="sozlesme-hero">
+        <div class="sozlesme-hero-copy">
+            <p class="sozlesme-kicker"><i class="fas fa-scale-balanced" aria-hidden="true"></i> @Model.Audience.ToUpperInvariant() · Sözleşme Merkezi</p>
+            <h1 class="sozlesme-title">@Model.Title</h1>
+            @if (!string.IsNullOrWhiteSpace(Model.Subtitle))
+            {
+                <p class="sozlesme-subtitle">@Model.Subtitle</p>
+            }
+            <div class="sozlesme-meta">
+                <span>@Model.VersionText</span>
+                <span>@Model.EffectiveDateText itibarıyla yürürlükte</span>
+            </div>
+            @if (!string.IsNullOrWhiteSpace(Model.PdfUrl))
+            {
+                <a class="sozlesme-pdf-btn" href="@Model.PdfUrl" target="_blank" rel="noopener noreferrer">
+                    <i class="fas fa-file-pdf" aria-hidden="true"></i> PDF formatında aç
+                </a>
+            }
+        </div>
+        @if (!string.IsNullOrWhiteSpace(Model.HeroImageUrl))
+        {
+            <div class="sozlesme-hero-visual">
+                <img src="@Model.HeroImageUrl" alt="@Model.Title" loading="lazy" />
+            </div>
+        }
+    </header>
+
+    <div class="sozlesme-layout">
+        <article class="sozlesme-body">
+            @if (!string.IsNullOrWhiteSpace(Model.SummaryHtml))
+            {
+                <div class="sozlesme-summary">@Html.Raw(Model.SummaryHtml)</div>
+            }
+            <div class="sozlesme-content">@Html.Raw(Model.ContentHtml)</div>
+        </article>
+
+        @if (Model.RelatedContracts?.Count > 0)
+        {
+            <aside class="sozlesme-sidebar">
+                <div class="sozlesme-sidebar-card">
+                    <h2>İlgili sözleşmeler</h2>
+                    <ul>
+                        @foreach (var item in Model.RelatedContracts)
+                        {
+                            <li><a href="@item.Url">@item.Title</a></li>
+                        }
+                    </ul>
+                </div>
+            </aside>
+        }
+    </div>
+</div>

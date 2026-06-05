@@ -1,0 +1,14 @@
+ID|SSS_KATEGORI_ID|SORU|CEVAP|ONE_CIKAN_MI|SIRALAMA|AKTIF_MI|OLUSTURULMA_TARIHI|GUNCELLENME_TARIHI
+--|---------------|----|-----|------------|--------|--------|------------------|------------------
+1|1|Rezervasyonumu nasıl iptal edebilirim?|Kullanıcı panelindeki rezervasyon detayından, check-in tarihi gelmeden iptal talebi oluşturabilirsiniz. Otel politikası ve ücretsiz iptal süresi rezervasyon kartında görünür.|1|10|1|2026-05-31 08:11:04|2026-05-31 08:11:04
+2|1|Rezervasyon güncellemesinde fiyat değişir mi?|Evet. Tarih, oda veya kişi sayısı değişirse geçerli güncel fiyatlar yeniden hesaplanır ve taraflara bildirilir.|1|20|1|2026-05-31 08:11:04|2026-05-31 08:11:04
+3|2|Kapıda ödeme ile online ödeme arasındaki fark nedir?|Kapıda ödeme tesis tarafından check-in sırasında tahsil edilir; online ödeme ise rezervasyon sırasında veya ön ödeme akışında tamamlanır.|1|10|1|2026-05-31 08:11:04|2026-05-31 08:11:04
+4|2|İade süreci ne kadar sürer?|İade süresi kullanılan ödeme yöntemine ve sağlayıcıya göre değişir; durum panel ve bildirim ekranlarında izlenir.|0|20|1|2026-05-31 08:11:04|2026-05-31 08:11:04
+5|3|E-posta doğrulaması neden zorunlu?|Hesap güvenliği, şifre sıfırlama ve rezervasyon bildirimlerinin doğru kişiye ulaşması için zorunludur.|1|10|1|2026-05-31 08:11:04|2026-05-31 08:11:04
+6|3|İki aşamalı doğrulama nasıl çalışır?|Giriş sırasında tek kullanımlık kod e-posta kanalıyla gönderilir; doğrulama tamamlanmadan yeni oturum açılmaz.|0|20|1|2026-05-31 08:11:04|2026-05-31 08:11:04
+7|4|Partner panelinde hangi işlemler yapılabilir?|Oda, fiyat, kampanya, görsel, rezervasyon ve finans süreçleri partner panelinden yönetilebilir.|1|10|1|2026-05-31 08:11:04|2026-05-31 08:11:04
+8|4|Belge onayı olmadan otel yayına açılır mı?|Hayır. Gerekli evraklar admin onayı almadan tesis yayınlanmaz.|1|20|1|2026-05-31 08:11:04|2026-05-31 08:11:04
+9|5|Firma rezervasyonunda personel atamak zorunlu mu?|Hayır; ancak atanırsa partner otel detayda kimin hangi odada kalacağını görebilir.|1|10|1|2026-05-31 08:11:04|2026-05-31 08:11:04
+10|5|Firma faturaları nerede görüntülenir?|Firma panelindeki faturalar alanında konaklama ve tahsilat belgeleri listelenir.|0|20|1|2026-05-31 08:11:04|2026-05-31 08:11:04
+11|6|Favori fiyat alarmı nasıl çalışır?|Kullanıcı hedef fiyat belirler; partner fiyatı bu seviyeye indiğinde uygun şablon ile e-posta bildirimi gönderilir.|1|10|1|2026-05-31 08:11:04|2026-05-31 08:11:04
+12|6|Kampanya bitince fiyat ne olur?|Kampanya bitiminde fiyat normal satış kuralına döner ve vitrin görünürlüğü otomatik sona erer.|0|20|1|2026-05-31 08:11:04|2026-05-31 08:11:04

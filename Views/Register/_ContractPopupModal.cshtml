@@ -3,15 +3,15 @@
     <section class="contract-popup__panel" role="dialog" aria-modal="true" aria-labelledby="contractPopupTitle">
         <header class="contract-popup__head">
             <div>
-                <p class="contract-popup__kicker">Sozlesme Onizleme</p>
-                <h3 id="contractPopupTitle">Sozlesme Detayi</h3>
+                <p class="contract-popup__kicker">Sözleşme Önizleme</p>
+                <h3 id="contractPopupTitle">Sözleşme Detayı</h3>
             </div>
             <button type="button" class="contract-popup__close" data-contract-popup-close aria-label="Kapat">
                 <i class="fas fa-times"></i>
             </button>
         </header>
         <div class="contract-popup__frame-wrap">
-            <iframe id="contractPopupFrame" title="Sozlesme icerigi" loading="lazy"></iframe>
+            <iframe id="contractPopupFrame" title="Sözleşme içeriği" loading="lazy"></iframe>
         </div>
     </section>
 </div>
@@ -33,9 +33,45 @@
             return;
         }
 
+        function buildPopupUrl(url) {
+            try {
+                const resolved = new URL(url || '/', window.location.origin);
+                resolved.searchParams.set('popup', '1');
+                return resolved.toString();
+            } catch (_error) {
+                return url || '/';
+            }
+        }
+
+        function trimFrameChrome() {
+            try {
+                const doc = frame.contentDocument || frame.contentWindow?.document;
+                if (!doc) {
+                    return;
+                }
+
+                ['.top-utility-bar', '.site-header', '.site-footer', '.yanbar-fab', '.yanbar-panel', '.mobile-booking-bar', '.mob-sticky-cta']
+                    .forEach(function (selector) {
+                        doc.querySelectorAll(selector).forEach(function (node) {
+                            node.style.display = 'none';
+                        });
+                    });
+
+                if (!doc.getElementById('contractPopupFrameStyle')) {
+                    const style = doc.createElement('style');
+                    style.id = 'contractPopupFrameStyle';
+                    style.textContent = 'html,body{background:#fff!important;}body{margin:0!important;padding:0!important;overflow:auto!important}.legal-contract-page{max-width:100%!important;padding:18px 16px 24px!important}.legal-contract-layout{grid-template-columns:minmax(0,1fr)!important}.legal-contract-sidebar{display:none!important}.legal-contract-hero,.legal-contract-body{border-radius:20px!important;box-shadow:none!important;border:1px solid rgba(226,232,240,.92)!important}.legal-contract-body{padding:20px!important}.legal-contract-hero{padding:20px!important;margin-bottom:16px!important}';
+                    doc.head.appendChild(style);
+                }
+            } catch (_error) {
+            }
+        }
+
+        frame.addEventListener('load', trimFrameChrome);
+
         function openPopup(url, heading) {
-            frame.src = url;
-            title.textContent = heading || 'Sozlesme Detayi';
+            frame.src = buildPopupUrl(url);
+            title.textContent = heading || 'Sözleşme Detayı';
             popup.hidden = false;
             document.body.classList.add('contract-popup-open');
         }

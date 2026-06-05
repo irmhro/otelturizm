@@ -1,0 +1,99 @@
+.admin-payments-page,
+.admin-invoices-page {
+    display: grid;
+    gap: 20px;
+}
+
+.admin-ops-filter {
+    display: grid;
+    grid-template-columns: minmax(220px, 1.5fr) minmax(180px, 1fr) minmax(180px, 1fr) minmax(120px, .6fr) auto auto;
+    gap: 14px;
+    align-items: end;
+    padding: 18px;
+    border-bottom: 1px solid #dbe5f0;
+    background: #f8fafc;
+}
+
+.admin-ops-filter label {
+    display: grid;
+    gap: 6px;
+    margin: 0;
+}
+
+.admin-ops-filter span {
+    font-size: .82rem;
+    font-weight: 800;
+    color: #334155;
+}
+
+.admin-ops-filter input,
+.admin-ops-filter select {
+    width: 100%;
+    min-height: 42px;
+    border: 1px solid #d5e1ef;
+    border-radius: 12px;
+    padding: 9px 12px;
+    background: #fff;
+}
+
+.admin-ops-table {
+    margin: 0;
+}
+
+.admin-ops-table thead th {
+    font-size: .76rem;
+    color: #64748b;
+    text-transform: uppercase;
+    letter-spacing: 0;
+    background: #f8fafc;
+}
+
+.admin-ops-table td strong,
+.admin-ops-table td span,
+.admin-ops-table td small {
+    display: block;
+}
+
+.admin-ops-table td small {
+    margin-top: 3px;
+    color: #64748b;
+}
+
+.admin-pagination-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+    padding: 16px 18px;
+    border-top: 1px solid #dbe5f0;
+    background: #fff;
+}
+
+@media (max-width: 1180px) {
+    .admin-ops-filter {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
+@media (max-width: 720px) {
+    .admin-ops-filter {
+        grid-template-columns: 1fr;
+    }
+
+    .admin-pagination-row {
+        align-items: stretch;
+        flex-direction: column;
+    }
+}
+
+
+
+@media (max-width: 720px) {
+    .admin-campaigns-filter {
+        grid-template-columns: 1fr;
+    }
+
+    .admin-campaigns-table td:first-child {
+        min-width: 0;
+    }
+}

@@ -24,7 +24,19 @@ public class ContractsController : Controller
 
         ViewData["Title"] = model.Title;
         ViewData["PageCss"] = "sozlesme";
-        ViewData["PageCssMobile"] = "sozlesme.mobile";
-        return View("~/Views/Legal/ContractDetail.cshtml", model);
+        ViewData["PageCssMobile"] = "sozlesme";
+        return View("~/Views/Sozlesmeler/Sozlesme.cshtml", model);
+    }
+
+    [HttpGet("{slug}/pdf")]
+    public async Task<IActionResult> Pdf(string slug, CancellationToken cancellationToken)
+    {
+        var pdfUrl = await _contractContentService.GetPublicContractPdfUrlBySlugAsync(slug, cancellationToken);
+        if (!string.IsNullOrWhiteSpace(pdfUrl))
+        {
+            return Redirect(pdfUrl);
+        }
+
+        return RedirectToAction(nameof(Detail), new { slug });
     }
 }

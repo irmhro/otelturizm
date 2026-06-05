@@ -803,7 +803,7 @@
     <value>Kişiselleştirilmiş gezi planları</value>
   </data>
   <data name="Plan.Hero.Lead" xml:space="preserve">
-    <value>Rota önerileri, bütçe tahmini, hafta sonu kaçamakları ve kampanya bazlı otel önerileriyle seyahatinizi tek ekrandan planlayın.</value>
+    <value>Rota önerileri, bütçe tahmini, hafta sonu rotaları ve kampanya bazlı otel önerileriyle seyahatinizi tek ekrandan planlayın.</value>
   </data>
   <data name="Plan.Hero.StatsLabel" xml:space="preserve">
     <value>Planlama özeti</value>
@@ -860,7 +860,7 @@
     <value>Bütçeme uygun oteller</value>
   </data>
   <data name="Plan.Weekend.Title" xml:space="preserve">
-    <value>Hafta sonu kaçamakları</value>
+    <value>Hafta sonu rotaları</value>
   </data>
   <data name="Plan.Weekend.Description" xml:space="preserve">
     <value>Kısa konaklamalar ve hafta sonu etiketli fırsatlar.</value>

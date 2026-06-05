@@ -24,6 +24,7 @@ public class KampanyalarController : Controller
     {
         var model = await _campaignService.GetCampaignListingPageAsync(preset, cancellationToken);
         ViewData["Title"] = string.IsNullOrWhiteSpace(preset) ? "Kampanyalar" : $"Kampanyalar · {preset}";
+        ViewData["IncludeAnasayfaStyles"] = true;
         ViewData["PageCss"] = "kampanyalar";
         return View("~/Views/Kampanyalar/Index.cshtml", model);
     }

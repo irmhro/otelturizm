@@ -3,7 +3,8 @@
 @{
     Layout = "~/Views/Paneller/Partner/_PartnerPanelLayout.cshtml";
     ViewData["PartnerShell"] = Model.Shell;
-    ViewData["PageCssPath"] = "paneller/partner/dashboard";
+    ViewData["PageCssPath"] = "partnerpanel_dashboard_masaustu";
+    ViewData["PageCssMobilePath"] = "partnerpanel_dashboard_mobil";
     ViewData["Title"] = "Partner Dashboard";
     var hotelQuery = Model.Shell.SelectedHotelId.HasValue ? $"?otelId={Model.Shell.SelectedHotelId.Value}" : string.Empty;
     string PartnerUrl(string path) => $"{path}{hotelQuery}";
@@ -11,12 +12,12 @@
     var ai = Model.Assistants;
 }
 
-<div class="partner-dashboard">
-    <section class="partner-dashboard-hero">
+<div class="partner-dashboard partnerpanel-dashboard-page">
+    <div class="ap-page-header">
         <div>
-            <div class="page-pretitle">Partner Operasyon Merkezi</div>
-            <h1 class="page-title">Tesis performansını tek ekrandan yönetin</h1>
-            <p class="text-muted mb-0">Rezervasyon, fiyat, oda, stok, yorum ve kampanya aksiyonları canlı operasyon akışına göre sıralandı.</p>
+            <div class="ap-page-pretitle">Partner Operasyon Merkezi</div>
+            <h1>Tesis performansını tek ekrandan yönetin</h1>
+            <p>Rezervasyon, fiyat, oda, stok, yorum ve kampanya aksiyonları canlı operasyon akışına göre sıralandı.</p>
         </div>
         <div class="partner-hero-actions">
             <a class="btn btn-primary btn-pill" href="@PartnerUrl("/panel/partner/takvim-fiyatlar")"><i class="fas fa-calendar-days me-2"></i>Fiyat Güncelle</a>

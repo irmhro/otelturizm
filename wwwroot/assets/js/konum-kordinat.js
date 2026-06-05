@@ -1,7 +1,9 @@
 (() => {
   const GEO_COOKIE = 'Otelturizm.LastGeo';
   const GEO_SESSION_KEY = 'otelturizm.geo.lastSentAt';
+  const GEO_PROMPT_KEY = 'otelturizm.geo.prompt.dismissedAt';
   const SEND_INTERVAL_MS = 12 * 60 * 60 * 1000; // 12 saat
+  const PROMPT_SNOOZE_MS = 7 * 24 * 60 * 60 * 1000;
 
   const canUseGeo = () => typeof navigator !== 'undefined' && !!navigator.geolocation;
 
@@ -70,7 +72,7 @@
           listedHotelIds: null,
           searchTerm: null,
           searchRegion: null,
-          source: payload.source || 'footer-auto'
+          source: payload.source || 'geo-consent-prompt'
         })
       });
       markSent();
@@ -79,15 +81,30 @@
     }
   };
 
-  const requestLocation = () => {
+  const hasRecentGeo = () => {
+    const existing = safeJsonParse(readCookie(GEO_COOKIE) || '');
+    return !!(existing?.ts && (Date.now() - Number(existing.ts)) < SEND_INTERVAL_MS);
+  };
+
+  const wasPromptDismissedRecently = () => {
+    try {
+      const last = Number(localStorage.getItem(GEO_PROMPT_KEY) || '0');
+      return !!last && (Date.now() - last) < PROMPT_SNOOZE_MS;
+    } catch {
+      return false;
+    }
+  };
+
+  const dismissPrompt = (toast) => {
+    try { localStorage.setItem(GEO_PROMPT_KEY, String(Date.now())); } catch {}
+    if (toast) toast.remove();
+  };
+
+  const requestLocation = (toast) => {
     if (!canUseGeo()) return;
     if (!shouldSendNow()) return;
 
-    // Kullanıcı daha önce cookie'de konum verdiyse ve yeni isteğe gerek yoksa yine loglamayalım.
-    const existing = safeJsonParse(readCookie(GEO_COOKIE) || '');
-    if (existing?.ts && (Date.now() - Number(existing.ts)) < SEND_INTERVAL_MS) {
-      return;
-    }
+    if (hasRecentGeo()) return;
 
     navigator.geolocation.getCurrentPosition(
       (pos) => {
@@ -97,14 +114,15 @@
           lat: Number(coords.latitude),
           lon: Number(coords.longitude),
           acc: coords.accuracy != null ? Number(coords.accuracy) : null,
-          source: 'footer-auto'
+          source: 'geo-consent-prompt'
         };
         if (!Number.isFinite(payload.lat) || !Number.isFinite(payload.lon)) return;
         storeLastGeo(payload);
+        dismissPrompt(toast);
         void sendToServer(payload);
       },
       () => {
-        // izin yok / hata: sessiz
+        dismissPrompt(toast);
       },
       {
         enableHighAccuracy: false,
@@ -114,11 +132,37 @@
     );
   };
 
-  // sayfa yüklenince küçük gecikmeyle iste (banner/CLS etkisini azaltır)
+  const showLocationPrompt = () => {
+    if (!canUseGeo() || !shouldSendNow() || hasRecentGeo() || wasPromptDismissedRecently()) return;
+    if (document.querySelector('[data-otelturizm-geo-prompt]')) return;
+
+    const toast = document.createElement('section');
+    toast.className = 'ot-geo-prompt';
+    toast.setAttribute('data-otelturizm-geo-prompt', 'true');
+    toast.setAttribute('role', 'status');
+    toast.innerHTML = `
+      <button type="button" class="ot-geo-prompt__close" aria-label="Konum bildirimini kapat">×</button>
+      <div class="ot-geo-prompt__icon"><i class="fas fa-location-dot" aria-hidden="true"></i></div>
+      <div class="ot-geo-prompt__content">
+        <strong>Yakınınızdaki otelleri daha kolay bulun</strong>
+        <span>Konum bilginizi paylaşmak ister misiniz? İzin verirseniz size yakın otelleri daha doğru gösterebiliriz.</span>
+      </div>
+      <div class="ot-geo-prompt__actions">
+        <button type="button" class="ot-geo-prompt__primary">Konumumu paylaş</button>
+        <button type="button" class="ot-geo-prompt__ghost">Şimdi değil</button>
+      </div>`;
+    document.body.appendChild(toast);
+
+    toast.querySelector('.ot-geo-prompt__primary')?.addEventListener('click', () => requestLocation(toast));
+    toast.querySelector('.ot-geo-prompt__ghost')?.addEventListener('click', () => dismissPrompt(toast));
+    toast.querySelector('.ot-geo-prompt__close')?.addEventListener('click', () => dismissPrompt(toast));
+  };
+
+  // Sayfa yüklenince tarayıcı iznini doğrudan isteme; önce platform içi bildirim göster.
   if (document.readyState === 'complete' || document.readyState === 'interactive') {
-    setTimeout(requestLocation, 1200);
+    setTimeout(showLocationPrompt, 1600);
   } else {
-    document.addEventListener('DOMContentLoaded', () => setTimeout(requestLocation, 1200));
+    document.addEventListener('DOMContentLoaded', () => setTimeout(showLocationPrompt, 1600));
   }
 })();
 

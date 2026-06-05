@@ -1,0 +1,23 @@
+/* admin_login.css — admin giriş */
+@import url('kullanici_login.css');
+
+.auth-card-admin {
+    max-width: 960px;
+}
+
+.auth-admin-note {
+    margin-top: 16px;
+    padding: 12px 14px;
+    border-radius: 12px;
+    background: rgba(255, 158, 0, 0.08);
+    border: 1px solid rgba(255, 158, 0, 0.25);
+    font-size: 12px;
+    color: #7c5a00;
+    line-height: 1.45;
+}
+
+.auth-admin-note a {
+    color: var(--flag-crimson);
+    font-weight: 700;
+    margin-left: 4px;
+}

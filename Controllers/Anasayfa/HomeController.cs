@@ -16,6 +16,7 @@ public class HomeController : Controller
     private readonly IHotelService _hotelService;
     private readonly IUserFavoriteService _userFavoriteService;
     private readonly IDeadLinkRedirectService _deadLinkRedirectService;
+    private readonly IDawnSurpriseService _dawnSurpriseService;
     private readonly ILogger<HomeController> _logger;
     private readonly IConfiguration _configuration;
 
@@ -23,12 +24,14 @@ public class HomeController : Controller
         IHotelService hotelService,
         IUserFavoriteService userFavoriteService,
         IDeadLinkRedirectService deadLinkRedirectService,
+        IDawnSurpriseService dawnSurpriseService,
         ILogger<HomeController> logger,
         IConfiguration configuration)
     {
         _hotelService = hotelService;
         _userFavoriteService = userFavoriteService;
         _deadLinkRedirectService = deadLinkRedirectService;
+        _dawnSurpriseService = dawnSurpriseService;
         _logger = logger;
         _configuration = configuration;
     }
@@ -61,6 +64,36 @@ public class HomeController : Controller
         await ApplyFavoriteStatesAsync(model, cancellationToken);
 
         return View("~/Views/Anasayfa/Anasayfa.cshtml", model);
+    }
+
+    [HttpGet("/api/dawn-surprise/status")]
+    public IActionResult DawnSurpriseStatus()
+    {
+        var state = _dawnSurpriseService.GetActive(HttpContext);
+        if (state is null)
+        {
+            return Json(new { active = false });
+        }
+
+        return Json(new
+        {
+            active = true,
+            percent = state.Percent,
+            remainingSeconds = state.RemainingSeconds
+        });
+    }
+
+    [HttpPost("/api/dawn-surprise/open")]
+    public IActionResult DawnSurpriseOpen()
+    {
+        var result = _dawnSurpriseService.Open(HttpContext);
+        return Json(new
+        {
+            success = true,
+            percent = result.Percent,
+            isNew = result.IsNew,
+            remainingSeconds = result.RemainingSeconds
+        });
     }
 
     public IActionResult Kurumsal()

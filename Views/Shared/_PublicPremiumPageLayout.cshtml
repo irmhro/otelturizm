@@ -1,0 +1,141 @@
+@using Microsoft.AspNetCore.Hosting
+@using Microsoft.Extensions.Configuration
+@using Microsoft.Extensions.Hosting
+@inject otelturizmnew.Services.Abstractions.IDevelopmentAccessService DevelopmentAccessService
+@{
+    Layout = null;
+    var pageTitle = ViewData["Title"] as string ?? "Otelturizm";
+    var bodyClass = ViewData["BodyClass"] as string ?? "anasayfa-page";
+    var pageCss = ViewData["PageCss"] as string;
+    var pageCssMobile = ViewData["PageCssMobile"] as string ?? pageCss;
+    var pageCssBase = ViewData["PageCssBase"] as string;
+    string ResolveMobileStylesheet(string? cssName)
+    {
+        if (string.IsNullOrWhiteSpace(cssName))
+        {
+            return string.Empty;
+        }
+
+        if (cssName.Contains('/'))
+        {
+            return cssName;
+        }
+
+        if (cssName.EndsWith(".mobile", StringComparison.OrdinalIgnoreCase))
+        {
+            return cssName;
+        }
+
+        return cssName + ".mobile";
+    }
+
+    var pageCssMobileResolved = ResolveMobileStylesheet(pageCssMobile);
+    var pageCssBaseMobileResolved = string.IsNullOrWhiteSpace(pageCssBase)
+        ? string.Empty
+        : ResolveMobileStylesheet(pageCssBase);
+    var nonce = Context.Items["CspNonce"] as string;
+    var hostEnv = Context.RequestServices.GetService(typeof(IWebHostEnvironment)) as IWebHostEnvironment;
+    var cfg = Context.RequestServices.GetService(typeof(IConfiguration)) as IConfiguration;
+    var requestHost = Context.Request.Host.Host ?? string.Empty;
+    var isLoopbackHost = string.Equals(requestHost, "localhost", StringComparison.OrdinalIgnoreCase)
+        || string.Equals(requestHost, "127.0.0.1", StringComparison.OrdinalIgnoreCase)
+        || string.Equals(requestHost, "::1", StringComparison.OrdinalIgnoreCase)
+        || requestHost.EndsWith(".localhost", StringComparison.OrdinalIgnoreCase);
+    var isLocalDevelopment = hostEnv?.IsDevelopment() == true || isLoopbackHost;
+    var developmentGateEnabled = cfg?.GetValue("DevelopmentGate:Enabled", false) == true;
+    var isDevelopmentUnlocked = !developmentGateEnabled
+        || isLocalDevelopment
+        || DevelopmentAccessService.TryGetAccessExpiration(Context, out _);
+}
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes, viewport-fit=cover" />
+    <title>@pageTitle - OTELTURİZM</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="~/assets/vendor/fontawesome/css/all.min.css" asp-append-version="true" />
+    @if (developmentGateEnabled)
+    {
+        <link rel="stylesheet" href="~/assets/css/development-gate.css" asp-append-version="true" />
+        <link rel="stylesheet" href="~/assets/css/development-gate.mobile.css" asp-append-version="true" media="(max-width: 900px)" />
+    }
+    <link rel="stylesheet" href="~/assets/css/anasayfa-header.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/assets/css/anasayfa-header.mobile.css" asp-append-version="true" media="(max-width: 900px)" />
+    <link rel="stylesheet" href="~/assets/css/footer_masaustu.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/assets/css/footer_mobil.css" asp-append-version="true" media="(max-width: 900px)" />
+    <link rel="stylesheet" href="~/assets/css/route-picker-modal.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/assets/css/route-picker-modal.mobile.css" asp-append-version="true" media="(max-width: 900px)" />
+    <link rel="stylesheet" href="~/assets/css/otelturizm-design-system.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/assets/css/public-premium-pages.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/assets/css/public-premium-pages.mobile.css" asp-append-version="true" media="(max-width: 900px)" />
+    @if (ViewData["IncludeAnasayfaStyles"] as bool? == true)
+    {
+        <link rel="stylesheet" href="~/assets/css/anasayfa_masaustu.css" asp-append-version="true" />
+        <link rel="stylesheet" href="~/assets/css/anasayfa_mobil.css" asp-append-version="true" media="(max-width: 900px)" />
+    }
+    @if (!string.IsNullOrWhiteSpace(pageCssBase) && !string.Equals(pageCssBase, pageCss, StringComparison.OrdinalIgnoreCase))
+    {
+        <link rel="stylesheet" href="~/assets/css/@(pageCssBase).css" asp-append-version="true" />
+        @if (!string.IsNullOrWhiteSpace(pageCssBaseMobileResolved))
+        {
+            <link rel="stylesheet" href="~/assets/css/@(pageCssBaseMobileResolved).css" asp-append-version="true" media="(max-width: 900px)" />
+        }
+    }
+    @if (!string.IsNullOrWhiteSpace(pageCss))
+    {
+        <link rel="stylesheet" href="~/assets/css/@(pageCss).css" asp-append-version="true" />
+    }
+    @if (!string.IsNullOrWhiteSpace(pageCssMobileResolved) && !string.Equals(pageCssMobileResolved, pageCss, StringComparison.OrdinalIgnoreCase))
+    {
+        <link rel="stylesheet" href="~/assets/css/@(pageCssMobileResolved).css" asp-append-version="true" media="(max-width: 900px)" />
+    }
+    @RenderSection("HeadStyles", required: false)
+</head>
+<body class="@bodyClass @(isDevelopmentUnlocked ? "development-unlocked" : "development-locked")">
+    @if (developmentGateEnabled)
+    {
+        <partial name="~/Views/Shared/_DevelopmentGateOverlay.cshtml" model="isDevelopmentUnlocked" />
+    }
+    <partial name="~/Views/Anasayfa/_AnasayfaPremiumHeader.cshtml" />
+
+    <main class="public-premium-main" id="mainContent">
+        @RenderBody()
+    </main>
+
+    <partial name="~/Views/Anasayfa/_AnasayfaPremiumFooter.cshtml" />
+    <partial name="~/Views/Shared/_RoutePickerModal.cshtml" />
+
+    <script src="~/assets/js/home-drawer-prefs.js" asp-append-version="true" defer></script>
+    <script src="~/assets/js/home-header-prefs.js" asp-append-version="true" defer></script>
+    <script src="~/assets/js/route-picker-modal.js" asp-append-version="true" defer></script>
+    <script nonce="@nonce">
+        (() => {
+            const btn = document.getElementById('homeMenuToggle');
+            const closeBtn = document.getElementById('homeDrawerClose');
+            const drawer = document.getElementById('homeDrawerMenu');
+            const overlay = document.getElementById('homeDrawerOverlay');
+            if (!btn || !drawer || !overlay) return;
+            const open = () => {
+                drawer.classList.add('open');
+                overlay.classList.add('open');
+                btn.setAttribute('aria-expanded', 'true');
+                document.body.style.overflow = 'hidden';
+            };
+            const close = () => {
+                drawer.classList.remove('open');
+                overlay.classList.remove('open');
+                btn.setAttribute('aria-expanded', 'false');
+                document.body.style.overflow = '';
+            };
+            btn.addEventListener('click', open);
+            closeBtn?.addEventListener('click', close);
+            overlay.addEventListener('click', close);
+            drawer.querySelectorAll('a').forEach(link => link.addEventListener('click', close));
+        })();
+    </script>
+    @RenderSection("Scripts", required: false)
+</body>
+</html>

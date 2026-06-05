@@ -1,5 +1,7 @@
 # Canlı Bağlantı Bilgileri
 
+> **Ana rehber:** [`canlıdeploy.md`](../../canlıdeploy.md) (proje kök dizini)
+
 ## Canlı MSSQL
 - Sunucu: `185.111.244.246`
 - Veritabanı: `otelturizm_2026db`

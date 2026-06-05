@@ -79,7 +79,7 @@ public class SeyahatPlanlamaService : ISeyahatPlanlamaService
             IsAuthenticated = isAuthenticated,
             RouteSuggestions = CuratedRoutes.ToList(),
             WeekendEscapes = BuildWeekendEscapes(),
-            MetaDescription = "Rota önerileri, bütçe tahmini, hafta sonu kaçamakları ve kampanya bazlı otel önerileri ile seyahatinizi planlayın."
+            MetaDescription = "Rota önerileri, bütçe tahmini, hafta sonu rotaları ve kampanya bazlı otel önerileri ile seyahatinizi planlayın."
         };
 
         var listing = await _campaignService.GetCampaignListingPageAsync(cancellationToken: cancellationToken);

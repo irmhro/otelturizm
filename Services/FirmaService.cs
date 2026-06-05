@@ -36,7 +36,7 @@ public class FirmaService : IFirmaService
 
         var model = new FirmaLandingPageViewModel
         {
-            HeroDescription = "5 ve üzeri oda ihtiyacınızda, otellerin firmalar için özel belirlediği indirimli fiyatlardan yararlanın. Tek fatura, çalışan limitleri ve detaylı raporlarla seyahat operasyonunuzu kontrol edin."
+            HeroDescription = "Otelturizm partner otellerinden işletmeniz adına toplu oda kiralayın. Üretim, lojistik, perakende ve hizmet firmaları panel üzerinden partner tesislerde kurumsal fiyatlarla konaklama alır."
         };
 
         const string summarySql = @"
@@ -147,10 +147,10 @@ public class FirmaService : IFirmaService
 
         model.Benefits = new List<FirmaLandingBenefitViewModel>
         {
-            new() { Title = "Firma bazlı özel fiyatlar", Description = "Her otelin firmalara özel minimum oda ve indirim tanımı canlı veritabanından okunur.", IconClass = "fa-tags" },
-            new() { Title = "Çalışan limit yönetimi", Description = "Departman ve kullanıcı bazlı harcama limitlerini firma panelinden kontrol edin.", IconClass = "fa-users-gear" },
-            new() { Title = "Tek merkezden fatura takibi", Description = "Kurumsal faturaları ve rezervasyon finans hareketlerini tek panelde görün.", IconClass = "fa-file-invoice" },
-            new() { Title = "Harcama ve otel bazlı rapor", Description = "Aylık toplam spend ve otel performansını karşılaştırmalı izleyin.", IconClass = "fa-chart-column" }
+            new() { Title = "Partner otel kurumsal fiyatları", Description = "Partner tesislerin işletmenize özel minimum oda ve indirim tanımı canlı olarak panelde listelenir.", IconClass = "fa-tags" },
+            new() { Title = "Ekip ve limit yönetimi", Description = "Saha, proje ve operasyon ekipleri için departman bazlı harcama limitlerini yönetin.", IconClass = "fa-users-gear" },
+            new() { Title = "Partner otel fatura takibi", Description = "Partner otellerden alınan konaklamaların faturalarını tek panelde toplayın.", IconClass = "fa-file-invoice" },
+            new() { Title = "Otel bazlı harcama raporu", Description = "Hangi partner otelde ne kadar oda kiralandığını dönemsel raporlarla izleyin.", IconClass = "fa-chart-column" }
         };
 
         return model;

@@ -5,6 +5,14 @@
 }
 
 <div class="user-profile-page">
+    @if (TempData["UserProfileSuccess"] is string profileSuccess && !string.IsNullOrWhiteSpace(profileSuccess))
+    {
+        <div class="profile-alert profile-alert--success"><i class="fas fa-circle-check"></i>@profileSuccess</div>
+    }
+    @if (TempData["UserProfileError"] is string profileError && !string.IsNullOrWhiteSpace(profileError))
+    {
+        <div class="profile-alert profile-alert--danger"><i class="fas fa-triangle-exclamation"></i>@profileError</div>
+    }
     <section class="profile-hero">
         <div class="profile-identity">
             <div class="profile-avatar-xl">
@@ -83,7 +91,7 @@
         @Html.AntiForgeryToken()
         <input type="hidden" name="ReturnUrl" value="@Model.ReturnUrl" />
 
-        <article class="profile-panel">
+        <article class="profile-panel profile-travel-panel">
             <div class="profile-panel-head">
                 <div>
                     <h2>Kişisel Bilgiler</h2>
@@ -198,10 +206,42 @@
                 <button type="submit" class="btn btn-primary">Tercihleri Kaydet</button>
             </div>
             <div class="profile-form-grid">
-                <label><span>Oda Tercihi</span><input class="form-control" name="RoomPreference" value="@Model.Form.RoomPreference" type="text" /></label>
-                <label><span>Yatak Tercihi</span><input class="form-control" name="BedPreference" value="@Model.Form.BedPreference" type="text" /></label>
-                <label><span>Seyahat Amacı</span><input class="form-control" name="TravelPurpose" value="@Model.Form.TravelPurpose" type="text" placeholder="İş, Tatil, Her İkisi" /></label>
-                <label><span>Konuşulan Diller</span><input class="form-control" name="SpokenLanguages" value="@Model.Form.SpokenLanguages" type="text" /></label>
+                <label>
+                    <span>Oda Tercihi</span>
+                    <select class="form-select" name="RoomPreference">
+                        @foreach (var option in Model.RoomPreferenceOptions)
+                        {
+                            <option value="@option" selected="@(string.Equals(Model.Form.RoomPreference, option, StringComparison.OrdinalIgnoreCase))">@option</option>
+                        }
+                    </select>
+                </label>
+                <label>
+                    <span>Yatak Tercihi</span>
+                    <select class="form-select" name="BedPreference">
+                        @foreach (var option in Model.BedPreferenceOptions)
+                        {
+                            <option value="@option" selected="@(string.Equals(Model.Form.BedPreference, option, StringComparison.OrdinalIgnoreCase))">@option</option>
+                        }
+                    </select>
+                </label>
+                <label>
+                    <span>Seyahat Amacı</span>
+                    <select class="form-select" name="TravelPurpose">
+                        @foreach (var option in Model.TravelPurposeOptions)
+                        {
+                            <option value="@option" selected="@(string.Equals(Model.Form.TravelPurpose, option, StringComparison.OrdinalIgnoreCase))">@option</option>
+                        }
+                    </select>
+                </label>
+                <label>
+                    <span>Konuşulan Dil</span>
+                    <select class="form-select" name="SpokenLanguages">
+                        @foreach (var option in Model.SpokenLanguageOptions)
+                        {
+                            <option value="@option" selected="@(string.Equals(Model.Form.SpokenLanguages, option, StringComparison.OrdinalIgnoreCase))">@option</option>
+                        }
+                    </select>
+                </label>
                 <label class="profile-field-full"><span>Özel İstekler</span><textarea class="form-control" name="SpecialRequests" rows="3">@Model.Form.SpecialRequests</textarea></label>
             </div>
         </article>
@@ -228,12 +268,12 @@
             image.onload = function () { URL.revokeObjectURL(previewUrl); };
             image.src = previewUrl;
 
-            // Koşullara uygunsa (tip + max 4MB) otomatik yükle ve profil görseli yap.
+            // Koşullara uygunsa otomatik yükle ve profil görseli yap.
             const allowed = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
-            const maxBytes = 4 * 1024 * 1024;
+            const maxBytes = 10 * 1024 * 1024;
             const ok = allowed.includes((file.type || '').toLowerCase()) && file.size <= maxBytes;
             if (!ok) {
-                alert('Lütfen JPG/PNG/WebP/GIF formatında ve en fazla 4 MB bir görsel seçin.');
+                alert('Lütfen JPG/PNG/WebP/GIF formatında ve en fazla 10 MB bir görsel seçin.');
                 input.value = '';
                 if (label) label.textContent = 'Görsel seç';
                 return;

@@ -418,6 +418,10 @@ public class UserProfilePageViewModel
     public bool OpenPhoneVerification { get; set; }
     public bool OpenEmailUpdate { get; set; }
     public string ReturnUrl { get; set; } = string.Empty;
+    public List<string> RoomPreferenceOptions { get; set; } = new();
+    public List<string> BedPreferenceOptions { get; set; } = new();
+    public List<string> SpokenLanguageOptions { get; set; } = new();
+    public List<string> TravelPurposeOptions { get; set; } = new();
 }
 
 public class UserUploadedProfileAvatarViewModel

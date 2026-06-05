@@ -16,6 +16,7 @@ public class KurumsalController : Controller
     public IActionResult Index()
     {
         ViewData["PageCss"] = "kurumsal";
+        ViewData["IncludeAnasayfaStyles"] = true;
         return View("~/Views/Kurumsal/Kurumsal.cshtml");
     }
 

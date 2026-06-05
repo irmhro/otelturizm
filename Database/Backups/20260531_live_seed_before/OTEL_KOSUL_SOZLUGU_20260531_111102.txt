@@ -1,0 +1,14 @@
+ID|OTEL_TIPI_ID|KATEGORI|KOSUL_ADI|ACIKLAMA|SIRALAMA|AKTIF_MI|OLUSTURULMA_TARIHI|GUNCELLENME_TARIHI
+--|------------|--------|---------|--------|--------|--------|------------------|------------------
+1|NULL|Giriş ve Çıkış|Erken giriş imkanı|Müsaitlik durumuna göre erken giriş sunulabilir.|10|1|2026-05-31 08:11:04|NULL
+2|NULL|Giriş ve Çıkış|Geç çıkış imkanı|Müsaitlik durumuna göre geç çıkış sunulabilir.|20|1|2026-05-31 08:11:04|NULL
+3|NULL|Çocuk ve Ek Yatak|Bebek karyolası|Bebek karyolası ücretsiz veya ücretli sağlanabilir.|30|1|2026-05-31 08:11:04|NULL
+4|NULL|Çocuk ve Ek Yatak|Ekstra yatak|Ekstra yatak talebi oda tipine göre değerlendirilebilir.|40|1|2026-05-31 08:11:04|NULL
+5|NULL|Ödeme|Ön ödeme zorunluluğu|Bazı dönemlerde rezervasyon için ön ödeme gerekebilir.|50|1|2026-05-31 08:11:04|NULL
+6|NULL|Ödeme|Hasar depozitosu|Girişte hasar depozitosu uygulanabilir.|60|1|2026-05-31 08:11:04|NULL
+7|NULL|İptal ve İade|Ücretsiz iptal süresi|Belirli süreye kadar ücretsiz iptal uygulanabilir.|70|1|2026-05-31 08:11:04|NULL
+8|NULL|İptal ve İade|No-show cezası|Giriş yapılmayan rezervasyonlarda ceza uygulanabilir.|80|1|2026-05-31 08:11:04|NULL
+9|NULL|Evcil Hayvan|Evcil hayvan kabulü|Evcil hayvan kabulü otel politikasına göre belirlenir.|90|1|2026-05-31 08:11:04|NULL
+10|NULL|Sessizlik ve Etkinlik|Sessizlik saatleri|Gece sessizlik saatleri uygulanabilir.|100|1|2026-05-31 08:11:04|NULL
+11|NULL|Ziyaretçi Politikası|Ziyaretçi kabulü|Dış ziyaretçi kabulü otel kurallarına bağlıdır.|110|1|2026-05-31 08:11:04|NULL
+12|NULL|Yiyecek ve İçecek|Dışarıdan yiyecek içecek|Dışarıdan yiyecek veya içecek getirimi sınırlandırılabilir.|120|1|2026-05-31 08:11:04|NULL

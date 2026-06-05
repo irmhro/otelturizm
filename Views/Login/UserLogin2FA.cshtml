@@ -3,9 +3,13 @@
     ViewData["Title"] = "Güvenlik Kodu";
 }
 
-<section class="auth-shell user-auth-shell">
-    <div class="auth-standalone-panel">
-        <div class="divider-line"><span>@Model.ChannelLabel güvenlik kodu</span></div>
+<div class="auth-card auth-card--solo">
+    <div class="auth-form-panel auth-form-panel--solo">
+        <div class="auth-solo-head">
+            <span class="auth-solo-kicker">Güvenlik</span>
+            <h1 class="auth-solo-title">@Model.ChannelLabel Güvenlik Kodu</h1>
+            <p class="auth-solo-desc">@Model.InlineHint</p>
+        </div>
 
         @if (TempData["UserLoginError"] is string loginError)
         {
@@ -25,10 +29,9 @@
             <div class="form-group">
                 <label asp-for="Code">Güvenlik Kodu</label>
                 <div class="input-wrap">
-                    <i class="fas fa-shield-check"></i>
-                    <input asp-for="Code" class="form-control" placeholder="Güvenlik kodunu girin" maxlength="8" inputmode="numeric" />
+                    <i class="fas fa-shield-halved"></i>
+                    <input asp-for="Code" class="form-control" placeholder="Güvenlik kodunu girin" maxlength="8" inputmode="numeric" autocomplete="one-time-code" />
                 </div>
-                <p class="auth-inline-hint">@Model.InlineHint</p>
             </div>
 
             <div class="auth-form-actions">
@@ -36,9 +39,9 @@
             </div>
         </form>
 
-        <form method="post" action="/kullanici-giris-2fa/tekrar-gonder" style="margin-top:16px;">
+        <form method="post" action="/kullanici-giris-2fa/tekrar-gonder" class="auth-resend-verify-form">
             @Html.AntiForgeryToken()
-            <button type="submit" class="text-button">Kodu tekrar gönder</button>
+            <button type="submit" class="auth-resend-verify-btn"><i class="fas fa-paper-plane"></i> Kodu tekrar gönder</button>
         </form>
     </div>
-</section>
+</div>

@@ -3,12 +3,9 @@
 @using Microsoft.AspNetCore.Hosting
 @using Microsoft.Extensions.Configuration
 @using Microsoft.Extensions.Hosting
-
 @{
     Layout = null;
     ViewData["Title"] ??= "Anasayfa";
-    ViewData["HeaderContext"] = "home";
-    var pageCss = ViewData["PageCss"] as string;
     var nonce = Context.Items["CspNonce"] as string;
     var cfg = Context.RequestServices.GetService(typeof(IConfiguration)) as IConfiguration;
     var publicBaseUrl = cfg?["App:PublicBaseUrl"]?.TrimEnd('/') ?? $"{Context.Request.Scheme}://{Context.Request.Host}";
@@ -19,8 +16,7 @@
     var jsonLd = ViewData["HomeJsonLd"] as string;
     var hostEnv = Context.RequestServices.GetService(typeof(IWebHostEnvironment)) as IWebHostEnvironment;
     var requestHost = Context.Request.Host.Host ?? string.Empty;
-    var isLoopbackHost =
-        string.Equals(requestHost, "localhost", StringComparison.OrdinalIgnoreCase)
+    var isLoopbackHost = string.Equals(requestHost, "localhost", StringComparison.OrdinalIgnoreCase)
         || string.Equals(requestHost, "127.0.0.1", StringComparison.OrdinalIgnoreCase)
         || string.Equals(requestHost, "::1", StringComparison.OrdinalIgnoreCase)
         || requestHost.EndsWith(".localhost", StringComparison.OrdinalIgnoreCase);
@@ -52,244 +48,76 @@
         <script type="application/ld+json" nonce="@nonce">@Html.Raw(jsonLd)</script>
     }
     <title>@pageTitle - Otelturizm</title>
-    <script type="importmap" nonce="@nonce"></script>
-
-            <link rel="stylesheet" href="~/assets/vendor/fonts/inter/inter-local.css" asp-append-version="true" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
     <link rel="stylesheet" href="~/assets/vendor/fontawesome/css/all.min.css" asp-append-version="true" />
-    <link rel="stylesheet" href="~/assets/vendor/swiper/swiper-bundle.min.css" asp-append-version="true" />
-    <link rel="stylesheet" href="~/assets/vendor/flag-icons/css/flag-icon.min.css" asp-append-version="true" />
-
-    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
-    <link rel="stylesheet" href="~/assets/css/site-layout.css" asp-append-version="true" />
-    <link rel="stylesheet" href="~/assets/css/site-layout.mobile.css" asp-append-version="true" media="(max-width: 900px)" />
     @if (developmentGateEnabled)
     {
         <link rel="stylesheet" href="~/assets/css/development-gate.css" asp-append-version="true" />
         <link rel="stylesheet" href="~/assets/css/development-gate.mobile.css" asp-append-version="true" media="(max-width: 900px)" />
     }
-    @if (!string.IsNullOrWhiteSpace(pageCss))
-    {
-        <link rel="stylesheet" href="~/assets/css/@(pageCss).css" asp-append-version="true" />
-    }
-    @{
-        var pageCssMobile = ViewData["PageCssMobile"] as string;
-    }
-    @if (!string.IsNullOrWhiteSpace(pageCssMobile))
-    {
-        <link rel="stylesheet" href="~/assets/css/@(pageCssMobile).css" asp-append-version="true" media="(max-width: 900px)" />
-    }
-    else if (!string.IsNullOrWhiteSpace(pageCss))
-    {
-        <link rel="stylesheet" href="~/assets/css/@(pageCss).mobile.css" asp-append-version="true" media="(max-width: 900px)" />
-    }
+    <link rel="stylesheet" href="~/assets/css/anasayfa-header.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/assets/css/anasayfa-header.mobile.css" asp-append-version="true" media="(max-width: 900px)" />
+    <link rel="stylesheet" href="~/assets/css/anasayfa_masaustu.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/assets/css/anasayfa_mobil.css" asp-append-version="true" media="(max-width: 900px)" />
+    <link rel="stylesheet" href="~/assets/css/footer_masaustu.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/assets/css/footer_mobil.css" asp-append-version="true" media="(max-width: 900px)" />
+    <link rel="stylesheet" href="~/assets/css/route-picker-modal.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/assets/css/route-picker-modal.mobile.css" asp-append-version="true" media="(max-width: 900px)" />
+    <link rel="stylesheet" href="~/assets/css/dawn-surprise-box.css" asp-append-version="true" />
 </head>
 <body class="@(isDevelopmentUnlocked ? "development-unlocked anasayfa-page" : "development-locked anasayfa-page")">
-    <partial name="~/Views/Anasayfa/_AnasayfaHeader.cshtml" />
-
     @if (developmentGateEnabled)
     {
         <partial name="~/Views/Shared/_DevelopmentGateOverlay.cshtml" model="isDevelopmentUnlocked" />
     }
-
-    <script src="~/assets/js/sw-asset-guard.js" asp-append-version="true"></script>
-    <script src="~/assets/js/layout/sw-cleanup.js" asp-append-version="true"></script>
-
-    <main class="site-main">
-        <partial name="~/Views/Anasayfa/_AnasayfaContent.cshtml" model="Model" />
-    </main>
-
-    <partial name="~/Views/Anasayfa/_AnasayfaFooter.cshtml" />
-
-    <script src="~/lib/jquery/dist/jquery.min.js"></script>
-    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="~/assets/vendor/swiper/swiper-bundle.min.js" asp-append-version="true"></script>
-    <script src="~/js/site.js" asp-append-version="true"></script>
-    <script src="~/assets/js/client-error-reporter.js" asp-append-version="true"></script>
-    <script src="~/assets/js/layout/mobile-menu.js" asp-append-version="true"></script>
-    @if (developmentGateEnabled)
-    {
-        <script src="~/assets/js/layout/development-gate.js" asp-append-version="true"></script>
-    }
-    <script nonce="@nonce">
-    (function(){
-        if(window.Swiper){
-            if(document.querySelector('.hero-swiper')){
-                new Swiper('.hero-swiper', {
-                    loop: true,
-                    autoplay: { delay: 3500, disableOnInteraction: false },
-                    pagination: { el: '.hero-pagination', clickable: true }
-                });
-            }
-
-            if(document.querySelector('.weekend-swiper')){
-                new Swiper('.weekend-swiper', {
-                    slidesPerView: 1,
-                    spaceBetween: 16,
-                    breakpoints: {
-                        640: { slidesPerView: 2.1 },
-                        960: { slidesPerView: 3 },
-                        1280: { slidesPerView: 4 }
-                    },
-                    navigation: { nextEl: '.weekend-next', prevEl: '.weekend-prev' }
-                });
-            }
-
-            if(document.querySelector('.popular-swiper')){
-                new Swiper('.popular-swiper', {
-                    slidesPerView: 1,
-                    spaceBetween: 16,
-                    breakpoints: {
-                        640: { slidesPerView: 2.1 },
-                        960: { slidesPerView: 3 },
-                        1280: { slidesPerView: 4 }
-                    },
-                    navigation: { nextEl: '.popular-next', prevEl: '.popular-prev' }
-                });
-            }
-
-            document.querySelectorAll('.home-category-swiper').forEach(function (swiperEl) {
-                const nextEl = swiperEl.querySelector('.home-category-next');
-                const prevEl = swiperEl.querySelector('.home-category-prev');
-                new Swiper(swiperEl, {
-                    slidesPerView: 1,
-                    spaceBetween: 12,
-                    breakpoints: {
-                        640: { slidesPerView: 2, spaceBetween: 16 },
-                        960: { slidesPerView: 3, spaceBetween: 16 },
-                        1280: { slidesPerView: 4, spaceBetween: 16 }
-                    },
-                    navigation: { nextEl: nextEl, prevEl: prevEl }
-                });
-            });
-        }
-
-        const fancySearchCard = document.querySelector('.fancy-search-card');
-        const fancyInput = fancySearchCard?.querySelector('.fancy-input');
-        const fancySelectedType = fancySearchCard?.querySelector('.fancy-selected-type');
-        const fancySelectedSlug = fancySearchCard?.querySelector('.fancy-selected-slug');
-        const fancyLiveStatusText = fancySearchCard?.querySelector('.fancy-live-status-text');
-        const fancySuggestions = document.getElementById('homeSearchSuggestions');
-        if (fancySearchCard && fancyInput) {
-            const searchingText = 'Otel fırsatları taranıyor...';
-            const typedText = 'Arama hazır, sonucu filtreleyebilirsin.';
-            const seededValue = (fancyInput.dataset.seededValue || '').trim();
-            let suggestionTimer = null;
-            const updateFancySearchState = function () {
-                const currentValue = fancyInput.value.trim();
-                const hasInput = currentValue.length > 0 && currentValue !== seededValue;
-                fancySearchCard.classList.toggle('has-user-input', hasInput);
-                fancySearchCard.classList.toggle('is-searching', !hasInput);
-                if (fancyLiveStatusText) {
-                    fancyLiveStatusText.textContent = hasInput ? typedText : searchingText;
-                }
-            };
-            const hideSuggestions = function () {
-                if (!fancySuggestions) {
-                    return;
-                }
-
-                fancySuggestions.hidden = true;
-                fancySuggestions.innerHTML = '';
-            };
-            const renderSuggestions = function (items) {
-                if (!fancySuggestions) {
-                    return;
-                }
-
-                if (!items || !items.length) {
-                    hideSuggestions();
-                    return;
-                }
-
-                fancySuggestions.innerHTML = items.map(function (item) {
-                    return '<button type="button" class="fancy-search-suggestion" data-value="' + item.value.replace(/"/g, '&quot;') + '" data-type="' + (item.type || '').replace(/"/g, '&quot;') + '" data-slug="' + (item.slug || '').replace(/"/g, '&quot;') + '">' +
-                        '<span>' + item.label + '</span>' +
-                        '<small>' + item.type + '</small>' +
-                        '</button>';
-                }).join('');
-                fancySuggestions.hidden = false;
-            };
-            const loadSuggestions = async function () {
-                const currentValue = fancyInput.value.trim();
-                if (currentValue.length < 2) {
-                    hideSuggestions();
-                    return;
-                }
-
-                try {
-                    const response = await fetch('/api/oteller/arama-onerileri?q=' + encodeURIComponent(currentValue), {
-                        credentials: 'same-origin',
-                        headers: {
-                            'X-Requested-With': 'XMLHttpRequest'
-                        }
-                    });
-                    if (!response.ok) {
-                        hideSuggestions();
-                        return;
-                    }
-
-                    const items = await response.json();
-                    renderSuggestions(items);
-                } catch (_error) {
-                    hideSuggestions();
-                }
-            };
-            fancyInput.addEventListener('input', updateFancySearchState);
-            fancyInput.addEventListener('input', function () {
-                if (fancySelectedType) {
-                    fancySelectedType.value = '';
-                }
-                if (fancySelectedSlug) {
-                    fancySelectedSlug.value = '';
-                }
-                window.clearTimeout(suggestionTimer);
-                suggestionTimer = window.setTimeout(loadSuggestions, 180);
-            });
-            fancyInput.addEventListener('focus', function () {
-                if (fancyInput.value.trim().length >= 2) {
-                    loadSuggestions();
-                }
-            });
-            fancySuggestions?.addEventListener('click', function (event) {
-                const button = event.target.closest('.fancy-search-suggestion[data-value]');
-                if (!button) {
-                    return;
-                }
-
-                fancyInput.value = button.dataset.value || '';
-                if (fancySelectedType) {
-                    fancySelectedType.value = button.dataset.type || '';
-                }
-                if (fancySelectedSlug) {
-                    fancySelectedSlug.value = button.dataset.slug || '';
-                }
-                updateFancySearchState();
-                hideSuggestions();
-                if ((button.dataset.type || '').toLowerCase() === 'otel' && (button.dataset.slug || '').trim().length > 0) {
-                    window.location.href = '/oteller/' + encodeURIComponent(button.dataset.slug || '');
-                    return;
-                }
-                fancySearchCard.requestSubmit();
-            });
-            fancySearchCard.addEventListener('submit', function (event) {
-                const selectedType = (fancySelectedType?.value || '').trim().toLowerCase();
-                const selectedSlug = (fancySelectedSlug?.value || '').trim();
-                if (selectedType === 'otel' && selectedSlug.length > 0) {
-                    event.preventDefault();
-                    window.location.href = '/oteller/' + encodeURIComponent(selectedSlug);
-                }
-            });
-            document.addEventListener('click', function (event) {
-                if (!fancySearchCard.contains(event.target)) {
-                    hideSuggestions();
-                }
-            });
-            updateFancySearchState();
-        }
-    })();
-    </script>
+    <partial name="~/Views/Anasayfa/_AnasayfaPremiumHeader.cshtml" />
+    <partial name="~/Views/Anasayfa/_AnasayfaContent.cshtml" model="Model" />
+    <partial name="~/Views/Anasayfa/_AnasayfaPremiumFooter.cshtml" />
+    <partial name="~/Views/Shared/_RoutePickerModal.cshtml" />
     <partial name="~/Views/Shared/_FavoriteToggleScriptPartial.cshtml" />
+    <script nonce="@nonce">
+        (() => {
+            const btn = document.getElementById('homeMenuToggle');
+            const closeBtn = document.getElementById('homeDrawerClose');
+            const drawer = document.getElementById('homeDrawerMenu');
+            const overlay = document.getElementById('homeDrawerOverlay');
+            if (!btn || !closeBtn || !drawer || !overlay) return;
+            const open = () => { drawer.classList.add('open'); overlay.classList.add('open'); document.body.style.overflow = 'hidden'; };
+            const close = () => { drawer.classList.remove('open'); overlay.classList.remove('open'); document.body.style.overflow = ''; };
+            btn.addEventListener('click', open);
+            closeBtn.addEventListener('click', close);
+            overlay.addEventListener('click', close);
+            drawer.querySelectorAll('a').forEach(link => link.addEventListener('click', close));
+        })();
+    </script>
+    <script nonce="@nonce">
+        (() => {
+            const input = document.querySelector('[data-rotating-placeholder]');
+            if (!input) return;
+            const samples = [
+                "İstanbul'da hafta sonu oteli ara",
+                "Kadıköy, Beşiktaş veya Taksim otelleri",
+                "Aile oteli, kahvaltı dahil",
+                "Bütçeme uygun şehir oteli",
+                "Antalya denize yakın oteller"
+            ];
+            let index = 0;
+            window.setInterval(() => {
+                if (document.activeElement === input || input.value.trim()) return;
+                index = (index + 1) % samples.length;
+                input.setAttribute('placeholder', samples[index]);
+            }, 2200);
+        })();
+    </script>
+    <script src="~/assets/js/route-picker-modal.js" asp-append-version="true"></script>
+    <script src="~/assets/js/home-drawer-prefs.js" asp-append-version="true" defer></script>
+    <script src="~/assets/js/home-header-prefs.js" asp-append-version="true" defer></script>
+    <script src="~/assets/js/home-search-dates.js" asp-append-version="true"></script>
+    <script src="~/assets/js/home-search-tags.js" asp-append-version="true"></script>
+    <script src="~/assets/js/home-radar-live.js" asp-append-version="true"></script>
+    <script src="~/assets/js/home-ai-route.js" asp-append-version="true"></script>
+    <script src="~/assets/js/dawn-surprise-box.js" asp-append-version="true" defer></script>
 </body>
 </html>
-
-

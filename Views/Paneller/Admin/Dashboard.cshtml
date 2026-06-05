@@ -14,211 +14,263 @@
         new { Label = "Yorum moderasyonu", Value = Model.Shell.PendingReviews, Url = "/admin/degerlendirmeler", Icon = "fa-comments", Tone = "info" },
         new { Label = "Kritik log", Value = Model.Shell.CriticalLogs, Url = "/admin/log-kayitlari", Icon = "fa-triangle-exclamation", Tone = "danger" }
     };
+
+    string MapKpi(string? tone) => tone switch
+    {
+        "success" => "kpi-green",
+        "danger" => "kpi-red",
+        "warning" => "kpi-warning",
+        "purple" => "kpi-purple",
+        "teal" => "kpi-teal",
+        _ => "kpi-blue"
+    };
+
+    string MapIcon(string? tone) => tone switch
+    {
+        "success" => "icon-green",
+        "danger" => "icon-red",
+        "warning" => "icon-warning",
+        "purple" => "icon-purple",
+        "teal" => "icon-teal",
+        _ => "icon-blue"
+    };
+
+    string MetricUrl(AdminMetricCardViewModel metric)
+    {
+        if (metric.Label.Contains("Komisyon", StringComparison.OrdinalIgnoreCase)) return "/admin/komisyonlar";
+        if (metric.Label.Contains("Otel", StringComparison.OrdinalIgnoreCase)) return "/admin/oteller";
+        if (metric.Label.Contains("Rezervasyon", StringComparison.OrdinalIgnoreCase)) return "/admin/rezervasyonlar-tek-liste";
+        return "/admin/raporlar";
+    }
 }
 
-<section class="admin-dashboard-page admin-command-dashboard">
-    <div class="admin-command-hero">
-        <div class="admin-command-hero-copy">
-            <p class="mini-caption">ADMIN KOMUTA MERKEZİ</p>
-            <h1>Platform operasyonunu tek ekrandan yönetin</h1>
-            <span>Otel, rezervasyon, komisyon, onay, içerik ve sistem sağlığı akışları canlı verilerle özetlenir.</span>
+<section class="admin-panel-dashboard">
+    <div class="ap-page-header">
+        <div>
+            <div class="ap-page-pretitle">Executive · Global Platform</div>
+            <h1>Merkezi Operasyon Üssü</h1>
+            <p>Global platform — tüm tesislerin anlık konsolide verileri ve ağ hareketleri.</p>
         </div>
-        <div class="admin-command-hero-actions">
-            <a class="btn btn-primary" href="/admin/onay-merkezi"><i class="fas fa-clipboard-check me-2"></i>Onay Merkezi</a>
-            <a class="btn btn-outline-primary" href="/admin/platform-checkup"><i class="fas fa-list-check me-2"></i>Platform Checkup</a>
-            <a class="btn btn-outline-secondary" href="/admin/sistem-sagligi"><i class="fas fa-heart-pulse me-2"></i>Sistem Sağlığı</a>
+        <div class="d-flex flex-wrap gap-2">
+            <a class="btn-primary-ap" href="/admin/onay-merkezi"><i class="fas fa-clipboard-check"></i> Onay Merkezi</a>
+            <a class="btn-outline-ap" href="/admin/platform-checkup"><i class="fas fa-list-check"></i> Platform Checkup</a>
         </div>
     </div>
 
-    <div class="admin-command-grid">
-        <article class="admin-command-panel admin-command-panel-main">
-            <div class="admin-section-head">
-                <div>
-                    <p class="mini-caption">GENEL DURUM</p>
-                    <h2>Ana performans kartları</h2>
-                    <span>Gelir, rezervasyon, ödeme ve tesis ağı sinyalleri.</span>
-                </div>
-                <a class="btn btn-outline-primary btn-sm" href="/admin/raporlar">Raporlar</a>
-            </div>
-            <div class="admin-kpi-grid is-dashboard">
-                @foreach (var metric in primaryMetrics)
-                {
-                    var tone = string.IsNullOrWhiteSpace(metric.ToneClass) ? "info" : metric.ToneClass;
-                    <a class="admin-kpi-card @tone" href="@(metric.Label.Contains("Komisyon", StringComparison.OrdinalIgnoreCase) ? "/admin/komisyonlar" : metric.Label.Contains("Otel", StringComparison.OrdinalIgnoreCase) ? "/admin/oteller" : metric.Label.Contains("Rezervasyon", StringComparison.OrdinalIgnoreCase) ? "/admin/rezervasyonlar-tek-liste" : "/admin/raporlar")">
-                        <span class="kpi-icon"><i class="fas @metric.IconClass"></i></span>
-                        <div>
-                            <p>@metric.Label</p>
-                            <h2>@metric.Value</h2>
-                            <span>@metric.TrendText</span>
-                        </div>
-                    </a>
-                }
-            </div>
-        </article>
+    <div class="quick-actions-bar">
+        <a class="action-chip" href="/admin/onay-merkezi"><i class="fas fa-clipboard-check" style="color: var(--ap-primary-red);"></i> Onay Kuyruğu</a>
+        <a class="action-chip" href="/admin/oteller"><i class="fas fa-hotel" style="color: var(--ap-warning);"></i> Otel Yönetimi</a>
+        <a class="action-chip" href="/admin/rezervasyonlar-tek-liste"><i class="fas fa-calendar-check" style="color: var(--ap-info);"></i> Rezervasyonlar</a>
+        <a class="action-chip" href="/admin/sistem-sagligi"><i class="fas fa-heart-pulse" style="color: var(--ap-success);"></i> Sistem Sağlığı</a>
+    </div>
 
-        <aside class="admin-command-panel admin-command-alerts">
-            <div class="admin-section-head compact">
-                <div>
-                    <p class="mini-caption">AKSİYON KUYRUĞU</p>
-                    <h2>Bekleyen işler</h2>
+    <div class="kpi-grid-pro">
+        @foreach (var metric in primaryMetrics)
+        {
+            var tone = string.IsNullOrWhiteSpace(metric.ToneClass) ? "info" : metric.ToneClass;
+            <a class="kpi-card-pro @MapKpi(tone)" href="@MetricUrl(metric)">
+                <div class="kpi-top">
+                    <span class="kpi-title">@metric.Label</span>
+                    <div class="kpi-icon @MapIcon(tone)"><i class="fas @metric.IconClass"></i></div>
+                </div>
+                <div class="kpi-value">@metric.Value</div>
+                @if (!string.IsNullOrWhiteSpace(metric.TrendText))
+                {
+                    <div class="kpi-bottom up"><i class="fas fa-chart-line"></i> @metric.TrendText</div>
+                }
+            </a>
+        }
+    </div>
+
+    <div class="complex-grid">
+        <div class="panel-card">
+            <div class="panel-header">
+                <h3><i class="fas fa-stream"></i> Son 6 ay rezervasyon hareketi</h3>
+                <a class="btn-outline-ap" style="height:28px;font-size:11px;padding:0 10px;" href="/admin/rezervasyonlar-tek-liste">Tümünü Gör</a>
+            </div>
+            <div class="panel-body panel-body-padded">
+                <div class="ap-chart-bars">
+                    @foreach (var bar in Model.ReservationChart)
+                    {
+                        <div class="ap-chart-bar-item">
+                            <span class="ap-chart-bar" style="height:@bar.HeightPercent%;"></span>
+                            <strong>@bar.Value</strong>
+                            <small>@bar.Label</small>
+                        </div>
+                    }
                 </div>
             </div>
-            <div class="admin-action-stack">
-                @foreach (var item in criticalItems)
-                {
-                    <a class="admin-action-tile @item.Tone" href="@item.Url">
-                        <span><i class="fas @item.Icon"></i></span>
-                        <div>
-                            <strong>@item.Value.ToString("N0", tr)</strong>
-                            <small>@item.Label</small>
-                        </div>
-                        <i class="fas fa-chevron-right"></i>
-                    </a>
-                }
+        </div>
+
+        <div class="panel-card">
+            <div class="panel-header">
+                <h3><i class="fas fa-bolt" style="color:var(--ap-warning);"></i> Bekleyen işler</h3>
             </div>
-        </aside>
+            <div class="panel-body panel-body-padded">
+                <div class="ap-action-stack">
+                    @foreach (var item in criticalItems)
+                    {
+                        <a class="ap-action-tile @item.Tone" href="@item.Url">
+                            <span><i class="fas @item.Icon"></i></span>
+                            <div>
+                                <strong>@item.Value.ToString("N0", tr)</strong>
+                                <small>@item.Label</small>
+                            </div>
+                            <i class="fas fa-chevron-right"></i>
+                        </a>
+                    }
+                </div>
+            </div>
+        </div>
     </div>
 
     @if (Model.Revenue30DayMetrics.Count > 0)
     {
-        <article class="admin-command-panel admin-command-panel-main">
-            <div class="admin-section-head">
-                <div>
-                    <p class="mini-caption">GELİR (30 GÜN)</p>
-                    <h2>Platform GMV (30 gün)</h2>
-                    <span>İptal hariç ciro, komisyon ve rezervasyon hacmi.</span>
+        <div class="panel-card">
+            <div class="panel-header">
+                <h3><i class="fas fa-chart-line"></i> Platform GMV (30 gün)</h3>
+                <a class="btn-outline-ap" style="height:28px;font-size:11px;padding:0 10px;" href="/admin/raporlar">Gelir raporu</a>
+            </div>
+            <div class="panel-body panel-body-padded">
+                <div class="kpi-grid-pro">
+                    @foreach (var metric in Model.Revenue30DayMetrics)
+                    {
+                        var tone = string.IsNullOrWhiteSpace(metric.ToneClass) ? "info" : metric.ToneClass;
+                        <a class="kpi-card-pro @MapKpi(tone)" href="/admin/raporlar">
+                            <div class="kpi-top">
+                                <span class="kpi-title">@metric.Label</span>
+                                <div class="kpi-icon @MapIcon(tone)"><i class="fas @metric.IconClass"></i></div>
+                            </div>
+                            <div class="kpi-value">@metric.Value</div>
+                            @if (!string.IsNullOrWhiteSpace(metric.TrendText))
+                            {
+                                <div class="kpi-bottom up">@metric.TrendText</div>
+                            }
+                        </a>
+                    }
                 </div>
-                <a class="btn btn-outline-primary btn-sm" href="/admin/raporlar">Gelir raporu</a>
             </div>
-            <div class="admin-kpi-grid is-dashboard">
-                @foreach (var metric in Model.Revenue30DayMetrics)
-                {
-                    var tone = string.IsNullOrWhiteSpace(metric.ToneClass) ? "info" : metric.ToneClass;
-                    <a class="admin-kpi-card @tone" href="/admin/raporlar">
-                        <span class="kpi-icon"><i class="fas @metric.IconClass"></i></span>
-                        <div>
-                            <p>@metric.Label</p>
-                            <h2>@metric.Value</h2>
-                            <span>@metric.TrendText</span>
-                        </div>
-                    </a>
-                }
-            </div>
-        </article>
+        </div>
     }
 
-    <div class="admin-command-routes">
-        <a href="/admin/oteller"><i class="fas fa-hotel"></i><strong>Otel yönetimi</strong><span>Yayın, askı, detay, oda ve medya</span></a>
-        <a href="/admin/komisyonlar"><i class="fas fa-percent"></i><strong>Oteller komisyon oranları</strong><span>Oran, tahakkuk ve ödeme bildirimi</span></a>
-        <a href="/admin/email-kuyruk"><i class="fas fa-envelope-open-text"></i><strong>E-posta kuyruğu</strong><span>Bekleyen ve hatalı gönderimler</span></a>
-        <a href="/admin/kullanicilar"><i class="fas fa-users-gear"></i><strong>Kullanıcı ve rol</strong><span>Rol, panel ve hesap durumları</span></a>
-        <a href="/admin/raporlar"><i class="fas fa-chart-line"></i><strong>Gelir raporları</strong><span>Aylık ciro ve komisyon</span></a>
-        <a href="/admin/sistem-sagligi"><i class="fas fa-shield-halved"></i><strong>Sistem monitörü</strong><span>Servis, link, kuyruk ve sağlık</span></a>
+    <div class="ap-route-grid">
+        <a class="ap-route-card" href="/admin/oteller">
+            <div class="ap-route-card-head">
+                <span class="ap-route-card-icon"><i class="fas fa-hotel"></i></span>
+                <strong>Otel yönetimi</strong>
+            </div>
+            <span class="ap-route-card-desc">Yayın, askı, detay, oda ve medya</span>
+        </a>
+        <a class="ap-route-card" href="/admin/komisyonlar">
+            <div class="ap-route-card-head">
+                <span class="ap-route-card-icon"><i class="fas fa-percent"></i></span>
+                <strong>Komisyon oranları</strong>
+            </div>
+            <span class="ap-route-card-desc">Oran, tahakkuk ve ödeme bildirimi</span>
+        </a>
+        <a class="ap-route-card" href="/admin/email-kuyruk">
+            <div class="ap-route-card-head">
+                <span class="ap-route-card-icon"><i class="fas fa-envelope-open-text"></i></span>
+                <strong>E-posta kuyruğu</strong>
+            </div>
+            <span class="ap-route-card-desc">Bekleyen ve hatalı gönderimler</span>
+        </a>
+        <a class="ap-route-card" href="/admin/kullanicilar">
+            <div class="ap-route-card-head">
+                <span class="ap-route-card-icon"><i class="fas fa-users-gear"></i></span>
+                <strong>Kullanıcı ve rol</strong>
+            </div>
+            <span class="ap-route-card-desc">Rol, panel ve hesap durumları</span>
+        </a>
+        <a class="ap-route-card" href="/admin/raporlar">
+            <div class="ap-route-card-head">
+                <span class="ap-route-card-icon"><i class="fas fa-chart-line"></i></span>
+                <strong>Gelir raporları</strong>
+            </div>
+            <span class="ap-route-card-desc">Aylık ciro ve komisyon</span>
+        </a>
+        <a class="ap-route-card" href="/admin/sistem-sagligi">
+            <div class="ap-route-card-head">
+                <span class="ap-route-card-icon"><i class="fas fa-shield-halved"></i></span>
+                <strong>Sistem monitörü</strong>
+            </div>
+            <span class="ap-route-card-desc">Servis, link, kuyruk ve sağlık</span>
+        </a>
     </div>
 
-    <div class="admin-dashboard-grid">
-        <article class="admin-section-card">
-            <div class="admin-section-head">
-                <div>
-                    <p class="mini-caption">REZERVASYON TRENDİ</p>
-                    <h2>Son 6 ay rezervasyon hareketi</h2>
-                    <span>Ay bazlı hacim değişimi.</span>
-                </div>
-                <a class="btn btn-outline-primary btn-sm" href="/admin/rezervasyonlar-tek-liste">Tümünü Gör</a>
+    <div class="complex-grid">
+        <div class="panel-card">
+            <div class="panel-header">
+                <h3><i class="fas fa-clock-rotate-left"></i> Son hareketler</h3>
             </div>
-            <div class="admin-chart-bars">
-                @foreach (var bar in Model.ReservationChart)
-                {
-                    <div class="chart-bar-item">
-                        <span class="chart-bar" style="height:@bar.HeightPercent%;"></span>
-                        <strong>@bar.Value</strong>
-                        <small>@bar.Label</small>
-                    </div>
-                }
-            </div>
-        </article>
-
-        <article class="admin-section-card">
-            <div class="admin-section-head">
-                <div>
-                    <p class="mini-caption">CANLI AKIŞ</p>
-                    <h2>Son hareketler</h2>
-                    <span>Başvuru, işlem ve sistem kayıtları.</span>
-                </div>
-            </div>
-            <div class="admin-activity-list">
-                @foreach (var activity in Model.Activities)
-                {
-                    var tone = string.IsNullOrWhiteSpace(activity.ToneClass) ? "info" : activity.ToneClass;
-                    <div class="admin-activity-item @tone">
-                        <span class="activity-icon"><i class="fas @activity.IconClass"></i></span>
-                        <div>
-                            <strong>@activity.Title</strong>
-                            <p>@activity.Subtitle</p>
-                        </div>
-                        <small>@activity.TimeText</small>
-                    </div>
-                }
-            </div>
-        </article>
-    </div>
-
-    <article class="admin-section-card">
-        <div class="admin-section-head">
-            <div>
-                <p class="mini-caption">TESİS PERFORMANSI</p>
-                <h2>Ciro, komisyon ve iptal riski</h2>
-                <span>En yüksek ciroya göre otel KPI listesi.</span>
-            </div>
-            <div class="admin-mini-metrics">
-                @foreach (var metric in secondaryMetrics)
-                {
-                    <span>@metric.Label <strong>@metric.Value</strong></span>
-                }
-            </div>
-        </div>
-        <div class="admin-table-wrap">
-            @if (Model.HotelKpis.Count == 0)
-            {
-                <div class="admin-empty-panel">Henüz KPI kaydı yok.</div>
-            }
-            else
-            {
-                <table class="admin-table">
-                    <thead>
-                    <tr>
-                        <th>Otel</th>
-                        <th>Konum</th>
-                        <th>Durum</th>
-                        <th>Rez.</th>
-                        <th>İptal</th>
-                        <th>İptal %</th>
-                        <th>Ciro</th>
-                        <th>Komisyon</th>
-                        <th>Yorum</th>
-                        <th>Puan</th>
-                    </tr>
-                    </thead>
-                    <tbody>
-                    @foreach (var row in Model.HotelKpis)
+            <div class="panel-body">
+                <div class="ap-activity-list">
+                    @foreach (var activity in Model.Activities)
                     {
-                        var cancelTone = row.CancelRatePercent >= 20 ? "danger" : row.CancelRatePercent >= 10 ? "warning" : "success";
-                        <tr>
-                            <td><strong>@row.HotelName</strong><div><a href="/admin/otel-detay/@row.HotelId">Detay</a></div></td>
-                            <td>@row.CityLabel</td>
-                            <td><span class="table-status info">@row.PublishStatus</span></td>
-                            <td>@row.ReservationCount</td>
-                            <td>@row.CancelledCount</td>
-                            <td><span class="table-status @cancelTone">@row.CancelRatePercent.ToString("0.0")%</span></td>
-                            <td><strong>@row.GrossRevenue.ToString("N0", tr) TL</strong></td>
-                            <td>@row.CommissionAmount.ToString("N0", tr) TL</td>
-                            <td>@row.ReviewCount</td>
-                            <td>@row.AverageScore.ToString("0.0", System.Globalization.CultureInfo.InvariantCulture)</td>
-                        </tr>
+                        var tone = string.IsNullOrWhiteSpace(activity.ToneClass) ? "info" : activity.ToneClass;
+                        <div class="ap-activity-item @tone">
+                            <span class="activity-icon"><i class="fas @activity.IconClass"></i></span>
+                            <div>
+                                <strong>@activity.Title</strong>
+                                <p>@activity.Subtitle</p>
+                            </div>
+                            <small>@activity.TimeText</small>
+                        </div>
                     }
-                    </tbody>
-                </table>
-            }
+                </div>
+            </div>
         </div>
-    </article>
+
+        <div class="panel-card">
+            <div class="panel-header">
+                <h3><i class="fas fa-ranking-star"></i> Tesis performansı</h3>
+            </div>
+            <div class="panel-body panel-body-padded">
+                @if (secondaryMetrics.Count > 0)
+                {
+                    <div class="ap-mini-metrics mb-3">
+                        @foreach (var metric in secondaryMetrics)
+                        {
+                            <span>@metric.Label<strong>@metric.Value</strong></span>
+                        }
+                    </div>
+                }
+                @if (Model.HotelKpis.Count == 0)
+                {
+                    <div class="ap-empty-panel">Henüz KPI kaydı yok.</div>
+                }
+                else
+                {
+                    <table class="pro-table">
+                        <thead>
+                            <tr>
+                                <th>Otel</th>
+                                <th>Konum</th>
+                                <th>Rez.</th>
+                                <th>Ciro</th>
+                                <th>Puan</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var row in Model.HotelKpis.Take(8))
+                            {
+                                <tr>
+                                    <td>
+                                        <div class="guest-info">
+                                            <span class="guest-name">@row.HotelName</span>
+                                            <span class="guest-meta"><a href="/admin/otel-detay/@row.HotelId">Detay</a> · @row.PublishStatus</span>
+                                        </div>
+                                    </td>
+                                    <td>@row.CityLabel</td>
+                                    <td>@row.ReservationCount</td>
+                                    <td><strong>@row.GrossRevenue.ToString("N0", tr) TL</strong></td>
+                                    <td>@row.AverageScore.ToString("0.0", System.Globalization.CultureInfo.InvariantCulture)</td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                }
+            </div>
+        </div>
+    </div>
 </section>

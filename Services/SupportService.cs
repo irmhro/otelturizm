@@ -431,7 +431,7 @@ public class SupportService : ISupportService
                 var slug = reader.GetString(1);
                 model.Categories.Add(new SssKategoriViewModel
                 {
-                    Name = reader.GetString(0),
+                    Name = FixMojibake(reader.GetString(0)),
                     Slug = slug,
                     IsActive = normalizedCategory == slug
                 });
@@ -484,9 +484,9 @@ public class SupportService : ISupportService
                 {
                     section = new SssBolumViewModel
                     {
-                        Name = reader.GetString(0),
+                        Name = FixMojibake(reader.GetString(0)),
                         Slug = slug,
-                        IconClass = reader.GetString(2)
+                        IconClass = FixMojibake(reader.GetString(2))
                     };
 
                     sections[slug] = section;
@@ -496,8 +496,8 @@ public class SupportService : ISupportService
                 section.Questions.Add(new SssSoruViewModel
                 {
                     Id = reader.GetInt64(3),
-                    Question = reader.GetString(4),
-                    Answer = reader.GetString(5)
+                    Question = FixMojibake(reader.GetString(4)),
+                    Answer = FixMojibake(reader.GetString(5))
                 });
             }
         }
@@ -516,11 +516,11 @@ public class SupportService : ISupportService
                 model.CtaChannel = new DestekKanalViewModel
                 {
                     Name = reader.GetString(0),
-                    Description = reader.IsDBNull(1) ? string.Empty : reader.GetString(1),
-                    IconClass = reader.IsDBNull(2) ? "fa-headset" : reader.GetString(2),
-                    ButtonText = reader.IsDBNull(3) ? "Canlı Desteğe Bağlan" : reader.GetString(3),
+                    Description = reader.IsDBNull(1) ? string.Empty : FixMojibake(reader.GetString(1)),
+                    IconClass = reader.IsDBNull(2) ? "fa-headset" : FixMojibake(reader.GetString(2)),
+                    ButtonText = reader.IsDBNull(3) ? "Canlı Desteğe Bağlan" : FixMojibake(reader.GetString(3)),
                     Url = reader.IsDBNull(4) ? "#" : reader.GetString(4),
-                    Note = reader.IsDBNull(5) ? string.Empty : reader.GetString(5),
+                    Note = reader.IsDBNull(5) ? string.Empty : FixMojibake(reader.GetString(5)),
                     Tone = reader.IsDBNull(6) ? "primary" : reader.GetString(6)
                 };
             }

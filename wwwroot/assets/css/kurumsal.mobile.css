@@ -1,1 +1,224 @@
-@import url("./kurumsal.css");
+@import url("./public-premium-pages.mobile.css");
+
+@media (max-width: 900px) {
+    .kurumsal-page .public-premium-main {
+        padding-bottom: 72px;
+    }
+
+    .kurumsal-page .kur-hero-shell {
+        margin-bottom: 0;
+    }
+
+    .kurumsal-page .kur-hero-section {
+        padding: 16px 0 12px;
+        gap: 20px;
+    }
+
+    .kurumsal-page .kur-hero-title {
+        font-size: clamp(1.6rem, 6.2vw, 2.05rem);
+    }
+
+    .kurumsal-page .kur-hero-lead {
+        font-size: 0.92rem;
+    }
+
+    .kurumsal-page .kur-hero-points {
+        grid-template-columns: 1fr;
+        gap: 6px;
+    }
+
+    .kurumsal-page .kur-hero-point {
+        font-size: 0.84rem;
+        padding: 10px 12px;
+    }
+
+    .kurumsal-page .kur-hero-visual {
+        padding: 18px 16px 14px;
+    }
+
+    .kurumsal-page .kur-hero-actions {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 8px;
+    }
+
+    .kurumsal-page .kur-hero-actions .btn-club-pro,
+    .kurumsal-page .kur-hero-actions .btn-club-pro-outline {
+        width: 100%;
+        min-width: 0;
+        min-height: 42px;
+        padding-inline: 8px;
+        font-size: 0.72rem;
+        line-height: 1.15;
+        text-align: center;
+        white-space: normal;
+    }
+
+    .kurumsal-page .kur-hero-actions .btn-club-pro i,
+    .kurumsal-page .kur-hero-actions .btn-club-pro-outline i {
+        display: none;
+    }
+
+    .kurumsal-page .kur-chart {
+        height: 100px;
+    }
+
+    .kurumsal-page .kur-stats-row {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 8px;
+        padding-bottom: 20px;
+    }
+
+    .kurumsal-page .kur-stat {
+        padding: 12px 10px;
+    }
+
+    .kurumsal-page .kur-stat strong {
+        font-size: 1.15rem;
+    }
+
+    .kurumsal-page .kur-section-nav {
+        padding-top: 8px;
+        margin-bottom: 0;
+    }
+
+    .kurumsal-page .kur-path-card {
+        grid-template-columns: auto 1fr;
+        grid-template-rows: auto auto;
+    }
+
+    .kurumsal-page .kur-path-cta {
+        grid-column: 1 / -1;
+        justify-self: start;
+        margin-top: 4px;
+    }
+
+    .kurumsal-page .kur-commission-panel {
+        padding: 14px 12px;
+        border-radius: 12px;
+    }
+
+    .kurumsal-page .kur-commission-lead {
+        margin-bottom: 10px;
+        font-size: 11px;
+    }
+
+    .kurumsal-page .kur-tier-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 6px;
+    }
+
+    .kurumsal-page .kur-tier-card {
+        gap: 8px;
+        padding: 8px 9px;
+        border-radius: 10px;
+    }
+
+    .kurumsal-page .kur-tier-icon {
+        width: 26px;
+        height: 26px;
+        font-size: 11px;
+    }
+
+    .kurumsal-page .kur-tier-name {
+        font-size: 0.76rem;
+    }
+
+    .kurumsal-page .kur-tier-req {
+        font-size: 8px;
+    }
+
+    .kurumsal-page .kur-tier-rate {
+        padding: 2px 7px;
+        font-size: 0.72rem;
+    }
+
+    .kurumsal-page .kur-steps {
+        grid-template-columns: 1fr;
+    }
+
+    .kurumsal-page .kur-benefits-strip {
+        grid-template-columns: 1fr;
+        gap: 10px;
+    }
+
+    .kurumsal-page .kur-faq-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .kurumsal-page .kur-final-cta {
+        padding: 20px 16px;
+        margin-bottom: 8px;
+    }
+
+    .kurumsal-page .kur-cta-actions {
+        grid-template-columns: 1fr;
+    }
+
+    .kurumsal-page .section-headline {
+        margin-top: 28px;
+        margin-bottom: 10px;
+        font-size: 18px;
+    }
+
+    .kurumsal-page .kur-section-intro {
+        font-size: 12px;
+        margin-bottom: 12px;
+    }
+
+    /* Sticky mobile CTA */
+    .kurumsal-page .kur-mobile-cta {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 8px;
+        position: fixed;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        z-index: 900;
+        padding: 10px 14px calc(10px + env(safe-area-inset-bottom));
+        background: rgba(252, 251, 249, 0.96);
+        border-top: 1px solid var(--border-subtle, #EBE9E4);
+        backdrop-filter: blur(12px);
+        -webkit-backdrop-filter: blur(12px);
+        box-shadow: 0 -8px 24px rgba(26, 25, 25, 0.08);
+    }
+
+    .kurumsal-page .kur-mobile-cta-btn {
+        min-height: 44px;
+        padding: 0 8px;
+        border-radius: 10px;
+        font-size: 0.72rem;
+        font-weight: 800;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        line-height: 1.15;
+        text-align: center;
+        white-space: normal;
+    }
+
+    .kurumsal-page .kur-mobile-cta-btn--primary {
+        background: var(--luxury-dark, #1A1919);
+        color: #fff;
+    }
+
+    .kurumsal-page .kur-mobile-cta-btn--ghost {
+        background: #fff;
+        color: var(--luxury-dark, #1A1919);
+        border: 1px solid var(--border-subtle, #EBE9E4);
+        padding-inline: 8px;
+    }
+}
+
+@media (max-width: 560px) {
+    .kurumsal-page .kur-stats-row {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
+@media (min-width: 901px) {
+    .kurumsal-page .kur-mobile-cta {
+        display: none !important;
+    }
+}

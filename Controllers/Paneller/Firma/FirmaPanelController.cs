@@ -30,18 +30,19 @@ public class FirmaPanelController : Controller
     [HttpGet("dashboard")]
     public async Task<IActionResult> Index(CancellationToken cancellationToken = default)
     {
-        if (!IsFirmaUser()) return Redirect("/kullanici-giris");
+        if (!IsFirmaUser()) return Redirect("/firma-giris");
         var model = await _firmaService.GetDashboardAsync(GetUserId(), cancellationToken);
         ApplyFeedback(model.Shell);
         ViewData["Title"] = "Firma Dashboard";
-        ViewData["PageCssPath"] = "paneller/firma/dashboard";
+        ViewData["PageCssPath"] = "firmapanel_dashboard_masaustu";
+        ViewData["PageCssMobilePath"] = "firmapanel_dashboard_mobil";
         return View("~/Views/Paneller/Firma/Dashboard.cshtml", model);
     }
 
     [HttpGet("guvenlik")]
     public async Task<IActionResult> Security(CancellationToken cancellationToken)
     {
-        if (!IsFirmaUser()) return Redirect("/kullanici-giris");
+        if (!IsFirmaUser()) return Redirect("/firma-giris");
         var dashboard = await _firmaService.GetDashboardAsync(GetUserId(), cancellationToken);
         ApplyFeedback(dashboard.Shell);
         ViewData["FirmaShell"] = dashboard.Shell;
@@ -55,7 +56,7 @@ public class FirmaPanelController : Controller
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> SaveTwoFactor(otelturizmnew.Models.Paneller.User.UserTwoFactorForm form, CancellationToken cancellationToken)
     {
-        if (!IsFirmaUser()) return Redirect("/kullanici-giris");
+        if (!IsFirmaUser()) return Redirect("/firma-giris");
         var result = await _authService.SaveTwoFactorSecurityAsync(GetUserId(), form, cancellationToken);
         TempData[result.Success ? "FirmaSuccess" : "FirmaError"] = result.Message;
         return Redirect("/panel/firma/guvenlik");
@@ -64,7 +65,7 @@ public class FirmaPanelController : Controller
     [HttpGet("firma-fiyatlari")]
     public async Task<IActionResult> Deals(string? city = null, string? district = null, string? neighborhood = null, int? minRoomCount = null, string? search = null, CancellationToken cancellationToken = default)
     {
-        if (!IsFirmaUser()) return Redirect("/kullanici-giris");
+        if (!IsFirmaUser()) return Redirect("/firma-giris");
         var model = await _firmaService.GetDealsAsync(GetUserId(), city, district, neighborhood, minRoomCount, search, cancellationToken);
         ApplyFeedback(model.Shell);
         ViewData["Title"] = "Firma Fiyatları";
@@ -75,7 +76,7 @@ public class FirmaPanelController : Controller
     [HttpGet("firma-fiyatlari/karsilastir")]
     public async Task<IActionResult> CompareDeals([FromQuery] long[] hotelIds, [FromQuery] int roomCount = 5, CancellationToken cancellationToken = default)
     {
-        if (!IsFirmaUser()) return Redirect("/kullanici-giris");
+        if (!IsFirmaUser()) return Redirect("/firma-giris");
         var model = await _firmaService.GetDealsCompareAsync(GetUserId(), hotelIds, roomCount, cancellationToken);
         ApplyFeedback(model.Shell);
         ViewData["Title"] = "Fiyat Karşılaştır";
@@ -86,7 +87,7 @@ public class FirmaPanelController : Controller
     [HttpGet("rezervasyonlar")]
     public async Task<IActionResult> Reservations(CancellationToken cancellationToken)
     {
-        if (!IsFirmaUser()) return Redirect("/kullanici-giris");
+        if (!IsFirmaUser()) return Redirect("/firma-giris");
         var model = await _firmaService.GetReservationsAsync(GetUserId(), cancellationToken);
         ApplyFeedback(model.Shell);
         ViewData["Title"] = "Firma Rezervasyonları";
@@ -107,7 +108,7 @@ public class FirmaPanelController : Controller
         [FromQuery] long? employeeUserId = null,
         CancellationToken cancellationToken = default)
     {
-        if (!IsFirmaUser()) return Redirect("/kullanici-giris");
+        if (!IsFirmaUser()) return Redirect("/firma-giris");
         var model = await _firmaService.GetCreateReservationAsync(
             GetUserId(),
             hotelId,
@@ -131,7 +132,7 @@ public class FirmaPanelController : Controller
     [Microsoft.AspNetCore.RateLimiting.EnableRateLimiting("reservation-create")]
     public async Task<IActionResult> CreateReservationPost(otelturizmnew.Models.Paneller.Firma.FirmaReservationCreateModel model, CancellationToken cancellationToken)
     {
-        if (!IsFirmaUser()) return Redirect("/kullanici-giris");
+        if (!IsFirmaUser()) return Redirect("/firma-giris");
         var idemKey = IdempotencyKey.ForObject($"firma-res-create:{GetUserId()}", model);
         var result = await _idempotency.GetOrCreateAsync(
             idemKey,
@@ -145,7 +146,7 @@ public class FirmaPanelController : Controller
     [HttpGet("mesajlar")]
     public async Task<IActionResult> Messages([FromQuery] long? conversationId, CancellationToken cancellationToken)
     {
-        if (!IsFirmaUser()) return Redirect("/kullanici-giris");
+        if (!IsFirmaUser()) return Redirect("/firma-giris");
         var model = await _firmaService.GetMessagesAsync(GetUserId(), conversationId, cancellationToken);
         ApplyFeedback(model.Shell);
         ViewData["Title"] = "Firma Mesajları";
@@ -161,7 +162,7 @@ public class FirmaPanelController : Controller
         [FromQuery] int? pageSize,
         CancellationToken cancellationToken)
     {
-        if (!IsFirmaUser()) return Redirect("/kullanici-giris");
+        if (!IsFirmaUser()) return Redirect("/firma-giris");
         var model = await _firmaService.GetEmployeesAsync(GetUserId(), q, departman, page, pageSize, cancellationToken);
         ApplyFeedback(model.Shell);
         ViewData["Title"] = "Çalışanlar";
@@ -172,7 +173,7 @@ public class FirmaPanelController : Controller
     [HttpGet("limitler-onaylar")]
     public async Task<IActionResult> Limits(CancellationToken cancellationToken)
     {
-        if (!IsFirmaUser()) return Redirect("/kullanici-giris");
+        if (!IsFirmaUser()) return Redirect("/firma-giris");
         var model = await _firmaService.GetLimitsAsync(GetUserId(), cancellationToken);
         ApplyFeedback(model.Shell);
         ViewData["Title"] = "Limitler & Onaylar";
@@ -183,7 +184,7 @@ public class FirmaPanelController : Controller
     [HttpGet("faturalar")]
     public async Task<IActionResult> Invoices(CancellationToken cancellationToken)
     {
-        if (!IsFirmaUser()) return Redirect("/kullanici-giris");
+        if (!IsFirmaUser()) return Redirect("/firma-giris");
         var model = await _firmaService.GetInvoicesAsync(GetUserId(), cancellationToken);
         ApplyFeedback(model.Shell);
         ViewData["Title"] = "Faturalar";
@@ -194,7 +195,7 @@ public class FirmaPanelController : Controller
     [HttpGet("harcama-raporlari")]
     public async Task<IActionResult> Spending(CancellationToken cancellationToken)
     {
-        if (!IsFirmaUser()) return Redirect("/kullanici-giris");
+        if (!IsFirmaUser()) return Redirect("/firma-giris");
         var model = await _firmaService.GetSpendingReportsAsync(GetUserId(), cancellationToken);
         ApplyFeedback(model.Shell);
         ViewData["Title"] = "Harcama Raporları";
@@ -205,7 +206,7 @@ public class FirmaPanelController : Controller
     [HttpGet("otel-bazli-rapor")]
     public async Task<IActionResult> Hotels(CancellationToken cancellationToken)
     {
-        if (!IsFirmaUser()) return Redirect("/kullanici-giris");
+        if (!IsFirmaUser()) return Redirect("/firma-giris");
         var model = await _firmaService.GetHotelReportsAsync(GetUserId(), cancellationToken);
         ApplyFeedback(model.Shell);
         ViewData["Title"] = "Otel Bazlı Rapor";
@@ -217,7 +218,7 @@ public class FirmaPanelController : Controller
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> CreateEmployee(FirmaEmployeeCreateModel model, CancellationToken cancellationToken)
     {
-        if (!IsFirmaUser()) return Redirect("/kullanici-giris");
+        if (!IsFirmaUser()) return Redirect("/firma-giris");
         var result = await _firmaService.CreateEmployeeAsync(GetUserId(), model, cancellationToken);
         SetFeedback(result.Success, result.Message);
         return Redirect("/panel/firma/calisanlar");
@@ -229,7 +230,7 @@ public class FirmaPanelController : Controller
     [RequestSizeLimit(31457280)]
     public async Task<IActionResult> SendMessage(MessageSendRequest form, List<IFormFile>? attachments, CancellationToken cancellationToken)
     {
-        if (!IsFirmaUser()) return Redirect("/kullanici-giris");
+        if (!IsFirmaUser()) return Redirect("/firma-giris");
         var result = await _firmaService.SendMessageAsync(GetUserId(), form, attachments, HttpContext, cancellationToken);
         SetFeedback(result.Success, result.Message);
         return Redirect($"/panel/firma/mesajlar?conversationId={form.ConversationId}");
@@ -239,7 +240,7 @@ public class FirmaPanelController : Controller
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> DeleteMessage(MessageDeleteRequest form, CancellationToken cancellationToken)
     {
-        if (!IsFirmaUser()) return Redirect("/kullanici-giris");
+        if (!IsFirmaUser()) return Redirect("/firma-giris");
         var result = await _firmaService.DeleteMessageAsync(GetUserId(), form, cancellationToken);
         SetFeedback(result.Success, result.Message);
         return Redirect($"/panel/firma/mesajlar?conversationId={form.ConversationId}");
@@ -249,7 +250,7 @@ public class FirmaPanelController : Controller
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> SaveLimit(FirmaLimitUpsertModel model, CancellationToken cancellationToken)
     {
-        if (!IsFirmaUser()) return Redirect("/kullanici-giris");
+        if (!IsFirmaUser()) return Redirect("/firma-giris");
         var result = await _firmaService.UpsertLimitAsync(GetUserId(), model, cancellationToken);
         SetFeedback(result.Success, result.Message);
         return Redirect("/panel/firma/limitler-onaylar");
@@ -259,7 +260,7 @@ public class FirmaPanelController : Controller
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> ReservationApproval(FirmaReservationDecisionModel model, CancellationToken cancellationToken)
     {
-        if (!IsFirmaUser()) return Redirect("/kullanici-giris");
+        if (!IsFirmaUser()) return Redirect("/firma-giris");
         var result = await _firmaService.UpdateReservationApprovalAsync(GetUserId(), model, cancellationToken);
         SetFeedback(result.Success, result.Message);
         return Redirect("/panel/firma/limitler-onaylar");
@@ -269,7 +270,7 @@ public class FirmaPanelController : Controller
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> SaveTheme(otelturizmnew.Models.Paneller.Partner.PanelThemeViewModel theme, CancellationToken cancellationToken = default)
     {
-        if (!IsFirmaUser()) return Redirect("/kullanici-giris");
+        if (!IsFirmaUser()) return Redirect("/firma-giris");
         var result = await _panelThemeService.SaveAsync("firma", GetUserId(), theme, cancellationToken);
         TempData[result.Success ? "FirmaSuccess" : "FirmaError"] = result.Message;
         return Redirect(Request.Headers.Referer.ToString() is { Length: > 0 } refUrl ? refUrl : "/panel/firma/dashboard");

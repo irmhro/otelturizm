@@ -1,5 +1,7 @@
 # Veritabanını Canlıya Yükleme (SQL Server) - Eksiksiz Kılavuz
 
+> **Ana rehber:** [`canlıdeploy.md`](../../canlıdeploy.md) (proje kök dizini)
+
 Bu doküman, `otelturizm_2026db` veritabanı migration/seed dosyalarını canlıya güvenli şekilde uygulama adımlarını içerir.
 
 İlgili ana standart doküman:

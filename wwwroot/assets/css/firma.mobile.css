@@ -1,1 +1,223 @@
-@import url("./firma.css");
+@import url("./public-premium-pages.mobile.css");
+
+@media (max-width: 900px) {
+    .firma-page .public-premium-main {
+        padding-bottom: 72px;
+    }
+
+    .firma-page .fir-hero-shell {
+        margin-bottom: 0;
+    }
+
+    .firma-page .fir-hero-section {
+        padding: 16px 0 12px;
+        gap: 20px;
+    }
+
+    .firma-page .fir-hero-title {
+        font-size: clamp(1.6rem, 6.2vw, 2.05rem);
+    }
+
+    .firma-page .fir-hero-lead {
+        font-size: 0.92rem;
+    }
+
+    .firma-page .fir-process-cards {
+        grid-template-columns: 1fr;
+        gap: 6px;
+    }
+
+    .firma-page .fir-hero-points {
+        grid-template-columns: 1fr;
+        gap: 6px;
+    }
+
+    .firma-page .fir-hero-point {
+        font-size: 0.84rem;
+        padding: 10px 12px;
+    }
+
+    .firma-page .fir-hero-visual {
+        padding: 18px 16px 14px;
+    }
+
+    .firma-page .fir-hero-actions {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 8px;
+    }
+
+    .firma-page .fir-hero-actions .btn-club-pro,
+    .firma-page .fir-hero-actions .btn-club-pro-outline {
+        width: 100%;
+        min-width: 0;
+        min-height: 42px;
+        padding-inline: 8px;
+        font-size: 0.72rem;
+        line-height: 1.15;
+        text-align: center;
+        white-space: normal;
+    }
+
+    .firma-page .fir-hero-actions .btn-club-pro i,
+    .firma-page .fir-hero-actions .btn-club-pro-outline i {
+        display: none;
+    }
+
+    .firma-page .fir-section-nav {
+        padding-top: 8px;
+        margin-bottom: 0;
+    }
+
+    .firma-page .fir-pricing-panel {
+        padding: 14px 12px;
+        border-radius: 12px;
+    }
+
+    .firma-page .fir-tier-grid {
+        grid-template-columns: 1fr;
+        gap: 6px;
+    }
+
+    .firma-page .fir-tier-card {
+        padding: 9px 11px 8px;
+        border-radius: 10px;
+    }
+
+    .firma-page .fir-tier-name {
+        font-size: 0.86rem;
+        margin-bottom: 1px;
+    }
+
+    .firma-page .fir-tier-range {
+        margin-bottom: 4px;
+        font-size: 9px;
+    }
+
+    .firma-page .fir-tier-rate {
+        margin-bottom: 4px;
+        padding: 2px 8px;
+        font-size: 0.76rem;
+    }
+
+    .firma-page .fir-tier-example {
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+        font-size: 9px;
+        line-height: 1.3;
+    }
+
+    .firma-page .fir-tier-note {
+        margin-top: 10px;
+        font-size: 11px;
+        line-height: 1.4;
+    }
+
+    .firma-page .fir-pricing-story {
+        margin-top: 4px;
+        margin-bottom: 4px;
+    }
+
+    .firma-page .fir-steps {
+        grid-template-columns: 1fr;
+    }
+
+    .firma-page .fir-benefits-strip {
+        grid-template-columns: 1fr;
+        gap: 10px;
+    }
+
+    .firma-page .fir-firm-types {
+        grid-template-columns: 1fr;
+        gap: 8px;
+    }
+
+    .firma-page .fir-firm-type {
+        padding: 12px 14px;
+    }
+
+    .firma-page .fir-firm-type-icon {
+        width: 36px;
+        height: 36px;
+        font-size: 0.92rem;
+    }
+
+    .firma-page .fir-faq-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .firma-page .fir-deals-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .firma-page .fir-final-cta {
+        padding: 20px 16px;
+        margin-bottom: 8px;
+    }
+
+    .firma-page .fir-cta-actions {
+        grid-template-columns: 1fr;
+    }
+
+    .firma-page .section-headline {
+        margin-top: 28px;
+        margin-bottom: 10px;
+        font-size: 18px;
+    }
+
+    .firma-page .fir-section-intro {
+        font-size: 12px;
+        margin-bottom: 12px;
+    }
+
+    .firma-page .fir-mobile-cta {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 8px;
+        position: fixed;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        z-index: 900;
+        padding: 10px 14px calc(10px + env(safe-area-inset-bottom));
+        background: rgba(252, 251, 249, 0.96);
+        border-top: 1px solid var(--border-subtle, #EBE9E4);
+        backdrop-filter: blur(12px);
+        -webkit-backdrop-filter: blur(12px);
+        box-shadow: 0 -8px 24px rgba(26, 25, 25, 0.08);
+    }
+
+    .firma-page .fir-mobile-cta-btn {
+        min-height: 44px;
+        padding: 0 8px;
+        border-radius: 10px;
+        font-size: 0.72rem;
+        font-weight: 800;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        line-height: 1.15;
+        text-align: center;
+        white-space: normal;
+    }
+
+    .firma-page .fir-mobile-cta-btn--primary {
+        background: var(--luxury-dark, #1A1919);
+        color: #fff;
+    }
+
+    .firma-page .fir-mobile-cta-btn--ghost {
+        background: #fff;
+        color: var(--luxury-dark, #1A1919);
+        border: 1px solid var(--border-subtle, #EBE9E4);
+        padding-inline: 8px;
+    }
+}
+
+@media (min-width: 901px) {
+    .firma-page .fir-mobile-cta {
+        display: none !important;
+    }
+}

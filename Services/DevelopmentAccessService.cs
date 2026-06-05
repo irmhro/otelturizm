@@ -7,7 +7,7 @@ public sealed class DevelopmentAccessService : IDevelopmentAccessService
 {
     public const string AccessCookieName = "Otelturizm.Gelisim.Access";
     private const string AccessPassword = "908155";
-    private static readonly TimeSpan AccessDuration = TimeSpan.FromHours(10);
+    private static readonly TimeSpan AccessDuration = TimeSpan.FromHours(12);
     private readonly IDataProtector _protector;
 
     public DevelopmentAccessService(IDataProtectionProvider dataProtectionProvider)

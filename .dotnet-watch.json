@@ -1,0 +1,15 @@
+{
+  "hotReloadEnabled": false,
+  "exclude": [
+    "**/Views/**",
+    "**/Pages/**",
+    "**/wwwroot/**",
+    "**/tmp/**",
+    "**/*.py",
+    "**/.coord-build-*/**",
+    "**/bin/**",
+    "**/obj/**",
+    "**/publish/**",
+    "**/Database/Backups/**"
+  ]
+}

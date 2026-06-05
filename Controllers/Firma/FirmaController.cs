@@ -17,6 +17,7 @@ public class FirmaController : Controller
     {
         var model = await _firmaService.GetLandingPageAsync(cancellationToken);
         ViewData["Title"] = "Firma";
+        ViewData["IncludeAnasayfaStyles"] = true;
         return View("~/Views/Firma/Firma.cshtml", model);
     }
 }

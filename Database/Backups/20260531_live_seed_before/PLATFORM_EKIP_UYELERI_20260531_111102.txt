@@ -1,0 +1,15 @@
+ID|AD_SOYAD|UNVAN|EPOSTA|ACIKLAMA|AVATAR_URL|SIRALAMA|AKTIF_MI|OLUSTURULMA_TARIHI|GUNCELLENME_TARIHI
+--|--------|-----|------|--------|----------|--------|--------|------------------|------------------
+1|Deniz Aksoy|Platform yönetimi|info+admin@otelturizm.com|Platform genel yönetimi ve yayın kararları|NULL|10|1|2026-05-31 08:11:04|NULL
+2|İrem Yalçın|İnsan kaynakları|info+ik.yonetici@otelturizm.com|İnsan kaynakları ve ekip süreçleri|NULL|20|1|2026-05-31 08:11:04|NULL
+3|Hande Mert|Hukuk & uyum|info+hukuk.musaviri@otelturizm.com|Hukuki süreçler ve uyum akışları|NULL|30|1|2026-05-31 08:11:04|NULL
+4|Volkan Yıldız|Veri & altyapı|info+dba@otelturizm.com|Veri tabanı ve altyapı yönetimi|NULL|40|1|2026-05-31 08:11:04|NULL
+5|Yiğit Uslu|Uygulama geliştirme|info+yazilim.uzmani@otelturizm.com|Uygulama geliştirme ve teslim süreçleri|NULL|50|1|2026-05-31 08:11:04|NULL
+6|Tolga Levent|Mimari & kod kalitesi|info+teknik.lider@otelturizm.com|Mimari kararlar ve kod standardı|NULL|60|1|2026-05-31 08:11:04|NULL
+7|Pelin Yaman|Büyüme & kampanya|info+pazarlama.yonetici@otelturizm.com|Kampanya ve görünürlük yönetimi|NULL|70|1|2026-05-31 08:11:04|NULL
+8|Derya Uçar|Müşteri destek|info+destek.uzmani@otelturizm.com|Kullanıcı destek süreçleri|NULL|80|1|2026-05-31 08:11:04|NULL
+9|Defne Yıldırım|Destek operasyonları|info+destek.yonetici@otelturizm.com|Destek SLA ve operasyon takibi|NULL|90|1|2026-05-31 08:11:04|NULL
+10|Okan Yalın|Operasyon & SLA|info+operasyon.yonetici@otelturizm.com|Operasyonel kalite ve SLA yönetimi|NULL|100|1|2026-05-31 08:11:04|NULL
+11|Merve Uzun|Muhasebe işlemleri|info+muhasebe.uzmani@otelturizm.com|Muhasebe ve belge akışı|NULL|110|1|2026-05-31 08:11:04|NULL
+12|Faruk Yılmaz|Finans & tahsilat|info+finans.yonetici@otelturizm.com|Komisyon ve tahsilat yönetimi|NULL|120|1|2026-05-31 08:11:04|NULL
+13|Gökhan Mutlu|Yönetim|info+genelmudur@otelturizm.com|Üst yönetim ve stratejik onay akışları|NULL|130|1|2026-05-31 08:11:04|NULL

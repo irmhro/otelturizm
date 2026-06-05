@@ -1,0 +1,129 @@
+/* Admin Panel v6 â€” mobil */
+@media (max-width: 991px) {
+    .firmapanel-v6-shell .admin-sidebar {
+        transform: translateX(-100%);
+    }
+
+    .firmapanel-v6-shell.mobile-open .admin-sidebar {
+        transform: translateX(0);
+    }
+
+    .firmapanel-v6-shell .main-layout {
+        margin-left: 0 !important;
+    }
+
+    .firmapanel-v6-shell .header-search {
+        display: none;
+    }
+
+    .firmapanel-v6-shell .btn-quick-add span {
+        display: none;
+    }
+
+    .firmapanel-v6-shell .btn-quick-add {
+        width: 34px;
+        padding: 0;
+        justify-content: center;
+    }
+
+    .firmapanel-v6-shell .avatar-trigger > i {
+        display: none;
+    }
+
+    .firmapanel-v6-shell .content-body {
+        padding: 16px;
+        padding-bottom: calc(72px + env(safe-area-inset-bottom));
+        gap: 16px;
+    }
+
+    .firmapanel-v6-shell .ap-page-header h1 {
+        font-size: 20px;
+    }
+
+    .firmapanel-v6-shell .kpi-grid-pro {
+        grid-template-columns: 1fr;
+    }
+
+    .firmapanel-v6-shell .admin-sidebar-backdrop {
+        display: block;
+        position: fixed;
+        inset: 0;
+        background: rgba(15, 23, 42, 0.45);
+        z-index: 1035;
+        opacity: 0;
+        visibility: hidden;
+        transition: opacity 0.25s, visibility 0.25s;
+    }
+
+    .firmapanel-v6-shell.mobile-open .admin-sidebar-backdrop {
+        opacity: 1;
+        visibility: visible;
+    }
+
+    .firmapanel-v6-shell .admin-mobile-nav {
+        position: fixed;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        z-index: 1045;
+        display: flex;
+        align-items: stretch;
+        gap: 0;
+        background: var(--fp-surface-card, #fff);
+        border-top: 1px solid var(--fp-border-main, #E2E8F0);
+        padding: 6px 4px calc(6px + env(safe-area-inset-bottom));
+        box-shadow: 0 -4px 20px rgba(15, 23, 42, 0.08);
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    .firmapanel-v6-shell .admin-mobile-nav a,
+    .firmapanel-v6-shell .admin-mobile-nav button {
+        flex: 1 0 auto;
+        min-width: 56px;
+        max-width: 80px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 3px;
+        padding: 6px 4px;
+        font-size: 10px;
+        font-weight: 600;
+        color: #64748B;
+        text-decoration: none;
+        border: none;
+        background: transparent;
+        border-radius: 8px;
+        cursor: pointer;
+    }
+
+    .firmapanel-v6-shell .admin-mobile-nav a i,
+    .firmapanel-v6-shell .admin-mobile-nav button i {
+        font-size: 16px;
+    }
+
+    .firmapanel-v6-shell .admin-mobile-nav a.active,
+    .firmapanel-v6-shell .admin-mobile-nav a:hover,
+    .firmapanel-v6-shell .admin-mobile-nav button:hover {
+        color: var(--fp-primary-red, #DC2626);
+        background: #FFF5F5;
+    }
+
+    .firmapanel-v6-shell .admin-mobile-nav .panel-mobile-logout-form {
+        flex: 1 0 auto;
+        margin: 0;
+        min-width: 56px;
+    }
+}
+
+@media (max-width: 576px) {
+    .firmapanel-v6-shell .global-topbar {
+        padding: 0 10px;
+    }
+
+    .firmapanel-v6-shell .topbar-right {
+        gap: 4px;
+    }
+}
+

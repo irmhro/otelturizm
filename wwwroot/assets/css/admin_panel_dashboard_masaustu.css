@@ -1,0 +1,188 @@
+/* Admin Panel — Dashboard sayfası (masaüstü) */
+.admin-panel-dashboard {
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+}
+
+.admin-panel-dashboard .ap-route-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 14px;
+}
+
+@media (max-width: 1200px) {
+    .admin-panel-dashboard .ap-route-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
+.admin-panel-dashboard .ap-action-tile {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 14px;
+    border-radius: 8px;
+    border: 1px solid var(--ap-border-main, #E2E8F0);
+    background: #fff;
+    text-decoration: none;
+    color: inherit;
+    transition: background 0.15s, border-color 0.15s;
+}
+
+.admin-panel-dashboard .ap-action-tile:hover {
+    background: #FFF5F5;
+    border-color: #FECACA;
+}
+
+.admin-panel-dashboard .ap-action-tile > span:first-child {
+    width: 36px;
+    height: 36px;
+    border-radius: 8px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: #F1F5F9;
+    color: var(--ap-info, #3B82F6);
+    flex-shrink: 0;
+}
+
+.admin-panel-dashboard .ap-action-tile.primary > span:first-child { background: #DBEAFE; color: #1D4ED8; }
+.admin-panel-dashboard .ap-action-tile.warning > span:first-child { background: #FEF3C7; color: #B45309; }
+.admin-panel-dashboard .ap-action-tile.info > span:first-child { background: #DBEAFE; color: #1D4ED8; }
+.admin-panel-dashboard .ap-action-tile.danger > span:first-child { background: #FEE2E2; color: #DC2626; }
+
+.admin-panel-dashboard .ap-action-tile strong {
+    display: block;
+    font-size: 18px;
+    color: var(--ap-primary-dark, #0F172A);
+    line-height: 1;
+}
+
+.admin-panel-dashboard .ap-action-tile small {
+    display: block;
+    font-size: 12px;
+    color: var(--ap-text-light, #64748B);
+    margin-top: 2px;
+}
+
+.admin-panel-dashboard .ap-action-tile > i:last-child {
+    margin-left: auto;
+    color: #94A3B8;
+    font-size: 12px;
+}
+
+.admin-panel-dashboard .ap-action-stack {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.admin-panel-dashboard .ap-chart-bars {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 10px;
+    min-height: 180px;
+    padding: 8px 4px 0;
+}
+
+.admin-panel-dashboard .ap-chart-bar-item {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    min-width: 0;
+}
+
+.admin-panel-dashboard .ap-chart-bar {
+    width: 100%;
+    max-width: 48px;
+    min-height: 8px;
+    border-radius: 6px 6px 2px 2px;
+    background: linear-gradient(180deg, var(--ap-primary-red, #DC2626), #F87171);
+}
+
+.admin-panel-dashboard .ap-chart-bar-item strong {
+    font-size: 13px;
+    color: var(--ap-primary-dark, #0F172A);
+}
+
+.admin-panel-dashboard .ap-chart-bar-item small {
+    font-size: 11px;
+    color: var(--ap-text-light, #64748B);
+    text-align: center;
+}
+
+.admin-panel-dashboard .ap-activity-list {
+    display: flex;
+    flex-direction: column;
+}
+
+.admin-panel-dashboard .ap-activity-item {
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    gap: 12px;
+    align-items: start;
+    padding: 14px 18px;
+    border-bottom: 1px solid #F1F5F9;
+}
+
+.admin-panel-dashboard .ap-activity-item:last-child {
+    border-bottom: none;
+}
+
+.admin-panel-dashboard .ap-activity-item .activity-icon {
+    width: 34px;
+    height: 34px;
+    border-radius: 8px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: #F1F5F9;
+    color: var(--ap-info, #3B82F6);
+    font-size: 13px;
+}
+
+.admin-panel-dashboard .ap-activity-item.info .activity-icon { background: #DBEAFE; color: #1D4ED8; }
+.admin-panel-dashboard .ap-activity-item.success .activity-icon { background: #DEF7EC; color: #059669; }
+.admin-panel-dashboard .ap-activity-item.warning .activity-icon { background: #FEF3C7; color: #B45309; }
+.admin-panel-dashboard .ap-activity-item.danger .activity-icon { background: #FEE2E2; color: #DC2626; }
+
+.admin-panel-dashboard .ap-activity-item strong {
+    font-size: 13px;
+    color: var(--ap-primary-dark, #0F172A);
+}
+
+.admin-panel-dashboard .ap-activity-item p {
+    margin: 3px 0 0;
+    font-size: 12px;
+    color: var(--ap-text-light, #64748B);
+}
+
+.admin-panel-dashboard .ap-activity-item > small {
+    font-size: 11px;
+    color: #94A3B8;
+    white-space: nowrap;
+}
+
+.admin-panel-dashboard .ap-empty-panel {
+    padding: 24px 18px;
+    text-align: center;
+    color: var(--ap-text-light, #64748B);
+    font-size: 13px;
+}
+
+.admin-panel-dashboard .ap-mini-metrics {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px 16px;
+    font-size: 12px;
+    color: var(--ap-text-light, #64748B);
+}
+
+.admin-panel-dashboard .ap-mini-metrics strong {
+    color: var(--ap-primary-dark, #0F172A);
+    margin-left: 4px;
+}

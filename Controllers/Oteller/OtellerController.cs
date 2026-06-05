@@ -79,8 +79,8 @@ public class OtellerController : Controller
     public async Task<IActionResult> OtelListeleme([FromQuery] string? q, [FromQuery] string? city, [FromQuery] string? etiket, [FromQuery] string? filter, [FromQuery] string? kampanya, [FromQuery] int page, CancellationToken cancellationToken)
     {
         var listingCulture = ApplyRouteListingCulture();
-        ViewData["PageCss"] = "otel-listeleme";
-        ViewData["PageCssMobile"] = "otel-listeleme.mobile";
+        ViewData["PageCss"] = "otelliste_masaustu";
+        ViewData["PageCssMobile"] = "otelliste_mobil";
         var searchTermRaw = !string.IsNullOrWhiteSpace(q) ? q : city;
         var searchTerm = SearchTextNormalizer.Normalize(searchTermRaw);
         var etiketN = HotelService.ResolveListingCampaignTag(etiket, filter);
@@ -122,7 +122,6 @@ public class OtellerController : Controller
     }
 
     [HttpGet("{slug}")]
-    [OutputCache(PolicyName = "public-short")]
     public async Task<IActionResult> OtelDetay(string slug, CancellationToken cancellationToken)
     {
         var detailCulture = ApplyRouteListingCulture();
@@ -225,8 +224,8 @@ public class OtellerController : Controller
         var detailMeta = _internationalSeo.BuildHotelDetailMeta(detailCulture, model.Name, model.City);
         ViewData["Title"] = detailMeta.Title;
         ViewData["MetaDescription"] = detailMeta.Description;
-        ViewData["PageCss"] = "paneller/otel/otel-detay";
-        ViewData["PageCssMobile"] = "paneller/otel/otel-detay.mobile";
+        ViewData["PageCss"] = "oteldetay_masaustu";
+        ViewData["PageCssMobile"] = "oteldetay_mobil";
         ViewData["SuppressGlobalDraftBanner"] = true;
         ApplyDetailSeoViewData(slug, detailCulture);
         return View("~/Views/Oteller/OtelDetay.cshtml", model);
@@ -471,6 +470,9 @@ public class OtellerController : Controller
             accommodationTaxAmount = quote.AccommodationTaxAmount,
             roomTotal = quote.RoomTotal,
             taxAmount = quote.TaxAmount,
+            originalTotalAmount = quote.OriginalTotalAmount,
+            dawnSurprisePercent = quote.DawnSurprisePercent,
+            dawnSurpriseDiscountAmount = quote.DawnSurpriseDiscountAmount,
             totalAmount = quote.TotalAmount,
             nightlyBreakdown = quote.NightlyBreakdown.Select(item => new
             {

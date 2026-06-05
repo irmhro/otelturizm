@@ -1,0 +1,16 @@
+ID|KATEGORI_ADI|SEO_SLUG|KATEGORI_IKON|KISA_ACIKLAMA|RENK_KODU|SIRALAMA|DURUM|OLUSTURULMA_TARIHI|GUNCELLENME_TARIHI
+--|------------|--------|-------------|-------------|---------|--------|-----|------------------|------------------
+1|Rezervasyonlar|rezervasyonlar|fa-calendar-check|Değişiklik, iptal ve onay süreçleri|#0b57d0|10|1|2026-05-31 08:11:04|2026-05-31 08:11:04
+2|Ödemeler|odemeler|fa-credit-card|İade, fatura ve ödeme yöntemleri|#116466|20|1|2026-05-31 08:11:04|2026-05-31 08:11:04
+3|Hesabım|hesabim|fa-user-shield|Giriş, profil ve güvenlik adımları|#7c3aed|30|1|2026-05-31 08:11:04|2026-05-31 08:11:04
+4|Otel Bilgileri|otel-bilgileri|fa-hotel|Olanaklar, konum ve tesis içerikleri|#c05621|40|1|2026-05-31 08:11:04|2026-05-31 08:11:04
+5|Kanal Entegrasyonu|kanal-entegrasyonu|fa-plug|Kanal eşleşmeleri ve entegrasyon yönetimi|#1d4ed8|50|1|2026-05-31 08:11:04|2026-05-31 08:11:04
+6|Fiyat ve Komisyon|fiyat-ve-komisyon|fa-percent|Fiyat paritesi, komisyon ve marj yönetimi|#0f766e|60|1|2026-05-31 08:11:04|2026-05-31 08:11:04
+7|Rezervasyon Operasyonu|rezervasyon-operasyonu|fa-bell-concierge|No-show, tarih değişikliği ve müsaitlik yönetimi|#9a3412|70|1|2026-05-31 08:11:04|2026-05-31 08:11:04
+8|Ödeme ve Mutabakat|odeme-ve-mutabakat|fa-file-invoice-dollar|Ödeme akışı, fatura ve tahsilat mutabakatı|#1e40af|80|1|2026-05-31 08:11:04|2026-05-31 08:11:04
+9|İçerik ve Görsel Kalite|icerik-ve-gorsel-kalite|fa-images|Listeleme metinleri, görseller ve içerik kalitesi|#6d28d9|90|1|2026-05-31 08:11:04|2026-05-31 08:11:04
+10|Puan ve Yorum Yönetimi|puan-ve-yorum-yonetimi|fa-star-half-stroke|Misafir puanı, yorum ve itibar yönetimi|#b45309|100|1|2026-05-31 08:11:04|2026-05-31 08:11:04
+11|Kampanya ve Görünürlük|kampanya-ve-gorunurluk|fa-bullhorn|Promosyon, vitrin ve görünürlük optimizasyonu|#be185d|110|1|2026-05-31 08:11:04|2026-05-31 08:11:04
+12|Güvenlik ve Sahtecilik|guvenlik-ve-sahtecilik|fa-shield-halved|Dolandırıcılık, sahte rezervasyon ve hesap güvenliği|#991b1b|120|1|2026-05-31 08:11:04|2026-05-31 08:11:04
+13|Firma Rezervasyonları|firma-rezervasyonlari|fa-building|Kurumsal rezervasyon, toplu konaklama ve faturalama|#1f2937|130|1|2026-05-31 08:11:04|2026-05-31 08:11:04
+14|Satış Operasyonu|satis-operasyonu|fa-chart-line|Satış ekibi teklif, dönüşüm ve takip akışları|#065f46|140|1|2026-05-31 08:11:04|2026-05-31 08:11:04

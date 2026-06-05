@@ -177,6 +177,7 @@ builder.Services.AddScoped<IAdminRbacService, AdminRbacService>();
 builder.Services.AddScoped<IDepartmentPanelService, DepartmentPanelService>();
 builder.Services.AddScoped<ICurrencyFormatter, CurrencyFormatter>();
 builder.Services.AddScoped<IUserPreferenceService, UserPreferenceService>();
+builder.Services.AddScoped<IDawnSurpriseService, DawnSurpriseService>();
 builder.Services.AddScoped<IPublicTextService, PublicTextService>();
 builder.Services.AddScoped<ITimeZoneService, TimeZoneService>();
 builder.Services.AddScoped<ICacheSingleFlight, CacheSingleFlight>();
@@ -193,6 +194,7 @@ builder.Services.AddScoped<IFirmaService, FirmaService>();
 builder.Services.AddScoped<IHotelService, HotelService>();
 builder.Services.AddScoped<IHotelPricingReadService, HotelPricingReadService>();
 builder.Services.AddScoped<IHeaderBildiriService, HeaderBildiriService>();
+builder.Services.AddScoped<IOzelGunService, OzelGunService>();
 builder.Services.AddScoped<IFavoritePriceAlertService, FavoritePriceAlertService>();
 builder.Services.AddScoped<IPhoneVerificationService, PhoneVerificationService>();
 builder.Services.AddScoped<IEmailTemplateService, EmailTemplateService>();
@@ -307,16 +309,22 @@ builder.Services.Configure<CookiePolicyOptions>(options =>
 builder.Services.AddHsts(options =>
 {
     options.MaxAge = TimeSpan.FromDays(365);
-    options.IncludeSubDomains = true;
+    options.IncludeSubDomains = builder.Configuration.GetValue("Security:HstsIncludeSubDomains", false);
     options.Preload = builder.Configuration.GetValue("Security:HstsPreload", false);
 });
 
 builder.Services.Configure<ForwardedHeadersOptions>(options =>
 {
-    options.ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto;
-    // Not: Network/Proxy allowlist ortamdan yönetilebilir; burada güvenli varsayılanla başlıyoruz.
+    options.ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto | ForwardedHeaders.XForwardedHost;
+    options.ForwardLimit = null;
+    options.AllowedHosts.Clear();
     options.KnownIPNetworks.Clear();
     options.KnownProxies.Clear();
+});
+
+builder.Services.Configure<Microsoft.AspNetCore.HttpsPolicy.HttpsRedirectionOptions>(options =>
+{
+    options.HttpsPort = 443;
 });
 
 static string BuildReservationCreatePartitionKey(HttpContext httpContext)
@@ -356,6 +364,30 @@ static bool IsLoopbackRequest(HttpContext context)
         || string.Equals(host, "127.0.0.1", StringComparison.OrdinalIgnoreCase)
         || string.Equals(host, "::1", StringComparison.OrdinalIgnoreCase)
         || host.EndsWith(".localhost", StringComparison.OrdinalIgnoreCase);
+}
+
+static bool IsForwardedHttpsRequest(HttpRequest request)
+{
+    var forwardedProto = request.Headers["X-Forwarded-Proto"].ToString();
+    if (!string.IsNullOrWhiteSpace(forwardedProto))
+    {
+        var proto = forwardedProto.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries).FirstOrDefault();
+        if (string.Equals(proto, Uri.UriSchemeHttps, StringComparison.OrdinalIgnoreCase))
+        {
+            return true;
+        }
+    }
+
+    if (string.Equals(request.Headers["X-Forwarded-Ssl"].ToString(), "on", StringComparison.OrdinalIgnoreCase) ||
+        string.Equals(request.Headers["X-Url-Scheme"].ToString(), Uri.UriSchemeHttps, StringComparison.OrdinalIgnoreCase) ||
+        string.Equals(request.Headers["Front-End-Https"].ToString(), "on", StringComparison.OrdinalIgnoreCase))
+    {
+        return true;
+    }
+
+    var cfVisitor = request.Headers["CF-Visitor"].ToString();
+    return !string.IsNullOrWhiteSpace(cfVisitor) &&
+        cfVisitor.IndexOf("\"https\"", StringComparison.OrdinalIgnoreCase) >= 0;
 }
 
 /// <summary>Genel otel/kampanya sayfaları indekslenebilir kalsın; panel ve giriş yollarında noindex.</summary>
@@ -665,6 +697,36 @@ if (runMigrations)
 // Configure the HTTP request pipeline.
 app.UseForwardedHeaders();
 
+// Reverse proxy arkasında HTTPS şeması bazen origin'e HTTP olarak düşebilir.
+// Antiforgery/Cookie secure policy kırılmaması için standart proxy header'larından scheme normalize edilir.
+app.Use((context, next) =>
+{
+    if (!context.Request.IsHttps)
+    {
+        if (IsForwardedHttpsRequest(context.Request))
+        {
+            context.Request.Scheme = Uri.UriSchemeHttps;
+        }
+    }
+
+    return next();
+});
+
+// Proxy dışından gelen düz HTTP GET/HEAD isteklerinde önce açık hedefle HTTPS'e al.
+app.Use((context, next) =>
+{
+    if (!context.Request.IsHttps &&
+        !IsLoopbackRequest(context) &&
+        (HttpMethods.IsGet(context.Request.Method) || HttpMethods.IsHead(context.Request.Method)))
+    {
+        var target = $"https://{context.Request.Host}{context.Request.PathBase}{context.Request.Path}{context.Request.QueryString}";
+        context.Response.Redirect(target, permanent: true);
+        return Task.CompletedTask;
+    }
+
+    return next();
+});
+
 // Canonical lowercase paths for Turkish SEO routes (e.g. /Oteller → /oteller).
 app.Use(async (context, next) =>
 {
@@ -705,6 +767,7 @@ app.UseHttpsRedirection();
 app.UseResponseCompression();
 app.UseRequestLocalization(app.Services.GetRequiredService<Microsoft.Extensions.Options.IOptions<RequestLocalizationOptions>>().Value);
 app.UseCookiePolicy();
+app.UseStaticFiles();
 
 app.Use(async (context, next) =>
 {
@@ -867,6 +930,23 @@ app.Use(async (context, next) =>
     {
         try
         {
+            var logger = context.RequestServices
+                .GetRequiredService<ILoggerFactory>()
+                .CreateLogger("UnhandledRequest");
+            logger.LogError(ex,
+                "UNHANDLED_REQUEST {Method} {Path}{QueryString} (trace={TraceId})",
+                context.Request.Method,
+                context.Request.Path.Value ?? string.Empty,
+                context.Request.QueryString.HasValue ? context.Request.QueryString.Value : string.Empty,
+                context.TraceIdentifier);
+        }
+        catch
+        {
+            // fail-safe
+        }
+
+        try
+        {
             var audit = context.RequestServices.GetRequiredService<IAuditLogService>();
             await audit.TryLogExceptionAsync(context, ex, context.RequestAborted);
         }
@@ -959,8 +1039,6 @@ app.Use(async (context, next) =>
 
     await next();
 });
-
-app.MapStaticAssets();
 
 app.MapHealthChecks("/health/platform", new HealthCheckOptions
     {

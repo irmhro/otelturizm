@@ -24,6 +24,8 @@ public class PublicReservationService : IPublicReservationService
     private readonly IPhoneVerificationService _phoneVerificationService;
     private readonly ISecureFileService _secureFileService;
     private readonly IWeatherService _weatherService;
+    private readonly IDawnSurpriseService _dawnSurpriseService;
+    private readonly IHttpContextAccessor _httpContextAccessor;
     private readonly ILogger<PublicReservationService> _logger;
 
     public PublicReservationService(
@@ -34,6 +36,8 @@ public class PublicReservationService : IPublicReservationService
         IPhoneVerificationService phoneVerificationService,
         ISecureFileService secureFileService,
         IWeatherService weatherService,
+        IDawnSurpriseService dawnSurpriseService,
+        IHttpContextAccessor httpContextAccessor,
         ILogger<PublicReservationService> logger)
     {
         _connectionString = configuration.GetConnectionString("DefaultConnection")
@@ -44,6 +48,8 @@ public class PublicReservationService : IPublicReservationService
         _phoneVerificationService = phoneVerificationService;
         _secureFileService = secureFileService;
         _weatherService = weatherService;
+        _dawnSurpriseService = dawnSurpriseService;
+        _httpContextAccessor = httpContextAccessor;
         _logger = logger;
     }
 
@@ -54,9 +60,69 @@ public class PublicReservationService : IPublicReservationService
     {
         await using var connection = await OpenConnectionAsync(cancellationToken);
         var pricing = await BuildPriceSummaryAsync(connection, roomTypeId, checkInDate, checkOutDate, roomCount, cancellationToken);
+        var quote = MapPriceQuoteViewModel(pricing);
+        quote.NightCount = Math.Max(1, checkOutDate.DayNumber - checkInDate.DayNumber);
+        return quote;
+    }
+
+    private void ApplyDawnSurpriseToSummary(PriceSummary pricing)
+    {
+        if (!pricing.IsAvailable || _httpContextAccessor.HttpContext is not { } httpContext)
+        {
+            return;
+        }
+
+        var dawnPercent = _dawnSurpriseService.GetActive(httpContext)?.Percent ?? 0;
+        if (dawnPercent <= 0)
+        {
+            return;
+        }
+
+        var total = pricing.TotalAmount;
+        var net = pricing.NetRoomAmount;
+        var vat = pricing.VatAmount;
+        var acc = pricing.AccommodationTaxAmount;
+        var tax = pricing.TaxAmount;
+        if (DawnSurprisePricing.TryApplyPercent(ref total, ref net, ref vat, ref acc, ref tax, dawnPercent))
+        {
+            pricing.TotalAmount = total;
+            pricing.NetRoomAmount = net;
+            pricing.VatAmount = vat;
+            pricing.AccommodationTaxAmount = acc;
+            pricing.TaxAmount = tax;
+        }
+    }
+
+    private PublicReservationPriceQuoteViewModel MapPriceQuoteViewModel(PriceSummary pricing)
+    {
+        var originalTotal = pricing.TotalAmount;
+        var dawnPercent = _httpContextAccessor.HttpContext is { } httpContext
+            ? _dawnSurpriseService.GetActive(httpContext)?.Percent ?? 0
+            : 0;
+        var discountAmount = 0m;
+        if (pricing.IsAvailable && dawnPercent > 0)
+        {
+            var total = pricing.TotalAmount;
+            var net = pricing.NetRoomAmount;
+            var vat = pricing.VatAmount;
+            var acc = pricing.AccommodationTaxAmount;
+            var tax = pricing.TaxAmount;
+            if (DawnSurprisePricing.TryApplyPercent(ref total, ref net, ref vat, ref acc, ref tax, dawnPercent))
+            {
+                pricing.TotalAmount = total;
+                pricing.NetRoomAmount = net;
+                pricing.VatAmount = vat;
+                pricing.AccommodationTaxAmount = acc;
+                pricing.TaxAmount = tax;
+                discountAmount = originalTotal - total;
+            }
+        }
+
         return new PublicReservationPriceQuoteViewModel
         {
-            NightCount = Math.Max(1, checkOutDate.DayNumber - checkInDate.DayNumber),
+            NightCount = pricing.NightlyBreakdown.Count > 0
+                ? pricing.NightlyBreakdown.Count
+                : 1,
             NightlyPrice = pricing.NightlyPrice,
             RoomTotal = pricing.RoomTotal,
             NetRoomAmount = pricing.NetRoomAmount,
@@ -65,6 +131,9 @@ public class PublicReservationService : IPublicReservationService
             AccommodationTaxRate = pricing.AccommodationTaxRate,
             AccommodationTaxAmount = pricing.AccommodationTaxAmount,
             TaxAmount = pricing.TaxAmount,
+            OriginalTotalAmount = originalTotal,
+            DawnSurprisePercent = dawnPercent,
+            DawnSurpriseDiscountAmount = discountAmount,
             TotalAmount = pricing.TotalAmount,
             IsAvailable = pricing.IsAvailable,
             AvailabilityMessage = pricing.AvailabilityMessage,
@@ -123,6 +192,7 @@ public class PublicReservationService : IPublicReservationService
             }
 
             var pricing = await BuildPriceSummaryAsync(connection, selection.RoomTypeId, selection.CheckInDate, selection.CheckOutDate, Math.Max(1, selection.RoomCount), cancellationToken);
+            ApplyDawnSurpriseToSummary(pricing);
             if (!pricing.IsAvailable)
             {
                 return new PublicReservationResult
@@ -137,6 +207,9 @@ public class PublicReservationService : IPublicReservationService
         }
 
         var totalAmountOverall = perRoomPricing.Sum(x => x.Pricing.TotalAmount);
+        var dawnPercent = _httpContextAccessor.HttpContext is { } httpContext
+            ? _dawnSurpriseService.GetActive(httpContext)?.Percent ?? 0
+            : 0;
 
         if (!TryBuildPaymentAllocation(form, totalAmountOverall, out var paymentPlan, out var paymentPlanError))
         {
@@ -147,6 +220,7 @@ public class PublicReservationService : IPublicReservationService
             };
         }
 
+        var dawnNote = dawnPercent > 0 ? $" SafakSurpriz:%{dawnPercent}." : string.Empty;
         var draftRequest = new ReservationDraftUpsertRequest
         {
             UserId = userId,
@@ -169,9 +243,9 @@ public class PublicReservationService : IPublicReservationService
             TotalAmount = totalAmountOverall,
             ReturnUrl = $"/oteller/{hotel.Slug}?continueDraft=1",
             ProfileCompletionUrl = $"/oteller/{hotel.Slug}?continueDraft=1&openProfile=1",
-            Notes = string.IsNullOrWhiteSpace(form.RoomsJson)
+            Notes = (string.IsNullOrWhiteSpace(form.RoomsJson)
                 ? "Public otel detay sayfasindan baslatildi."
-                : "Public otel detay sayfasindan baslatildi. RoomsJson=" + form.RoomsJson,
+                : "Public otel detay sayfasindan baslatildi. RoomsJson=" + form.RoomsJson) + dawnNote,
             GuestUlkeId = null
         };
 

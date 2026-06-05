@@ -1,0 +1,445 @@
+/* Otel listeleme — mobil (/oteller) · anasayfa premium şablon, köşesiz kartlar */
+
+@media (max-width: 900px) {
+    .otelliste-page-shell .public-premium-main {
+        padding: 0 0 16px;
+    }
+
+    .otelliste-page-shell.anasayfa-page .otelliste-page {
+        --home-type-section: 20px;
+        --home-type-section-link: 12px;
+        --home-type-card-title: 14px;
+        --home-type-card-location: 12px;
+        --home-type-card-meta: 11px;
+        --home-type-card-action: 12px;
+        --home-type-field-sub: 11px;
+        --home-type-input-value: 14px;
+        --home-type-btn: 12px;
+        --home-btn-min-height: 40px;
+        --home-card-media-h: 180px;
+        --otl-media-ratio: 56.25%;
+    }
+
+    .otelliste-page {
+        padding: 0 0 calc(88px + env(safe-area-inset-bottom, 0px));
+        overflow-x: hidden;
+    }
+
+    .otelliste-page .otelliste-page-hero-inner {
+        padding: 12px 16px 14px;
+    }
+
+    .otelliste-page .otelliste-page-hero {
+        margin-bottom: 0;
+    }
+
+    .otelliste-page .otelliste-top-search-panel {
+        padding: 0;
+        margin-bottom: 0;
+    }
+
+    .otelliste-page .otelliste-top-search-row {
+        flex-wrap: wrap;
+        border-radius: 0;
+        gap: 0;
+    }
+
+    .otelliste-page .otelliste-top-search-icon {
+        order: 1;
+        width: 44px;
+        min-width: 44px;
+        min-height: 44px;
+    }
+
+    .otelliste-page .otelliste-top-search-input {
+        width: 100%;
+        flex: 1 1 100%;
+        order: 2;
+        padding: 10px 14px;
+        font-size: 14px;
+        border-top: 1px solid var(--otl-border, #EBE9E4);
+    }
+
+    .otelliste-page .otelliste-top-search-btn {
+        order: 3;
+        width: 100%;
+        min-height: 44px;
+        border-left: 0;
+        border-top: 1px solid rgba(255, 255, 255, 0.12);
+    }
+
+    .otelliste-page .otelliste-active-criteria {
+        margin-top: 8px;
+        gap: 6px;
+    }
+
+    .otelliste-page .otelliste-criteria-chip {
+        max-width: 160px;
+        font-size: 11px;
+    }
+
+    .otelliste-page .otelliste-criteria-clear {
+        margin-left: 0;
+        width: 100%;
+        text-align: right;
+    }
+
+    .otelliste-page .otelliste-container {
+        flex-direction: column;
+        padding: 0 16px;
+        gap: 0;
+        max-width: 100%;
+    }
+
+    .otelliste-page .otelliste-filter-sidebar {
+        display: none;
+    }
+
+    /* Sticky mobil araç çubuğu */
+    .otelliste-page .otelliste-mobile-bar {
+        display: flex;
+        position: sticky;
+        top: calc(var(--home-header-sticky-h, 56px));
+        z-index: 90;
+        margin: 0 -16px 12px;
+        padding: 10px 16px;
+        background: rgba(252, 251, 249, 0.94);
+        backdrop-filter: blur(16px);
+        -webkit-backdrop-filter: blur(16px);
+        border-bottom: 1px solid var(--otl-border, #EBE9E4);
+        gap: 8px;
+        box-shadow: 0 4px 14px rgba(26, 25, 25, 0.04);
+    }
+
+    .otelliste-page .otelliste-mobile-filter-btn {
+        flex: 1.1;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 7px;
+        min-height: var(--home-btn-min-height, 40px);
+        padding: 0 14px;
+        border-radius: 0;
+        border: 1px solid var(--otl-border, #EBE9E4);
+        background: #fff;
+        font-weight: 800;
+        font-size: var(--otl-type-btn, 12px);
+        font-family: inherit;
+        color: var(--otl-dark, #1A1919);
+        cursor: pointer;
+        box-shadow: none;
+    }
+
+    .otelliste-page .otelliste-mobile-filter-btn i {
+        color: var(--otl-crimson, #E30A17);
+        font-size: 13px;
+    }
+
+    .otelliste-page .otelliste-mobile-filter-btn .otelliste-filter-count {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-width: 18px;
+        height: 18px;
+        padding: 0 5px;
+        border-radius: 0;
+        background: var(--otl-crimson, #E30A17);
+        color: #fff;
+        font-size: 10px;
+        font-weight: 800;
+    }
+
+    .otelliste-page .otelliste-mobile-filter-btn .otelliste-filter-count:empty,
+    .otelliste-page .otelliste-mobile-filter-btn .otelliste-filter-count[data-count="0"] {
+        display: none;
+    }
+
+    .otelliste-page .otelliste-mobile-sort {
+        flex: 1;
+        min-width: 0;
+    }
+
+    .otelliste-page .otelliste-mobile-sort select {
+        width: 100%;
+        min-height: var(--home-btn-min-height, 40px);
+        padding: 0 12px;
+        border-radius: 0;
+        border: 1px solid var(--otl-border, #EBE9E4);
+        background: #fff;
+        font-weight: 700;
+        font-size: var(--otl-type-card-meta, 11px);
+        font-family: inherit;
+        color: var(--otl-dark, #1A1919);
+    }
+
+    .otelliste-page .otelliste-mobile-map-btn {
+        flex-shrink: 0;
+        width: var(--home-btn-min-height, 40px);
+        height: var(--home-btn-min-height, 40px);
+        border-radius: 0;
+        border: 1px solid var(--otl-border, #EBE9E4);
+        background: #fff;
+        color: var(--otl-dark, #1A1919);
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        text-decoration: none;
+        box-shadow: none;
+    }
+
+    .otelliste-page .otelliste-mobile-map-btn i {
+        font-size: 14px;
+        color: var(--otl-crimson, #E30A17);
+    }
+
+    /* Başlık alanı */
+    .otelliste-page .otelliste-results-head {
+        margin-bottom: 12px;
+        padding: 12px 14px;
+        gap: 10px;
+    }
+
+    .otelliste-page .otelliste-page-title {
+        font-size: var(--otl-type-section, 20px);
+    }
+
+    .otelliste-page .otelliste-page-title::before {
+        height: 16px;
+    }
+
+    .otelliste-page .otelliste-page-sub {
+        margin-left: 13px;
+        font-size: var(--otl-type-card-location, 12px);
+    }
+
+    .otelliste-page .otelliste-results-meta .otelliste-sort {
+        display: none;
+    }
+
+    .otelliste-page .otelliste-toolbar-actions {
+        display: none;
+    }
+
+    .otelliste-page .otelliste-count {
+        font-size: var(--otl-type-card-meta, 11px);
+        padding: 5px 12px;
+    }
+
+    /* Konsept bar */
+    .otelliste-page .otelliste-concept-bar {
+        margin: 0 -4px 12px;
+        padding: 0 4px 6px;
+    }
+
+    .otelliste-page .otelliste-concept-pill {
+        padding: 6px 12px;
+        font-size: var(--otl-type-card-meta, 11px);
+    }
+
+    /* Tek sütun kart grid */
+    .otelliste-page .otelliste-hotel-grid {
+        grid-template-columns: 1fr;
+        gap: 14px;
+    }
+
+    .otelliste-page .otelliste-hotel-card {
+        border-radius: 0;
+        box-shadow: 0 1px 0 rgba(26, 25, 25, 0.04);
+    }
+
+    .otelliste-page .otelliste-hotel-card:active {
+        transform: scale(0.995);
+    }
+
+    .otelliste-page .otelliste-card-media {
+        padding-top: var(--otl-media-ratio, 56.25%);
+    }
+
+    .otelliste-page .otelliste-card-body {
+        padding: 12px 14px 14px;
+        gap: 5px;
+    }
+
+    .otelliste-page .otelliste-card-title {
+        font-size: var(--otl-type-card-title, 14px);
+    }
+
+    .otelliste-page .otelliste-card-price {
+        font-size: 17px;
+    }
+
+    .otelliste-page .otelliste-card-foot {
+        align-items: center;
+    }
+
+    .otelliste-page .otelliste-card-cta {
+        min-height: 34px;
+        padding: 0 14px;
+        display: inline-flex;
+        align-items: center;
+        background: var(--otl-dark, #1A1919);
+        color: #fff;
+        border-radius: 0;
+        font-size: var(--otl-type-card-action, 12px);
+    }
+
+    .otelliste-page .otelliste-card-cta:hover {
+        background: var(--otl-crimson, #E30A17);
+        color: #fff;
+    }
+
+    /* Tam ekran filtre drawer */
+    .otelliste-page .otelliste-filter-drawer {
+        display: flex;
+        flex-direction: column;
+        position: fixed;
+        inset: 0;
+        z-index: 1200;
+        background: #fff;
+        transform: translateX(100%);
+        transition: transform 0.28s cubic-bezier(0.4, 0, 0.2, 1);
+        overflow: hidden;
+    }
+
+    .otelliste-page .otelliste-filter-drawer.is-open {
+        transform: translateX(0);
+    }
+
+    .otelliste-page .otelliste-filter-drawer-head {
+        flex-shrink: 0;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 14px 16px;
+        background: rgba(255, 255, 255, 0.98);
+        border-bottom: 1px solid var(--otl-border, #EBE9E4);
+        backdrop-filter: blur(12px);
+    }
+
+    .otelliste-page .otelliste-filter-drawer-head h2 {
+        margin: 0;
+        font-size: var(--otl-type-section, 20px);
+        font-weight: 800;
+        letter-spacing: -0.02em;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .otelliste-page .otelliste-filter-drawer-head h2::before {
+        content: '';
+        width: 4px;
+        height: 16px;
+        background: var(--otl-sun, #FF9E00);
+        border-radius: 2px;
+    }
+
+    .otelliste-page .otelliste-filter-drawer-close {
+        width: 38px;
+        height: 38px;
+        border: 1px solid var(--otl-border, #EBE9E4);
+        border-radius: 0;
+        background: var(--otl-bg, #FCFBF9);
+        font-size: 16px;
+        cursor: pointer;
+        color: var(--otl-dark, #1A1919);
+    }
+
+    .otelliste-page .otelliste-filter-drawer-body {
+        flex: 1;
+        overflow-y: auto;
+        padding: 16px;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    .otelliste-page .otelliste-filter-drawer-body .otelliste-filter-group > label,
+    .otelliste-page .otelliste-filter-drawer-body .otelliste-filter-group > .otelliste-filter-label {
+        font-size: var(--otl-type-field-sub, 11px);
+    }
+
+    .otelliste-page .otelliste-filter-drawer-body .otelliste-field,
+    .otelliste-page .otelliste-filter-drawer-body select,
+    .otelliste-page .otelliste-filter-drawer-body input {
+        font-size: var(--otl-type-input-value, 14px);
+        min-height: var(--home-btn-min-height, 40px);
+    }
+
+    .otelliste-page .otelliste-filter-drawer-body .otelliste-check-list {
+        max-height: none;
+    }
+
+    .otelliste-page .otelliste-filter-drawer-foot {
+        flex-shrink: 0;
+        display: grid;
+        grid-template-columns: 1fr 1.2fr;
+        gap: 8px;
+        padding: 12px 16px calc(12px + env(safe-area-inset-bottom, 0px));
+        background: linear-gradient(180deg, rgba(255, 255, 255, 0.88), #fff);
+        border-top: 1px solid var(--otl-border, #EBE9E4);
+        box-shadow: 0 -8px 20px rgba(26, 25, 25, 0.06);
+    }
+
+    .otelliste-page .otelliste-filter-drawer .otelliste-btn-reset {
+        margin-top: 0;
+    }
+
+    .otelliste-page .otelliste-filter-drawer .otelliste-btn-apply {
+        display: block;
+        background: var(--otl-crimson, #E30A17);
+        border: 0;
+        color: #fff;
+    }
+
+    .otelliste-page .otelliste-filter-drawer .otelliste-btn-apply:active {
+        transform: scale(0.98);
+    }
+
+    .otelliste-page .otelliste-filter-overlay {
+        display: block;
+        position: fixed;
+        inset: 0;
+        z-index: 1190;
+        background: rgba(26, 25, 25, 0.48);
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity 0.25s ease;
+    }
+
+    .otelliste-page .otelliste-filter-overlay.is-open {
+        opacity: 1;
+        pointer-events: auto;
+    }
+
+    .otelliste-page .otelliste-pagination {
+        margin-top: 18px;
+        gap: 5px;
+    }
+
+    .otelliste-page .otelliste-pagination a {
+        min-width: 36px;
+        height: 36px;
+        font-size: var(--otl-type-card-meta, 11px);
+    }
+
+    .otelliste-page .otelliste-empty {
+        padding: 32px 18px;
+    }
+
+    .otelliste-page .otelliste-empty h2 {
+        font-size: var(--otl-type-section, 20px);
+    }
+}
+
+@media (prefers-reduced-motion: reduce) and (max-width: 900px) {
+    .otelliste-page .otelliste-filter-drawer {
+        transition: none;
+    }
+
+    .otelliste-page .otelliste-filter-overlay {
+        transition: none;
+    }
+
+    .otelliste-page .otelliste-hotel-card:active {
+        transform: none;
+    }
+}

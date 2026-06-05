@@ -83,9 +83,29 @@
 
 .yanbar-panel__head {
     display: flex;
-    align-items: center;
+    align-items: flex-start;
     justify-content: space-between;
-    margin-bottom: 14px;
+    gap: 14px;
+    margin-bottom: 16px;
+}
+
+.yanbar-panel__title-wrap {
+    min-width: 0;
+}
+
+.yanbar-panel__eyebrow {
+    display: inline-flex;
+    align-items: center;
+    min-height: 26px;
+    padding: 0 10px;
+    border-radius: 999px;
+    background: rgba(29, 78, 216, 0.08);
+    color: #1d4ed8;
+    font-size: 11px;
+    font-weight: 900;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    margin-bottom: 8px;
 }
 
 .yanbar-panel__head h3 {
@@ -93,6 +113,13 @@
     font-size: 19px;
     font-weight: 900;
     color: #0f172a;
+}
+
+.yanbar-panel__subtitle {
+    margin: 6px 0 0;
+    color: #64748b;
+    font-size: 13px;
+    line-height: 1.45;
 }
 
 .yanbar-panel__close {
@@ -113,21 +140,22 @@
 
 .yanbar-links {
     display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 12px;
 }
 
 .yanbar-link {
     display: grid;
-    grid-template-columns: 42px 1fr;
-    align-items: center;
-    gap: 10px;
+    grid-template-columns: 1fr;
+    align-content: start;
+    gap: 12px;
     border: 1px solid #dbe5f2;
-    border-radius: 16px;
-    padding: 12px 13px;
+    border-radius: 18px;
+    padding: 14px;
     text-decoration: none;
     color: #0f172a;
     background: linear-gradient(180deg, #ffffff, #f8fbff);
-    box-shadow: 0 12px 24px rgba(15, 23, 42, 0.06);
+    box-shadow: 0 14px 28px rgba(15, 23, 42, 0.07);
     transition: transform 0.16s ease, border-color 0.16s ease, box-shadow 0.16s ease;
 }
 
@@ -159,6 +187,7 @@
     display: block;
     color: #64748b;
     font-size: 12px;
+    line-height: 1.45;
 }
 
 @media (max-width: 900px) {
@@ -184,6 +213,34 @@
     }
     .yanbar-panel.is-open .yanbar-panel__dialog {
         transform: translate(-50%, 0) scale(1);
+    }
+
+    .yanbar-links {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 10px;
+    }
+
+    .yanbar-link {
+        min-height: 138px;
+        padding: 12px;
+    }
+
+    .yanbar-link span {
+        font-size: 14px;
+    }
+
+    .yanbar-link small {
+        font-size: 11px;
+    }
+}
+
+@media (max-width: 380px) {
+    .yanbar-panel__subtitle {
+        font-size: 12px;
+    }
+
+    .yanbar-link {
+        min-height: 128px;
     }
 }
 

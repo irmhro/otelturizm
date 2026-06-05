@@ -21,6 +21,7 @@ public class FirmaRegistrationModel
     public string City { get; set; } = string.Empty;
     public string District { get; set; } = string.Empty;
     public string? Neighborhood { get; set; }
+    public string? CountryName { get; set; }
     public long? UlkeId { get; set; }
     public long? IlId { get; set; }
     public long? IlceId { get; set; }

@@ -13,6 +13,12 @@
                 <span>@Model.VersionText</span>
                 <span>@Model.EffectiveDateText itibarıyla yürürlükte</span>
             </div>
+            @if (!string.IsNullOrWhiteSpace(Model.PdfUrl))
+            {
+                <a class="legal-contract-pdf-btn" href="@Model.PdfUrl" target="_blank" rel="noopener">
+                    <i class="fas fa-file-pdf"></i> PDF formatında aç
+                </a>
+            }
         </div>
         @if (!string.IsNullOrWhiteSpace(Model.HeroImageUrl))
         {

@@ -16,7 +16,7 @@
 }
 
 <article class="home-hotel-card">
-    <a asp-controller="Oteller" asp-action="OtelDetay" asp-route-slug="@Model.DetailSlug" class="home-hotel-card-link">
+    <a href="/oteller/@Uri.EscapeDataString(Model.DetailSlug ?? string.Empty)" class="home-hotel-card-link">
         <div class="card-image-shell">
             @{
                 var gallery = (Model.GalleryImageUrls ?? new List<string>())
@@ -83,65 +83,13 @@
                 }
             </div>
 
-            @{
-                var recentCampaigns = Model.RecentCampaigns ?? new List<string>();
-                var recentDiscounts = Model.RecentDiscounts ?? new List<string>();
-            }
-
-            @if (recentCampaigns.Count > 0 || recentDiscounts.Count > 0)
-            {
-                <div class="home-hotel-promo">
-                    @if (recentCampaigns.Count > 0)
-                    {
-                        foreach (var item in recentCampaigns.Take(2))
-                        {
-                            <span class="promo-pill promo-pill--campaign">
-                                <i class="fas fa-bullhorn" aria-hidden="true"></i>
-                                @item
-                            </span>
-                        }
-                    }
-                    @if (recentDiscounts.Count > 0)
-                    {
-                        foreach (var item in recentDiscounts.Take(2))
-                        {
-                            <span class="promo-pill promo-pill--discount">
-                                <i class="fas fa-tags" aria-hidden="true"></i>
-                                @item
-                            </span>
-                        }
-                    }
-                </div>
-            }
-
-            <div class="home-hotel-tags">
-                @foreach (var tag in Model.Tags)
-                {
-                    if (string.Equals(tag, "Öne Çıkan", StringComparison.OrdinalIgnoreCase)
-                        || string.Equals(tag, "One Cikan", StringComparison.OrdinalIgnoreCase)
-                        || string.Equals(tag, "Hafta Sonu Seçimi", StringComparison.OrdinalIgnoreCase)
-                        || string.Equals(tag, "Hafta Sonu Secimi", StringComparison.OrdinalIgnoreCase))
-                    {
-                        continue;
-                    }
-                    <span>@tag</span>
-                }
-            </div>
-
-            <div class="amenities">
-                @foreach (var amenity in Model.Amenities)
-                {
-                    <span><i class="fas @amenity.IconClass"></i> @amenity.Label</span>
-                }
-            </div>
-
             <div class="home-hotel-price-row">
                 <div class="price-box">
                     @if (Model.HasDiscount && Model.OriginalPrice.HasValue && Model.DiscountedPrice.HasValue)
                     {
-                        <span class="price-original">Normal Fiyat: <s>TRY @Model.OriginalPrice.Value.ToString("N0")</s></span>
+                        <span class="price-original">Normal fiyat <s>₺@Model.OriginalPrice.Value.ToString("N0")</s></span>
                         <span class="price-discount-label">
-                            İndirim: %@Model.DiscountPercent
+                            %@Model.DiscountPercent indirim
                             @if (Model.DiscountId.HasValue && !string.IsNullOrWhiteSpace(Model.DiscountName))
                             {
                                 <button type="button"
@@ -155,7 +103,8 @@
                                 </button>
                             }
                         </span>
-                        <span class="price-value discounted">İndirimli Fiyatı: TRY @Model.DiscountedPrice.Value.ToString("N0")</span>
+                        <span class="price-from">Gecelik indirimli fiyat</span>
+                        <span class="price-value discounted">₺@Model.DiscountedPrice.Value.ToString("N0")</span>
                     }
                     else
                     {

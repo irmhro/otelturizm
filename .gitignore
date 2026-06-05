@@ -278,6 +278,8 @@ Generated_Code/
 # because we have git ;-)
 _UpgradeReport_Files/
 Backup*/
+!Database/Backups/
+!Database/Backups/**
 UpgradeLog*.XML
 UpgradeLog*.htm
 ServiceFabricBackup/
@@ -402,6 +404,22 @@ yayinlanacakderlenmisdosyalar/
 .coord-build-*/
 .build-*/
 .tmp.driveupload/
+.agent-build/
+.agent-build*/
+.agent-build-*/
+.cto_build_verify/
+.cto-build-verify-session/
+.migrate-build/
+.tmp_build_verify/
+tmp-build*/
+tmp-build-verify/
+yayinla/
+yayinla*/
+*.css.bak
+
+# Yerel bağlantı / gizli ayarlar (public repoda taşınmaz)
+appsettings.*.local.json
+secrets.json
 
 # Tarihli yerel yedek snapshot (git'e alinmaz)
 23.05.2026/

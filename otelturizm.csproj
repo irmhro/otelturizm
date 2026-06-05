@@ -22,9 +22,13 @@
     <UseAppHost>false</UseAppHost>
   </PropertyGroup>
 
-  <!-- Debug build: avoid apphost lock during dotnet run -->
+  <!-- Debug build: hızlı geliştirme -->
   <PropertyGroup Condition="'$(Configuration)' == 'Debug'">
     <UseAppHost>false</UseAppHost>
+    <!-- Polling yalnizca dev-watch-stable.bat ile acilir; varsayilan anlik izleme -->
+    <RunAnalyzersDuringBuild>false</RunAnalyzersDuringBuild>
+    <RunAnalyzersDuringLiveAnalysis>false</RunAnalyzersDuringLiveAnalysis>
+    <HotReloadEnabled>false</HotReloadEnabled>
   </PropertyGroup>
 
   <ItemGroup>
@@ -101,6 +105,18 @@
 
   <ItemGroup>
     <Folder Include="logs\" />
+  </ItemGroup>
+
+  <!-- dotnet watch: sadece C# degisikliklerinde rebuild; view/css/js anlik -->
+  <ItemGroup>
+    <Watch Remove="tmp/**" />
+    <Watch Remove="**/*.py" />
+    <Watch Remove=".coord-build-*/**" />
+    <Watch Remove="Database/Backups/**" />
+    <Watch Remove="publish/**" />
+    <Watch Remove="Views/**" />
+    <Watch Remove="Pages/**" />
+    <Watch Remove="wwwroot/**" />
   </ItemGroup>
 
   <ItemGroup>

@@ -1,0 +1,8 @@
+ID|KOD|AD|ACIKLAMA|SIRA_NO|AKTIF_MI|SISTEM_SATIR_MI|IPTAL_MI|TAMAMLANDI_MI|BEKLEYEN_MI|GELIR_SAYILIR_MI|OZELLIK_JSON_SABLONU|OLUSTURULMA_TARIHI
+--|---|--|--------|-------|--------|---------------|--------|-------------|-----------|----------------|--------------------|------------------
+1|DEGISIKLIK_BEKLIYOR|Değişiklik Bekliyor|Tarih, oda veya fiyat değişikliği onay bekliyor|30|1|0|0|0|1|0|NULL|2026-05-31 08:11:04.1273054
+2|IPTAL_EDILDI|İptal Edildi|Rezervasyon iptal edildi|50|1|0|1|0|0|0|NULL|2026-05-31 08:11:04.1273054
+3|NO_SHOW|No-Show|Misafir giriş yapmadı|60|1|0|1|0|0|0|NULL|2026-05-31 08:11:04.1273054
+4|ONAY_BEKLIYOR|Onay Bekliyor|Rezervasyon partner/onay akışında bekliyor|10|1|1|0|0|1|0|NULL|2026-05-31 08:11:04.1273054
+5|ONAYLANDI|Onaylandı|Rezervasyon onaylandı ve aktif plan olarak ilerliyor|20|1|0|0|0|0|1|NULL|2026-05-31 08:11:04.1273054
+6|TAMAMLANDI|Tamamlandı|Konaklama başarıyla tamamlandı|40|1|0|0|1|0|1|NULL|2026-05-31 08:11:04.1273054

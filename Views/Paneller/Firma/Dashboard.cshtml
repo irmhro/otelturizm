@@ -2,10 +2,11 @@
 @{
     Layout = "~/Views/Paneller/Firma/_FirmaPanelLayout.cshtml";
     ViewData["FirmaShell"] = Model.Shell;
-    ViewData["PageCssPath"] ??= "paneller/firma/dashboard";
-    ViewData["PageCssMobile"] ??= "paneller/firma/dashboard.mobile";
+    ViewData["PageCssPath"] ??= "firmapanel_dashboard_masaustu";
+    ViewData["PageCssMobilePath"] ??= "firmapanel_dashboard_mobil";
 }
 
+<div class="firmapanel-dashboard-page">
 @if (Model.LimitAlerts.Count > 0)
 {
     <div class="firma-dash-alerts" role="status">
@@ -139,3 +140,4 @@
     </div>
     <a class="firma-section-more" href="/panel/firma/rezervasyonlar">Tüm rezervasyonlar →</a>
 </section>
+</div>

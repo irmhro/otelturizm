@@ -1,0 +1,36 @@
+@import url("./dashboard.css");
+
+.partner-dashboard-hero {
+    flex-direction: column;
+    align-items: stretch;
+    padding: 18px;
+    border-radius: 20px;
+}
+
+.partner-hero-actions {
+    justify-content: stretch;
+}
+
+.partner-hero-actions .btn {
+    width: 100%;
+}
+
+.partner-widget-strip,
+.partner-ai-grid {
+    grid-template-columns: 1fr;
+}
+
+.partner-ai-card--competitors,
+.partner-ai-card--magic-price,
+.partner-ai-card--campaign {
+    grid-column: span 1;
+}
+
+.partner-revenue-card .partner-chart-bars {
+    min-height: 180px;
+    gap: 6px;
+}
+
+.partner-stat-card {
+    min-height: 0;
+}

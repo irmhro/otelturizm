@@ -1318,6 +1318,91 @@ body {
   background: #fff;
 }
 
+.ot-geo-prompt {
+  position: fixed;
+  right: 22px;
+  bottom: 24px;
+  z-index: 2140;
+  width: min(420px, calc(100vw - 32px));
+  display: grid;
+  grid-template-columns: 46px minmax(0, 1fr);
+  gap: 12px;
+  padding: 16px;
+  border: 1px solid rgba(191, 219, 254, .9);
+  border-radius: 20px;
+  background: rgba(255, 255, 255, .96);
+  box-shadow: 0 22px 60px rgba(15, 23, 42, .18);
+  backdrop-filter: blur(16px);
+}
+
+.ot-geo-prompt__close {
+  position: absolute;
+  top: 8px;
+  right: 10px;
+  width: 30px;
+  height: 30px;
+  border: 0;
+  border-radius: 999px;
+  background: #f1f5f9;
+  color: #334155;
+  font-size: 20px;
+  line-height: 1;
+}
+
+.ot-geo-prompt__icon {
+  width: 46px;
+  height: 46px;
+  display: grid;
+  place-items: center;
+  border-radius: 16px;
+  color: #0b5ed7;
+  background: #eff6ff;
+}
+
+.ot-geo-prompt__content {
+  display: grid;
+  gap: 5px;
+  padding-right: 22px;
+}
+
+.ot-geo-prompt__content strong {
+  color: #0f172a;
+  font-weight: 900;
+}
+
+.ot-geo-prompt__content span {
+  color: #64748b;
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+.ot-geo-prompt__actions {
+  grid-column: 1 / -1;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 8px;
+}
+
+.ot-geo-prompt__primary,
+.ot-geo-prompt__ghost {
+  min-height: 40px;
+  border-radius: 999px;
+  padding: 0 14px;
+  font-weight: 900;
+}
+
+.ot-geo-prompt__primary {
+  border: 0;
+  color: #fff;
+  background: linear-gradient(135deg, #0b5ed7, #003b95);
+}
+
+.ot-geo-prompt__ghost {
+  border: 1px solid #dbeafe;
+  color: #1d4ed8;
+  background: #fff;
+}
+
 @media (min-width: 901px) {
   .footer-col--accordion .footer-accordion > summary {
     pointer-events: none;
@@ -1369,7 +1454,7 @@ body {
     height: var(--header-height-mobile);
     min-height: var(--header-height-mobile);
   }
-  .logo-area {
+  .header-container > .logo-area {
     position: absolute;
     left: 16px;
     transform: none;

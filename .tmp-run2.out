@@ -1,0 +1,4 @@
+Bunun olası nedenleri şunlar olabilir:
+  * Yerleşik bir dotnet komutunu yanlış yazdınız.
+  * Bir .NET programını yürütmeyi amaçladınız ancak dotnet-D:\otelturizm\bin\Release\net8.0\otelturizm.dll mevcut değil.
+  * Bir genel aracı çalıştırmayı amaçladınız ancak YOL dizininde bu ada sahip dotnet ön eki olan bir yürütülebilir dosya bulunamadı.

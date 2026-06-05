@@ -1,0 +1,36 @@
+-- Tablo: dbo.OZEL_GUNLER — dünya / ulusal özel günler (header logo altı vitrin)
+IF OBJECT_ID(N'dbo.OZEL_GUNLER', N'U') IS NULL
+BEGIN
+    CREATE TABLE [dbo].[OZEL_GUNLER]
+    (
+        [ID] int IDENTITY(1,1) NOT NULL,
+        [GUN_KODU] nvarchar(80) NOT NULL,
+        [GUN_ADI] nvarchar(200) NOT NULL,
+        [AY] tinyint NOT NULL,
+        [GUN] tinyint NULL,
+        [KURAL_TIPI] nvarchar(30) NOT NULL CONSTRAINT [DF_OZEL_GUNLER_KURAL_TIPI] DEFAULT (N'SABIT'),
+        [KURAL_PARAM1] tinyint NULL,
+        [KURAL_PARAM2] tinyint NULL,
+        [EMOJI] nvarchar(16) NULL,
+        [KUTLAMA_METNI] nvarchar(300) NULL,
+        [KATEGORI] nvarchar(80) NULL,
+        [AKTIF_MI] bit NOT NULL CONSTRAINT [DF_OZEL_GUNLER_AKTIF] DEFAULT ((1)),
+        [SIRALAMA] int NOT NULL CONSTRAINT [DF_OZEL_GUNLER_SIRALAMA] DEFAULT ((100)),
+        [OLUSTURULMA_TARIHI] datetime2(0) NOT NULL CONSTRAINT [DF_OZEL_GUNLER_OLUSTURMA] DEFAULT (sysutcdatetime()),
+        CONSTRAINT [PK_OZEL_GUNLER] PRIMARY KEY CLUSTERED ([ID] ASC),
+        CONSTRAINT [UQ_OZEL_GUNLER_GUN_KODU] UNIQUE ([GUN_KODU] ASC)
+    );
+END
+GO
+
+IF NOT EXISTS (
+    SELECT 1 FROM sys.indexes
+    WHERE name = N'IX_OZEL_GUNLER_AKTIF_SIRALAMA'
+      AND object_id = OBJECT_ID(N'dbo.OZEL_GUNLER')
+)
+BEGIN
+    CREATE NONCLUSTERED INDEX [IX_OZEL_GUNLER_AKTIF_SIRALAMA]
+        ON [dbo].[OZEL_GUNLER] ([AKTIF_MI] ASC, [SIRALAMA] ASC)
+        INCLUDE ([GUN_KODU], [GUN_ADI], [AY], [GUN], [KURAL_TIPI], [KURAL_PARAM1], [KURAL_PARAM2], [EMOJI], [KUTLAMA_METNI]);
+END
+GO

@@ -1,0 +1,16 @@
+ID|DESTEK_KATEGORI_ID|SORU|CEVAP|SIRALAMA|AKTIF_MI|OLUSTURULMA_TARIHI
+--|------------------|----|-----|--------|--------|------------------
+1|1|Rezervasyon iptalinde hangi bilgiler görünmeli?|İptal tarihi, iptal eden taraf, neden ve varsa ceza koşulu aynı kayıt üzerinde görünmelidir.|10|1|2026-05-31 08:11:04
+2|2|İade süreci nasıl izlenmeli?|İade edilen tutar, iade tarihi, yöntem ve kalan bakiye aynı ödeme kaydında tutulmalıdır.|20|1|2026-05-31 08:11:04
+3|3|E-posta doğrulama neden zorunlu?|Hesap güvenliği ve işlem teyidi için e-posta doğrulama tamamlanmadan kritik panel akışları açılmamalıdır.|30|1|2026-05-31 08:11:04
+4|4|Koordinat bilgisi neden önemlidir?|Harita görünürlüğü, rota servisleri ve konum filtreleri için doğru koordinat zorunludur.|40|1|2026-05-31 08:11:04
+5|5|Kanal eşleşme hatası nasıl anlaşılır?|Oda/stok/fiyat verisi senkron değilse kanal eşleşmesi incelenmeli ve mapping kayıtları gözden geçirilmelidir.|50|1|2026-05-31 08:11:04
+6|6|Komisyon oranı hangi ekranda yönetilmeli?|Komisyon oranı tek merkezden yönetilmeli, partner ve admin ekranlarında aynı değeri göstermelidir.|60|1|2026-05-31 08:11:04
+7|7|No-show kaydı ne zaman işlenmeli?|Giriş günü sonrası teyit alındığında no-show statüsü ve varsa ceza oranı sisteme işlenmelidir.|70|1|2026-05-31 08:11:04
+8|8|Mutabakatta hangi alanlar zorunlu?|Dönem, rezervasyon no, brüt tutar, komisyon, vergi, tahsilat durumu ve fatura bağlantısı zorunludur.|80|1|2026-05-31 08:11:04
+9|9|Kapak görseli nasıl seçilmeli?|Tesisi doğru temsil eden, yüksek çözünürlüklü ve ilk bakışta güven veren görsel kapak olarak seçilmelidir.|90|1|2026-05-31 08:11:04
+10|10|Yorumlar ne zaman yayınlanmalı?|Sadece onaylı konaklama sonrası oluşturulan yorumlar moderasyon kurallarına göre yayınlanmalıdır.|100|1|2026-05-31 08:11:04
+11|11|Kampanya bitince ne olur?|Kampanya bitiş tarihinde görünürlük ve indirim etkisi otomatik sona erer; fiyat normal satış kuralına döner.|110|1|2026-05-31 08:11:04
+12|12|Sahte rezervasyon nasıl işaretlenir?|Anormal IP, cihaz veya ödeme paterni görüldüğünde kayıt güvenlik incelemesine alınmalıdır.|120|1|2026-05-31 08:11:04
+13|13|Firma personel ataması zorunlu mu?|Hayır; ancak atanırsa partner panelinde oda bazında personel bilgisi görünmelidir.|130|1|2026-05-31 08:11:04
+14|14|Satış kaydı kime bildirilir?|Satış üzerinden oluşan rezervasyon kullanıcıya ve partnere e-posta ile bildirilmelidir.|140|1|2026-05-31 08:11:04

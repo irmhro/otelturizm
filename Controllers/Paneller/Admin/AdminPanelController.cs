@@ -94,7 +94,7 @@ public class AdminPanelController : Controller
             }
         }
         ViewData["Title"] = model.Shell.PanelTitle;
-        ViewData["PageCssPath"] = "panel-admin-section";
+        ViewData["PageCssPath"] = "admin_panel_section_masaustu";
         return View("~/Views/Paneller/Admin/Team.cshtml", model);
     }
 
@@ -341,7 +341,7 @@ public class AdminPanelController : Controller
         }
 
         ViewData["Title"] = section.Shell.PanelTitle;
-        ViewData["PageCssPath"] = "panel-admin-section";
+        ViewData["PageCssPath"] = "admin_panel_section_masaustu";
         ViewData["AdminShell"] = section.Shell;
         ViewData["HelpCenterTab"] = string.IsNullOrWhiteSpace(tab) ? "categories" : tab;
         return View("~/Views/Paneller/Admin/HelpCenter.cshtml", model);
@@ -569,8 +569,8 @@ public class AdminPanelController : Controller
 
         var model = await _adminService.GetDashboardAsync(GetFullName(), GetEmail(), GetUserRole(), cancellationToken);
         ViewData["Title"] = "Admin Dashboard";
-        ViewData["PageCssPath"] = "paneller/admin/dashboard";
-        ViewData["PageCssMobile"] = "paneller/admin/dashboard.mobile";
+        ViewData["PageCssPath"] = "admin_panel_dashboard_masaustu";
+        ViewData["PageCssMobilePath"] = "admin_panel_dashboard_mobil";
         return View("~/Views/Paneller/Admin/Dashboard.cshtml", model);
     }
 
@@ -609,7 +609,7 @@ public class AdminPanelController : Controller
         var model = await _adminService.GetSystemHealthAsync(GetFullName(), GetEmail(), GetUserRole(), cancellationToken);
         model.LinkCheck.BaseUrl = $"{Request.Scheme}://{Request.Host}";
         ViewData["Title"] = model.Shell.PanelTitle;
-        ViewData["PageCssPath"] = "panel-admin-section";
+        ViewData["PageCssPath"] = "admin_panel_section_masaustu";
         return View("~/Views/Paneller/Admin/SystemHealth.cshtml", model);
     }
 
@@ -627,7 +627,7 @@ public class AdminPanelController : Controller
 
         var model = await _adminService.GetPlatformCheckupAsync(GetFullName(), GetEmail(), GetUserRole(), cancellationToken);
         ViewData["Title"] = model.Shell.PanelTitle;
-        ViewData["PageCssPath"] = "paneller/admin/platform-checkup";
+        ViewData["PageCssPath"] = "admin_panel_platform_checkup_masaustu";
         return View("~/Views/Paneller/Admin/PlatformCheckup.cshtml", model);
     }
 
@@ -645,8 +645,8 @@ public class AdminPanelController : Controller
 
         var model = await _adminService.GetApprovalCenterAsync(GetFullName(), GetEmail(), GetUserRole(), cancellationToken);
         ViewData["Title"] = model.Shell.PanelTitle;
-        ViewData["PageCssPath"] = "paneller/admin/approval-center";
-        ViewData["PageCssMobile"] = "paneller/admin/approval-center.mobile";
+        ViewData["PageCssPath"] = "admin_panel_approval_center_masaustu";
+        ViewData["PageCssMobilePath"] = "admin_panel_approval_center_mobil";
         return View("~/Views/Paneller/Admin/ApprovalCenter.cshtml", model);
     }
 
@@ -674,7 +674,7 @@ public class AdminPanelController : Controller
         {
             model.LinkCheck.Warning = $"Views klasörü bulunamadı: {viewsRoot}";
             ViewData["Title"] = model.Shell.PanelTitle;
-            ViewData["PageCssPath"] = "panel-admin-section";
+            ViewData["PageCssPath"] = "admin_panel_section_masaustu";
             return View("~/Views/Paneller/Admin/SystemHealth.cshtml", model);
         }
 
@@ -738,7 +738,7 @@ public class AdminPanelController : Controller
         }
 
         ViewData["Title"] = model.Shell.PanelTitle;
-        ViewData["PageCssPath"] = "panel-admin-section";
+        ViewData["PageCssPath"] = "admin_panel_section_masaustu";
         return View("~/Views/Paneller/Admin/SystemHealth.cshtml", model);
     }
 
@@ -923,8 +923,7 @@ public class AdminPanelController : Controller
         };
 
         ViewData["Title"] = model.Shell.PanelTitle;
-        ViewData["PageCssPath"] = "panel-admin-section";
-        ViewData["PageCssMobile"] = "paneller/admin/slow-sql";
+        ViewData["PageCssPath"] = "admin_panel_slow_sql_masaustu";
         ViewData["AdminShell"] = model.Shell;
         return View("~/Views/Paneller/Admin/SlowSql.cshtml", model);
     }
@@ -955,7 +954,7 @@ public class AdminPanelController : Controller
 
         var model = await _adminService.GetAdminActionLogsAsync(GetFullName(), GetEmail(), GetUserRole(), filter, cancellationToken);
         ViewData["Title"] = model.Shell.PanelTitle;
-        ViewData["PageCssPath"] = "panel-admin-section";
+        ViewData["PageCssPath"] = "admin_panel_section_masaustu";
         ViewData["AdminShell"] = model.Shell;
         return View("~/Views/Paneller/Admin/AdminActionLogs.cshtml", model);
     }
@@ -1004,8 +1003,8 @@ public class AdminPanelController : Controller
 
         var model = await _adminService.GetUnifiedReservationsAsync(GetFullName(), GetEmail(), GetUserRole(), q, status, page, pageSize, cancellationToken);
         ViewData["Title"] = model.Shell.PanelTitle;
-        ViewData["PageCssPath"] = "paneller/admin/unified-reservations";
-        ViewData["PageCssMobile"] = "paneller/admin/unified-reservations.mobile";
+        ViewData["PageCssPath"] = "admin_panel_unified_reservations_masaustu";
+        ViewData["PageCssMobilePath"] = "admin_panel_unified_reservations_mobil";
         ViewData["AdminShell"] = model.Shell;
         return View("~/Views/Paneller/Admin/UnifiedReservations.cshtml", model);
     }
@@ -1026,7 +1025,7 @@ public class AdminPanelController : Controller
         var filter = new AdminEmailQueueFilter { Status = status, Query = q, Page = page <= 0 ? 1 : page, PageSize = pageSize <= 0 ? 50 : pageSize };
         var model = await _adminService.GetEmailQueueAsync(GetFullName(), GetEmail(), GetUserRole(), filter, cancellationToken);
         ViewData["Title"] = model.Shell.PanelTitle;
-        ViewData["PageCssPath"] = "panel-admin-section";
+        ViewData["PageCssPath"] = "admin_panel_section_masaustu";
         ViewData["AdminShell"] = model.Shell;
         return View("~/Views/Paneller/Admin/EmailQueue.cshtml", model);
     }
@@ -1151,7 +1150,7 @@ public class AdminPanelController : Controller
 
         var model = await _adminService.GetRateLimitStatsAsync(GetFullName(), GetEmail(), GetUserRole(), windowHours <= 0 ? 24 : windowHours, cancellationToken);
         ViewData["Title"] = model.Shell.PanelTitle;
-        ViewData["PageCssPath"] = "panel-admin-section";
+        ViewData["PageCssPath"] = "admin_panel_section_masaustu";
         ViewData["AdminShell"] = model.Shell;
         return View("~/Views/Paneller/Admin/RateLimitStats.cshtml", model);
     }
@@ -1212,7 +1211,7 @@ public class AdminPanelController : Controller
         }
 
         ViewData["Title"] = model.Shell.PanelTitle;
-        ViewData["PageCssPath"] = "panel-admin-section";
+        ViewData["PageCssPath"] = "admin_panel_section_masaustu";
         ViewData["AdminShell"] = model.Shell;
         return View("~/Views/Paneller/Admin/LogEvents.cshtml", model);
     }
@@ -1271,7 +1270,7 @@ public class AdminPanelController : Controller
 
         var model = await _adminService.GetSettingsMonitorAsync(GetFullName(), GetEmail(), GetUserRole(), cancellationToken);
         ViewData["Title"] = model.Shell.PanelTitle;
-        ViewData["PageCssPath"] = "panel-admin-section";
+        ViewData["PageCssPath"] = "admin_panel_section_masaustu";
         ViewData["AdminShell"] = model.Shell;
         return View("~/Views/Paneller/Admin/SettingsMonitor.cshtml", model);
     }
@@ -1290,7 +1289,7 @@ public class AdminPanelController : Controller
 
         var model = await _adminService.GetCommerceInsightPageAsync(GetFullName(), GetEmail(), GetUserRole(), hotelId, cancellationToken);
         ViewData["Title"] = model.Shell.PanelTitle;
-        ViewData["PageCssPath"] = "panel-admin-section";
+        ViewData["PageCssPath"] = "admin_panel_section_masaustu";
         ViewData["AdminShell"] = model.Shell;
         return View("~/Views/Paneller/Admin/CommerceInsight.cshtml", model);
     }
@@ -1391,7 +1390,7 @@ public class AdminPanelController : Controller
         var model = await _sitemapService.GetDiagnosticsAsync(cancellationToken);
         ViewData["AdminShell"] = section.Shell;
         ViewData["Title"] = "Sitemap Yönetimi";
-        ViewData["PageCssPath"] = "panel-admin-section";
+        ViewData["PageCssPath"] = "admin_panel_section_masaustu";
         return View("~/Views/Paneller/Admin/Sitemap.cshtml", model);
     }
 
@@ -1435,8 +1434,8 @@ public class AdminPanelController : Controller
 
         var model = await _adminHotelManagementService.GetHotelsPageAsync(GetFullName(), GetEmail(), GetUserRole(), q, city, district, neighborhood, publishStatus, approvalStatus, page, pageSize, cancellationToken);
         ViewData["Title"] = model.Shell.PanelTitle;
-        ViewData["PageCssPath"] = "panel-admin-hotels";
-        ViewData["PageCssMobile"] = "panel-admin-hotels.mobile";
+        ViewData["PageCssPath"] = "admin_panel_hotels_masaustu";
+        ViewData["PageCssMobilePath"] = "admin_panel_hotels_mobil";
         return View("~/Views/Paneller/Admin/Hotels.cshtml", model);
     }
 
@@ -1461,7 +1460,7 @@ public class AdminPanelController : Controller
 
         var model = await _adminHotelManagementService.GetHotelManagementPageAsync(id.Value, GetFullName(), GetEmail(), GetUserRole(), roomId, hotelPhotoId, roomPhotoId, cancellationToken);
         ViewData["Title"] = model.Shell.PanelTitle;
-        ViewData["PageCssPath"] = "panel-admin-hotels";
+        ViewData["PageCssPath"] = "admin_panel_hotels_masaustu";
         return View("~/Views/Paneller/Admin/HotelDetail.cshtml", model);
     }
 
@@ -1865,8 +1864,8 @@ public class AdminPanelController : Controller
         model.Shell.PanelTitle = "Rezervasyonlar";
         model.Shell.PanelSubtitle = "Bireysel, firma ve satış kaynaklı rezervasyonları tek operasyon tablosunda yönetin.";
         ViewData["Title"] = model.Shell.PanelTitle;
-        ViewData["PageCssPath"] = "paneller/admin/unified-reservations";
-        ViewData["PageCssMobile"] = "paneller/admin/unified-reservations.mobile";
+        ViewData["PageCssPath"] = "admin_panel_unified_reservations_masaustu";
+        ViewData["PageCssMobilePath"] = "admin_panel_unified_reservations_mobil";
         ViewData["AdminShell"] = model.Shell;
         return View("~/Views/Paneller/Admin/UnifiedReservations.cshtml", model);
     }
@@ -1886,7 +1885,7 @@ public class AdminPanelController : Controller
 
         var model = await _adminService.GetPaymentsAsync(GetFullName(), GetEmail(), GetUserRole(), q, status, paymentType, page, pageSize, cancellationToken);
         ViewData["Title"] = model.Shell.PanelTitle;
-        ViewData["PageCssPath"] = "paneller/admin/payments";
+        ViewData["PageCssPath"] = "admin_panel_payments_masaustu";
         ViewData["AdminShell"] = model.Shell;
         return View("~/Views/Paneller/Admin/Payments.cshtml", model);
     }
@@ -1906,7 +1905,7 @@ public class AdminPanelController : Controller
 
         var model = await _adminService.GetInvoicesAsync(GetFullName(), GetEmail(), GetUserRole(), q, status, invoiceType, page, pageSize, cancellationToken);
         ViewData["Title"] = model.Shell.PanelTitle;
-        ViewData["PageCssPath"] = "paneller/admin/invoices";
+        ViewData["PageCssPath"] = "admin_panel_invoices_masaustu";
         ViewData["AdminShell"] = model.Shell;
         return View("~/Views/Paneller/Admin/Invoices.cshtml", model);
     }
@@ -1921,7 +1920,7 @@ public class AdminPanelController : Controller
 
         var model = await _adminService.GetCommissionManagementAsync(GetFullName(), GetEmail(), GetUserRole(), hotelId, dateFrom, dateTo, city, district, neighborhood, paymentStatus, pageSize, cancellationToken);
         ViewData["Title"] = model.Shell.PanelTitle;
-        ViewData["PageCssPath"] = "paneller/admin/commissions";
+        ViewData["PageCssPath"] = "admin_panel_commissions_page_masaustu";
         return View("~/Views/Paneller/Admin/Commissions.cshtml", model);
     }
 
@@ -1966,7 +1965,7 @@ public class AdminPanelController : Controller
 
         var model = await _adminService.GetCommissionCollectionLedgerAsync(GetFullName(), GetEmail(), GetUserRole(), filter, cancellationToken);
         ViewData["Title"] = model.Shell.PanelTitle;
-        ViewData["PageCssPath"] = "panel-admin-commission-collection";
+        ViewData["PageCssPath"] = "admin_panel_commission_collection_masaustu";
         ViewData["AdminShell"] = model.Shell;
         return View("~/Views/Paneller/Admin/CommissionCollection.cshtml", model);
     }
@@ -2045,7 +2044,7 @@ public class AdminPanelController : Controller
 
         var model = await _contractContentService.GetAdminContractManagementAsync(GetFullName(), GetEmail(), GetUserRole(), contractId, cancellationToken);
         ViewData["Title"] = model.Shell.PanelTitle;
-        ViewData["PageCssPath"] = "panel-admin-contracts";
+        ViewData["PageCssPath"] = "admin_panel_contracts_masaustu";
         return View("~/Views/Paneller/Admin/Contracts.cshtml", model);
     }
 
@@ -2215,7 +2214,7 @@ public class AdminPanelController : Controller
 
         var model = await _adminService.GetPartnerApplicationsAsync(GetFullName(), GetEmail(), GetUserRole(), cancellationToken);
         ViewData["Title"] = model.Shell.PanelTitle;
-        ViewData["PageCssPath"] = "paneller/admin/partner-applications";
+        ViewData["PageCssPath"] = "admin_panel_partner_applications_masaustu";
         return View("~/Views/Paneller/Admin/PartnerApplications.cshtml", model);
     }
 
@@ -2258,8 +2257,8 @@ public class AdminPanelController : Controller
         }
 
         ViewData["Title"] = model.Shell.PanelTitle;
-        ViewData["PageCssPath"] = "paneller/admin/partner-documents";
-        ViewData["PageCssMobile"] = "paneller/admin/partner-documents.mobile";
+        ViewData["PageCssPath"] = "admin_panel_partner_documents_masaustu";
+        ViewData["PageCssMobilePath"] = "admin_panel_partner_documents_mobil";
         ViewData["AdminShell"] = model.Shell;
         return View("~/Views/Paneller/Admin/PartnerDocuments.cshtml", model);
     }
@@ -2312,7 +2311,7 @@ public class AdminPanelController : Controller
 
         var model = await _adminService.GetCompanyApplicationsAsync(GetFullName(), GetEmail(), GetUserRole(), cancellationToken);
         ViewData["Title"] = model.Shell.PanelTitle;
-        ViewData["PageCssPath"] = "panel-admin-section";
+        ViewData["PageCssPath"] = "admin_panel_section_masaustu";
         return View("~/Views/Paneller/Admin/CompanyApplications.cshtml", model);
     }
 
@@ -2350,7 +2349,7 @@ public class AdminPanelController : Controller
 
         var model = await _adminService.GetListingSubscriptionsAsync(GetFullName(), GetEmail(), GetUserRole(), cancellationToken);
         ViewData["Title"] = model.Shell.PanelTitle;
-        ViewData["PageCssPath"] = "panel-admin-section";
+        ViewData["PageCssPath"] = "admin_panel_section_masaustu";
         return View("~/Views/Paneller/Admin/ListingSubscriptions.cshtml", model);
     }
 
@@ -2406,8 +2405,8 @@ public class AdminPanelController : Controller
 
         var model = await _platformPackageService.GetAdminPageAsync(GetFullName(), GetEmail(), GetUserRole(), cancellationToken);
         ViewData["Title"] = model.Shell.PanelTitle;
-        ViewData["PageCssPath"] = "paneller/admin/platform-packages";
-        ViewData["PageCssMobile"] = "paneller/admin/platform-packages.mobile";
+        ViewData["PageCssPath"] = "admin_panel_platform_packages_masaustu";
+        ViewData["PageCssMobilePath"] = "admin_panel_platform_packages_mobil";
         return View("~/Views/Paneller/Admin/PlatformPackages.cshtml", model);
     }
 
@@ -2483,7 +2482,7 @@ public class AdminPanelController : Controller
 
         var model = await _developmentRequestService.GetAdminPageAsync(GetFullName(), GetEmail(), GetUserRole(), q, status, priority, developerUserId, cancellationToken);
         ViewData["Title"] = model.Shell.PanelTitle;
-        ViewData["PageCssPath"] = "panel-admin-development";
+        ViewData["PageCssPath"] = "admin_panel_development_masaustu";
         return View("~/Views/Paneller/Admin/DevelopmentRequests.cshtml", model);
     }
 
@@ -2556,7 +2555,7 @@ public class AdminPanelController : Controller
         model.Shell.PanelTitle = "Açık Oteller";
         model.Shell.PanelSubtitle = "Yayında ve admin onaylı tesisleri; yayın kapatma, detay ve komisyon takibi için yönetin.";
         ViewData["Title"] = model.Shell.PanelTitle;
-        ViewData["PageCssPath"] = "panel-admin-hotels";
+        ViewData["PageCssPath"] = "admin_panel_hotels_masaustu";
         return View("~/Views/Paneller/Admin/Hotels.cshtml", model);
     }
 
@@ -2577,7 +2576,7 @@ public class AdminPanelController : Controller
         model.Shell.PanelTitle = "Bekleyen Oteller";
         model.Shell.PanelSubtitle = "Evrak, otel bilgisi, komisyon ve yayın kararı bekleyen tesisleri tek tabloda inceleyin.";
         ViewData["Title"] = model.Shell.PanelTitle;
-        ViewData["PageCssPath"] = "panel-admin-hotels";
+        ViewData["PageCssPath"] = "admin_panel_hotels_masaustu";
         return View("~/Views/Paneller/Admin/Hotels.cshtml", model);
     }
 
@@ -2596,7 +2595,7 @@ public class AdminPanelController : Controller
 
         var model = await _adminService.GetReviewModerationPageAsync(GetFullName(), GetEmail(), GetUserRole(), q, city, hotel, take, cancellationToken);
         ViewData["Title"] = model.Shell.PanelTitle;
-        ViewData["PageCssPath"] = "panel-admin-section";
+        ViewData["PageCssPath"] = "admin_panel_section_masaustu";
         ViewData["AdminShell"] = model.Shell;
         return View("~/Views/Paneller/Admin/ReviewsModeration.cshtml", model);
     }
@@ -2727,7 +2726,7 @@ public class AdminPanelController : Controller
 
         var model = await _adminService.GetRevenueCommandCenterAsync(GetFullName(), GetEmail(), GetUserRole(), cancellationToken);
         ViewData["Title"] = model.Shell.PanelTitle;
-        ViewData["PageCssPath"] = "paneller/admin/revenue-command-center";
+        ViewData["PageCssPath"] = "admin_panel_revenue_command_center_masaustu";
         ViewData["AdminShell"] = model.Shell;
         return View("~/Views/Paneller/Admin/RevenueCommandCenter.cshtml", model);
     }
@@ -2747,7 +2746,7 @@ public class AdminPanelController : Controller
 
         var model = await _adminService.GetReportsAsync(GetFullName(), GetEmail(), GetUserRole(), hotelId, dateFrom, dateTo, page, pageSize, cancellationToken);
         ViewData["Title"] = model.Shell.PanelTitle;
-        ViewData["PageCssPath"] = "paneller/admin/reports";
+        ViewData["PageCssPath"] = "admin_panel_reports_masaustu";
         ViewData["AdminShell"] = model.Shell;
         return View("~/Views/Paneller/Admin/Reports.cshtml", model);
     }
@@ -2862,7 +2861,7 @@ public class AdminPanelController : Controller
 
         var model = await _adminService.GetEmailSettingsPageAsync(GetFullName(), GetEmail(), GetUserRole(), cancellationToken);
         ViewData["Title"] = model.Shell.PanelTitle;
-        ViewData["PageCssPath"] = "panel-admin-section";
+        ViewData["PageCssPath"] = "admin_panel_section_masaustu";
         ViewData["AdminShell"] = model.Shell;
         return View("~/Views/Paneller/Admin/EmailTemplates.cshtml", model);
     }
@@ -2901,7 +2900,7 @@ public class AdminPanelController : Controller
 
         var model = await _adminService.GetMailCenterAsync(GetFullName(), GetEmail(), GetUserRole(), accountId, sync, cancellationToken);
         ViewData["Title"] = model.Shell.PanelTitle;
-        ViewData["PageCssPath"] = "panel-admin-mail-center";
+        ViewData["PageCssPath"] = "admin_panel_mail_center_masaustu";
         ViewData["AdminShell"] = model.Shell;
         return View("~/Views/Paneller/Admin/MailCenter.cshtml", model);
     }
@@ -2921,7 +2920,7 @@ public class AdminPanelController : Controller
 
         var model = await _adminEmailRoutingService.GetPageAsync(GetFullName(), GetEmail(), GetUserRole(), cancellationToken);
         ViewData["Title"] = model.Shell.PanelTitle;
-        ViewData["PageCssPath"] = "panel-admin-email-routing";
+        ViewData["PageCssPath"] = "admin_panel_email_routing_masaustu";
         ViewData["AdminShell"] = model.Shell;
         return View("~/Views/Paneller/Admin/EmailRouting.cshtml", model);
     }
@@ -3047,7 +3046,7 @@ public class AdminPanelController : Controller
 
         var model = await _adminSupportArticleService.GetPageAsync(section.Shell, q, kategoriId, durum, editId, cancellationToken);
         ViewData["Title"] = section.Shell.PanelTitle;
-        ViewData["PageCssPath"] = "panel-admin-section";
+        ViewData["PageCssPath"] = "admin_panel_section_masaustu";
         ViewData["AdminShell"] = section.Shell;
         return View("~/Views/Paneller/Admin/SupportArticles.cshtml", model);
     }
@@ -3148,11 +3147,11 @@ public class AdminPanelController : Controller
         var model = await _adminService.GetSectionPageAsync(sectionKey, GetFullName(), GetEmail(), GetUserRole(), cancellationToken);
         ViewData["Title"] = model.Shell.PanelTitle;
         ViewData["PageCssPath"] = string.Equals(sectionKey, "users", StringComparison.OrdinalIgnoreCase)
-            ? "panel-admin-users"
-            : "panel-admin-section";
+            ? "admin_panel_users_masaustu"
+            : "admin_panel_section_masaustu";
         ViewData["PageCssMobile"] = string.Equals(sectionKey, "users", StringComparison.OrdinalIgnoreCase)
-            ? "panel-admin-users.mobile"
-            : "panel-admin-section.mobile";
+            ? "admin_panel_users_mobil"
+            : "admin_panel_section_mobil";
         if (string.Equals(sectionKey, "reports", StringComparison.OrdinalIgnoreCase))
         {
             ViewData["MonthlyCsvExportUrl"] = Url.Action(nameof(ExportMonthlyRevenueCommissionCsv), "AdminPanel");

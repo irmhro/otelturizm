@@ -1,45 +1,16 @@
 @{
-    Layout = null;
+
     ViewData["Title"] = "Kurumsal";
-    ViewData["HeaderContext"] = "corporate";
-    var nonce = Context.Items["CspNonce"] as string;
+
+    ViewData["BodyClass"] = "kurumsal-page anasayfa-page";
+
+    ViewData["PageCss"] = "kurumsal";
+
+    ViewData["IncludeAnasayfaStyles"] = true;
+
 }
-<!DOCTYPE html>
-<html lang="tr">
-<head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes, viewport-fit=cover" />
-    <meta name="google-site-verification" content="XOjXVbWYoGSwJOaCHdDNb2l8Zs_JO7nr2BnsfeAp9Uw" />
-    <title>@ViewData["Title"] - Otelturizm</title>
-    <script type="importmap" nonce="@nonce"></script>
 
-            <link rel="stylesheet" href="~/assets/vendor/fonts/inter/inter-local.css" asp-append-version="true" />
-    <link rel="stylesheet" href="~/assets/vendor/fontawesome/css/all.min.css" asp-append-version="true" />
-    <link rel="stylesheet" href="~/assets/vendor/flag-icons/css/flag-icon.min.css" asp-append-version="true" />
-    <link href="https://api.fontshare.com/v2/css?f[]=satoshi@400,500,700,900&display=swap" rel="stylesheet" />
-    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
-    <link rel="stylesheet" href="~/assets/css/site-layout.css" asp-append-version="true" />
-    <link rel="stylesheet" href="~/assets/css/site-layout.mobile.css" asp-append-version="true" media="(max-width: 900px)" />
-    <link rel="stylesheet" href="~/assets/css/otelturizm-design-system.css" asp-append-version="true" />
-    <link rel="stylesheet" href="~/assets/css/otelturizm-design-system.mobile.css" asp-append-version="true" media="(max-width: 900px)" />
-    <link rel="stylesheet" href="~/assets/css/kurumsal.css" asp-append-version="true" />
-    <link rel="stylesheet" href="~/assets/css/kurumsal.mobile.css" asp-append-version="true" media="(max-width: 900px)" />
-</head>
-<body class="corporate-page-body">
-    <partial name="~/Views/Anasayfa/_AnasayfaHeader.cshtml" />
 
-    <script src="~/assets/js/sw-asset-guard.js" asp-append-version="true"></script>
-    <script src="~/assets/js/layout/sw-cleanup.js" asp-append-version="true"></script>
 
-    <main class="corporate-main">
-        <partial name="~/Views/Kurumsal/_KurumsalContent.cshtml" />
-    </main>
+<partial name="~/Views/Kurumsal/_KurumsalContent.cshtml" />
 
-    <partial name="~/Views/Anasayfa/_AnasayfaFooter.cshtml" />
-
-    <script src="~/lib/jquery/dist/jquery.min.js"></script>
-    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="~/js/site.js" asp-append-version="true"></script>
-    <script src="~/assets/js/layout/mobile-menu.js" asp-append-version="true"></script>
-</body>
-</html>

@@ -1,0 +1,59 @@
+/* ===== footer_mobil.css — gelişmiş premium footer (mobil / tablet) ===== */
+@media (max-width: 900px) {
+    .footer-logo-link {
+        position: static !important;
+        transform: none !important;
+        left: auto !important;
+        top: auto !important;
+        max-width: none;
+        z-index: auto;
+        padding: 6px 10px;
+        border-radius: 9px;
+    }
+
+    .footer {
+        padding: 28px 0 16px;
+        margin-top: 28px;
+    }
+
+    .footer-top {
+        grid-template-columns: 1fr;
+        gap: 22px;
+        padding-bottom: 18px;
+    }
+
+    .footer-brand {
+        grid-column: auto;
+    }
+
+    /* 4 link grubu — 2 sütun x 2 satır */
+    .footer-columns {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 20px 16px;
+    }
+
+    .footer-col {
+        display: contents;
+    }
+
+    .footer-links h5,
+    .footer-brand p,
+    .concierge-text {
+        color: #ffffff;
+    }
+
+    .footer-links a {
+        color: rgba(255, 255, 255, 0.72);
+    }
+
+    .footer-bottom {
+        align-items: flex-start;
+        gap: 14px;
+        flex-direction: column;
+        color: rgba(255, 255, 255, 0.65);
+    }
+
+    .secure-logos {
+        justify-content: flex-start;
+    }
+}

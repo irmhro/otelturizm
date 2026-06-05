@@ -18,6 +18,7 @@ public class RegisterController : Controller
     private const string PartnerRegisterPath = "/partner-kayit";
     private const string FirmaLoginPath = "/firma-giris";
     private const string FirmaRegisterPath = "/firma-kayit";
+    private const string RegisterTabQuery = "?sekme=kayit";
 
     private readonly IAuthService _authService;
 
@@ -30,21 +31,21 @@ public class RegisterController : Controller
     public IActionResult UserRegisterRedirect()
     {
         TempData["OpenUserRegisterTab"] = "1";
-        return Redirect(UserLoginPath);
+        return Redirect(UserLoginPath + RegisterTabQuery);
     }
 
     [HttpGet(PartnerRegisterPath)]
     public IActionResult PartnerRegisterRedirect()
     {
         TempData["OpenPartnerRegisterTab"] = "1";
-        return Redirect(PartnerLoginPath);
+        return Redirect(PartnerLoginPath + RegisterTabQuery);
     }
 
     [HttpGet(FirmaRegisterPath)]
     public IActionResult FirmaRegisterRedirect()
     {
         TempData["OpenFirmaRegisterTab"] = "1";
-        return Redirect(FirmaLoginPath);
+        return Redirect(FirmaLoginPath + RegisterTabQuery);
     }
 
     [HttpPost(UserRegisterPath)]
@@ -59,7 +60,7 @@ public class RegisterController : Controller
             {
                 TempData["UserRegisterError"] = result.Message;
                 TempData["OpenUserRegisterTab"] = "1";
-                return Redirect(UserLoginPath);
+                return Redirect(UserLoginPath + RegisterTabQuery);
             }
 
             TempData["UserLoginSuccess"] = result.Message;
@@ -69,7 +70,7 @@ public class RegisterController : Controller
         {
             TempData["UserRegisterError"] = $"Kayıt işlemi sırasında beklenmeyen bir hata oluştu: {ex.Message}";
             TempData["OpenUserRegisterTab"] = "1";
-            return Redirect(UserLoginPath);
+            return Redirect(UserLoginPath + RegisterTabQuery);
         }
     }
 
@@ -86,17 +87,18 @@ public class RegisterController : Controller
             {
                 TempData["PartnerRegisterError"] = result.Message;
                 TempData["OpenPartnerRegisterTab"] = "1";
-                return Redirect(PartnerLoginPath);
+                return Redirect(PartnerLoginPath + RegisterTabQuery);
             }
 
             TempData["PartnerRegisterSuccess"] = result.Message;
-            return Redirect($"/eposta-dogrula?email={Uri.EscapeDataString(normalizedEmail)}");
+            TempData["PartnerRegisterSuccessEmail"] = normalizedEmail;
+            return Redirect(PartnerLoginPath);
         }
         catch (Exception ex)
         {
             TempData["PartnerRegisterError"] = $"Partner kaydı sırasında beklenmeyen bir hata oluştu: {ex.Message}";
             TempData["OpenPartnerRegisterTab"] = "1";
-            return Redirect(PartnerLoginPath);
+            return Redirect(PartnerLoginPath + RegisterTabQuery);
         }
     }
 
@@ -113,7 +115,7 @@ public class RegisterController : Controller
             {
                 TempData["FirmaRegisterError"] = result.Message;
                 TempData["OpenFirmaRegisterTab"] = "1";
-                return Redirect(FirmaLoginPath);
+                return Redirect(FirmaLoginPath + RegisterTabQuery);
             }
 
             TempData["FirmaRegisterSuccess"] = result.Message;
@@ -123,7 +125,7 @@ public class RegisterController : Controller
         {
             TempData["FirmaRegisterError"] = $"Firma başvurusu sırasında beklenmeyen bir hata oluştu: {ex.Message}";
             TempData["OpenFirmaRegisterTab"] = "1";
-            return Redirect(FirmaLoginPath);
+            return Redirect(FirmaLoginPath + RegisterTabQuery);
         }
     }
 

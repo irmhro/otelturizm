@@ -1,0 +1,31 @@
+ID|YETKI_KODU|MODUL|EYLEM|ACIKLAMA|VARSAYILAN_IZIN|OLUSTURULMA_TARIHI
+--|----------|-----|-----|--------|---------------|------------------
+1|DASHBOARD_GORUNTULE|Dashboard|Görüntüle|Panel özet ekranlarını görüntüler|1|2026-05-31 08:11:04
+2|REZERVASYON_GORUNTULE|Rezervasyon|Görüntüle|Rezervasyon kayıtlarını listeler|1|2026-05-31 08:11:04
+3|REZERVASYON_YONET|Rezervasyon|Yönet|Rezervasyon statüsü ve müdahale işlemleri|0|2026-05-31 08:11:04
+4|OTEL_GORUNTULE|Otel|Görüntüle|Otel ve tesis kayıtlarını listeler|1|2026-05-31 08:11:04
+5|OTEL_YONET|Otel|Yönet|Otel yayın, askı ve detay yönetimi|0|2026-05-31 08:11:04
+6|ODA_YONET|Oda|Yönet|Oda ve oda özelliklerini yönetir|0|2026-05-31 08:11:04
+7|FIYAT_YONET|Fiyat|Yönet|Fiyat, stok ve kampanya kayıtlarını yönetir|0|2026-05-31 08:11:04
+8|KAMPANYA_YONET|Kampanya|Yönet|Kampanya tanım ve katılım kayıtlarını yönetir|0|2026-05-31 08:11:04
+9|FIRMA_GORUNTULE|Firma|Görüntüle|Firma başvuru ve rezervasyon kayıtlarını görüntüler|0|2026-05-31 08:11:04
+10|FIRMA_YONET|Firma|Yönet|Firma hesap ve onay süreçlerini yönetir|0|2026-05-31 08:11:04
+11|PARTNER_GORUNTULE|Partner|Görüntüle|Partner başvuru ve tesis kayıtlarını görüntüler|0|2026-05-31 08:11:04
+12|PARTNER_YONET|Partner|Yönet|Partner onay, evrak ve tesis süreçlerini yönetir|0|2026-05-31 08:11:04
+13|KULLANICI_GORUNTULE|Kullanıcı|Görüntüle|Kullanıcı kayıtlarını görüntüler|0|2026-05-31 08:11:04
+14|KULLANICI_YONET|Kullanıcı|Yönet|Kullanıcı, rol ve departman atamalarını yönetir|0|2026-05-31 08:11:04
+15|ROL_YONET|Yetki|Yönet|Rol ve yetki matrisi yönetimi|0|2026-05-31 08:11:04
+16|FINANS_GORUNTULE|Finans|Görüntüle|Fatura, komisyon ve ödeme kayıtlarını görüntüler|0|2026-05-31 08:11:04
+17|FINANS_YONET|Finans|Yönet|Ödeme, mutabakat ve finans yönetimi|0|2026-05-31 08:11:04
+18|RAPOR_GORUNTULE|Rapor|Görüntüle|Operasyon ve gelir raporlarını görüntüler|0|2026-05-31 08:11:04
+19|ICERIK_YONET|İçerik|Yönet|Yardım merkezi, blog, SSS ve içerik yönetimi|0|2026-05-31 08:11:04
+20|MAIL_YONET|E-posta|Yönet|E-posta servisleri, kuyruk ve şablon yönetimi|0|2026-05-31 08:11:04
+21|DESTEK_YONET|Destek|Yönet|Destek talepleri ve cevap süreçlerini yönetir|0|2026-05-31 08:11:04
+22|YORUM_YONET|Yorum|Yönet|Yorum moderasyonu ve ihlal bildirimleri|0|2026-05-31 08:11:04
+23|GUVENLIK_GORUNTULE|Güvenlik|Görüntüle|Güvenlik olaylarını görüntüler|0|2026-05-31 08:11:04
+24|GUVENLIK_YONET|Güvenlik|Yönet|Güvenlik, oturum ve erişim ayarlarını yönetir|0|2026-05-31 08:11:04
+25|SISTEM_GORUNTULE|Sistem|Görüntüle|Sistem sağlığı ve checkup ekranlarını görüntüler|0|2026-05-31 08:11:04
+26|SISTEM_YONET|Sistem|Yönet|Platform ayarları ve servis yapılandırması|0|2026-05-31 08:11:04
+27|SATIS_GORUNTULE|Satış|Görüntüle|Satış talepleri ve müşteri kayıtlarını görüntüler|0|2026-05-31 08:11:04
+28|SATIS_YONET|Satış|Yönet|Satış akışı ve teklif süreçlerini yönetir|0|2026-05-31 08:11:04
+29|SOZLESME_YONET|Sözleşme|Yönet|Sözleşme ve KVKK içerik süreçlerini yönetir|0|2026-05-31 08:11:04

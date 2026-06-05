@@ -4,46 +4,18 @@
     var resendVerifyEmail = TempData["ResendVerifyEmail"] as string ?? string.Empty;
 }
 
-<section class="auth-shell user-auth-shell firma-auth-shell">
-    <div class="auth-stage">
-        <aside class="auth-sidebar firma-auth-sidebar">
-            <div class="auth-sidebar-top">
-                <span class="auth-sidebar-badge">Firma</span>
+<div class="auth-card">
+    <div class="auth-layout">
+        <div class="auth-form-panel">
+            <div class="auth-tab-buttons" data-auth-tabs>
+                <button type="button" class="auth-tab-btn active" data-target="firmaLoginPanel">Firma Girişi</button>
+                <button type="button" class="auth-tab-btn" data-target="firmaRegisterPanel">Firma Hesabı Açın</button>
             </div>
 
-            <div class="auth-sidebar-content">
-                <p class="auth-kicker">Kurumsal seyahat yönetimi</p>
-                <h1>Firmanızın konaklama bütçesini tek panelden yönetin</h1>
-                <p class="auth-lead">Firma hesabınızı açın, başvurunuzu yöneticilerimiz değerlendirsin ve onay sonrasında özel fiyatlar, çalışan limitleri ve rapor ekranlarıyla ilerleyin.</p>
-
-                <ul class="auth-feature-list">
-                    <li><i class="fas fa-tags"></i> Otellerin firmalara özel tanımladığı indirimli fiyatları görün</li>
-                    <li><i class="fas fa-user-group"></i> Çalışan bazlı limit ve onay akışlarını yönetin</li>
-                    <li><i class="fas fa-file-invoice"></i> Kurumsal faturaları ve rezervasyon geçmişini takip edin</li>
-                    <li><i class="fas fa-shield-check"></i> Onaylı hesap ile güvenli giriş ve merkezi kontrol sağlayın</li>
-                </ul>
-            </div>
-
-            <div class="auth-sidebar-bottom">
-                <span><i class="fas fa-clock"></i> Ortalama değerlendirme süresi: 24 saat</span>
-                <span><i class="fas fa-circle-check"></i> Onay sonrası firma paneli aktif olur</span>
-            </div>
-        </aside>
-
-        <div class="auth-panel-wrap">
-            <div class="auth-tabs" data-auth-tabs>
-                <button type="button" class="auth-tab active" data-target="firmaLoginPanel">
-                    <i class="fas fa-sign-in-alt"></i> Firma Girişi
-                </button>
-                <button type="button" class="auth-tab" data-target="firmaRegisterPanel">
-                    <i class="fas fa-building-circle-check"></i> Firma Hesabı Açın
-                </button>
-            </div>
-
-            <div class="auth-panel active" id="firmaLoginPanel">
+            <div class="auth-form-panel-block active" id="firmaLoginPanel">
                 @if (TempData["FirmaRegisterSuccess"] is string successMessage)
                 {
-                    <div class="auth-success">@successMessage</div>
+                    <div class="auth-alert auth-alert-success">@successMessage</div>
                 }
 
                 @if (TempData["FirmaLoginError"] is string loginError)
@@ -54,36 +26,26 @@
                         <form method="post" action="/eposta-dogrula/tekrar-gonder" class="auth-resend-verify-form">
                             @Html.AntiForgeryToken()
                             <input type="hidden" name="email" value="@resendVerifyEmail" />
-                            <button type="submit" class="auth-resend-verify-btn">
-                                <i class="fas fa-paper-plane"></i> Onaylama E-postası Gönder
-                            </button>
+                            <button type="submit" class="auth-resend-verify-btn"><i class="fas fa-paper-plane"></i> Onaylama E-postası Gönder</button>
                         </form>
                     }
                 }
 
-                <div class="divider-line"><span>onaylı firma hesabı ile giriş yapın</span></div>
+                <div class="auth-form-hint"><i class="fas fa-building"></i> Onaylı firma hesabı ile giriş yapın</div>
 
                 <form class="auth-form" id="firmaLoginForm" method="post" action="/firma-giris">
                     @Html.AntiForgeryToken()
                     <div class="form-group">
                         <label for="firmaIdentity">Yetkili E-posta</label>
-                        <div class="input-wrap">
-                            <i class="far fa-envelope"></i>
-                            <input id="firmaIdentity" name="firmaIdentity" type="email" class="form-control" placeholder="yetkili@firma.com" value="@resendVerifyEmail" required />
-                        </div>
+                        <input id="firmaIdentity" name="firmaIdentity" type="email" class="form-control" placeholder="yetkili@firma.com" value="@resendVerifyEmail" required />
                     </div>
-
                     <div class="form-group">
                         <label for="firmaLoginPassword">Şifre</label>
-                        <div class="input-wrap">
-                            <i class="fas fa-lock"></i>
+                        <div class="input-wrap password-wrapper">
                             <input id="firmaLoginPassword" name="firmaPassword" type="password" class="form-control" placeholder="••••••••" required />
-                            <button type="button" class="toggle-password" data-toggle-target="firmaLoginPassword">
-                                <i class="far fa-eye"></i>
-                            </button>
+                            <button type="button" class="toggle-password" data-toggle-target="firmaLoginPassword" aria-label="Şifreyi göster"><i class="far fa-eye"></i></button>
                         </div>
                     </div>
-
                     <div class="form-row-meta">
                         <label class="checkbox-inline">
                             <input type="checkbox" name="rememberMe" value="true" checked />
@@ -91,23 +53,45 @@
                         </label>
                         <a href="/sifremi-unuttum" class="text-link">Şifremi unuttum</a>
                     </div>
-
-                    <button type="submit" class="auth-submit-btn firma-submit-btn">Firma Paneline Giriş Yap <i class="fas fa-arrow-right"></i></button>
+                    <button type="submit" class="auth-submit-btn">Firma Paneline Giriş Yap <i class="fas fa-arrow-right"></i></button>
                 </form>
+                <p class="auth-helper">Henüz firma hesabınız yok mu? <button type="button" class="text-button" data-switch-tab="firmaRegisterPanel">Hemen başvurun</button></p>
             </div>
 
-            <div class="auth-panel" id="firmaRegisterPanel">
+            <div class="auth-form-panel-block" id="firmaRegisterPanel">
                 <partial name="~/Views/Register/_FirmaRegisterForm.cshtml" />
             </div>
 
-            <div class="auth-trust-row">
+            <div class="legal-note">
                 <span><i class="fas fa-shield-alt"></i> KVKK</span>
                 <span><i class="fas fa-building-shield"></i> Kurumsal Doğrulama</span>
                 <span><i class="fas fa-file-signature"></i> Onaylı Erişim</span>
             </div>
         </div>
+
+        <aside class="auth-info">
+            <div>
+                <div class="auth-info-logo">
+                    <partial name="~/Views/Anasayfa/_AnasayfaLogo.cshtml" />
+                    <small>Firma</small>
+                </div>
+                <span class="auth-info-badge">Kurumsal</span>
+                <h2>İş seyahatlerinizi tek panelden yönetin</h2>
+                <p class="tagline">Firma hesabınızı açın, onay sonrasında özel fiyatlar ve rapor ekranlarıyla ilerleyin.</p>
+                <ul class="benefits-list">
+                    <li><i class="fas fa-tags"></i> Firmalara özel indirimli fiyatlar</li>
+                    <li><i class="fas fa-user-group"></i> Çalışan limit ve onay akışları</li>
+                    <li><i class="fas fa-file-invoice"></i> Kurumsal fatura ve rezervasyon geçmişi</li>
+                    <li><i class="fas fa-shield-check"></i> Onaylı hesap ile güvenli giriş</li>
+                </ul>
+            </div>
+            <div class="trust-badges">
+                <span><i class="fas fa-clock"></i> Ortalama onay: 24 saat</span>
+                <span><i class="fas fa-circle-check"></i> Onaylı erişim</span>
+            </div>
+        </aside>
     </div>
-</section>
+</div>
 
 @section Scripts {
     @{
@@ -115,160 +99,32 @@
     }
     <script nonce="@nonce">
         (function () {
-            let lastTouchEnd = 0;
-            document.addEventListener('touchend', function (event) {
-                const now = Date.now();
-                if (now - lastTouchEnd <= 280) {
-                    event.preventDefault();
-                }
-                lastTouchEnd = now;
-            }, { passive: false });
-
-            const scope = document.querySelector('.firma-auth-shell');
-            if (!scope) {
-                return;
-            }
-
-            const tabs = scope.querySelectorAll('[data-auth-tabs] .auth-tab');
-            const panels = scope.querySelectorAll('.auth-panel');
-
-            function switchPanel(id) {
-                tabs.forEach(tab => tab.classList.toggle('active', tab.dataset.target === id));
-                panels.forEach(panel => panel.classList.toggle('active', panel.id === id));
-            }
-
-            tabs.forEach(tab => {
-                tab.addEventListener('click', () => switchPanel(tab.dataset.target));
-            });
-
-            scope.querySelectorAll('[data-toggle-target]').forEach(button => {
-                button.addEventListener('click', function () {
-                    const input = document.getElementById(this.dataset.toggleTarget);
-                    const icon = this.querySelector('i');
-                    if (!input || !icon) {
-                        return;
-                    }
-
-                    const isPassword = input.type === 'password';
-                    input.type = isPassword ? 'text' : 'password';
-                    icon.className = isPassword ? 'far fa-eye-slash' : 'far fa-eye';
-                });
-            });
-
-            const loginForm = document.getElementById('firmaLoginForm');
-            loginForm?.addEventListener('submit', function () {
-                const submitButton = this.querySelector('.auth-submit-btn');
-                if (submitButton) {
-                    submitButton.disabled = true;
-                    submitButton.innerHTML = 'Giriş doğrulanıyor <i class="fas fa-spinner fa-spin"></i>';
-                }
-            });
-
-            const registerForm = document.getElementById('firmaRegisterForm');
-            registerForm?.addEventListener('submit', function () {
-                const submitButton = this.querySelector('.auth-submit-btn');
-                if (submitButton) {
-                    submitButton.disabled = true;
-                    submitButton.innerHTML = 'Başvuru oluşturuluyor <i class="fas fa-spinner fa-spin"></i>';
-                }
-            });
-
             const query = new URLSearchParams(window.location.search);
             const shouldOpenRegister = '@(TempData["OpenFirmaRegisterTab"] as string ?? string.Empty)';
-            const shouldOpenRegisterFromUrl = query.get('sekme') === 'kayit' || window.location.hash === '#firma-kayit';
-            if (shouldOpenRegister === '1' || shouldOpenRegisterFromUrl) {
-                switchPanel('firmaRegisterPanel');
+            if (shouldOpenRegister === '1' || query.get('sekme') === 'kayit' || window.location.hash === '#firma-kayit') {
+                document.querySelector('[data-auth-tabs] [data-target="firmaRegisterPanel"]')?.click();
             }
 
-            async function initializeAddressLookup() {
-                const provinceSelect = document.getElementById('firmaCity');
-                const districtSelect = document.getElementById('firmaDistrict');
-                const neighborhoodSelect = document.getElementById('firmaNeighborhood');
-                const postalCodeInput = document.getElementById('firmaPostalCode');
+            document.getElementById('firmaLoginForm')?.addEventListener('submit', function () {
+                const btn = this.querySelector('.auth-submit-btn');
+                if (btn) { btn.disabled = true; btn.innerHTML = 'Giriş doğrulanıyor <i class="fas fa-spinner fa-spin"></i>'; }
+            });
 
-                if (!provinceSelect || !districtSelect || !neighborhoodSelect) {
-                    return;
-                }
+            document.getElementById('firmaRegisterForm')?.addEventListener('submit', function () {
+                const btn = this.querySelector('.auth-submit-btn');
+                if (btn) { btn.disabled = true; btn.innerHTML = 'Başvuru oluşturuluyor <i class="fas fa-spinner fa-spin"></i>'; }
+            });
 
-                const fillOptions = function (select, items, placeholder) {
-                    select.innerHTML = '';
-                    const placeholderOption = document.createElement('option');
-                    placeholderOption.value = '';
-                    placeholderOption.textContent = placeholder;
-                    select.appendChild(placeholderOption);
-
-                    items.forEach(function (item) {
-                        const option = document.createElement('option');
-                        option.value = item.name;
-                        option.textContent = item.name;
-                        option.dataset.id = item.id;
-                        if (item.postalCode) {
-                            option.dataset.postalCode = item.postalCode;
-                        }
-                        select.appendChild(option);
-                    });
-                };
-
-                const loadDistricts = async function () {
-                    const selected = provinceSelect.options[provinceSelect.selectedIndex];
-                    const provinceId = selected?.dataset.id;
-                    if (!provinceId) {
-                        districtSelect.disabled = true;
-                        neighborhoodSelect.disabled = true;
-                        fillOptions(districtSelect, [], 'Önce il seçiniz');
-                        fillOptions(neighborhoodSelect, [], 'Önce ilçe seçiniz');
-                        return;
-                    }
-
-                    const response = await fetch('/api/adres/ilceler?ilId=' + encodeURIComponent(provinceId), { credentials: 'same-origin' });
-                    const items = await response.json();
-                    fillOptions(districtSelect, items, 'İlçe seçiniz');
-                    fillOptions(neighborhoodSelect, [], 'Önce ilçe seçiniz');
-                    districtSelect.disabled = false;
-                    neighborhoodSelect.disabled = true;
-                };
-
-                const loadNeighborhoods = async function () {
-                    const selected = districtSelect.options[districtSelect.selectedIndex];
-                    const districtId = selected?.dataset.id;
-                    if (!districtId) {
-                        neighborhoodSelect.disabled = true;
-                        fillOptions(neighborhoodSelect, [], 'Önce ilçe seçiniz');
-                        if (postalCodeInput) {
-                            postalCodeInput.value = '';
-                        }
-                        return;
-                    }
-
-                    const response = await fetch('/api/adres/mahalleler?ilceId=' + encodeURIComponent(districtId), { credentials: 'same-origin' });
-                    const items = await response.json();
-                    fillOptions(neighborhoodSelect, items, 'Mahalle seçiniz');
-                    neighborhoodSelect.disabled = false;
-                };
-
-                neighborhoodSelect.addEventListener('change', function () {
-                    const selected = neighborhoodSelect.options[neighborhoodSelect.selectedIndex];
-                    if (postalCodeInput) {
-                        postalCodeInput.value = selected?.dataset.postalCode || '';
-                    }
-                });
-
-                provinceSelect.addEventListener('change', loadDistricts);
-                districtSelect.addEventListener('change', loadNeighborhoods);
-
-                const countriesResponse = await fetch('/api/adres/ulkeler', { credentials: 'same-origin' });
-                const countries = countriesResponse.ok ? await countriesResponse.json() : [];
-                const trCountry = countries.find(function (c) { return (c.iso2 || '').toUpperCase() === 'TR'; }) || countries[0];
-                if (!trCountry || !trCountry.id) {
-                    fillOptions(provinceSelect, [], 'Ülke listesi yüklenemedi');
-                    return;
-                }
-                const provinceResponse = await fetch('/api/adres/iller?ulkeId=' + encodeURIComponent(trCountry.id), { credentials: 'same-origin' });
-                const provinces = provinceResponse.ok ? await provinceResponse.json() : [];
-                fillOptions(provinceSelect, provinces, 'İl seçiniz');
+            if (window.otelturizmInitAuthAddressLookup) {
+                window.otelturizmInitAuthAddressLookup({
+                    countryId: 'firmaCountry',
+                    provinceId: 'firmaCity',
+                    districtId: 'firmaDistrict',
+                    neighborhoodId: 'firmaNeighborhood',
+                    postalCodeId: 'firmaPostalCode',
+                    defaultCountryIso: 'TR'
+                }).catch(console.error);
             }
-
-            initializeAddressLookup().catch(console.error);
         })();
     </script>
 }

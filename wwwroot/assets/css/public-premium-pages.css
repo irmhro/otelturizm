@@ -1,0 +1,105 @@
+/* Ortak public premium kabuk — kurumsal, firma, sözleşme vb. */
+:root {
+    --space-8: 32px;
+    --utility-bar-height: 32px;
+    --header-height: 72px;
+    --header-height-mobile: 64px;
+    --home-header-sticky-h: 88px;
+    --page-max-width: 1240px;
+}
+
+.otelliste-page-shell,
+.otelliste-page-shell .public-premium-main {
+    overflow-x: clip;
+}
+
+.kurumsal-page,
+.firma-page,
+.kampanyalar-page,
+.sozlesme-page {
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    color: #1A1919;
+    background: #FCFBF9;
+    letter-spacing: -0.01em;
+}
+
+.kurumsal-page .public-premium-main,
+.firma-page .public-premium-main,
+.kampanyalar-page .public-premium-main,
+.sozlesme-page .public-premium-main {
+    padding: 0 0 52px;
+    overflow-x: clip;
+}
+
+/* Kurumsal ana landing (/kurumsal) — detay: kurumsal.css */
+.kurumsal-page .kur-main {
+    padding: 12px 0 8px;
+}
+
+.kurumsal-page .kur-main .container {
+    max-width: var(--page-max-width);
+    margin: 0 auto;
+    padding: 0 24px;
+}
+
+/* Kurumsal alt sayfalar (hakkımızda, blog, …) */
+.kurumsal-page .corp-page {
+    margin-top: 0;
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    background:
+        radial-gradient(900px 520px at 12% -8%, rgba(255, 158, 0, 0.08), transparent 58%),
+        radial-gradient(720px 440px at 92% 12%, rgba(227, 10, 23, 0.05), transparent 52%),
+        linear-gradient(185deg, #fdfcf8 0%, #f7f3ec 52%, #faf8f4 100%);
+}
+
+.kurumsal-page .corp-page__inner {
+    max-width: var(--page-max-width);
+    padding-left: 24px;
+    padding-right: 24px;
+}
+
+.kurumsal-page .corp-hero__glass {
+    background: linear-gradient(135deg, #1A1919 0%, #2a2928 48%, #003b95 100%);
+}
+
+.kurumsal-page .corp-btn--primary {
+    background: #1A1919;
+    border-color: #1A1919;
+}
+
+.kurumsal-page .corp-btn--primary:hover {
+    background: #E30A17;
+    border-color: #E30A17;
+}
+
+/* Firma landing (/firma) — detay: firma.css */
+.firma-page .fir-main {
+    padding: 12px 0 8px;
+}
+
+.firma-page .fir-main .container {
+    max-width: var(--page-max-width);
+    margin: 0 auto;
+    padding: 0 24px;
+}
+
+@media (min-width: 901px) {
+    .kurumsal-page .kur-main {
+        padding-top: 20px;
+    }
+
+    .firma-page .fir-main {
+        padding-top: 20px;
+    }
+}
+
+@media (max-width: 900px) {
+    .kurumsal-page .kur-main .container,
+    .kurumsal-page .corp-page__inner,
+    .firma-page .fir-main .container,
+    .firma-page .fir-body.container,
+    .kampanyalar-page .kmp-body.container {
+        padding-left: 16px;
+        padding-right: 16px;
+    }
+}

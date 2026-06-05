@@ -32,6 +32,32 @@ public class LocaleController : Controller
                 Path = "/"
             });
 
+        Response.Cookies.Append(
+            "site_language_v1",
+            normalized[..2].ToLowerInvariant(),
+            new CookieOptions
+            {
+                IsEssential = true,
+                HttpOnly = false,
+                SameSite = SameSiteMode.Lax,
+                Secure = Request.IsHttps,
+                Expires = DateTimeOffset.UtcNow.AddYears(1),
+                Path = "/"
+            });
+
+        Response.Cookies.Append(
+            "site_language_explicit_v1",
+            "1",
+            new CookieOptions
+            {
+                IsEssential = true,
+                HttpOnly = false,
+                SameSite = SameSiteMode.Lax,
+                Secure = Request.IsHttps,
+                Expires = DateTimeOffset.UtcNow.AddYears(1),
+                Path = "/"
+            });
+
         if (User?.Identity?.IsAuthenticated == true)
         {
             var userId = TryGetUserId();

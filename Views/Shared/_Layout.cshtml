@@ -8,7 +8,8 @@
 @inject otelturizmnew.Services.InternationalSeoService InternationalSeo
 <!DOCTYPE html>
 @{
-    var pathHasLocalePrefix = otelturizmnew.Services.InternationalSeoPaths.HasLocalePathPrefix(Context.Request.Path.Value ?? "/");
+    var pathValue = Context.Request.Path.Value ?? "/";
+    var pathHasLocalePrefix = otelturizmnew.Services.InternationalSeoPaths.HasLocalePathPrefix(pathValue);
     var lang = pathHasLocalePrefix
         ? System.Globalization.CultureInfo.CurrentUICulture.TwoLetterISOLanguageName
         : "tr";
@@ -132,6 +133,12 @@
     <link rel="stylesheet" href="~/assets/css/site-layout.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/assets/css/site-layout.mobile.css" asp-append-version="true" media="(max-width: 900px)" />
     <link rel="stylesheet" href="~/assets/css/site-footer.mobile.css" asp-append-version="true" media="(max-width: 900px)" />
+    <link rel="stylesheet" href="~/assets/css/anasayfa-header.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/assets/css/anasayfa-header.mobile.css" asp-append-version="true" media="(max-width: 900px)" />
+    <link rel="stylesheet" href="~/assets/css/footer_masaustu.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/assets/css/footer_mobil.css" asp-append-version="true" media="(max-width: 900px)" />
+    <link rel="stylesheet" href="~/assets/css/route-picker-modal.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/assets/css/route-picker-modal.mobile.css" asp-append-version="true" media="(max-width: 900px)" />
     <link rel="stylesheet" href="~/assets/css/slaytgorsel.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/assets/css/yanbar.css" asp-append-version="true" />
     @if (developmentGateEnabled)
@@ -168,12 +175,18 @@
         <script type="application/ld+json">@Html.Raw(jsonLd)</script>
     }
 </head>
-<body class="@(isDevelopmentUnlocked ? "development-unlocked" : "development-locked")">
+@{
+    var layoutBodyClass = ViewData["BodyClass"] as string ?? string.Empty;
+    var layoutBodyClasses = string.Join(" ",
+        isDevelopmentUnlocked ? "development-unlocked" : "development-locked",
+        layoutBodyClass).Trim();
+}
+<body class="@layoutBodyClasses">
 @{
     ViewData["HeaderContext"] = ViewData["HeaderContext"] as string ?? "auth";
 }
 <a class="skip-link" href="#mainContent">@SharedLocalizer["Nav.SkipToContent"].Value</a>
-<partial name="~/Views/Anasayfa/_AnasayfaHeader.cshtml" />
+<partial name="~/Views/Anasayfa/_AnasayfaPremiumHeader.cshtml" />
 
 <script src="~/assets/js/sw-asset-guard.js" asp-append-version="true"></script>
 <script src="~/assets/js/layout/sw-cleanup.js" asp-append-version="true"></script>
@@ -209,7 +222,8 @@
 
 <main class="site-main" id="mainContent">@RenderBody()</main>
 
-<partial name="~/Views/Anasayfa/_AnasayfaFooter.cshtml" />
+<partial name="~/Views/Anasayfa/_AnasayfaPremiumFooter.cshtml" />
+<partial name="~/Views/Shared/_RoutePickerModal.cshtml" />
 <partial name="~/Views/Shared/yanbar.cshtml" />
 <partial name="~/Views/Shared/_SlaytGorsel.cshtml" />
 
@@ -217,6 +231,34 @@
 <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
 <script src="~/js/site.js" asp-append-version="true"></script>
 <script src="~/assets/js/layout/mobile-menu.js" asp-append-version="true"></script>
+<script nonce="@nonce">
+(() => {
+    const menuButton = document.getElementById('homeMenuToggle');
+    const closeButton = document.getElementById('homeDrawerClose');
+    const drawer = document.getElementById('homeDrawerMenu');
+    const overlay = document.getElementById('homeDrawerOverlay');
+    if (!menuButton || !drawer || !overlay) return;
+    const open = () => {
+        drawer.classList.add('open');
+        overlay.classList.add('open');
+        menuButton.setAttribute('aria-expanded', 'true');
+        document.body.style.overflow = 'hidden';
+    };
+    const close = () => {
+        drawer.classList.remove('open');
+        overlay.classList.remove('open');
+        menuButton.setAttribute('aria-expanded', 'false');
+        document.body.style.overflow = '';
+    };
+    menuButton.addEventListener('click', open);
+    closeButton?.addEventListener('click', close);
+    overlay.addEventListener('click', close);
+    drawer.querySelectorAll('a').forEach(link => link.addEventListener('click', close));
+    document.addEventListener('keydown', event => {
+        if (event.key === 'Escape') close();
+    });
+})();
+</script>
 @if (developmentGateEnabled)
 {
     <script src="~/assets/js/layout/development-gate.js" asp-append-version="true"></script>
@@ -224,6 +266,9 @@
 <script src="~/assets/js/rum-webvitals.js" asp-append-version="true"></script>
 <script src="~/assets/js/client-error-reporter.js" asp-append-version="true"></script>
 <script src="~/assets/js/growth-analytics.js" asp-append-version="true"></script>
+<script src="~/assets/js/route-picker-modal.js" asp-append-version="true"></script>
+<script src="~/assets/js/home-drawer-prefs.js" asp-append-version="true" defer></script>
+<script src="~/assets/js/home-header-prefs.js" asp-append-version="true" defer></script>
 <script src="~/assets/js/slaytgorsel.js" asp-append-version="true"></script>
 @await RenderSectionAsync("Scripts", required: false)
 </body>

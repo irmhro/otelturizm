@@ -1,0 +1,946 @@
+/* ===== anasayfa_mobil.css — temel (home-index.mobile.css) ===== */
+/* Anasayfa mobil — yeni tasarım.html uyumlu (≤900px) */
+@media (max-width: 900px) {
+    .anasayfa-page {
+        --home-type-promo-title: 13px;
+        --home-type-section: 20px;
+        --home-type-card-title: 14px;
+        --home-type-card-location: 12px;
+        --home-type-field-sub: 11px;
+        --home-type-input-value: 14px;
+        --home-btn-min-height: 40px;
+        --home-card-media-h: 180px;
+    }
+
+    .anasayfa-page {
+        overflow-x: hidden;
+        max-width: 100vw;
+    }
+
+    .anasayfa-page main,
+    .anasayfa-page .container {
+        max-width: 100%;
+        overflow-x: hidden;
+    }
+
+    .container { padding: 0 16px; }
+
+    .anasayfa-page .navbar {
+        height: var(--home-header-bar-h) !important;
+        min-height: var(--home-header-bar-h) !important;
+        padding: 0 !important;
+    }
+
+    .hero-section { padding: 26px 0 14px; }
+    .hero-title { font-size: clamp(28px, 8vw, 38px); }
+    .hero-subtitle { font-size: 14px; margin-bottom: 20px; }
+
+    .hero-section-atmosphere,
+    .hero-stage-veil {
+        display: none !important;
+    }
+
+    .hero-stage {
+        padding: 0;
+        margin: 0;
+    }
+
+    .hero-top-grid--solo .hero-headline-pro {
+        max-width: 100%;
+    }
+
+    /* Arama — legacy form (search-engine-pro hariç) */
+    .search-engine:not(.search-engine-pro) {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 12px;
+        border-radius: 16px;
+        padding: 14px 16px;
+        max-width: 100%;
+    }
+
+    .search-engine:not(.search-engine-pro) .input-destination {
+        grid-column: 1 / -1;
+    }
+
+    .search-engine:not(.search-engine-pro) .input-checkin {
+        grid-column: 1;
+        min-width: 0;
+    }
+
+    .search-engine:not(.search-engine-pro) .input-checkout {
+        grid-column: 2;
+        min-width: 0;
+    }
+
+    .search-engine:not(.search-engine-pro) .input-adults {
+        grid-column: 1;
+        min-width: 0;
+    }
+
+    .search-engine:not(.search-engine-pro) .input-children {
+        grid-column: 2;
+        min-width: 0;
+    }
+
+    .search-engine:not(.search-engine-pro) .input-rooms {
+        grid-column: 1 / -1;
+    }
+
+    .search-engine:not(.search-engine-pro) .input-group {
+        border-bottom: none;
+        padding-bottom: 0;
+        min-width: 0;
+    }
+
+    .search-engine:not(.search-engine-pro) .input-group:not(:last-of-type)::after {
+        display: none;
+    }
+
+    .search-engine:not(.search-engine-pro) .btn-search {
+        grid-column: 1 / -1;
+        width: 100%;
+        border-radius: 18px;
+    }
+
+    .category-carousel {
+        justify-content: flex-start;
+        max-width: 100%;
+        margin: 16px 0 8px;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    /* Şanslı Şafak — kalan süre + kutuyu aç yan yana buton */
+    .flash-mystery-box {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 14px;
+        padding: 16px;
+    }
+
+    .mystery-left {
+        width: 100%;
+        min-width: 0;
+    }
+
+    .mystery-action-row {
+        width: 100%;
+        display: flex;
+        flex-direction: row;
+        align-items: stretch;
+        gap: 10px;
+    }
+
+    .mystery-action-row .mystery-countdown,
+    .mystery-action-row .btn-open-box {
+        flex: 1 1 0;
+        min-width: 0;
+        text-align: center;
+        justify-content: center;
+    }
+
+    .mystery-countdown { white-space: nowrap; }
+
+    .hotel-grid { grid-template-columns: 1fr; gap: 16px; }
+
+    .anasayfa-page .hotel-grid .hotel-card {
+        background: #fff;
+        border: 1px solid var(--border-subtle);
+        border-radius: 14px;
+        overflow: hidden;
+        box-shadow: 0 4px 14px rgba(26, 25, 25, 0.05);
+    }
+
+    .anasayfa-page .hotel-grid .home-premium-card-link {
+        display: block;
+    }
+
+    .anasayfa-page .hotel-grid .hotel-card-body {
+        padding: 12px 14px 14px;
+    }
+
+    .anasayfa-page .hotel-grid .hotel-title {
+        margin: 0 0 4px;
+        font-size: var(--home-type-card-title);
+        line-height: 1.25;
+    }
+
+    .anasayfa-page .hotel-grid .hotel-desc {
+        margin: 0 0 8px;
+        font-size: var(--home-type-card-location);
+    }
+
+    .anasayfa-page .hotel-grid .price-row {
+        margin-top: 0;
+        padding-top: 10px;
+        border-top: 1px solid var(--border-subtle);
+        align-items: flex-end;
+    }
+
+    .anasayfa-page .hotel-grid .price-row .card-link {
+        flex-shrink: 0;
+        white-space: nowrap;
+    }
+
+    .anasayfa-page .hotel-grid .price-inline strong {
+        font-size: 17px;
+    }
+
+    /* img-holder yüksekliği → anasayfa_mobil.css (--home-card-media-h) */
+
+    .section-headline {
+        font-size: 18px;
+        margin: 32px 0 14px;
+        flex-wrap: nowrap;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .headline-left {
+        flex: 1 1 auto;
+        min-width: 0;
+    }
+
+    .headline-link {
+        flex-shrink: 0;
+        white-space: nowrap;
+        font-size: 12px;
+    }
+
+    /* Bölgelere Göre Keşfet — 2 sütun, şablon kart stili */
+    .destinations-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+        gap: 10px;
+    }
+
+    .dest-card {
+        min-width: 0;
+        padding: 10px;
+        background: #fff;
+        border: 1px solid var(--border-subtle);
+        border-radius: 12px;
+    }
+
+    .dest-img {
+        width: 40px;
+        height: 40px;
+        flex-shrink: 0;
+    }
+
+    .dest-meta h4 {
+        font-size: 13px;
+        line-height: 1.2;
+    }
+
+    .dest-meta p {
+        font-size: 11px;
+    }
+
+    .price-lock-banner {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 14px;
+    }
+
+    .lock-content {
+        flex: 1 1 auto;
+        min-width: 0;
+        width: 100%;
+    }
+
+    .lock-title-row {
+        gap: 8px;
+    }
+
+    .lock-badge {
+        width: 30px;
+        height: 30px;
+        font-size: 14px;
+    }
+
+    .lock-title-row h4 {
+        font-size: 14px;
+    }
+
+    .lock-text p {
+        font-size: 12.5px;
+        line-height: 1.4;
+    }
+
+    .price-lock-steps {
+        gap: 6px;
+        margin-top: 8px;
+    }
+
+    .price-lock-steps li {
+        font-size: 10.5px;
+        padding: 4px 8px;
+    }
+
+    .btn-lock-action {
+        flex-shrink: 0;
+        margin-left: auto;
+    }
+
+    .deals-row,
+    .loyalty-passport-hub,
+    .collections-grid,
+    .experience-row,
+    .fintech-strip,
+    .trust-section,
+    .blog-grid,
+    .business-lounge {
+        grid-template-columns: 1fr !important;
+    }
+
+    .quest-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+        gap: 12px;
+    }
+
+    .radar-row {
+        grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+        gap: 10px;
+    }
+
+    .eco-ribbon-stack {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 12px;
+    }
+
+    .eco-pills,
+    .ai-pills {
+        flex-wrap: wrap;
+        max-width: 100%;
+    }
+
+    .ai-pill,
+    .eco-pill {
+        max-width: 100%;
+    }
+
+    .heatmap-panel-stack {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 12px;
+        padding: 14px;
+    }
+
+    .heatmap-panel-stack .heat-meta-compact h4 {
+        font-size: 13px;
+    }
+
+    .heatmap-panel-stack .heat-meta-compact p {
+        font-size: 11.5px;
+    }
+
+    .heatmap-panel-stack .heat-meta-compact .heat-analysis-text {
+        font-size: 10.5px;
+        padding: 5px 8px;
+        line-height: 1.35;
+    }
+
+    .heatmap-panel-stack .heat-radar-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 8px;
+    }
+
+    .heatmap-panel-stack .heat-radar-card {
+        padding: 6px 5px 8px;
+    }
+
+    .heatmap-panel-stack .heat-radar-visual {
+        max-width: 72px;
+        margin-bottom: 5px;
+    }
+
+    .heatmap-panel-stack .heat-radar-name {
+        font-size: 10.5px;
+    }
+
+    .heatmap-panel-stack .heat-radar-stars {
+        margin-top: 4px;
+        gap: 3px;
+    }
+
+    .heatmap-panel-stack .heat-star-row {
+        font-size: 7.5px;
+    }
+
+    .heatmap-panel-stack .heat-radar-delta {
+        margin-top: 4px;
+        font-size: 9px;
+        padding: 3px 5px;
+    }
+
+    .heat-bar-wrapper {
+        width: 100%;
+        justify-content: space-between;
+        gap: 8px;
+    }
+}
+
+@media (max-width: 520px) {
+    .container { padding: 0 14px; }
+
+    .price-lock-banner {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 12px;
+    }
+
+    .btn-lock-action {
+        margin-left: 0;
+        width: 100%;
+        text-align: center;
+    }
+}
+
+
+/* ===== anasayfa_mobil.css — v4 katmanı (legacy form; pro hariç) ===== */
+@media (max-width: 900px) {
+    .search-engine:not(.search-engine-pro) {
+        display: grid !important;
+        grid-template-columns: 1fr 1fr !important;
+        gap: 10px !important;
+        border-radius: 16px !important;
+        padding: 14px !important;
+        max-width: 100%;
+        align-items: stretch;
+    }
+
+    .search-engine:not(.search-engine-pro) .input-destination { grid-column: 1 / -1 !important; }
+    .search-engine:not(.search-engine-pro) .input-checkin { grid-column: 1 !important; min-width: 0; }
+    .search-engine:not(.search-engine-pro) .input-checkout { grid-column: 2 !important; min-width: 0; }
+    .search-engine:not(.search-engine-pro) .input-adults { grid-column: 1 !important; min-width: 0; }
+    .search-engine:not(.search-engine-pro) .input-children { grid-column: 2 !important; min-width: 0; }
+    .search-engine:not(.search-engine-pro) .input-rooms { grid-column: 1 / -1 !important; }
+
+    .search-engine:not(.search-engine-pro) .input-group {
+        border-bottom: none;
+        padding: 4px 2px;
+        min-width: 0;
+    }
+
+    .search-engine:not(.search-engine-pro) .input-group label {
+        font-size: 9px;
+        margin-bottom: 2px;
+    }
+
+    .search-engine:not(.search-engine-pro) .input-group input,
+    .search-engine:not(.search-engine-pro) .input-group select {
+        font-size: 13px;
+        width: 100%;
+        min-width: 0;
+    }
+
+    .search-engine:not(.search-engine-pro) .input-group:not(:last-of-type)::after { display: none !important; }
+
+    .search-engine:not(.search-engine-pro) .btn-search {
+        grid-column: 1 / -1 !important;
+        width: 100% !important;
+        height: 46px;
+        border-radius: 14px !important;
+    }
+
+    .typewriter-hint {
+        font-size: 12px;
+        max-width: calc(100% - 4px);
+    }
+
+    .quest-item { padding: 12px; }
+
+    .club-banner-pro { padding: 20px 18px; }
+
+    .club-pro-actions { width: 100%; }
+
+    .btn-club-pro,
+    .btn-club-pro-outline { flex: 1 1 auto; }
+
+    .trust-section-pro { padding: 18px; }
+
+    .stat-card { flex: 1 1 calc(50% - 5px); }
+}
+
+@media (max-width: 900px) {
+    .category-carousel-shell { gap: 4px; margin: 16px 0 8px; }
+    .cat-nav { width: 30px; height: 30px; font-size: 11px; }
+}
+
+
+@media (max-width: 900px) {
+    .anasayfa-page .quest-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        border-top: 1px solid var(--border-subtle);
+    }
+
+    .anasayfa-page .quest-item {
+        padding: 14px 12px;
+        border-bottom: 1px solid var(--border-subtle);
+        border-right: 1px solid var(--border-subtle);
+    }
+
+    .anasayfa-page .quest-item:nth-child(2n) {
+        border-right: none;
+    }
+
+    .anasayfa-page .quest-item:nth-last-child(-n+2) {
+        border-bottom: none;
+    }
+}
+
+
+/* ===== anasayfa_mobil.css — v5 katmanı ===== */
+@media (max-width: 900px) {
+    .hero-top-grid {
+        gap: 16px;
+        margin-bottom: 18px;
+    }
+
+    .hero-top-grid .hero-campaigns {
+        display: none !important;
+    }
+
+    .hero-top-grid:not(.hero-top-grid--solo) .hero-headline-pro {
+        text-align: center;
+        align-items: center;
+        margin-bottom: 0;
+    }
+
+    .hero-top-grid:not(.hero-top-grid--solo) .hero-kicker,
+    .hero-top-grid:not(.hero-top-grid--solo) .hero-title-row {
+        justify-content: center;
+    }
+
+    .hero-headline-pro {
+        margin-bottom: 0;
+        padding: 0 2px;
+        gap: 10px;
+    }
+
+    .hero-meta-chip-text {
+        font-size: 9.5px;
+        letter-spacing: 0.09em;
+    }
+
+    .hero-meta-chip--brand {
+        padding: 3px 8px;
+    }
+
+    .hero-meta-chip--brand .hero-meta-chip-text {
+        font-size: 8px;
+        letter-spacing: 0.1em;
+    }
+
+    .hero-meta-chip--ozel {
+        padding: 8px 16px 9px;
+        max-width: min(340px, 92vw);
+    }
+
+    .hero-meta-chip-label {
+        font-size: 8px;
+        letter-spacing: 0.14em;
+    }
+
+    .hero-section {
+        padding-top: 16px;
+        padding-bottom: 14px;
+    }
+
+    .hero-section::after {
+        height: 88px;
+    }
+
+    .hero-title.hero-title-pro {
+        font-size: clamp(24px, 7.4vw, 32px);
+        line-height: 1.12;
+        gap: 2px;
+        letter-spacing: -0.03em;
+    }
+
+    .hero-title.hero-title-pro--headline {
+        width: 100%;
+        max-width: 100%;
+        font-size: clamp(17px, 4.8vw, 28px);
+        line-height: 1.15;
+        gap: 4px;
+    }
+
+    .hero-title-pro--headline .hero-title-row--spread {
+        justify-content: center;
+        flex-wrap: nowrap;
+        gap: 0.3em;
+        width: 100%;
+        max-width: 100%;
+    }
+
+    .hero-title-pro--headline .hero-title-row--spread .hero-title-word {
+        flex: 0 0 auto;
+        white-space: nowrap;
+    }
+
+    .hero-title-row {
+        display: flex;
+        flex-wrap: nowrap;
+        align-items: baseline;
+        justify-content: center;
+        gap: 0.28em;
+        width: 100%;
+        max-width: 100%;
+        white-space: nowrap;
+    }
+
+    .hero-title-row .hero-title-word {
+        white-space: nowrap;
+    }
+
+    .hero-title-row--impact {
+        padding-bottom: 4px;
+    }
+
+    .hero-title-word--discover::after {
+        height: 2px;
+        bottom: -3px;
+    }
+
+    .search-engine-shell {
+        width: 100%;
+        max-width: 100%;
+        margin-top: 4px;
+        margin-bottom: 12px;
+    }
+
+    .search-engine.search-engine-pro {
+        width: 100%;
+        max-width: 100%;
+        display: block !important;
+        grid-template-columns: unset !important;
+        padding: 0 !important;
+        gap: 0 !important;
+        border-radius: 16px !important;
+        border: 1px solid rgba(235, 233, 228, 0.6) !important;
+        box-shadow:
+            0 14px 36px rgba(26, 25, 25, 0.035),
+            0 4px 14px rgba(26, 25, 25, 0.015) !important;
+        margin: 0 auto 4px;
+    }
+
+    .search-engine-pro .input-group:not(:last-of-type)::after {
+        display: none !important;
+    }
+
+    .search-pro-row-tags {
+        display: block !important;
+        padding: 0;
+    }
+
+    .search-pro-ai-toggle {
+        padding: 10px 14px;
+    }
+
+    .search-pro-ai-toggle-main {
+        font-size: 10px;
+    }
+
+    .search-pro-ai-panel {
+        padding: 0 14px 12px;
+    }
+
+    .search-pro-ai-pills {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 6px;
+    }
+
+    .search-pro-row-trip {
+        display: grid !important;
+        grid-template-columns: 1fr 1fr;
+        gap: 12px 10px;
+        padding: 16px 16px 14px;
+        border-bottom: 1px solid rgba(235, 233, 228, 0.45);
+        background: linear-gradient(180deg, rgba(255, 255, 255, 0.98) 0%, rgba(252, 251, 250, 0.92) 100%);
+    }
+
+    .search-pro-row-trip .search-pro-field.search-pro-destination {
+        grid-column: 1 / -1 !important;
+        width: 100%;
+        margin-bottom: 2px;
+    }
+
+    .search-pro-row-trip .search-pro-field.search-pro-checkin {
+        grid-column: 1 !important;
+        min-width: 0;
+    }
+
+    .search-pro-row-trip .search-pro-field.search-pro-checkout {
+        grid-column: 2 !important;
+        min-width: 0;
+    }
+
+    .search-pro-row-meta {
+        display: grid !important;
+        grid-template-columns: 1fr;
+        gap: 12px;
+        padding: 14px 16px 16px;
+    }
+
+    .search-pro-row-meta .search-pro-guests-group {
+        grid-column: 1 / -1;
+        width: 100%;
+        display: grid;
+        gap: 6px;
+    }
+
+    .search-pro-guests-title {
+        display: flex;
+        align-items: center;
+        gap: 5px;
+        margin-bottom: 0;
+        font-size: var(--home-type-promo-title);
+        font-weight: 800;
+        letter-spacing: 0.02em;
+        text-transform: none;
+        color: var(--text-muted);
+    }
+
+    .search-pro-guests-title i {
+        color: var(--flag-crimson);
+        font-size: 11px;
+    }
+
+    .search-pro-guests-row {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 8px;
+    }
+
+    .search-pro-row-meta .search-pro-action {
+        grid-column: 1 / -1;
+        width: 100%;
+        margin-top: 2px;
+    }
+
+    .search-pro-guests-row .search-pro-field > label {
+        font-size: var(--home-type-field-sub);
+        font-weight: 800;
+        letter-spacing: 0.03em;
+        margin-bottom: 4px;
+    }
+
+    .search-pro-field label {
+        font-size: var(--home-type-promo-title);
+        margin-bottom: 6px;
+        gap: 5px;
+        letter-spacing: 0.02em;
+        text-transform: none;
+    }
+
+    .search-pro-field label i {
+        font-size: 11px;
+    }
+
+    .search-pro-input {
+        min-height: 40px;
+        padding: 8px 12px;
+        border-radius: 12px;
+        border-color: rgba(235, 233, 228, 0.65);
+    }
+
+    .search-engine-pro .search-pro-input input,
+    .search-engine-pro .search-pro-input select {
+        font-size: 14px;
+        min-height: 20px;
+        line-height: 1.25;
+    }
+
+    .search-pro-mini {
+        padding: 7px 8px;
+        border-radius: 12px;
+        border-color: rgba(235, 233, 228, 0.65);
+    }
+
+    .search-pro-mini .mini-label {
+        font-size: var(--home-type-field-sub);
+        margin-bottom: 2px;
+        letter-spacing: 0.03em;
+    }
+
+    .search-engine-pro .search-pro-mini select {
+        font-size: 13px;
+        min-height: 18px;
+        line-height: 1.2;
+    }
+
+    .search-engine-pro .btn-search-pro {
+        width: 100%;
+        min-width: 0;
+        height: 44px;
+        border-radius: 12px;
+        font-size: 14px;
+        gap: 8px;
+    }
+
+    .search-engine-pro .typewriter-field {
+        min-height: 20px;
+    }
+
+    .search-engine-pro .typewriter-hint {
+        font-size: 14px;
+        line-height: 1.25;
+    }
+
+    .route-picker {
+        margin: 16px 0 4px;
+    }
+
+    .route-picker-marquee {
+        min-height: 42px;
+        padding-right: 4px;
+    }
+
+    .route-marquee-chip {
+        font-size: 11px;
+        padding: 6px 10px;
+    }
+
+    .route-picker-marquee-action {
+        min-height: 30px;
+        padding: 0 10px;
+        font-size: 10px;
+    }
+
+    .ai-foot-summary {
+        max-height: 44px;
+        min-height: 44px;
+    }
+
+    /* Görsel yükseklik standardı — Editoryal Koleksiyonlar (180px) */
+    .anasayfa-page {
+        --home-card-media-h: 180px;
+    }
+
+    .anasayfa-page .collection-card {
+        height: var(--home-card-media-h);
+    }
+
+    .anasayfa-page .collection-card img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+
+    .anasayfa-page .hotel-grid .img-holder {
+        padding-top: 0 !important;
+        height: var(--home-card-media-h);
+        margin-bottom: 0;
+        border-radius: 0;
+    }
+
+    .anasayfa-page .hotel-grid .img-holder img {
+        position: absolute;
+        inset: 0;
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+
+    .anasayfa-page .blog-img-box {
+        padding-top: 0 !important;
+        height: var(--home-card-media-h);
+        margin-bottom: 10px;
+    }
+
+    .anasayfa-page .blog-img-box img {
+        position: absolute;
+        inset: 0;
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+
+    .anasayfa-page .exp-card {
+        flex-direction: column;
+        align-items: stretch;
+        height: auto;
+    }
+
+    .anasayfa-page .exp-img {
+        width: 100%;
+        height: var(--home-card-media-h);
+        flex-shrink: 0;
+        object-fit: cover;
+    }
+
+    .anasayfa-page .exp-body {
+        width: 100%;
+        padding: 12px 14px 14px;
+    }
+}
+
+@media (max-width: 520px) {
+    .anasayfa-page {
+        --home-card-media-h: 168px;
+    }
+
+    .hero-headline-pro {
+        margin-bottom: 20px;
+        gap: 10px;
+    }
+
+    .hero-kicker {
+        font-size: 8px;
+    }
+
+    .hero-title-row {
+        gap: 0.24em;
+    }
+
+    .hero-title.hero-title-pro {
+        font-size: clamp(22px, 6.8vw, 28px);
+        letter-spacing: -0.026em;
+    }
+
+    .hero-title.hero-title-pro--headline {
+        width: 100%;
+        max-width: 100%;
+        font-size: clamp(15px, 4.4vw, 22px);
+        line-height: 1.14;
+        gap: 3px;
+        letter-spacing: -0.024em;
+    }
+
+    .hero-title-pro--headline .hero-title-row--spread {
+        justify-content: center;
+        flex-wrap: nowrap;
+        gap: 0.26em;
+    }
+
+    .hero-title-pro--headline .hero-title-row--spread .hero-title-word {
+        white-space: nowrap;
+    }
+
+    .search-pro-row-trip {
+        gap: 11px 9px;
+        padding: 14px 14px 12px;
+    }
+
+    .search-pro-row-meta {
+        gap: 11px;
+        padding: 12px 14px 14px;
+    }
+
+    .search-pro-input {
+        min-height: 38px;
+        padding: 7px 10px;
+    }
+
+    .search-pro-mini {
+        padding: 6px 7px;
+    }
+
+    .search-engine-pro .btn-search-pro {
+        height: 42px;
+        font-size: 13px;
+    }
+}
+

@@ -34,6 +34,31 @@ public class ContractContentService : IContractContentService
         return await LoadContractDetailAsync(connection, null, slug.Trim().ToLowerInvariant(), cancellationToken);
     }
 
+    public async Task<string?> GetPublicContractPdfUrlBySlugAsync(string slug, CancellationToken cancellationToken = default)
+    {
+        if (string.IsNullOrWhiteSpace(slug))
+        {
+            return null;
+        }
+
+        await using var connection = new SqlConnection(_connectionString);
+        await connection.OpenAsync(cancellationToken);
+
+        const string sql = @"
+            SELECT TOP (1) d.[DOSYA_YOLU]
+            FROM [dbo].[SOZLESMELER] s
+            INNER JOIN [dbo].[SOZLESME_DOSYALARI] d ON d.[SOZLESME_ID] = s.id
+            WHERE s.slug = @slug
+              AND s.[AKTIF_MI] = 1
+              AND d.[DOSYA_TIPI] = 'pdf'
+            ORDER BY d.id DESC;";
+
+        await using var command = new SqlCommand(sql, connection);
+        command.Parameters.AddWithValue("@slug", slug.Trim().ToLowerInvariant());
+        var value = await command.ExecuteScalarAsync(cancellationToken);
+        return value as string;
+    }
+
     public async Task<IReadOnlyList<ContractLinkViewModel>> GetActiveContractsForAudienceAsync(string audience, CancellationToken cancellationToken = default)
     {
         await using var connection = new SqlConnection(_connectionString);
@@ -182,6 +207,75 @@ public class ContractContentService : IContractContentService
                 VALUES
                 (
                     @contractId, @userId, @partnerId, @firmaId, @email, 'EmailDogrulamaSonrasi',
+                    @subject, @body, 'KuyrugaAlindi', SYSUTCDATETIME(), @ipAddress, @userAgent
+                );";
+
+            await using var logCommand = new SqlCommand(logSql, connection, transaction);
+            logCommand.Parameters.AddWithValue("@contractId", contract.ContractId);
+            logCommand.Parameters.AddWithValue("@userId", recipient.UserId);
+            logCommand.Parameters.AddWithValue("@partnerId", (object?)recipient.PartnerId ?? DBNull.Value);
+            logCommand.Parameters.AddWithValue("@firmaId", (object?)recipient.FirmaId ?? DBNull.Value);
+            logCommand.Parameters.AddWithValue("@email", recipient.Email);
+            logCommand.Parameters.AddWithValue("@subject", $"{MapAudienceLabel(recipient.Audience)} sözleşme ve KVKK bilgilendirmeniz");
+            logCommand.Parameters.AddWithValue("@body", sectionsHtml);
+            logCommand.Parameters.AddWithValue("@ipAddress", (object?)TrimOrNull(ipAddress, 80) ?? DBNull.Value);
+            logCommand.Parameters.AddWithValue("@userAgent", (object?)TrimOrNull(userAgent, 500) ?? DBNull.Value);
+            await logCommand.ExecuteNonQueryAsync(cancellationToken);
+        }
+    }
+
+    public async Task QueueRegistrationContractBundleAsync(SqlConnection connection, SqlTransaction? transaction, long userId, string email, string? ipAddress, string? userAgent, CancellationToken cancellationToken = default)
+    {
+        var recipient = await ResolveRecipientAsync(connection, transaction, userId, email, cancellationToken);
+        if (recipient is null)
+        {
+            return;
+        }
+
+        var contracts = await LoadEmailBundleContractsAsync(connection, transaction, recipient.Audience, cancellationToken);
+        if (contracts.Count == 0)
+        {
+            return;
+        }
+
+        var sectionsHtml = string.Join(Environment.NewLine, contracts.Select(static contract =>
+            $"<section style=\"padding:16px 0;border-bottom:1px solid #e5e7eb;\"><h3 style=\"margin:0 0 8px;font-size:18px;\">{contract.Title}</h3><p style=\"margin:0 0 10px;color:#475569;\">{contract.Subtitle}</p><p style=\"margin:0 0 8px;\"><a href=\"{contract.Url}\" style=\"color:#0f4aa3;font-weight:700;text-decoration:none;\">Sözleşmeyi görüntüle</a></p><div style=\"color:#64748b;font-size:13px;\">Versiyon: {contract.VersionText}</div></section>"));
+
+        var attachments = await LoadContractPdfAttachmentsAsync(connection, transaction, contracts.Select(static x => x.ContractId).ToList(), cancellationToken);
+
+        await _emailQueueService.QueueTemplateAsync(
+            connection,
+            transaction,
+            new QueuedEmailTemplateRequest
+            {
+                UserId = recipient.UserId,
+                RecipientEmail = recipient.Email,
+                TemplateCode = "contract_delivery",
+                RelatedTable = "KULLANICILAR",
+                RelatedRecordId = recipient.UserId,
+                Attachments = attachments,
+                Tokens = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+                {
+                    ["recipient_name"] = recipient.FullName,
+                    ["module_label"] = MapAudienceLabel(recipient.Audience),
+                    ["contract_bundle_title"] = $"{MapAudienceLabel(recipient.Audience)} sözleşme ve KVKK paketiniz",
+                    ["contract_sections_html"] = sectionsHtml,
+                    ["primary_contract_url"] = contracts[0].Url
+                }
+            },
+            cancellationToken);
+
+        foreach (var contract in contracts)
+        {
+            const string logSql = @"
+                INSERT INTO [dbo].[SOZLESME_GONDERIM_LOGLARI]
+                (
+                    [SOZLESME_ID], [KULLANICI_ID], [PARTNER_ID], [FIRMA_ID], [ALICI_EPOSTA], [GONDERIM_NEDENI],
+                    [KONU_SNAPSHOT], [ICERIK_SNAPSHOT], [DURUM], [GONDERIM_TARIHI], [IP_ADRESI], [KULLANICI_ARACISI]
+                )
+                VALUES
+                (
+                    @contractId, @userId, @partnerId, @firmaId, @email, 'BasvuruSonrasi',
                     @subject, @body, 'KuyrugaAlindi', SYSUTCDATETIME(), @ipAddress, @userAgent
                 );";
 
@@ -599,14 +693,21 @@ public class ContractContentService : IContractContentService
     private async Task<ContractDetailPageViewModel?> LoadContractDetailAsync(SqlConnection connection, SqlTransaction? transaction, string slug, CancellationToken cancellationToken)
     {
         const string sql = @"
-            SELECT TOP (1) id, [HEDEF_KITLE], [SOZLESME_TIPI], [BASLIK], [ALT_BASLIK], [OZET_HTML], [ICERIK_HTML],
-                   [GORSEL_URL], [VERSIYON_NO], [BASLANGIC_TARIHI]
-            FROM [dbo].[SOZLESMELER]
-            WHERE slug = @slug
-              AND [AKTIF_MI] = 1
-              AND [BASLANGIC_TARIHI] <= SYSUTCDATETIME()
-              AND ([BITIS_TARIHI] IS NULL OR [BITIS_TARIHI] >= SYSUTCDATETIME())
-            ORDER BY [VERSIYON_NO] DESC, id DESC;";
+            SELECT TOP (1) s.id, s.[HEDEF_KITLE], s.[SOZLESME_TIPI], s.[BASLIK], s.[ALT_BASLIK], s.[OZET_HTML], s.[ICERIK_HTML],
+                   s.[GORSEL_URL], s.[VERSIYON_NO], s.[BASLANGIC_TARIHI],
+                   (
+                       SELECT TOP (1) d.[DOSYA_YOLU]
+                       FROM [dbo].[SOZLESME_DOSYALARI] d
+                       WHERE d.[SOZLESME_ID] = s.id
+                         AND d.[DOSYA_TIPI] = 'pdf'
+                       ORDER BY d.id DESC
+                   ) AS [PDF_URL]
+            FROM [dbo].[SOZLESMELER] s
+            WHERE s.slug = @slug
+              AND s.[AKTIF_MI] = 1
+              AND s.[BASLANGIC_TARIHI] <= SYSUTCDATETIME()
+              AND (s.[BITIS_TARIHI] IS NULL OR s.[BITIS_TARIHI] >= SYSUTCDATETIME())
+            ORDER BY s.[VERSIYON_NO] DESC, s.id DESC;";
 
         ContractDetailPageViewModel? model = null;
         string audience;
@@ -631,7 +732,8 @@ public class ContractContentService : IContractContentService
                 ContentHtml = reader.IsDBNull(6) ? string.Empty : reader.GetString(6),
                 HeroImageUrl = reader.IsDBNull(7) ? null : reader.GetString(7),
                 VersionText = $"Versiyon {Convert.ToInt32(reader.GetValue(8), CultureInfo.InvariantCulture)}",
-                EffectiveDateText = reader.GetDateTime(9).ToString("dd MMMM yyyy", CultureInfo.GetCultureInfo("tr-TR"))
+                EffectiveDateText = reader.GetDateTime(9).ToString("dd MMMM yyyy", CultureInfo.GetCultureInfo("tr-TR")),
+                PdfUrl = reader.IsDBNull(10) ? null : reader.GetString(10)
             };
         }
 

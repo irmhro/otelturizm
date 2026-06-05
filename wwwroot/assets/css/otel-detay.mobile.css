@@ -437,11 +437,43 @@
         font-size: 1.15rem;
     }
 
-    #saveHotelBtnTop,
-    #startConversationBtn,
-    #shareHotelBtn,
-    #shareMenu {
-        display: none !important;
+    .otel-detail-template-v41.otel-detail-tabler .detail-breadcrumb-right {
+        display: flex !important;
+        order: 2;
+        width: 100%;
+        overflow-x: auto;
+        overflow-y: visible;
+        gap: 8px;
+        padding: 2px 0 4px;
+        margin-left: 0;
+        -webkit-overflow-scrolling: touch;
+        scrollbar-width: none;
+    }
+
+    .otel-detail-template-v41.otel-detail-tabler .detail-breadcrumb-right::-webkit-scrollbar {
+        display: none;
+    }
+
+    .otel-detail-template-v41.otel-detail-tabler .detail-quick-action {
+        min-height: 42px;
+        padding: 0 12px;
+        border-radius: 999px;
+        flex: 0 0 auto;
+        font-size: 0.76rem;
+        font-weight: 800;
+        background: #fff;
+        box-shadow: 0 8px 18px rgba(15, 23, 42, 0.08);
+    }
+
+    .otel-detail-template-v41.otel-detail-tabler .detail-share-wrap {
+        position: relative;
+        flex: 0 0 auto;
+    }
+
+    .otel-detail-template-v41.otel-detail-tabler .share-menu--top {
+        left: 0;
+        right: auto;
+        min-width: min(320px, calc(100vw - 36px));
     }
 
     /* --- Main grid: single column, full width --- */
@@ -481,6 +513,36 @@
         padding: 18px 16px;
         border-radius: 18px;
         overflow-x: clip;
+    }
+
+    .otel-detail-template-v41 #roomsCard .room-card {
+        gap: 14px;
+        padding: 14px;
+        border-radius: 18px;
+    }
+
+    .otel-detail-template-v41 #roomsCard .room-card-main {
+        gap: 12px;
+    }
+
+    .otel-detail-template-v41 #roomsCard .room-card-cover img {
+        height: clamp(164px, 48vw, 220px);
+    }
+
+    .otel-detail-template-v41 #roomsCard .room-price-box {
+        max-width: none;
+        border-left: 0;
+        border-top: 1px solid rgba(148, 163, 184, 0.22);
+        padding: 14px 0 0;
+    }
+
+    .otel-detail-template-v41 #roomsCard .room-price-actions .select-room-btn {
+        width: 100%;
+        min-height: 46px;
+    }
+
+    .otel-detail-template-v41 #roomsCard .room-price-value strong {
+        font-size: 1.6rem;
     }
 
     /* --- Reviews --- */
@@ -860,10 +922,6 @@
         display: none;
     }
 
-    .site-footer {
-        padding-bottom: calc(5.25rem + env(safe-area-inset-bottom));
-    }
-
     /* --- booking-inline-mobile --- */
     .otel-detail-template-v41.booking-inline-mobile .booking-modal-backdrop {
         display: none !important;
@@ -988,6 +1046,462 @@
     }
 }
 
+/* 2026-05-31 final live mobile pass: photographic gallery, no horizontal bleed */
+@media (max-width: 760px) {
+    html,
+    body {
+        max-width: 100% !important;
+        overflow-x: hidden !important;
+    }
+
+    .otel-detail-template-v41,
+    .otel-detail-template-v41 .detail-page-shell,
+    .otel-detail-template-v41 .detail-container,
+    .otel-detail-template-v41 .detail-grid,
+    .otel-detail-template-v41 .gallery-mobile-strip,
+    .otel-detail-template-v41 .detail-header.hotel-title-section,
+    .otel-detail-template-v41 .detail-content,
+    .otel-detail-template-v41 .booking-sidebar {
+        max-width: 100% !important;
+        overflow-x: clip !important;
+    }
+
+    .otel-detail-template-v41 .detail-breadcrumb-right {
+        width: 100% !important;
+        display: grid !important;
+        grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+        gap: 8px !important;
+        padding: 0 !important;
+        margin: 8px 0 0 !important;
+    }
+
+    .otel-detail-template-v41 .detail-breadcrumb-right .detail-quick-action {
+        width: 100% !important;
+        min-width: 0 !important;
+        max-width: 100% !important;
+        height: 42px !important;
+        padding: 0 8px !important;
+        border-radius: 999px !important;
+        justify-content: center !important;
+        gap: 5px !important;
+        overflow: hidden !important;
+    }
+
+    .otel-detail-template-v41 .detail-breadcrumb-right .detail-quick-action span {
+        min-width: 0 !important;
+        max-width: 74px !important;
+        overflow: hidden !important;
+        text-overflow: ellipsis !important;
+        white-space: nowrap !important;
+        font-size: 0.78rem !important;
+    }
+
+    .otel-detail-template-v41 .gallery-mobile-strip {
+        position: relative !important;
+        width: calc(100% - 20px) !important;
+        margin: 14px 10px 12px !important;
+        padding: 10px !important;
+        border-radius: 24px !important;
+        overflow: hidden !important;
+        background: linear-gradient(180deg, rgba(255, 255, 255, 0.96), rgba(239, 246, 255, 0.78)) !important;
+    }
+
+    .otel-detail-template-v41 .gallery-mobile-track {
+        position: relative !important;
+        width: 100% !important;
+        height: clamp(230px, 61vw, 330px) !important;
+        margin: 42px 0 0 !important;
+        border-radius: 20px !important;
+        overflow: hidden !important;
+        background: #e2e8f0 !important;
+    }
+
+    .otel-detail-template-v41 .gallery-mobile-slide,
+    .otel-detail-template-v41 .gallery-mobile-slide img {
+        width: 100% !important;
+        height: 100% !important;
+        border-radius: 20px !important;
+        object-fit: cover !important;
+    }
+
+    .otel-detail-template-v41 .gallery-mobile-chrome {
+        position: absolute !important;
+        top: 12px !important;
+        right: 12px !important;
+        left: 12px !important;
+        height: 34px !important;
+        inset: 12px 12px auto 12px !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: flex-end !important;
+        pointer-events: none !important;
+        z-index: 26 !important;
+    }
+
+    .otel-detail-template-v41 .gallery-mobile-back {
+        display: none !important;
+    }
+
+    .otel-detail-template-v41 .gallery-mobile-counter {
+        position: static !important;
+        width: auto !important;
+        min-width: 54px !important;
+        height: 34px !important;
+        padding: 0 12px !important;
+        display: inline-flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        border-radius: 999px !important;
+        background: rgba(15, 23, 42, 0.78) !important;
+        color: #fff !important;
+        box-shadow: 0 12px 24px rgba(15, 23, 42, 0.2) !important;
+        font-size: 0.92rem !important;
+        font-weight: 900 !important;
+        pointer-events: auto !important;
+    }
+
+    .otel-detail-template-v41 .gallery-swipe-hint {
+        position: absolute !important;
+        top: 12px !important;
+        left: 12px !important;
+        right: 78px !important;
+        width: auto !important;
+        height: 34px !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        padding: 0 10px !important;
+        border-radius: 999px !important;
+        background: rgba(255, 255, 255, 0.92) !important;
+        color: #475569 !important;
+        font-size: 0.72rem !important;
+        font-weight: 850 !important;
+        white-space: nowrap !important;
+        overflow: hidden !important;
+        text-overflow: ellipsis !important;
+        z-index: 25 !important;
+    }
+
+    .otel-detail-template-v41 .gallery-mobile-nav {
+        position: absolute !important;
+        top: 52px !important;
+        left: 10px !important;
+        right: 10px !important;
+        width: auto !important;
+        height: clamp(230px, 61vw, 330px) !important;
+        background: transparent !important;
+        border: 0 !important;
+        border-radius: 20px !important;
+        box-shadow: none !important;
+        pointer-events: none !important;
+        z-index: 27 !important;
+    }
+
+    .otel-detail-template-v41 .gallery-mobile-nav-btn {
+        position: absolute !important;
+        top: 50% !important;
+        transform: translateY(-50%) !important;
+        width: 44px !important;
+        height: 44px !important;
+        min-width: 44px !important;
+        min-height: 44px !important;
+        max-width: 44px !important;
+        max-height: 44px !important;
+        display: inline-flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        padding: 0 !important;
+        border: 1px solid rgba(255, 255, 255, 0.28) !important;
+        border-radius: 999px !important;
+        background: rgba(15, 23, 42, 0.74) !important;
+        color: #fff !important;
+        box-shadow: 0 14px 28px rgba(15, 23, 42, 0.24) !important;
+        pointer-events: auto !important;
+    }
+
+    .otel-detail-template-v41 .gallery-mobile-nav-btn--prev {
+        left: 10px !important;
+        right: auto !important;
+    }
+
+    .otel-detail-template-v41 .gallery-mobile-nav-btn--next {
+        right: 10px !important;
+        left: auto !important;
+    }
+
+    .otel-detail-template-v41 .gallery-mobile-footer {
+        width: 100% !important;
+        height: 52px !important;
+        margin-top: 8px !important;
+        padding: 4px 52px 4px 4px !important;
+        border-radius: 18px !important;
+        overflow: hidden !important;
+        position: relative !important;
+    }
+
+    .otel-detail-template-v41 .gallery-mobile-all-photos {
+        position: absolute !important;
+        right: 8px !important;
+        bottom: 6px !important;
+        width: 40px !important;
+        height: 40px !important;
+        border-radius: 999px !important;
+        z-index: 22 !important;
+    }
+
+    .otel-detail-template-v41 .mobile-booking-bar {
+        width: 100% !important;
+        display: grid !important;
+        grid-template-columns: minmax(0, 1fr) 136px !important;
+        align-items: center !important;
+        gap: 10px !important;
+        min-height: 68px !important;
+        padding: 8px 10px calc(8px + env(safe-area-inset-bottom)) !important;
+        overflow: hidden !important;
+    }
+
+    .otel-detail-template-v41 .mobile-booking-summary {
+        min-width: 0 !important;
+        display: grid !important;
+        gap: 1px !important;
+    }
+
+    .otel-detail-template-v41 .mobile-booking-total {
+        font-size: 1.2rem !important;
+        line-height: 1 !important;
+    }
+
+    .otel-detail-template-v41 .mobile-booking-from,
+    .otel-detail-template-v41 .mobile-booking-label,
+    .otel-detail-template-v41 .mobile-booking-tax-note {
+        white-space: nowrap !important;
+        overflow: hidden !important;
+        text-overflow: ellipsis !important;
+    }
+
+    .otel-detail-template-v41 .mobile-booking-cta {
+        width: 136px !important;
+        max-width: 136px !important;
+        min-height: 50px !important;
+        height: 50px !important;
+        justify-self: end !important;
+        border-radius: 18px !important;
+        white-space: nowrap !important;
+        font-size: 0.9rem !important;
+        padding: 0 8px !important;
+    }
+}
+
+@media (max-width: 390px) {
+    .otel-detail-template-v41 .gallery-swipe-hint {
+        display: none !important;
+    }
+
+    .otel-detail-template-v41 .detail-breadcrumb-right .detail-quick-action span {
+        max-width: 58px !important;
+        font-size: 0.72rem !important;
+    }
+
+    .otel-detail-template-v41 .mobile-booking-bar {
+        grid-template-columns: minmax(0, 1fr) 126px !important;
+    }
+
+    .otel-detail-template-v41 .mobile-booking-cta {
+        width: 126px !important;
+        max-width: 126px !important;
+        font-size: 0.84rem !important;
+    }
+}
+
+/* 2026-05-31 photographic mobile correction: keep controls inside the image frame */
+@media (max-width: 760px) {
+    .otel-detail-template-v41 .gallery-mobile-strip {
+        overflow: visible !important;
+    }
+
+    .otel-detail-template-v41 .gallery-mobile-track {
+        position: relative !important;
+        overflow: hidden !important;
+        border-radius: 22px !important;
+    }
+
+    .otel-detail-template-v41 .gallery-mobile-chrome {
+        inset: 12px 12px auto 12px !important;
+        height: 36px !important;
+        justify-content: flex-end !important;
+        z-index: 18 !important;
+    }
+
+    .otel-detail-template-v41 .gallery-mobile-back {
+        display: none !important;
+    }
+
+    .otel-detail-template-v41 .gallery-mobile-counter {
+        position: absolute !important;
+        top: 0 !important;
+        right: 0 !important;
+        left: auto !important;
+        width: auto !important;
+        min-width: 54px !important;
+        height: 36px !important;
+        padding: 0 12px !important;
+        display: inline-flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        border-radius: 999px !important;
+        background: rgba(15, 23, 42, 0.76) !important;
+        box-shadow: 0 12px 24px rgba(15, 23, 42, 0.22) !important;
+        font-size: 0.96rem !important;
+        font-weight: 900 !important;
+        letter-spacing: 0 !important;
+    }
+
+    .otel-detail-template-v41 .gallery-swipe-hint {
+        left: 14px !important;
+        right: 76px !important;
+        top: 12px !important;
+        height: 34px !important;
+        justify-content: center !important;
+        background: rgba(255, 255, 255, 0.9) !important;
+        box-shadow: 0 10px 20px rgba(15, 23, 42, 0.08) !important;
+        z-index: 17 !important;
+    }
+
+    .otel-detail-template-v41 .gallery-mobile-nav {
+        position: absolute !important;
+        inset: 0 !important;
+        width: auto !important;
+        height: 100% !important;
+        background: transparent !important;
+        border: 0 !important;
+        border-radius: 22px !important;
+        box-shadow: none !important;
+        pointer-events: none !important;
+        z-index: 16 !important;
+    }
+
+    .otel-detail-template-v41 .gallery-mobile-nav-btn {
+        position: absolute !important;
+        top: 50% !important;
+        transform: translateY(-50%) !important;
+        width: 44px !important;
+        height: 44px !important;
+        min-width: 44px !important;
+        min-height: 44px !important;
+        max-width: 44px !important;
+        max-height: 44px !important;
+        display: inline-flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        padding: 0 !important;
+        border-radius: 999px !important;
+        border: 1px solid rgba(255, 255, 255, 0.24) !important;
+        background: rgba(15, 23, 42, 0.76) !important;
+        color: #fff !important;
+        box-shadow: 0 16px 30px rgba(15, 23, 42, 0.26) !important;
+        pointer-events: auto !important;
+        z-index: 19 !important;
+    }
+
+    .otel-detail-template-v41 .gallery-mobile-nav-btn--prev {
+        left: 12px !important;
+        right: auto !important;
+    }
+
+    .otel-detail-template-v41 .gallery-mobile-nav-btn--next {
+        right: 12px !important;
+        left: auto !important;
+    }
+
+    .otel-detail-template-v41 .gallery-mobile-nav-btn i,
+    .otel-detail-template-v41 .gallery-mobile-nav-btn svg {
+        width: 15px !important;
+        height: 15px !important;
+        font-size: 0.9rem !important;
+        line-height: 1 !important;
+    }
+
+    .otel-detail-template-v41 .gallery-mobile-footer {
+        position: relative !important;
+        margin-top: 8px !important;
+        height: 52px !important;
+        padding-right: 54px !important;
+        z-index: 12 !important;
+    }
+
+    .otel-detail-template-v41 .gallery-mobile-all-photos {
+        right: 8px !important;
+        bottom: 6px !important;
+        width: 40px !important;
+        height: 40px !important;
+        z-index: 13 !important;
+    }
+
+    .otel-detail-template-v41 .mobile-booking-bar {
+        display: grid !important;
+        grid-template-columns: minmax(0, 1fr) 142px !important;
+        align-items: center !important;
+        gap: 10px !important;
+        min-height: 70px !important;
+        padding: 8px 10px calc(8px + env(safe-area-inset-bottom)) !important;
+    }
+
+    .otel-detail-template-v41 .mobile-booking-summary {
+        display: grid !important;
+        align-content: center !important;
+        gap: 2px !important;
+        min-width: 0 !important;
+        overflow: hidden !important;
+    }
+
+    .otel-detail-template-v41 .mobile-booking-total {
+        font-size: 1.24rem !important;
+        line-height: 1 !important;
+        white-space: nowrap !important;
+    }
+
+    .otel-detail-template-v41 .mobile-booking-from,
+    .otel-detail-template-v41 .mobile-booking-label,
+    .otel-detail-template-v41 .mobile-booking-tax-note {
+        white-space: nowrap !important;
+        overflow: hidden !important;
+        text-overflow: ellipsis !important;
+    }
+
+    .otel-detail-template-v41 .mobile-booking-cta {
+        width: 142px !important;
+        max-width: 142px !important;
+        min-width: 0 !important;
+        min-height: 52px !important;
+        height: 52px !important;
+        justify-self: end !important;
+        border-radius: 18px !important;
+        white-space: nowrap !important;
+        font-size: 0.9rem !important;
+    }
+
+    .ot-geo-prompt {
+        max-width: min(92vw, 380px) !important;
+        border-radius: 20px !important;
+        z-index: 4200 !important;
+    }
+}
+
+@media (max-width: 390px) {
+    .otel-detail-template-v41 .gallery-swipe-hint {
+        display: none !important;
+    }
+
+    .otel-detail-template-v41 .mobile-booking-bar {
+        grid-template-columns: minmax(0, 1fr) 132px !important;
+    }
+
+    .otel-detail-template-v41 .mobile-booking-cta {
+        width: 132px !important;
+        max-width: 132px !important;
+    }
+}
+
 @media (max-width: 380px) {
     .mobile-booking-bar {
         flex-wrap: wrap;
@@ -1099,5 +1613,2697 @@
 
     .otel-detail-template-v41.od-detail .od-sticky-cta {
         z-index: 1740;
+    }
+
+    /* --- Mobile polish pass: top area, cards, booking flow --- */
+    .site-main > .otel-detail-template-v41 {
+        margin-top: -20px;
+    }
+
+    .otel-detail-template-v41 {
+        padding: 0.35rem 0 calc(104px + env(safe-area-inset-bottom));
+    }
+
+    .otel-detail-template-v41 .detail-breadcrumb,
+    .otel-detail-template-v41 .detail-header,
+    .otel-detail-template-v41 .detail-grid,
+    .otel-detail-template-v41 .detail-map-card,
+    .otel-detail-template-v41 .od-quick-facts {
+        width: calc(100% - 16px);
+        padding-left: 8px;
+        padding-right: 8px;
+    }
+
+    .otel-detail-template-v41 .detail-breadcrumb {
+        gap: 0.55rem;
+        padding-top: 0.15rem;
+        padding-bottom: 0.4rem;
+    }
+
+    .otel-detail-template-v41 .detail-breadcrumb-left {
+        width: 100%;
+        flex: 1 1 100%;
+    }
+
+    .otel-detail-template-v41.otel-detail-tabler .detail-breadcrumb-right {
+        display: grid !important;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        width: 100%;
+        gap: 8px;
+        overflow: visible;
+        padding: 0;
+    }
+
+    .otel-detail-template-v41.otel-detail-tabler .detail-quick-action,
+    .otel-detail-template-v41.otel-detail-tabler .detail-share-wrap {
+        min-width: 0;
+        width: 100%;
+    }
+
+    .otel-detail-template-v41.otel-detail-tabler .detail-quick-action {
+        justify-content: center;
+        min-height: 44px;
+        padding: 0 10px;
+        font-size: 0.72rem;
+        gap: 6px;
+    }
+
+    .otel-detail-template-v41.otel-detail-tabler .detail-quick-action span {
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    .otel-detail-template-v41.otel-detail-tabler .share-menu--top {
+        left: auto;
+        right: 0;
+        min-width: min(320px, calc(100vw - 24px));
+    }
+
+    .gallery-mobile-strip {
+        position: relative;
+        border-radius: 20px;
+        width: calc(100% - 16px) !important;
+        max-width: calc(100% - 16px) !important;
+        margin: 0 auto !important;
+        overflow: hidden;
+        background: linear-gradient(180deg, #eff4fb 0%, #ffffff 100%);
+        border: 1px solid rgba(226, 232, 240, 0.95);
+        box-shadow: 0 18px 40px rgba(15, 23, 42, 0.14);
+    }
+
+    .gallery-mobile-chrome {
+        inset: 0 0 auto 0;
+        padding: 12px 12px 0;
+    }
+
+    .gallery-mobile-back,
+    .gallery-mobile-counter {
+        box-shadow: 0 14px 28px rgba(15, 23, 42, 0.24);
+    }
+
+    .gallery-mobile-nav {
+        position: absolute;
+        inset: 50% 0 auto 0;
+        z-index: 4;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 0 10px;
+        transform: translateY(-50%);
+        pointer-events: none;
+    }
+
+    .gallery-mobile-nav-btn {
+        pointer-events: auto;
+        width: 38px;
+        height: 38px;
+        border: 0;
+        border-radius: 999px;
+        background: rgba(15, 23, 42, 0.72);
+        color: #fff;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        box-shadow: 0 12px 24px rgba(15, 23, 42, 0.24);
+    }
+
+    .gallery-mobile-slide {
+        flex: 0 0 calc(100% - 28px);
+        width: calc(100% - 28px);
+        min-height: 220px;
+        max-height: 280px;
+        aspect-ratio: 16 / 11;
+        margin: 0;
+        border-radius: 18px;
+        overflow: hidden;
+        box-shadow: 0 14px 26px rgba(15, 23, 42, 0.12);
+    }
+
+    .gallery-mobile-slide img {
+        aspect-ratio: 16 / 11;
+    }
+
+    .gallery-mobile-track {
+        gap: 10px;
+        padding: 54px 14px 14px;
+        scroll-padding-inline: 14px;
+    }
+
+    .gallery-mobile-footer {
+        display: grid;
+        gap: 10px;
+        padding: 0 12px 14px;
+        background: linear-gradient(180deg, rgba(255, 255, 255, 0), #fff 26%);
+    }
+
+    .gallery-mobile-thumbs {
+        display: flex;
+        gap: 8px;
+        overflow-x: auto;
+        overflow-y: hidden;
+        padding: 2px 0;
+        scrollbar-width: none;
+    }
+
+    .gallery-mobile-thumbs::-webkit-scrollbar {
+        display: none;
+    }
+
+    .gallery-mobile-thumb {
+        flex: 0 0 62px;
+        width: 62px;
+        height: 52px;
+        padding: 0;
+        border-radius: 14px;
+        border: 1px solid rgba(226, 232, 240, 0.92);
+        overflow: hidden;
+        background: #fff;
+        opacity: 0.84;
+        box-shadow: 0 10px 20px rgba(15, 23, 42, 0.08);
+    }
+
+    .gallery-mobile-thumb.active {
+        opacity: 1;
+        border-color: rgba(37, 99, 235, 0.45);
+        box-shadow: 0 12px 24px rgba(37, 99, 235, 0.14);
+    }
+
+    .gallery-mobile-thumb img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        display: block;
+    }
+
+    .gallery-mobile-dots {
+        padding: 0;
+        background: transparent;
+    }
+
+    .gallery-mobile-all-photos {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        min-height: 44px;
+        width: 100%;
+        border: 1px solid rgba(37, 99, 235, 0.16);
+        border-radius: 999px;
+        background: linear-gradient(135deg, #f8fbff 0%, #eef4ff 100%);
+        color: #0f172a;
+        font-size: 0.82rem;
+        font-weight: 900;
+        box-shadow: 0 10px 22px rgba(37, 99, 235, 0.08);
+    }
+
+    .otel-detail-template-v41 .detail-header.hotel-title-section {
+        gap: 14px;
+        margin-top: 0.75rem;
+        padding: 1rem 0.9rem;
+        border-radius: 22px;
+    }
+
+    .otel-detail-template-v41 .detail-hero-head {
+        flex-direction: column;
+        gap: 12px;
+    }
+
+    .otel-detail-template-v41 .detail-rating-chip {
+        width: 100%;
+        justify-content: flex-start;
+    }
+
+    .otel-detail-template-v41 .detail-header.hotel-title-section .hotel-name h1 {
+        font-size: clamp(1.35rem, 6vw, 1.8rem);
+        line-height: 1.14;
+    }
+
+    .otel-detail-template-v41 .detail-header.hotel-title-section .detail-location {
+        font-size: 0.82rem;
+    }
+
+    .otel-detail-template-v41 .detail-title-subnav {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin-top: 10px;
+    }
+
+    .otel-detail-template-v41 .detail-title-subnav-btn,
+    .otel-detail-template-v41 .detail-title-subnav-badge {
+        min-height: 38px;
+        padding: 0 12px;
+        border-radius: 999px;
+        font-size: 0.73rem;
+        font-weight: 800;
+    }
+
+    .otel-detail-template-v41.od-detail .od-quick-facts {
+        width: calc(100% - 16px);
+        margin: 0.45rem auto 0.6rem;
+        padding: 12px;
+        border-radius: 20px;
+    }
+
+    .otel-detail-template-v41.od-detail .od-quick-facts__list {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 10px;
+    }
+
+    .otel-detail-template-v41.od-detail .od-quick-facts__item {
+        min-width: 0;
+        padding: 10px 12px;
+        border-radius: 16px;
+        background: rgba(248, 250, 252, 0.98);
+        border: 1px solid rgba(226, 232, 240, 0.9);
+    }
+
+    .otel-detail-template-v41.od-detail .od-quick-facts__chips {
+        gap: 8px;
+        padding-top: 4px;
+    }
+
+    .otel-detail-template-v41 .content-card {
+        padding: 16px 14px;
+        border-radius: 20px;
+        box-shadow: 0 14px 32px rgba(15, 23, 42, 0.07);
+    }
+
+    .otel-detail-template-v41 .content-card > h2,
+    .otel-detail-template-v41 .content-card .section-title {
+        margin-bottom: 6px;
+    }
+
+    .otel-detail-template-v41 .amenities-list-clean {
+        grid-template-columns: 1fr;
+        gap: 8px;
+    }
+
+    .otel-detail-template-v41 #roomsCard .room-list {
+        gap: 12px !important;
+    }
+
+    .otel-detail-template-v41 #roomsCard .room-card,
+    .otel-detail-template-v41.otel-detail-tabler .room-card {
+        border-radius: 20px;
+        border: 1px solid rgba(226, 232, 240, 0.95);
+        box-shadow: 0 14px 30px rgba(15, 23, 42, 0.08);
+    }
+
+    .otel-detail-template-v41 #roomsCard .room-card-media,
+    .otel-detail-template-v41 #roomsCard .room-card-media-placeholder,
+    .otel-detail-template-v41 #roomsCard .room-card-cover {
+        height: clamp(11rem, 52vw, 14rem) !important;
+    }
+
+    .otel-detail-template-v41 #roomsCard .room-card-copy {
+        padding: 12px 12px 0 !important;
+    }
+
+    .otel-detail-template-v41 #roomsCard .room-thumb-strip {
+        padding: 8px 12px 0;
+    }
+
+    .otel-detail-template-v41 #roomsCard .room-feature-row {
+        padding: 0 12px 6px !important;
+    }
+
+    .otel-detail-template-v41 #roomsCard .room-feature-list {
+        gap: 6px !important;
+    }
+
+    .otel-detail-template-v41 #roomsCard .room-feature-item {
+        padding: 6px 9px !important;
+        font-size: 0.7rem !important;
+    }
+
+    .otel-detail-template-v41 #roomsCard .room-price-box,
+    .otel-detail-template-v41.otel-detail-tabler .room-price-box {
+        gap: 10px !important;
+        padding: 12px !important;
+    }
+
+    .otel-detail-template-v41 #roomsCard .room-price-value strong {
+        font-size: 1.45rem;
+    }
+
+    .otel-detail-template-v41.booking-inline-mobile .detail-content .booking-sidebar {
+        width: calc(100% - 16px) !important;
+        margin: 0.65rem auto 0;
+    }
+
+    .otel-detail-template-v41.booking-inline-mobile .booking-card {
+        padding: 16px 14px;
+        border-radius: 20px;
+    }
+
+    .otel-detail-template-v41 .booking-modal-close {
+        width: 38px;
+        height: 38px;
+    }
+
+    .otel-detail-template-v41 .booking-price-head {
+        margin-bottom: 12px;
+    }
+
+    .otel-detail-template-v41 .booking-price-head strong,
+    .otel-detail-template-v41.booking-inline-mobile .booking-price-head strong {
+        font-size: 1.5rem;
+    }
+
+    .otel-detail-template-v41 .multi-room-head {
+        display: flex;
+        flex-direction: column;
+        align-items: stretch;
+        gap: 10px;
+    }
+
+    .otel-detail-template-v41 .multi-room-add {
+        width: 100%;
+        justify-content: center;
+        min-height: 44px;
+    }
+
+    .otel-detail-template-v41 .multi-room-list {
+        gap: 10px;
+    }
+
+    .otel-detail-template-v41 .multi-room-item {
+        padding: 12px;
+        border-radius: 16px;
+    }
+
+    .otel-detail-template-v41 .multi-room-item-head {
+        align-items: center;
+        gap: 8px;
+    }
+
+    .otel-detail-template-v41 .multi-room-remove {
+        min-height: 36px;
+        padding: 0 10px;
+        border-radius: 999px;
+    }
+
+    .otel-detail-template-v41 .multi-room-item-grid {
+        grid-template-columns: 1fr;
+        gap: 10px;
+    }
+
+    .otel-detail-template-v41 .room-quantity-control {
+        min-height: 46px;
+    }
+
+    .otel-detail-template-v41 .guest-row {
+        padding: 10px 12px;
+        border-radius: 14px;
+        background: #f8fafc;
+        border: 1px solid rgba(226, 232, 240, 0.9);
+    }
+
+    .otel-detail-template-v41 .guest-row > span {
+        font-size: 0.82rem;
+        font-weight: 800;
+    }
+
+    .otel-detail-template-v41 .guest-controls strong {
+        min-width: 22px;
+        text-align: center;
+    }
+
+    .otel-detail-template-v41 .booking-advanced-fields {
+        margin-top: 14px;
+        padding: 14px 12px;
+        border-radius: 16px;
+    }
+
+    .otel-detail-template-v41 .booking-advanced-grid,
+    .otel-detail-template-v41 .booking-payment-mix {
+        grid-template-columns: 1fr;
+        gap: 10px;
+    }
+
+    .otel-detail-template-v41 .booking-advanced-grid > label,
+    .otel-detail-template-v41 .booking-payment-mix > label {
+        width: 100%;
+    }
+
+    .otel-detail-template-v41 .booking-trust-row {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 8px;
+    }
+
+    .otel-detail-template-v41 .price-breakdown {
+        padding-top: 12px;
+    }
+
+    .otel-detail-template-v41 .price-row {
+        gap: 10px;
+        align-items: flex-start;
+    }
+
+    .otel-detail-template-v41 .price-row span,
+    .otel-detail-template-v41 .price-row strong {
+        line-height: 1.35;
+    }
+
+    .otel-detail-template-v41 .nightly-breakdown-details {
+        margin-top: 10px;
+    }
+
+    .mobile-booking-bar {
+        align-items: stretch;
+        gap: 10px;
+        padding: 10px 12px calc(10px + env(safe-area-inset-bottom));
+    }
+
+    .mobile-booking-bar .mobile-booking-summary {
+        justify-content: center;
+    }
+
+    .mobile-booking-bar .mobile-booking-cta {
+        min-width: 132px;
+        padding: 0 16px;
+    }
+
+    /* --- Full mobile redesign pass --- */
+    .site-main > .otel-detail-template-v41 {
+        margin-top: -12px;
+    }
+
+    .otel-detail-template-v41 {
+        display: block;
+        padding: 0.25rem 0 calc(112px + env(safe-area-inset-bottom));
+        background:
+            radial-gradient(circle at top, rgba(219, 234, 254, 0.55), rgba(255, 255, 255, 0) 30%),
+            linear-gradient(180deg, #f5f7fb 0%, #eef3f9 100%);
+    }
+
+    .otel-detail-template-v41 .detail-breadcrumb,
+    .otel-detail-template-v41 .detail-header,
+    .otel-detail-template-v41 .detail-grid,
+    .otel-detail-template-v41 .detail-map-card,
+    .otel-detail-template-v41 .od-quick-facts,
+    .otel-detail-template-v41 .gallery-mobile-strip {
+        width: calc(100% - 16px) !important;
+        max-width: calc(100% - 16px) !important;
+        margin-left: auto !important;
+        margin-right: auto !important;
+    }
+
+    .otel-detail-template-v41 .detail-breadcrumb {
+        display: grid;
+        gap: 10px;
+        padding: 0.35rem 8px 0.3rem;
+    }
+
+    .otel-detail-template-v41 .detail-breadcrumb-left,
+    .otel-detail-template-v41 .detail-breadcrumb-right {
+        width: 100%;
+    }
+
+    .otel-detail-template-v41 .detail-breadcrumb-context {
+        min-height: 42px;
+        padding-inline: 14px;
+        border-radius: 999px;
+        box-shadow: 0 10px 24px rgba(15, 23, 42, 0.06);
+    }
+
+    .otel-detail-template-v41.otel-detail-tabler .detail-breadcrumb-right {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 8px;
+    }
+
+    .otel-detail-template-v41.otel-detail-tabler .detail-quick-action {
+        min-height: 42px;
+        padding-inline: 8px;
+        font-size: 0.71rem;
+        border-radius: 16px;
+    }
+
+    .otel-detail-template-v41 .gallery-mobile-strip {
+        margin-top: 0.2rem !important;
+        border-radius: 28px;
+        border: 1px solid rgba(226, 232, 240, 0.98);
+        box-shadow: 0 24px 52px rgba(15, 23, 42, 0.14);
+        overflow: hidden;
+        background: linear-gradient(180deg, #eff4fb 0%, #ffffff 100%);
+    }
+
+    .otel-detail-template-v41 .gallery-swipe-hint {
+        padding: 10px 14px 4px;
+        font-size: 0.7rem;
+        color: #475569;
+    }
+
+    .otel-detail-template-v41 .gallery-mobile-track {
+        gap: 12px;
+        padding: 56px 12px 10px;
+        scroll-padding-inline: 12px;
+        background: linear-gradient(180deg, rgba(239, 244, 251, 0.88) 0%, rgba(255, 255, 255, 0.98) 100%);
+    }
+
+    .otel-detail-template-v41 .gallery-mobile-slide {
+        flex: 0 0 calc(100vw - 40px);
+        width: calc(100vw - 40px);
+        min-height: 228px;
+        max-height: 292px;
+        border-radius: 22px;
+        overflow: hidden;
+        box-shadow: 0 18px 34px rgba(15, 23, 42, 0.14);
+        background: #0f172a;
+        font-size: 0;
+        line-height: 0;
+        color: transparent;
+    }
+
+    .otel-detail-template-v41 .gallery-mobile-slide img {
+        width: 100%;
+        height: 100%;
+        display: block !important;
+        object-fit: cover;
+        opacity: 1;
+        visibility: visible;
+    }
+
+    .otel-detail-template-v41 .gallery-mobile-footer {
+        gap: 10px;
+        padding: 0 12px 14px;
+    }
+
+    .otel-detail-template-v41 .gallery-mobile-thumbs {
+        gap: 8px;
+        padding-bottom: 2px;
+    }
+
+    .otel-detail-template-v41 .gallery-mobile-thumb {
+        flex-basis: 64px;
+        width: 64px;
+        height: 54px;
+        border-radius: 14px;
+    }
+
+    .otel-detail-template-v41 .gallery-mobile-all-photos {
+        min-height: 46px;
+        border-radius: 16px;
+        font-size: 0.8rem;
+        font-weight: 900;
+    }
+
+    .otel-detail-template-v41 .detail-header.hotel-title-section {
+        margin-top: 0.7rem;
+        padding: 1rem 0.95rem;
+        border-radius: 24px;
+        background: rgba(255, 255, 255, 0.92);
+        box-shadow: 0 18px 38px rgba(15, 23, 42, 0.08);
+    }
+
+    .otel-detail-template-v41 .detail-hero-head {
+        display: grid;
+        gap: 12px;
+    }
+
+    .otel-detail-template-v41 .hotel-name {
+        display: grid;
+        gap: 10px;
+    }
+
+    .otel-detail-template-v41 .detail-header.hotel-title-section .hotel-name h1 {
+        font-size: clamp(1.4rem, 6vw, 1.9rem);
+        line-height: 1.1;
+        margin: 0;
+    }
+
+    .otel-detail-template-v41 .detail-location.od-header__location-pill {
+        width: fit-content;
+        max-width: 100%;
+        min-height: 40px;
+        padding: 0 14px;
+        border-radius: 999px;
+        background: #f8fafc;
+        border: 1px solid rgba(203, 213, 225, 0.92);
+        box-shadow: inset 0 1px 0 rgba(255,255,255,.8);
+    }
+
+    .otel-detail-template-v41 .detail-title-subnav {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 8px;
+    }
+
+    .otel-detail-template-v41 .detail-title-subnav-btn,
+    .otel-detail-template-v41 .detail-title-subnav-badge {
+        width: 100%;
+        justify-content: center;
+        min-height: 40px;
+        border-radius: 14px;
+    }
+
+    .otel-detail-template-v41 .detail-rating-chip,
+    .otel-detail-template-v41 .weather-inline-trigger {
+        width: 100%;
+        min-height: 64px;
+        border-radius: 18px;
+    }
+
+    .otel-detail-template-v41 .header-right-stack,
+    .otel-detail-template-v41 .header-top-metrics,
+    .otel-detail-template-v41 .detail-utility-row {
+        width: 100%;
+    }
+
+    .otel-detail-template-v41 .weather-inline-trigger {
+        padding: 12px 14px;
+        align-items: center;
+    }
+
+    .otel-detail-template-v41.od-detail .od-quick-facts {
+        padding: 14px;
+        border-radius: 22px;
+        background: rgba(255,255,255,.94);
+        box-shadow: 0 16px 32px rgba(15,23,42,.06);
+    }
+
+    .otel-detail-template-v41.od-detail .od-quick-facts__list {
+        gap: 10px;
+    }
+
+    .otel-detail-template-v41.od-detail .od-quick-facts__item {
+        padding: 12px;
+        border-radius: 16px;
+    }
+
+    .otel-detail-template-v41 .detail-grid {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 14px;
+        margin-top: 0.55rem;
+    }
+
+    .otel-detail-template-v41 .detail-grid > .detail-content,
+    .otel-detail-template-v41 .detail-grid > .booking-sidebar,
+    .otel-detail-template-v41 .detail-grid > .mobile-booking-bar {
+        min-width: 0;
+        width: 100%;
+    }
+
+    .otel-detail-template-v41 .content-card {
+        padding: 16px 14px;
+        border-radius: 22px;
+        background: rgba(255, 255, 255, 0.94);
+        box-shadow: 0 16px 34px rgba(15, 23, 42, 0.07);
+    }
+
+    .otel-detail-template-v41 .content-card + .content-card {
+        margin-top: 0;
+    }
+
+    .otel-detail-template-v41 #roomsCard .room-list {
+        gap: 14px !important;
+    }
+
+    .otel-detail-template-v41 #roomsCard .room-card,
+    .otel-detail-template-v41.otel-detail-tabler #roomsCard .room-card {
+        padding: 14px;
+        border-radius: 22px;
+        background: linear-gradient(180deg, rgba(255,255,255,.98), rgba(248,250,252,.98));
+        box-shadow: 0 18px 36px rgba(15, 23, 42, 0.08);
+    }
+
+    .otel-detail-template-v41 #roomsCard .room-card-main,
+    .otel-detail-template-v41.otel-detail-tabler #roomsCard .room-card-main {
+        gap: 12px;
+    }
+
+    .otel-detail-template-v41 #roomsCard .room-card-copy {
+        padding: 4px 0 0 !important;
+    }
+
+    .otel-detail-template-v41 #roomsCard .room-card-copy h3 {
+        font-size: 1.08rem;
+        line-height: 1.25;
+    }
+
+    .otel-detail-template-v41 #roomsCard .room-card-copy p {
+        line-height: 1.5;
+    }
+
+    .otel-detail-template-v41 #roomsCard .room-price-box,
+    .otel-detail-template-v41.otel-detail-tabler #roomsCard .room-price-box {
+        gap: 12px !important;
+        padding: 14px !important;
+        border-radius: 18px !important;
+        background: linear-gradient(180deg, #f8fbff 0%, #ffffff 100%) !important;
+        box-shadow: inset 0 1px 0 rgba(255,255,255,.85), 0 10px 22px rgba(37,99,235,.08);
+    }
+
+    .otel-detail-template-v41 #roomsCard .room-price-value,
+    .otel-detail-template-v41.otel-detail-tabler #roomsCard .room-price-value {
+        align-items: flex-start;
+    }
+
+    .otel-detail-template-v41 .booking-sidebar .booking-card {
+        padding: 16px 14px;
+        border-radius: 22px;
+        background: rgba(255,255,255,.96);
+        box-shadow: 0 18px 36px rgba(15,23,42,.08);
+    }
+
+    .otel-detail-template-v41 .multi-room-list {
+        gap: 12px;
+    }
+
+    .otel-detail-template-v41 .multi-room-item {
+        border-radius: 18px;
+        padding: 12px;
+        background: #f8fafc;
+        border: 1px solid rgba(226, 232, 240, 0.95);
+    }
+
+    .otel-detail-template-v41 .multi-room-item-head {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: space-between;
+    }
+
+    .otel-detail-template-v41 #reviewsSection .review-summary--ota {
+        grid-template-columns: 1fr;
+        gap: 16px;
+        padding: 16px;
+        border-radius: 22px;
+    }
+
+    .otel-detail-template-v41 #reviewsSection .review-bars {
+        gap: 10px;
+    }
+
+    .otel-detail-template-v41 #reviewsSection .review-topic-strip {
+        gap: 8px;
+    }
+
+    .otel-detail-template-v41 #reviewsSection .review-card {
+        border-radius: 18px;
+        padding: 14px;
+    }
+
+    .otel-detail-template-v41 .detail-map-card {
+        border-radius: 22px;
+        overflow: hidden;
+        background: rgba(255,255,255,.94);
+        box-shadow: 0 18px 34px rgba(15,23,42,.07);
+    }
+
+    .otel-detail-template-v41 .detail-map-card .map-card {
+        border-radius: 0 0 22px 22px;
+        overflow: hidden;
+    }
+
+    .otel-detail-template-v41 .detail-map-card #detailLocationMap {
+        min-height: 260px;
+    }
+
+    .mobile-booking-bar {
+        left: 0;
+        right: 0;
+        bottom: 0;
+        gap: 12px;
+        padding: 12px 14px calc(12px + env(safe-area-inset-bottom));
+        background: rgba(255, 255, 255, 0.98);
+        border-top: 1px solid rgba(226, 232, 240, 0.92);
+        box-shadow: 0 -18px 36px rgba(15, 23, 42, 0.12);
+        backdrop-filter: blur(14px);
+    }
+
+    .mobile-booking-bar .mobile-booking-summary {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 2px;
+    }
+
+    .mobile-booking-bar .mobile-booking-cta {
+        min-width: 156px;
+        min-height: 48px;
+        border-radius: 999px;
+        box-shadow: 0 16px 30px rgba(29, 78, 216, 0.20);
+    }
+}
+
+/* 2026-05-31 - Otel detay mobil premium son katman */
+@media (max-width: 900px) {
+    .site-main > .otel-detail-template-v41,
+    .otel-detail-template-v41 {
+        margin-top: 0 !important;
+        padding-bottom: 92px !important;
+        overflow-x: clip;
+    }
+
+    .otel-detail-template-v41 .detail-breadcrumb,
+    .otel-detail-template-v41 .gallery-mobile-strip,
+    .otel-detail-template-v41 .gallery-filmstrip-wrap,
+    .otel-detail-template-v41 .detail-header,
+    .otel-detail-template-v41 .od-quick-facts,
+    .otel-detail-template-v41 .detail-grid,
+    .otel-detail-template-v41 .detail-map-card {
+        width: calc(100% - 24px) !important;
+        max-width: none !important;
+        margin-left: auto !important;
+        margin-right: auto !important;
+    }
+
+    .otel-detail-template-v41 .detail-breadcrumb {
+        display: grid !important;
+        grid-template-columns: 1fr;
+        gap: 10px;
+        padding-top: 12px;
+    }
+
+    .otel-detail-template-v41 .detail-breadcrumb-right {
+        display: grid !important;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 8px;
+        width: 100%;
+    }
+
+    .otel-detail-template-v41 .action-pill,
+    .otel-detail-template-v41 .share-button,
+    .otel-detail-template-v41 .favorite-action {
+        width: 100%;
+        min-height: 44px;
+        justify-content: center;
+        border-radius: 16px;
+        font-size: 0.82rem;
+    }
+
+    .otel-detail-template-v41 .gallery-mobile-strip {
+        position: relative;
+        display: grid;
+        gap: 10px;
+        padding: 10px;
+        border-radius: 24px;
+        background: linear-gradient(180deg, #ffffff 0%, #f6f9fd 100%);
+        box-shadow: 0 18px 38px rgba(15, 23, 42, 0.10);
+    }
+
+    .otel-detail-template-v41 .gallery-swipe-hint {
+        min-height: 34px !important;
+        padding: 0 10px !important;
+        border-radius: 999px;
+        font-size: 0.78rem;
+        background: rgba(248, 250, 252, 0.96);
+        color: #475569;
+    }
+
+    .otel-detail-template-v41 .gallery-mobile-track {
+        display: flex !important;
+        border-radius: 20px;
+        overflow-x: auto;
+        scroll-snap-type: x mandatory;
+        background: #eef2f7;
+    }
+
+    .otel-detail-template-v41 .gallery-mobile-slide {
+        min-width: 100%;
+        height: auto !important;
+        min-height: 0 !important;
+        aspect-ratio: 16 / 10.5;
+        max-height: 264px;
+        border-radius: 20px;
+        overflow: hidden;
+        scroll-snap-align: center;
+    }
+
+    .otel-detail-template-v41 .gallery-mobile-slide img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+
+    .otel-detail-template-v41 .gallery-mobile-nav {
+        width: 42px;
+        height: 42px;
+        border-radius: 50%;
+        background: rgba(15, 23, 42, 0.74);
+        color: #fff;
+    }
+
+    .otel-detail-template-v41 .gallery-mobile-counter {
+        top: 18px;
+        right: 18px;
+        min-height: 36px;
+        padding: 0 12px;
+        border-radius: 999px;
+        background: rgba(15, 23, 42, 0.72);
+        color: #fff;
+        font-weight: 900;
+    }
+
+    .otel-detail-template-v41 .gallery-mobile-thumbs {
+        display: flex;
+        gap: 8px;
+        overflow-x: auto;
+        padding: 0 2px 2px;
+    }
+
+    .otel-detail-template-v41 .gallery-mobile-thumb {
+        flex: 0 0 64px;
+        width: 64px;
+        height: 48px;
+        border-radius: 12px;
+    }
+
+    .otel-detail-template-v41.otel-detail-tabler .detail-header.hotel-title-section {
+        display: grid !important;
+        grid-template-columns: 1fr !important;
+        gap: 14px;
+        padding: 16px !important;
+        border-radius: 22px;
+        background: #fff;
+        box-shadow: 0 16px 34px rgba(15, 23, 42, 0.08);
+    }
+
+    .otel-detail-template-v41 .detail-header.hotel-title-section .hotel-name h1 {
+        font-size: clamp(1.55rem, 6.6vw, 2rem) !important;
+        line-height: 1.08;
+    }
+
+    .otel-detail-template-v41 .header-top-metrics {
+        display: grid !important;
+        grid-template-columns: 1fr;
+        gap: 10px;
+    }
+
+    .otel-detail-template-v41 .detail-rating-chip,
+    .otel-detail-template-v41 .weather-inline-trigger {
+        min-height: 58px !important;
+        border-radius: 18px !important;
+    }
+
+    .otel-detail-template-v41 .weather-inline-trigger {
+        display: grid !important;
+        grid-template-columns: auto minmax(0, 1fr) auto;
+        gap: 10px;
+    }
+
+    .otel-detail-template-v41.od-detail .od-quick-facts__list {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .otel-detail-template-v41 .featured-amenities-card .amenities-list-clean,
+    .otel-detail-template-v41 .od-amenities__grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+        gap: 10px !important;
+    }
+
+    .otel-detail-template-v41 .amenities-list-item {
+        min-height: 76px !important;
+        padding: 12px !important;
+        border-radius: 16px !important;
+    }
+
+    .otel-detail-template-v41 #roomsCard .section-head .tabler-section-headrow {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 10px;
+    }
+
+    .otel-detail-template-v41 #roomsCard .tabler-section-action-btn {
+        width: 100%;
+        min-height: 44px;
+    }
+
+    .otel-detail-template-v41 #roomsCard .room-card,
+    .otel-detail-template-v41.otel-detail-tabler #roomsCard .room-card {
+        display: grid !important;
+        grid-template-columns: 1fr !important;
+        gap: 10px !important;
+        padding: 12px !important;
+        border-radius: 22px !important;
+    }
+
+    .otel-detail-template-v41 #roomsCard .room-card-main,
+    .otel-detail-template-v41.otel-detail-tabler #roomsCard .room-card-main {
+        display: grid !important;
+        grid-template-columns: 108px minmax(0, 1fr) !important;
+        gap: 12px !important;
+    }
+
+    .otel-detail-template-v41 #roomsCard .room-card-media {
+        min-width: 0;
+    }
+
+    .otel-detail-template-v41 #roomsCard .room-card-cover img {
+        height: 108px !important;
+        border-radius: 16px !important;
+    }
+
+    .otel-detail-template-v41 #roomsCard .room-thumb-strip {
+        display: none !important;
+    }
+
+    .otel-detail-template-v41 #roomsCard .room-card-copy h3 {
+        font-size: 1rem !important;
+    }
+
+    .otel-detail-template-v41 #roomsCard .od-room-card__meta,
+    .otel-detail-template-v41 #roomsCard .room-feature-list {
+        gap: 6px !important;
+    }
+
+    .otel-detail-template-v41 #roomsCard .od-room-card__specs {
+        display: -webkit-box;
+        overflow: hidden;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+        font-size: 0.84rem;
+    }
+
+    .otel-detail-template-v41 #roomsCard .room-price-box,
+    .otel-detail-template-v41.otel-detail-tabler #roomsCard .room-price-box {
+        display: grid !important;
+        grid-template-columns: minmax(0, 1fr) auto;
+        align-items: center;
+        gap: 12px !important;
+        padding: 12px !important;
+        border-left: 0 !important;
+        border-radius: 18px !important;
+        background: linear-gradient(135deg, #f8fbff 0%, #fff 55%, #ecfdf5 100%) !important;
+    }
+
+    .otel-detail-template-v41 #roomsCard .room-price-actions {
+        order: 2;
+    }
+
+    .otel-detail-template-v41 #roomsCard .room-price-actions .select-room-btn {
+        min-width: 130px;
+        min-height: 44px;
+        border-radius: 16px;
+        padding-inline: 14px;
+    }
+
+    .otel-detail-template-v41 #roomsCard .room-price-value {
+        order: 1;
+    }
+
+    .otel-detail-template-v41 #roomsCard .room-price-value strong {
+        font-size: 1.35rem !important;
+    }
+
+    .otel-detail-template-v41 #reviewsSection .review-summary--ota {
+        grid-template-columns: 1fr !important;
+        gap: 12px !important;
+        padding: 14px !important;
+        max-height: none;
+    }
+
+    .otel-detail-template-v41 #reviewsSection .review-score-circle {
+        width: 98px;
+        height: 98px;
+        margin-inline: auto;
+    }
+
+    .otel-detail-template-v41 #reviewsSection .review-bars {
+        gap: 7px !important;
+    }
+
+    .otel-detail-template-v41 #reviewsSection .review-topic-strip {
+        flex-wrap: nowrap;
+        overflow-x: auto;
+    }
+
+    .mobile-booking-bar {
+        gap: 10px !important;
+        padding: 9px 12px calc(9px + env(safe-area-inset-bottom)) !important;
+    }
+
+    .mobile-booking-bar .mobile-booking-summary {
+        min-width: 0;
+    }
+
+    .mobile-booking-bar .mobile-booking-from,
+    .mobile-booking-bar .mobile-booking-tax-note {
+        font-size: 0.72rem;
+    }
+
+    .mobile-booking-bar .mobile-booking-total {
+        font-size: 1.35rem !important;
+        line-height: 1;
+    }
+
+    .mobile-booking-bar .mobile-booking-cta {
+        min-width: 124px !important;
+        min-height: 46px !important;
+        border-radius: 20px !important;
+        font-size: 0.92rem !important;
+        padding-inline: 14px;
+    }
+
+    .mobile-booking-bar .mobile-booking-label {
+        display: none !important;
+    }
+
+    .otel-detail-template-v41 .room-detail-modal:not([hidden]) {
+        inset: 12px;
+        width: calc(100vw - 24px);
+        max-height: calc(100vh - 24px);
+        border-radius: 24px;
+    }
+
+    .otel-detail-template-v41 .room-detail-modal-body {
+        padding: 16px;
+    }
+
+    .otel-detail-template-v41 .room-detail-modal-stats,
+    .otel-detail-template-v41 .room-detail-modal-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .otel-detail-template-v41.booking-inline-mobile .booking-sidebar .booking-card,
+    .otel-detail-template-v41 .booking-sidebar .booking-card {
+        max-height: none !important;
+        overflow: visible !important;
+        padding: 12px !important;
+        gap: 10px !important;
+    }
+
+    .otel-detail-template-v41 .booking-price-head--ota {
+        position: relative !important;
+        top: auto !important;
+        padding: 12px !important;
+        border-radius: 18px !important;
+    }
+
+    .otel-detail-template-v41 .booking-price-main {
+        display: grid !important;
+        grid-template-columns: minmax(0, 1fr) auto;
+        gap: 3px 8px !important;
+    }
+
+    .otel-detail-template-v41 .booking-price-total {
+        font-size: 1.48rem !important;
+    }
+
+    .otel-detail-template-v41 .booking-price-unit {
+        grid-column: 2 / 3;
+        grid-row: 1 / 3;
+        align-self: center;
+        padding: 5px 8px;
+        font-size: 0.72rem;
+    }
+
+    .otel-detail-template-v41 .multi-room-item {
+        padding: 10px !important;
+    }
+
+    .otel-detail-template-v41 .multi-room-item-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+        gap: 8px !important;
+    }
+
+    .otel-detail-template-v41 .multi-room-item-grid label span {
+        font-size: 0.76rem;
+    }
+
+    .otel-detail-template-v41 .multi-room-item-span,
+    .otel-detail-template-v41 .multi-room-quantity {
+        grid-column: 1 / -1;
+    }
+
+    .otel-detail-template-v41 .guest-row {
+        min-height: 40px !important;
+        padding: 7px 10px !important;
+    }
+
+    .otel-detail-template-v41 .booking-advanced-fields {
+        padding: 10px !important;
+    }
+
+    .otel-detail-template-v41 .booking-advanced-heading span,
+    .otel-detail-template-v41 .booking-advanced-tip,
+    .otel-detail-template-v41 .booking-trust-row {
+        display: none !important;
+    }
+
+    .otel-detail-template-v41 .price-breakdown {
+        padding: 10px !important;
+        border-radius: 16px !important;
+    }
+
+    .otel-detail-template-v41 .nightly-breakdown-list {
+        max-height: 220px;
+        overflow: auto;
+    }
+
+    .otel-detail-template-v41 .nightly-breakdown-row {
+        grid-template-columns: minmax(0, 1fr) auto !important;
+    }
+}
+
+/* 2026-05-31 - Otel detay mobil galeri ve rezervasyon barı kompakt lüks düzen */
+@media (max-width: 900px) {
+    .otel-detail-template-v41 .gallery-mobile-strip {
+        gap: 8px !important;
+        padding: 8px !important;
+        border-radius: 22px !important;
+        box-shadow: 0 16px 34px rgba(15, 23, 42, 0.10) !important;
+    }
+
+    .otel-detail-template-v41 .gallery-swipe-hint {
+        position: absolute !important;
+        top: 14px !important;
+        left: 74px !important;
+        right: 74px !important;
+        z-index: 4 !important;
+        min-height: 30px !important;
+        display: inline-flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        padding: 0 8px !important;
+        margin: 0 !important;
+        border-radius: 999px !important;
+        background: rgba(255, 255, 255, 0.82) !important;
+        color: #475569 !important;
+        font-size: 0.74rem !important;
+        line-height: 1.15 !important;
+        white-space: nowrap !important;
+        overflow: hidden !important;
+        text-overflow: ellipsis !important;
+        backdrop-filter: blur(12px);
+    }
+
+    .otel-detail-template-v41 .gallery-mobile-track {
+        padding: 44px 8px 8px !important;
+        border-radius: 19px !important;
+    }
+
+    .otel-detail-template-v41 .gallery-mobile-slide {
+        aspect-ratio: 16 / 9.6 !important;
+        max-height: 224px !important;
+        border-radius: 18px !important;
+    }
+
+    .otel-detail-template-v41 .gallery-mobile-footer {
+        display: grid !important;
+        grid-template-columns: minmax(0, 1fr) auto !important;
+        align-items: center !important;
+        gap: 8px !important;
+        min-height: 54px !important;
+        padding: 2px 8px 8px !important;
+    }
+
+    .otel-detail-template-v41 .gallery-mobile-thumbs {
+        gap: 7px !important;
+        padding: 0 !important;
+    }
+
+    .otel-detail-template-v41 .gallery-mobile-thumb {
+        flex-basis: 58px !important;
+        width: 58px !important;
+        height: 42px !important;
+        border-radius: 11px !important;
+    }
+
+    .otel-detail-template-v41 .gallery-mobile-dots {
+        display: none !important;
+    }
+
+    .otel-detail-template-v41 .gallery-mobile-all-photos {
+        min-height: 40px !important;
+        padding: 0 12px !important;
+        border-radius: 999px !important;
+        white-space: nowrap !important;
+        box-shadow: 0 10px 22px rgba(15, 23, 42, 0.10) !important;
+    }
+
+    .otel-detail-template-v41 .gallery-mobile-all-photos span {
+        display: none !important;
+    }
+
+    .mobile-booking-bar {
+        min-height: 68px !important;
+        gap: 8px !important;
+        padding: 8px 10px calc(8px + env(safe-area-inset-bottom)) !important;
+        border-top: 1px solid rgba(226, 232, 240, 0.96) !important;
+        box-shadow: 0 -14px 34px rgba(15, 23, 42, 0.10) !important;
+    }
+
+    .mobile-booking-bar .mobile-booking-total {
+        font-size: 1.28rem !important;
+    }
+
+    .mobile-booking-bar .mobile-booking-cta {
+        min-width: 132px !important;
+        min-height: 48px !important;
+        border-radius: 18px !important;
+        font-size: 0.92rem !important;
+        box-shadow: 0 14px 26px rgba(0, 74, 173, 0.22) !important;
+    }
+}
+
+@media (max-width: 420px) {
+    .otel-detail-template-v41 .gallery-swipe-hint {
+        left: 66px !important;
+        right: 58px !important;
+        font-size: 0.69rem !important;
+    }
+
+    .otel-detail-template-v41 .gallery-mobile-slide {
+        max-height: 208px !important;
+    }
+
+    .otel-detail-template-v41 .gallery-mobile-all-photos {
+        display: none !important;
+    }
+}
+
+/* 2026-05-31 - Otel detay mobil başlık ve hızlı bilgiler kompakt düzen */
+@media (max-width: 900px) {
+    .otel-detail-template-v41.otel-detail-tabler .detail-header.hotel-title-section {
+        gap: 11px !important;
+        padding: 14px !important;
+    }
+
+    .otel-detail-template-v41 .detail-header.hotel-title-section .hotel-name h1 {
+        font-size: clamp(1.42rem, 5.4vw, 1.78rem) !important;
+        line-height: 1.1 !important;
+    }
+
+    .otel-detail-template-v41 .header-top-metrics {
+        grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+        gap: 8px !important;
+    }
+
+    .otel-detail-template-v41 .detail-rating-chip,
+    .otel-detail-template-v41 .weather-inline-trigger {
+        min-height: 66px !important;
+        padding: 10px 12px !important;
+        border-radius: 17px !important;
+    }
+
+    .otel-detail-template-v41 .detail-rating-chip strong {
+        font-size: 1.4rem !important;
+        line-height: 1 !important;
+    }
+
+    .otel-detail-template-v41 .detail-rating-chip .rating-copy,
+    .otel-detail-template-v41 .weather-inline-trigger .weather-copy {
+        min-width: 0 !important;
+    }
+
+    .otel-detail-template-v41 .detail-rating-chip .rating-copy span,
+    .otel-detail-template-v41 .weather-inline-trigger .weather-copy span {
+        overflow: hidden !important;
+        text-overflow: ellipsis !important;
+        white-space: nowrap !important;
+    }
+
+    .otel-detail-template-v41 .weather-inline-trigger {
+        grid-template-columns: auto minmax(0, 1fr) !important;
+    }
+
+    .otel-detail-template-v41 .weather-inline-trigger .weather-days-badge {
+        display: none !important;
+    }
+
+    .otel-detail-template-v41.od-detail .od-quick-facts {
+        display: grid !important;
+        gap: 10px !important;
+        padding: 12px !important;
+    }
+
+    .otel-detail-template-v41.od-detail .od-quick-facts__list {
+        display: grid !important;
+        grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+        gap: 10px !important;
+    }
+
+    .otel-detail-template-v41.od-detail .od-quick-facts__item {
+        min-height: 70px !important;
+        padding: 10px 12px !important;
+        border-radius: 17px !important;
+    }
+
+    .otel-detail-template-v41.od-detail .od-quick-facts__chips {
+        display: grid !important;
+        grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+        gap: 8px !important;
+    }
+
+    .otel-detail-template-v41.od-detail .od-quick-facts__chip {
+        justify-content: center !important;
+        min-height: 38px !important;
+        border-radius: 999px !important;
+        font-size: 0.78rem !important;
+    }
+}
+
+@media (max-width: 420px) {
+    .otel-detail-template-v41 .header-top-metrics {
+        grid-template-columns: 1fr !important;
+    }
+}
+
+@media (min-width: 520px) and (max-width: 900px) {
+    .otel-detail-template-v41.otel-detail-tabler .detail-header.hotel-title-section {
+        grid-template-columns: minmax(0, 1.25fr) minmax(190px, 0.75fr) !important;
+        align-items: start !important;
+    }
+
+    .otel-detail-template-v41 .detail-hero-head,
+    .otel-detail-template-v41 .header-right-stack {
+        min-width: 0 !important;
+        width: 100% !important;
+    }
+
+    .otel-detail-template-v41 .detail-hero-head .hotel-name,
+    .otel-detail-template-v41 .detail-rating-chip,
+    .otel-detail-template-v41 .header-top-metrics,
+    .otel-detail-template-v41 .detail-utility-row,
+    .otel-detail-template-v41 .weather-inline-trigger {
+        width: 100% !important;
+    }
+
+    .otel-detail-template-v41 .header-top-metrics {
+        grid-template-columns: 1fr !important;
+    }
+
+    .otel-detail-template-v41 .weather-inline-trigger {
+        min-height: 76px !important;
+    }
+}
+
+/* 2026-05-31 - Oda kartı mobil mimarisi: görsel, içerik ve fiyat tek premium akış */
+@media (max-width: 900px) {
+    .otel-detail-template-v41 #roomsCard {
+        padding: 14px 12px !important;
+        border-radius: 24px !important;
+    }
+
+    .otel-detail-template-v41 #roomsCard .room-list {
+        gap: 16px !important;
+    }
+
+    .otel-detail-template-v41 #roomsCard .room-card,
+    .otel-detail-template-v41.otel-detail-tabler #roomsCard .room-card {
+        display: grid !important;
+        grid-template-columns: 1fr !important;
+        gap: 0 !important;
+        padding: 0 !important;
+        overflow: hidden !important;
+        border-radius: 26px !important;
+        border: 1px solid rgba(203, 213, 225, 0.94) !important;
+        background:
+            radial-gradient(circle at 90% 105%, rgba(16, 185, 129, 0.12), transparent 34%),
+            linear-gradient(180deg, #ffffff 0%, #f8fbff 100%) !important;
+        box-shadow: 0 22px 46px rgba(15, 23, 42, 0.10) !important;
+    }
+
+    .otel-detail-template-v41 #roomsCard .room-card-main,
+    .otel-detail-template-v41.otel-detail-tabler #roomsCard .room-card-main {
+        display: grid !important;
+        grid-template-columns: 1fr !important;
+        gap: 0 !important;
+        min-width: 0 !important;
+    }
+
+    .otel-detail-template-v41 #roomsCard .room-card-media {
+        width: 100% !important;
+        min-width: 0 !important;
+        height: auto !important;
+        padding: 12px 12px 0 !important;
+    }
+
+    .otel-detail-template-v41 #roomsCard .room-card-cover,
+    .otel-detail-template-v41 #roomsCard .room-card-cover .room-gallery-trigger {
+        width: 100% !important;
+        height: clamp(168px, 48vw, 226px) !important;
+        min-height: 0 !important;
+        border-radius: 20px !important;
+        overflow: hidden !important;
+        display: block !important;
+        position: relative !important;
+        background: #e2e8f0 !important;
+    }
+
+    .otel-detail-template-v41 #roomsCard .room-card-cover img {
+        width: 100% !important;
+        height: 100% !important;
+        min-height: 0 !important;
+        border-radius: 20px !important;
+        object-fit: cover !important;
+        display: block !important;
+    }
+
+    .otel-detail-template-v41 #roomsCard .room-gallery-count {
+        left: 12px !important;
+        right: auto !important;
+        bottom: 12px !important;
+        top: auto !important;
+        min-height: 34px !important;
+        padding: 0 12px !important;
+        border-radius: 999px !important;
+        background: rgba(255, 255, 255, 0.92) !important;
+        color: #0f172a !important;
+        box-shadow: 0 12px 24px rgba(15, 23, 42, 0.16) !important;
+        backdrop-filter: blur(12px) !important;
+    }
+
+    .otel-detail-template-v41 #roomsCard .room-thumb-strip {
+        display: flex !important;
+        gap: 8px !important;
+        padding: 9px 0 0 !important;
+        overflow-x: auto !important;
+        scrollbar-width: none !important;
+    }
+
+    .otel-detail-template-v41 #roomsCard .room-thumb-strip::-webkit-scrollbar {
+        display: none !important;
+    }
+
+    .otel-detail-template-v41 #roomsCard .room-thumb-item {
+        flex: 0 0 54px !important;
+        width: 54px !important;
+        height: 42px !important;
+        border-radius: 13px !important;
+        overflow: hidden !important;
+        border: 1px solid rgba(226, 232, 240, 0.96) !important;
+        background: #fff !important;
+        box-shadow: 0 8px 16px rgba(15, 23, 42, 0.08) !important;
+    }
+
+    .otel-detail-template-v41 #roomsCard .room-thumb-item img {
+        width: 100% !important;
+        height: 100% !important;
+        object-fit: cover !important;
+    }
+
+    .otel-detail-template-v41 #roomsCard .room-card-copy,
+    .otel-detail-template-v41.otel-detail-tabler #roomsCard .room-card-copy {
+        display: grid !important;
+        gap: 10px !important;
+        padding: 14px 14px 12px !important;
+        min-width: 0 !important;
+    }
+
+    .otel-detail-template-v41 #roomsCard .room-card-copy h3,
+    .otel-detail-template-v41 #roomsCard .od-room-card__title {
+        margin: 0 !important;
+        font-size: 1.18rem !important;
+        line-height: 1.22 !important;
+        letter-spacing: 0 !important;
+        color: #0f172a !important;
+    }
+
+    .otel-detail-template-v41 #roomsCard .od-room-card__meta,
+    .otel-detail-template-v41 #roomsCard .room-feature-list {
+        display: flex !important;
+        flex-wrap: wrap !important;
+        gap: 7px !important;
+    }
+
+    .otel-detail-template-v41 #roomsCard .od-pill,
+    .otel-detail-template-v41 #roomsCard .room-feature-item {
+        min-height: 32px !important;
+        padding: 0 10px !important;
+        border-radius: 999px !important;
+        font-size: 0.76rem !important;
+        font-weight: 850 !important;
+        background: #eef5ff !important;
+        color: #1747a6 !important;
+    }
+
+    .otel-detail-template-v41 #roomsCard .od-pill--meal,
+    .otel-detail-template-v41 #roomsCard .cancellation-badge {
+        background: #dcfce7 !important;
+        color: #047857 !important;
+    }
+
+    .otel-detail-template-v41 #roomsCard .od-room-card__specs {
+        margin: 0 !important;
+        display: block !important;
+        overflow: visible !important;
+        color: #64748b !important;
+        font-size: 0.9rem !important;
+        line-height: 1.45 !important;
+    }
+
+    .otel-detail-template-v41 #roomsCard .room-feature-row {
+        padding: 0 !important;
+    }
+
+    .otel-detail-template-v41 #roomsCard .room-card-aux {
+        display: flex !important;
+        align-items: center !important;
+        justify-content: space-between !important;
+        gap: 8px !important;
+        padding-top: 2px !important;
+    }
+
+    .otel-detail-template-v41 #roomsCard .room-detail-btn {
+        min-height: 40px !important;
+        padding: 0 14px !important;
+        border-radius: 999px !important;
+        background: #fff !important;
+        border: 1px solid rgba(203, 213, 225, 0.96) !important;
+        color: #0f172a !important;
+        box-shadow: 0 8px 18px rgba(15, 23, 42, 0.06) !important;
+    }
+
+    .otel-detail-template-v41 #roomsCard .room-price-box,
+    .otel-detail-template-v41.otel-detail-tabler #roomsCard .room-price-box {
+        display: grid !important;
+        grid-template-columns: minmax(0, 1fr) auto !important;
+        align-items: center !important;
+        gap: 12px !important;
+        width: calc(100% - 24px) !important;
+        box-sizing: border-box !important;
+        margin: 0 12px 12px !important;
+        padding: 14px !important;
+        border: 1px solid rgba(191, 219, 254, 0.88) !important;
+        border-left: 1px solid rgba(191, 219, 254, 0.88) !important;
+        border-radius: 20px !important;
+        background:
+            radial-gradient(circle at 100% 0%, rgba(37, 99, 235, 0.10), transparent 30%),
+            linear-gradient(135deg, #f8fbff 0%, #ffffff 50%, #ecfdf5 100%) !important;
+        box-shadow: inset 0 1px 0 rgba(255,255,255,.9), 0 16px 30px rgba(37, 99, 235, 0.10) !important;
+    }
+
+    .otel-detail-template-v41 #roomsCard .room-price-value,
+    .otel-detail-template-v41.otel-detail-tabler #roomsCard .room-price-value {
+        order: 1 !important;
+        align-items: flex-start !important;
+        text-align: left !important;
+        gap: 3px !important;
+        min-width: 0 !important;
+    }
+
+    .otel-detail-template-v41 #roomsCard .room-price-actions {
+        order: 2 !important;
+        justify-self: end !important;
+        width: auto !important;
+    }
+
+    .otel-detail-template-v41 #roomsCard .room-price-kicker {
+        font-size: 0.72rem !important;
+        letter-spacing: 0.04em !important;
+        color: #64748b !important;
+    }
+
+    .otel-detail-template-v41 #roomsCard .room-price-old {
+        color: #94a3b8 !important;
+        font-size: 0.9rem !important;
+        font-weight: 800 !important;
+    }
+
+    .otel-detail-template-v41 #roomsCard .room-price-value strong {
+        font-size: clamp(1.55rem, 7vw, 1.95rem) !important;
+        line-height: 1 !important;
+        color: #0f172a !important;
+    }
+
+    .otel-detail-template-v41 #roomsCard .room-price-discount-stack {
+        display: grid !important;
+        grid-template-columns: auto auto !important;
+        align-items: end !important;
+        gap: 2px 8px !important;
+    }
+
+    .otel-detail-template-v41 #roomsCard .room-price-discount-stack strong {
+        grid-column: 1 / 2 !important;
+    }
+
+    .otel-detail-template-v41 #roomsCard .room-price-discount-pill {
+        grid-column: 2 / 3 !important;
+        grid-row: 2 / 3 !important;
+        min-height: 28px !important;
+        padding: 0 10px !important;
+        border-radius: 999px !important;
+        background: #ffe4e6 !important;
+        color: #be123c !important;
+        font-weight: 950 !important;
+    }
+
+    .otel-detail-template-v41 #roomsCard .room-price-inclusive-label {
+        min-height: 28px !important;
+        padding: 0 10px !important;
+        border-radius: 999px !important;
+        background: #ccfbf1 !important;
+        color: #0f766e !important;
+        font-size: 0.72rem !important;
+        font-weight: 900 !important;
+    }
+
+    .otel-detail-template-v41 #roomsCard .room-price-total {
+        font-size: 0.82rem !important;
+        color: #334155 !important;
+        font-weight: 850 !important;
+    }
+
+    .otel-detail-template-v41 #roomsCard .room-price-actions .select-room-btn {
+        width: auto !important;
+        min-width: 132px !important;
+        min-height: 50px !important;
+        padding: 0 18px !important;
+        border-radius: 18px !important;
+        box-shadow: 0 16px 30px rgba(0, 74, 173, 0.22) !important;
+    }
+}
+
+@media (max-width: 420px) {
+    .otel-detail-template-v41 #roomsCard .room-card-cover,
+    .otel-detail-template-v41 #roomsCard .room-card-cover .room-gallery-trigger {
+        height: 164px !important;
+    }
+
+    .otel-detail-template-v41 #roomsCard .room-price-box,
+    .otel-detail-template-v41.otel-detail-tabler #roomsCard .room-price-box {
+        grid-template-columns: 1fr !important;
+    }
+
+    .otel-detail-template-v41 #roomsCard .room-price-actions {
+        justify-self: stretch !important;
+    }
+
+    .otel-detail-template-v41 #roomsCard .room-price-actions .select-room-btn {
+        width: 100% !important;
+    }
+}
+
+/* 2026-05-31 mobile composition pass: photo-like hierarchy, compact booking flow */
+@media (max-width: 900px) {
+    .otel-detail-template-v41.otel-detail-tabler {
+        --od-mobile-gutter: clamp(12px, 3.6vw, 18px);
+        --od-mobile-radius: 22px;
+        background:
+            radial-gradient(circle at 18% 0%, rgba(219, 234, 254, 0.72), transparent 34%),
+            linear-gradient(180deg, #f7faff 0%, #eef4fb 48%, #f8fbff 100%) !important;
+        padding-bottom: 92px !important;
+        overflow-x: hidden !important;
+    }
+
+    .otel-detail-template-v41 .detail-breadcrumb {
+        width: calc(100% - (var(--od-mobile-gutter) * 2)) !important;
+        margin: 10px var(--od-mobile-gutter) 8px !important;
+        padding: 0 !important;
+        gap: 8px !important;
+        overflow: hidden !important;
+    }
+
+    .otel-detail-template-v41 .detail-breadcrumb-left,
+    .otel-detail-template-v41 .detail-breadcrumb-right {
+        width: 100% !important;
+        display: grid !important;
+        grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+        gap: 8px !important;
+        overflow: hidden !important;
+    }
+
+    .otel-detail-template-v41 .detail-breadcrumb-left {
+        grid-template-columns: 1fr !important;
+    }
+
+    .otel-detail-template-v41 .detail-quick-action,
+    .otel-detail-template-v41 .detail-share-wrap,
+    .otel-detail-template-v41 .detail-share-wrap > button {
+        width: 100% !important;
+        min-width: 0 !important;
+        height: 42px !important;
+        padding: 0 10px !important;
+        border-radius: 999px !important;
+        font-size: 0.82rem !important;
+        box-shadow: 0 12px 24px rgba(15, 23, 42, 0.08) !important;
+        overflow: hidden !important;
+        text-overflow: ellipsis !important;
+        white-space: nowrap !important;
+    }
+
+    .otel-detail-template-v41 .gallery-mobile-strip {
+        width: calc(100% - (var(--od-mobile-gutter) * 2)) !important;
+        height: auto !important;
+        min-height: 0 !important;
+        margin: 8px var(--od-mobile-gutter) 10px !important;
+        padding: 8px !important;
+        border-radius: 28px !important;
+        background: linear-gradient(180deg, rgba(255, 255, 255, 0.92), rgba(241, 246, 253, 0.92)) !important;
+        box-shadow: 0 22px 54px rgba(15, 23, 42, 0.14) !important;
+        overflow: hidden !important;
+    }
+
+    .otel-detail-template-v41 .gallery-mobile-track {
+        height: clamp(218px, 58vw, 308px) !important;
+        width: 100% !important;
+        margin: 0 !important;
+        border-radius: 22px !important;
+    }
+
+    .otel-detail-template-v41 .gallery-mobile-slide,
+    .otel-detail-template-v41 .gallery-mobile-slide img {
+        height: clamp(218px, 58vw, 308px) !important;
+        border-radius: 22px !important;
+    }
+
+    .otel-detail-template-v41 .gallery-mobile-chrome {
+        inset: 8px 8px auto 8px !important;
+        width: auto !important;
+        height: 46px !important;
+        pointer-events: none !important;
+    }
+
+    .otel-detail-template-v41 .gallery-swipe-hint {
+        display: none !important;
+    }
+
+    .otel-detail-template-v41 .gallery-mobile-nav {
+        inset: 0 !important;
+        width: 100% !important;
+        height: 0 !important;
+        pointer-events: none !important;
+    }
+
+    .otel-detail-template-v41 .gallery-mobile-nav-btn {
+        position: absolute !important;
+        top: clamp(118px, 29vw, 168px) !important;
+        pointer-events: auto !important;
+    }
+
+    .otel-detail-template-v41 .gallery-mobile-nav-btn--prev {
+        left: 12px !important;
+    }
+
+    .otel-detail-template-v41 .gallery-mobile-nav-btn--next {
+        right: 12px !important;
+        left: auto !important;
+    }
+
+    .otel-detail-template-v41 .gallery-mobile-footer {
+        height: 52px !important;
+        margin-top: 8px !important;
+        padding: 4px !important;
+        border-radius: 18px !important;
+        background: rgba(255, 255, 255, 0.76) !important;
+    }
+
+    .otel-detail-template-v41 .gallery-mobile-all-photos {
+        max-width: 44px !important;
+        overflow: hidden !important;
+    }
+
+    .otel-detail-template-v41 .detail-header.hotel-title-section {
+        width: calc(100% - (var(--od-mobile-gutter) * 2)) !important;
+        min-height: 0 !important;
+        height: auto !important;
+        margin: 10px var(--od-mobile-gutter) 8px !important;
+        padding: 16px !important;
+        display: grid !important;
+        grid-template-columns: 1fr !important;
+        gap: 12px !important;
+        border-radius: 26px !important;
+        overflow: hidden !important;
+    }
+
+    .otel-detail-template-v41 .detail-hero-head,
+    .otel-detail-template-v41 .hotel-name,
+    .otel-detail-template-v41 .header-right-stack,
+    .otel-detail-template-v41 .header-top-metrics,
+    .otel-detail-template-v41 .detail-utility-row {
+        width: 100% !important;
+        height: auto !important;
+        display: grid !important;
+        grid-template-columns: 1fr !important;
+        gap: 10px !important;
+        position: static !important;
+    }
+
+    .otel-detail-template-v41 .hotel-name h1 {
+        font-size: clamp(1.55rem, 7vw, 2.25rem) !important;
+        line-height: 1.05 !important;
+        letter-spacing: 0 !important;
+        margin: 0 !important;
+    }
+
+    .otel-detail-template-v41 .rating-summary.detail-rating-chip,
+    .otel-detail-template-v41 .weather-inline-trigger {
+        width: 100% !important;
+        min-height: 58px !important;
+        height: auto !important;
+        border-radius: 18px !important;
+        background: rgba(255, 255, 255, 0.82) !important;
+        box-shadow: 0 14px 30px rgba(15, 23, 42, 0.08) !important;
+    }
+
+    .otel-detail-template-v41 .rating-summary.detail-rating-chip {
+        display: grid !important;
+        grid-template-columns: auto minmax(0, 1fr) !important;
+        align-items: center !important;
+        gap: 10px !important;
+        padding: 12px !important;
+    }
+
+    .otel-detail-template-v41 .rating-summary.detail-rating-chip .rating-big,
+    .otel-detail-template-v41 .rating-summary.detail-rating-chip .rating-text {
+        width: auto !important;
+        min-width: 0 !important;
+    }
+
+    .otel-detail-template-v41 .rating-summary.detail-rating-chip .rating-text strong,
+    .otel-detail-template-v41 .rating-summary.detail-rating-chip .rating-text span {
+        display: block !important;
+        max-width: 100% !important;
+        overflow: hidden !important;
+        text-overflow: ellipsis !important;
+        white-space: nowrap !important;
+    }
+
+    .otel-detail-template-v41 .od-quick-facts {
+        width: calc(100% - (var(--od-mobile-gutter) * 2)) !important;
+        height: auto !important;
+        margin: 8px var(--od-mobile-gutter) 12px !important;
+        padding: 12px !important;
+        display: grid !important;
+        grid-template-columns: 1fr !important;
+        gap: 10px !important;
+        border-radius: 24px !important;
+    }
+
+    .otel-detail-template-v41 .od-quick-facts__list,
+    .otel-detail-template-v41 .od-quick-facts__chips {
+        width: 100% !important;
+        height: auto !important;
+        display: grid !important;
+        grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+        gap: 8px !important;
+    }
+
+    .otel-detail-template-v41 .detail-grid,
+    .otel-detail-template-v41 .detail-content {
+        width: calc(100% - (var(--od-mobile-gutter) * 2)) !important;
+        margin-inline: var(--od-mobile-gutter) !important;
+        gap: 14px !important;
+    }
+
+    .otel-detail-template-v41 .content-card,
+    .otel-detail-template-v41 #roomsCard,
+    .otel-detail-template-v41 #reviewsSection {
+        width: 100% !important;
+        margin-inline: 0 !important;
+        border-radius: 24px !important;
+        box-shadow: 0 18px 42px rgba(15, 23, 42, 0.08) !important;
+    }
+
+    .otel-detail-template-v41 #roomsCard {
+        padding: 14px !important;
+        overflow: visible !important;
+    }
+
+    .otel-detail-template-v41 #roomsCard .tabler-section-head {
+        min-height: 0 !important;
+        padding: 0 0 12px !important;
+        align-items: center !important;
+    }
+
+    .otel-detail-template-v41 #roomsCard .room-card,
+    .otel-detail-template-v41 #roomsCard .room-card-main {
+        display: grid !important;
+        grid-template-columns: 118px minmax(0, 1fr) !important;
+        gap: 12px !important;
+        min-height: 0 !important;
+        height: auto !important;
+        padding: 12px !important;
+        border-radius: 24px !important;
+        overflow: hidden !important;
+        background: linear-gradient(145deg, #ffffff 0%, #f8fbff 100%) !important;
+        border: 1px solid rgba(191, 219, 254, 0.86) !important;
+    }
+
+    .otel-detail-template-v41 #roomsCard .room-card-media {
+        width: 118px !important;
+        height: auto !important;
+        min-height: 0 !important;
+        display: grid !important;
+        grid-template-rows: 118px auto !important;
+        gap: 8px !important;
+        align-self: start !important;
+    }
+
+    .otel-detail-template-v41 #roomsCard .room-card-cover,
+    .otel-detail-template-v41 #roomsCard .room-card-cover .room-gallery-trigger,
+    .otel-detail-template-v41 #roomsCard .room-card-cover img {
+        width: 118px !important;
+        height: 118px !important;
+        border-radius: 20px !important;
+        object-fit: cover !important;
+    }
+
+    .otel-detail-template-v41 #roomsCard .room-gallery-count {
+        left: 8px !important;
+        right: 8px !important;
+        bottom: 8px !important;
+        width: auto !important;
+        height: 30px !important;
+        justify-content: center !important;
+        border-radius: 999px !important;
+        font-size: 0.78rem !important;
+    }
+
+    .otel-detail-template-v41 #roomsCard .room-thumb-strip {
+        width: 118px !important;
+        height: 42px !important;
+        padding: 0 !important;
+        gap: 6px !important;
+        overflow: hidden !important;
+    }
+
+    .otel-detail-template-v41 #roomsCard .room-thumb-item,
+    .otel-detail-template-v41 #roomsCard .room-thumb-item img {
+        width: 36px !important;
+        height: 36px !important;
+        border-radius: 12px !important;
+    }
+
+    .otel-detail-template-v41 #roomsCard .room-card-copy {
+        min-width: 0 !important;
+        height: auto !important;
+        padding: 2px 0 0 !important;
+        display: grid !important;
+        gap: 9px !important;
+    }
+
+    .otel-detail-template-v41 #roomsCard .od-room-card__title {
+        font-size: 1.05rem !important;
+        line-height: 1.2 !important;
+        margin: 0 !important;
+    }
+
+    .otel-detail-template-v41 #roomsCard .od-room-card__meta,
+    .otel-detail-template-v41 #roomsCard .room-feature-row,
+    .otel-detail-template-v41 #roomsCard .room-feature-list,
+    .otel-detail-template-v41 #roomsCard .room-card-aux {
+        width: 100% !important;
+        height: auto !important;
+        justify-content: flex-start !important;
+        gap: 6px !important;
+    }
+
+    .otel-detail-template-v41 #roomsCard .od-pill,
+    .otel-detail-template-v41 #roomsCard .room-feature-item,
+    .otel-detail-template-v41 #roomsCard .cancellation-badge {
+        min-height: 28px !important;
+        padding: 0 9px !important;
+        border-radius: 999px !important;
+        font-size: 0.72rem !important;
+    }
+
+    .otel-detail-template-v41 #roomsCard .od-room-card__specs {
+        font-size: 0.86rem !important;
+        line-height: 1.45 !important;
+        margin: 0 !important;
+    }
+
+    .otel-detail-template-v41 #roomsCard .room-price-box {
+        grid-column: 1 / -1 !important;
+        width: 100% !important;
+        min-height: 0 !important;
+        height: auto !important;
+        margin-top: 4px !important;
+        padding: 12px !important;
+        display: grid !important;
+        grid-template-columns: minmax(0, 1fr) auto !important;
+        gap: 12px !important;
+        border-radius: 20px !important;
+        background:
+            linear-gradient(135deg, rgba(240, 253, 250, 0.92), rgba(239, 246, 255, 0.98)) !important;
+        box-shadow: inset 0 0 0 1px rgba(125, 211, 252, 0.22) !important;
+    }
+
+    .otel-detail-template-v41 #roomsCard .room-price-value {
+        width: auto !important;
+        height: auto !important;
+        display: grid !important;
+        gap: 4px !important;
+    }
+
+    .otel-detail-template-v41 #roomsCard .room-price-discount-stack {
+        width: auto !important;
+        height: auto !important;
+        display: flex !important;
+        align-items: baseline !important;
+        gap: 8px !important;
+        flex-wrap: wrap !important;
+    }
+
+    .otel-detail-template-v41 #roomsCard .room-price-discount-stack strong {
+        font-size: clamp(1.35rem, 6vw, 1.9rem) !important;
+        line-height: 1 !important;
+    }
+
+    .otel-detail-template-v41 #roomsCard .room-price-actions {
+        width: auto !important;
+        align-self: center !important;
+        justify-self: end !important;
+    }
+
+    .otel-detail-template-v41 #roomsCard .room-price-actions .select-room-btn {
+        min-width: 128px !important;
+        min-height: 48px !important;
+        border-radius: 18px !important;
+        padding: 0 18px !important;
+    }
+
+    .otel-detail-template-v41 #reviewsSection {
+        height: auto !important;
+        min-height: 0 !important;
+        overflow: visible !important;
+        padding: 16px !important;
+    }
+
+    .otel-detail-template-v41 #reviewsSection .review-overview-card,
+    .otel-detail-template-v41 #reviewsSection .rating-breakdown {
+        max-height: none !important;
+    }
+
+    .mobile-booking-bar {
+        min-height: 64px !important;
+        padding: 7px 10px calc(7px + env(safe-area-inset-bottom)) !important;
+        gap: 8px !important;
+        background: rgba(255, 255, 255, 0.94) !important;
+        backdrop-filter: blur(18px) !important;
+    }
+
+    .mobile-booking-bar .mobile-booking-total {
+        font-size: 1.18rem !important;
+    }
+
+    .mobile-booking-bar .mobile-booking-from,
+    .mobile-booking-bar .mobile-booking-label,
+    .mobile-booking-bar .mobile-booking-tax-note {
+        font-size: 0.72rem !important;
+        line-height: 1.1 !important;
+    }
+
+    .mobile-booking-bar .mobile-booking-cta {
+        min-width: 138px !important;
+        min-height: 46px !important;
+        border-radius: 18px !important;
+        font-size: 0.9rem !important;
+    }
+}
+
+@media (max-width: 520px) {
+    html,
+    body {
+        max-width: 100vw !important;
+        overflow-x: hidden !important;
+    }
+
+    .site-header,
+    .otel-detail-template-v41 {
+        max-width: 100vw !important;
+        overflow-x: hidden !important;
+    }
+
+    .otel-detail-template-v41 .detail-breadcrumb-right {
+        display: grid !important;
+        grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+        gap: 6px !important;
+        height: auto !important;
+        min-height: 42px !important;
+    }
+
+    .otel-detail-template-v41 .detail-breadcrumb-right > *,
+    .otel-detail-template-v41 .detail-breadcrumb-right .detail-share-wrap,
+    .otel-detail-template-v41 .detail-breadcrumb-right .detail-quick-action {
+        width: 100% !important;
+        min-width: 0 !important;
+        max-width: 100% !important;
+    }
+
+    .otel-detail-template-v41 .detail-breadcrumb-right .detail-quick-action {
+        font-size: 0 !important;
+        color: transparent !important;
+        display: inline-flex !important;
+        flex-direction: row !important;
+        align-items: center !important;
+        justify-content: center !important;
+        gap: 6px !important;
+        padding: 0 6px !important;
+    }
+
+    .otel-detail-template-v41 .detail-breadcrumb-right .detail-quick-action i {
+        font-size: 1rem !important;
+        color: inherit !important;
+    }
+
+    .otel-detail-template-v41 #startConversationBtn::after,
+    .otel-detail-template-v41 #shareHotelBtn::after,
+    .otel-detail-template-v41 #saveHotelBtnTop::after {
+        font-size: 0.76rem !important;
+        font-weight: 900 !important;
+        line-height: 1 !important;
+        color: #0f172a !important;
+    }
+
+    .otel-detail-template-v41 #startConversationBtn::after {
+        content: "Görüşme";
+    }
+
+    .otel-detail-template-v41 #shareHotelBtn::after {
+        content: "Paylaş";
+    }
+
+    .otel-detail-template-v41 #saveHotelBtnTop::after {
+        content: "Favori";
+    }
+
+    .otel-detail-template-v41 .detail-quick-action span,
+    .otel-detail-template-v41 .detail-share-wrap > button span {
+        white-space: nowrap !important;
+    }
+
+    .otel-detail-template-v41 .gallery-mobile-nav-btn {
+        transform: none !important;
+    }
+
+    .otel-detail-template-v41 .gallery-mobile-nav-btn--next {
+        right: 18px !important;
+    }
+
+    .otel-detail-template-v41 #roomsCard .room-card,
+    .otel-detail-template-v41 #roomsCard .room-card-main {
+        grid-template-columns: 96px minmax(0, 1fr) !important;
+        gap: 10px !important;
+        padding: 10px !important;
+    }
+
+    .otel-detail-template-v41 #roomsCard .room-card-media {
+        width: 96px !important;
+        grid-template-rows: 104px auto !important;
+    }
+
+    .otel-detail-template-v41 #roomsCard .room-card-cover,
+    .otel-detail-template-v41 #roomsCard .room-card-cover .room-gallery-trigger,
+    .otel-detail-template-v41 #roomsCard .room-card-cover img {
+        width: 96px !important;
+        height: 104px !important;
+        border-radius: 18px !important;
+    }
+
+    .otel-detail-template-v41 #roomsCard .room-thumb-strip {
+        display: none !important;
+    }
+
+    .otel-detail-template-v41 #roomsCard .room-price-box {
+        grid-template-columns: 1fr !important;
+    }
+
+    .otel-detail-template-v41 #roomsCard .room-price-actions,
+    .otel-detail-template-v41 #roomsCard .room-price-actions .select-room-btn {
+        width: 100% !important;
+    }
+
+    .mobile-booking-bar {
+        grid-template-columns: minmax(0, 1fr) 118px !important;
+        justify-content: stretch !important;
+    }
+
+    .mobile-booking-bar .mobile-booking-summary {
+        min-width: 0 !important;
+    }
+
+    .mobile-booking-bar .mobile-booking-cta {
+        min-width: 118px !important;
+        width: 118px !important;
+        padding: 0 10px !important;
+        font-size: 0.84rem !important;
+    }
+}
+
+/* 2026-05-31 photographic mobile reset: gallery-first hotel detail composition */
+@media (max-width: 760px) {
+    html,
+    body {
+        width: 100% !important;
+        max-width: 100vw !important;
+        overflow-x: hidden !important;
+        background: #f3f7fc !important;
+    }
+
+    .otel-detail-template-v41.otel-detail-tabler {
+        --od-photo-gap: 12px;
+        --od-photo-radius: 22px;
+        width: 100% !important;
+        max-width: 100vw !important;
+        padding: 10px 0 96px !important;
+        overflow-x: hidden !important;
+        background:
+            linear-gradient(180deg, rgba(238, 246, 255, 0.98) 0%, rgba(247, 250, 255, 0.98) 38%, #f5f8fc 100%) !important;
+    }
+
+    .otel-detail-template-v41 .detail-breadcrumb {
+        width: calc(100% - 24px) !important;
+        margin: 10px 12px 10px !important;
+        padding: 0 !important;
+        display: grid !important;
+        gap: 10px !important;
+        overflow: visible !important;
+    }
+
+    .otel-detail-template-v41 .detail-breadcrumb-left {
+        width: 100% !important;
+        display: flex !important;
+        min-width: 0 !important;
+    }
+
+    .otel-detail-template-v41 .detail-breadcrumb-context {
+        width: auto !important;
+        max-width: 100% !important;
+        min-height: 40px !important;
+        border-radius: 999px !important;
+        padding: 0 14px !important;
+        background: rgba(255, 255, 255, 0.78) !important;
+        box-shadow: inset 0 0 0 1px rgba(148, 163, 184, 0.22) !important;
+    }
+
+    .otel-detail-template-v41 .detail-breadcrumb-right {
+        width: 100% !important;
+        display: grid !important;
+        grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+        gap: 8px !important;
+        overflow: visible !important;
+    }
+
+    .otel-detail-template-v41 .detail-breadcrumb-right > *,
+    .otel-detail-template-v41 .detail-share-wrap,
+    .otel-detail-template-v41 .detail-quick-action {
+        width: 100% !important;
+        min-width: 0 !important;
+        max-width: 100% !important;
+    }
+
+    .otel-detail-template-v41 .detail-breadcrumb-right .detail-quick-action,
+    .otel-detail-template-v41 .detail-share-wrap > .detail-quick-action {
+        height: 40px !important;
+        min-height: 40px !important;
+        padding: 0 8px !important;
+        border-radius: 999px !important;
+        display: inline-flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        gap: 6px !important;
+        font-size: clamp(0.72rem, 2.9vw, 0.84rem) !important;
+        font-weight: 900 !important;
+        letter-spacing: 0 !important;
+        white-space: nowrap !important;
+        overflow: hidden !important;
+        text-overflow: ellipsis !important;
+        color: #111827 !important;
+        background: rgba(255, 255, 255, 0.94) !important;
+        box-shadow: 0 10px 24px rgba(15, 23, 42, 0.10) !important;
+    }
+
+    .otel-detail-template-v41 .detail-breadcrumb-right .detail-quick-action i {
+        flex: 0 0 auto !important;
+        color: inherit !important;
+    }
+
+    .otel-detail-template-v41 .gallery-mobile-strip {
+        position: relative !important;
+        width: calc(100% - 24px) !important;
+        margin: 12px 12px 12px !important;
+        padding: 10px !important;
+        border-radius: 26px !important;
+        background: rgba(255, 255, 255, 0.86) !important;
+        border: 1px solid rgba(191, 219, 254, 0.72) !important;
+        box-shadow: 0 22px 52px rgba(15, 23, 42, 0.13) !important;
+        overflow: hidden !important;
+    }
+
+    .otel-detail-template-v41 .gallery-mobile-track {
+        position: relative !important;
+        width: 100% !important;
+        height: clamp(230px, 61vw, 330px) !important;
+        margin: 0 !important;
+        border-radius: 22px !important;
+        overflow: hidden !important;
+        background: #dbe7f5 !important;
+    }
+
+    .otel-detail-template-v41 .gallery-mobile-slide,
+    .otel-detail-template-v41 .gallery-mobile-slide img {
+        height: clamp(230px, 61vw, 330px) !important;
+        border-radius: 22px !important;
+        object-fit: cover !important;
+    }
+
+    .otel-detail-template-v41 .gallery-mobile-chrome {
+        position: absolute !important;
+        inset: 12px 12px auto 12px !important;
+        width: auto !important;
+        height: 44px !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: space-between !important;
+        pointer-events: none !important;
+        z-index: 8 !important;
+    }
+
+    .otel-detail-template-v41 .gallery-mobile-back,
+    .otel-detail-template-v41 .gallery-mobile-counter {
+        pointer-events: auto !important;
+        width: 42px !important;
+        height: 42px !important;
+        border-radius: 999px !important;
+        background: rgba(15, 23, 42, 0.72) !important;
+        color: #fff !important;
+        box-shadow: 0 14px 28px rgba(15, 23, 42, 0.22) !important;
+    }
+
+    .otel-detail-template-v41 .gallery-mobile-back {
+        display: none !important;
+    }
+
+    .otel-detail-template-v41 .gallery-swipe-hint {
+        position: absolute !important;
+        left: 74px !important;
+        right: 74px !important;
+        top: 12px !important;
+        width: auto !important;
+        height: 34px !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        padding: 0 10px !important;
+        border-radius: 999px !important;
+        background: rgba(255, 255, 255, 0.84) !important;
+        color: #475569 !important;
+        font-size: clamp(0.68rem, 2.5vw, 0.78rem) !important;
+        font-weight: 850 !important;
+        white-space: nowrap !important;
+        overflow: hidden !important;
+        text-overflow: ellipsis !important;
+        z-index: 7 !important;
+    }
+
+    .otel-detail-template-v41 .gallery-mobile-nav {
+        position: absolute !important;
+        inset: 10px !important;
+        width: auto !important;
+        height: auto !important;
+        min-width: 0 !important;
+        min-height: 0 !important;
+        max-width: none !important;
+        max-height: none !important;
+        pointer-events: none !important;
+        z-index: 9 !important;
+        background: transparent !important;
+        border: 0 !important;
+        border-radius: 0 !important;
+        box-shadow: none !important;
+        backdrop-filter: none !important;
+    }
+
+    .otel-detail-template-v41 .gallery-mobile-nav-btn {
+        position: absolute !important;
+        top: clamp(132px, 33vw, 176px) !important;
+        width: 44px !important;
+        height: 44px !important;
+        min-width: 44px !important;
+        min-height: 44px !important;
+        max-width: 44px !important;
+        max-height: 44px !important;
+        transform: translateY(-50%) !important;
+        border-radius: 999px !important;
+        background: rgba(15, 23, 42, 0.72) !important;
+        color: #fff !important;
+        box-shadow: 0 16px 30px rgba(15, 23, 42, 0.24) !important;
+        pointer-events: auto !important;
+        z-index: 10 !important;
+    }
+
+    .otel-detail-template-v41 .gallery-mobile-nav-btn--prev {
+        left: 0 !important;
+        right: auto !important;
+    }
+
+    .otel-detail-template-v41 .gallery-mobile-nav-btn--next {
+        right: 0 !important;
+        left: auto !important;
+    }
+
+    .otel-detail-template-v41 #startConversationBtn::after,
+    .otel-detail-template-v41 #shareHotelBtn::after,
+    .otel-detail-template-v41 #saveHotelBtnTop::after {
+        content: none !important;
+        display: none !important;
+    }
+
+    .otel-detail-template-v41 .detail-breadcrumb-right .detail-quick-action span {
+        display: inline-block !important;
+        min-width: 0 !important;
+        max-width: 100% !important;
+        overflow: hidden !important;
+        text-overflow: ellipsis !important;
+        white-space: nowrap !important;
+    }
+
+    .otel-detail-template-v41 .gallery-mobile-footer {
+        width: 100% !important;
+        height: 50px !important;
+        margin: 8px 0 0 !important;
+        padding: 4px 48px 4px 4px !important;
+        display: flex !important;
+        align-items: center !important;
+        gap: 8px !important;
+        border-radius: 18px !important;
+        background: rgba(255, 255, 255, 0.76) !important;
+        overflow: hidden !important;
+    }
+
+    .otel-detail-template-v41 .gallery-mobile-thumbs {
+        width: 100% !important;
+        min-width: 0 !important;
+        height: 42px !important;
+        display: flex !important;
+        gap: 7px !important;
+        overflow: hidden !important;
+    }
+
+    .otel-detail-template-v41 .gallery-mobile-thumb,
+    .otel-detail-template-v41 .gallery-mobile-thumb img {
+        width: 54px !important;
+        height: 40px !important;
+        border-radius: 12px !important;
+        object-fit: cover !important;
+    }
+
+    .otel-detail-template-v41 .gallery-mobile-all-photos {
+        position: absolute !important;
+        right: 12px !important;
+        bottom: 14px !important;
+        width: 40px !important;
+        height: 40px !important;
+        border-radius: 999px !important;
+        overflow: hidden !important;
+        background: rgba(255, 255, 255, 0.92) !important;
+        box-shadow: 0 10px 22px rgba(15, 23, 42, 0.12) !important;
+    }
+
+    .otel-detail-template-v41 .gallery-mobile-all-photos span {
+        display: none !important;
+    }
+
+    .otel-detail-template-v41 .detail-header.hotel-title-section {
+        width: calc(100% - 24px) !important;
+        margin: 12px 12px 10px !important;
+        padding: 16px 14px !important;
+        display: grid !important;
+        grid-template-columns: 1fr !important;
+        gap: 12px !important;
+        min-height: 0 !important;
+        height: auto !important;
+        border-radius: 26px !important;
+        background: rgba(255, 255, 255, 0.94) !important;
+        overflow: hidden !important;
+    }
+
+    .otel-detail-template-v41 .detail-hero-head,
+    .otel-detail-template-v41 .hotel-name,
+    .otel-detail-template-v41 .header-right-stack,
+    .otel-detail-template-v41 .header-top-metrics,
+    .otel-detail-template-v41 .detail-utility-row {
+        width: 100% !important;
+        height: auto !important;
+        position: static !important;
+        display: grid !important;
+        grid-template-columns: 1fr !important;
+        gap: 10px !important;
+    }
+
+    .otel-detail-template-v41 .hotel-name h1 {
+        margin: 0 !important;
+        font-size: clamp(1.55rem, 7vw, 2.2rem) !important;
+        line-height: 1.05 !important;
+        letter-spacing: 0 !important;
+    }
+
+    .otel-detail-template-v41 .rating-summary.detail-rating-chip,
+    .otel-detail-template-v41 .weather-inline-trigger {
+        width: 100% !important;
+        min-height: 62px !important;
+        height: auto !important;
+        border-radius: 18px !important;
+        background: linear-gradient(135deg, #ffffff, #f8fbff) !important;
+        border: 1px solid rgba(226, 232, 240, 0.92) !important;
+        box-shadow: 0 12px 26px rgba(15, 23, 42, 0.07) !important;
+    }
+
+    .otel-detail-template-v41 .rating-summary.detail-rating-chip {
+        display: grid !important;
+        grid-template-columns: auto minmax(0, 1fr) !important;
+        align-items: center !important;
+        gap: 10px !important;
+        padding: 11px 12px !important;
+    }
+
+    .otel-detail-template-v41 .rating-summary.detail-rating-chip .rating-text strong,
+    .otel-detail-template-v41 .rating-summary.detail-rating-chip .rating-text span {
+        max-width: 100% !important;
+        overflow: hidden !important;
+        text-overflow: ellipsis !important;
+        white-space: nowrap !important;
+    }
+
+    .otel-detail-template-v41 .mobile-booking-bar {
+        width: 100% !important;
+        min-height: 68px !important;
+        display: grid !important;
+        grid-template-columns: minmax(0, 1fr) minmax(128px, 34vw) !important;
+        gap: 8px !important;
+        padding: 8px 10px calc(8px + env(safe-area-inset-bottom)) !important;
+        background: rgba(255, 255, 255, 0.96) !important;
+        backdrop-filter: blur(18px) !important;
+        border-top: 1px solid rgba(226, 232, 240, 0.96) !important;
+        box-shadow: 0 -18px 36px rgba(15, 23, 42, 0.12) !important;
+    }
+
+    .otel-detail-template-v41 .mobile-booking-summary {
+        min-width: 0 !important;
+    }
+
+    .otel-detail-template-v41 .mobile-booking-total {
+        font-size: 1.22rem !important;
+        line-height: 1 !important;
+    }
+
+    .otel-detail-template-v41 .mobile-booking-cta {
+        width: 100% !important;
+        min-width: 0 !important;
+        min-height: 50px !important;
+        border-radius: 18px !important;
+        padding: 0 10px !important;
+        font-size: clamp(0.82rem, 3vw, 0.94rem) !important;
+        white-space: normal !important;
+        line-height: 1.1 !important;
     }
 }

@@ -1,0 +1,27 @@
+@media (max-width: 991px) {
+    .admin-panel-dashboard {
+        gap: 16px;
+    }
+
+    .admin-panel-dashboard .ap-route-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .admin-panel-dashboard .ap-chart-bars {
+        min-height: 140px;
+        overflow-x: auto;
+        justify-content: flex-start;
+    }
+
+    .admin-panel-dashboard .ap-chart-bar-item {
+        min-width: 52px;
+    }
+
+    .admin-panel-dashboard .ap-activity-item {
+        grid-template-columns: auto 1fr;
+    }
+
+    .admin-panel-dashboard .ap-activity-item > small {
+        grid-column: 2;
+    }
+}

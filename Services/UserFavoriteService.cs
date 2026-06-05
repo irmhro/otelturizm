@@ -252,10 +252,10 @@ public class UserFavoriteService : IUserFavoriteService
             var priceOrdinal = reader.GetOrdinal("baslangic_fiyat");
             var price = reader.IsDBNull(priceOrdinal) ? (decimal?)null : reader.GetDecimal(priceOrdinal);
             var createdAt = reader.GetDateTime(reader.GetOrdinal("olusturulma_tarihi"));
-            var hotelCode = reader.GetString(reader.GetOrdinal("otel_kodu"));
-            var hotelName = reader.GetString(reader.GetOrdinal("otel_adi"));
-            var approvalStatus = reader.GetString(reader.GetOrdinal("onay_durumu"));
-            var publishStatus = reader.GetString(reader.GetOrdinal("yayin_durumu"));
+            var hotelCode = reader.IsDBNull(reader.GetOrdinal("otel_kodu")) ? string.Empty : reader.GetString(reader.GetOrdinal("otel_kodu"));
+            var hotelName = reader.IsDBNull(reader.GetOrdinal("otel_adi")) ? "Otel" : reader.GetString(reader.GetOrdinal("otel_adi"));
+            var approvalStatus = reader.IsDBNull(reader.GetOrdinal("onay_durumu")) ? string.Empty : reader.GetString(reader.GetOrdinal("onay_durumu"));
+            var publishStatus = reader.IsDBNull(reader.GetOrdinal("yayin_durumu")) ? string.Empty : reader.GetString(reader.GetOrdinal("yayin_durumu"));
             var alertActive = false;
             var alertActiveOrdinal = reader.GetOrdinal("alert_aktif_mi");
             if (!reader.IsDBNull(alertActiveOrdinal))
@@ -287,8 +287,8 @@ public class UserFavoriteService : IUserFavoriteService
                 HotelCode = hotelCode,
                 Name = hotelName,
                 Slug = BuildSlug(hotelName, hotelCode),
-                City = reader.GetString(reader.GetOrdinal("sehir")),
-                District = reader.GetString(reader.GetOrdinal("ilce")),
+                City = reader.IsDBNull(reader.GetOrdinal("sehir")) ? string.Empty : reader.GetString(reader.GetOrdinal("sehir")),
+                District = reader.IsDBNull(reader.GetOrdinal("ilce")) ? string.Empty : reader.GetString(reader.GetOrdinal("ilce")),
                 AvailabilityNote = BuildAvailabilityNote(approvalStatus, publishStatus),
                 ImageUrl = NormalizeImageUrl(reader.IsDBNull(reader.GetOrdinal("gorsel_url")) ? string.Empty : reader.GetString(reader.GetOrdinal("gorsel_url"))),
                 Rating = rating,

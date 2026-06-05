@@ -3,9 +3,13 @@
     ViewData["Title"] = "E-posta Doğrula";
 }
 
-<section class="auth-shell user-auth-shell">
-    <div class="auth-standalone-panel">
-        <div class="divider-line"><span>e-posta adresinizi onaylayın</span></div>
+<div class="auth-card auth-card--solo">
+    <div class="auth-form-panel auth-form-panel--solo">
+        <div class="auth-solo-head">
+            <span class="auth-solo-kicker">Doğrulama</span>
+            <h1 class="auth-solo-title">E-posta Adresinizi Onaylayın</h1>
+            <p class="auth-solo-desc">Kayıt sonrası e-postanıza gelen 6 haneli kodu girin veya maildeki bağlantıya tıklayın.</p>
+        </div>
 
         @if (TempData["UserLoginError"] is string loginError)
         {
@@ -28,17 +32,16 @@
                 <label asp-for="Email">E-posta Adresiniz</label>
                 <div class="input-wrap">
                     <i class="far fa-envelope"></i>
-                    <input asp-for="Email" class="form-control" placeholder="ornek@email.com" />
+                    <input asp-for="Email" class="form-control" placeholder="ornek@email.com" autocomplete="email" />
                 </div>
             </div>
 
             <div class="form-group">
                 <label asp-for="Code">Doğrulama Kodu</label>
                 <div class="input-wrap">
-                    <i class="fas fa-shield-check"></i>
-                    <input asp-for="Code" class="form-control" placeholder="6 haneli kod" maxlength="8" />
+                    <i class="fas fa-shield-halved"></i>
+                    <input asp-for="Code" class="form-control" placeholder="6 haneli kod" maxlength="8" inputmode="numeric" autocomplete="one-time-code" />
                 </div>
-                <p class="auth-inline-hint">Kayıt sonrası e-posta adresinize gönderilen 6 haneli kodu girin. İsterseniz mail içindeki bağlantıya da tıklayabilirsiniz.</p>
             </div>
 
             <div class="auth-form-actions">
@@ -46,10 +49,10 @@
             </div>
         </form>
 
-        <form method="post" action="/eposta-dogrula/tekrar-gonder" style="margin-top:16px;">
+        <form method="post" action="/eposta-dogrula/tekrar-gonder" class="auth-resend-verify-form">
             @Html.AntiForgeryToken()
             <input type="hidden" name="email" value="@Model.Email" />
-            <button type="submit" class="text-button">Kodu tekrar gönder</button>
+            <button type="submit" class="auth-resend-verify-btn"><i class="fas fa-paper-plane"></i> Kodu tekrar gönder</button>
         </form>
     </div>
-</section>
+</div>

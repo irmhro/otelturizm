@@ -3,7 +3,7 @@
 @{
     Layout = "~/Views/Paneller/Admin/_AdminPanelLayout.cshtml";
     ViewData["AdminShell"] = Model.Shell;
-    ViewData["PageCssPath"] = "panel-admin-system-health";
+    ViewData["PageCssPath"] = "admin_panel_system_health_masaustu";
     var warningCount = Model.Checks.Count(x => string.Equals(x.ToneClass, "warning", StringComparison.OrdinalIgnoreCase));
     var dangerCount = Model.Checks.Count(x => string.Equals(x.ToneClass, "danger", StringComparison.OrdinalIgnoreCase));
     var okRows = Model.LinkCheck.Rows.Count(x => x.IsOk);

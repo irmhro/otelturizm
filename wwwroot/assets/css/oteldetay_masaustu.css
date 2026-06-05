@@ -1,0 +1,673 @@
+/* Otel detay — masaüstü (/oteller/{slug}) · anasayfa tipografi & şablon uyumu */
+
+.oteldetay-page-shell {
+    background: var(--bg-warm, #FCFBF9);
+}
+
+.oteldetay-page-shell.anasayfa-page .oteldetay-page {
+    --od-crimson: var(--flag-crimson, #E30A17);
+    --od-sun: var(--anatolian-sun, #FF9E00);
+    --od-dark: var(--luxury-dark, #1A1919);
+    --od-muted: var(--text-muted, #6E6E77);
+    --od-border: var(--border-subtle, #EBE9E4);
+    --od-bg: var(--bg-warm, #FCFBF9);
+    --od-radius: var(--radius-premium, 16px);
+    --od-radius-lg: 24px;
+    --od-shadow: 0 20px 35px -12px rgba(0, 0, 0, 0.08);
+    --od-type-section: var(--home-type-section, 22px);
+    --od-type-card-title: var(--home-type-card-title, 14.5px);
+    --od-type-card-location: var(--home-type-card-location, 12.5px);
+    --od-type-card-meta: var(--home-type-card-meta, 12px);
+    --od-type-btn: var(--home-type-btn, 13px);
+    --od-page-max: 1240px;
+    --home-type-section: 22px;
+    --home-type-card-title: 14.5px;
+    --home-type-card-location: 12.5px;
+    --home-type-card-meta: 12px;
+    --home-type-btn: 13px;
+}
+
+.oteldetay-page {
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    letter-spacing: -0.01em;
+    -webkit-font-smoothing: antialiased;
+    color: var(--od-dark, #1A1919);
+    background: var(--od-bg, #FCFBF9);
+    padding-bottom: 48px;
+}
+
+.oteldetay-page .detail-breadcrumb,
+.oteldetay-page .gallery-grid,
+.oteldetay-page .gallery-filmstrip-wrap,
+.oteldetay-page .detail-header,
+.oteldetay-page .od-quick-facts,
+.oteldetay-page .detail-grid {
+    width: min(var(--od-page-max, 1240px), calc(100% - 48px));
+    margin-left: auto;
+    margin-right: auto;
+}
+
+/* —— Üst gezinme —— */
+.oteldetay-page .detail-breadcrumb {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 12px;
+    padding: 14px 0 10px;
+}
+
+.oteldetay-page .detail-back-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 16px;
+    border-radius: 999px;
+    background: #fff;
+    border: 1px solid var(--od-border);
+    color: var(--od-dark);
+    font-weight: 700;
+    font-size: var(--od-type-btn);
+    text-decoration: none;
+    transition: background 0.18s ease, color 0.18s ease, border-color 0.18s ease;
+}
+
+.oteldetay-page .detail-back-link:hover {
+    background: var(--od-crimson);
+    border-color: var(--od-crimson);
+    color: #fff;
+}
+
+.oteldetay-page .detail-breadcrumb-context {
+    color: var(--od-muted);
+    font-weight: 600;
+    font-size: var(--od-type-card-meta);
+    text-decoration: none;
+}
+
+.oteldetay-page .detail-breadcrumb-context strong {
+    color: var(--od-dark);
+}
+
+.oteldetay-page .detail-quick-action {
+    border-radius: 999px;
+    border: 1px solid var(--od-border);
+    background: #fff;
+    font-weight: 700;
+    font-size: var(--od-type-card-meta);
+    min-height: 36px;
+    padding: 6px 12px;
+    transition: border-color 0.18s ease, color 0.18s ease;
+}
+
+.oteldetay-page .detail-quick-action:hover {
+    border-color: rgba(227, 10, 23, 0.28);
+    color: var(--od-crimson);
+}
+
+/* —— Galeri hero —— */
+.oteldetay-page .gallery-grid.od-gallery--desktop {
+    display: grid;
+    grid-template-columns: 1.6fr 1fr;
+    gap: 8px;
+    border-radius: var(--od-radius-lg);
+    overflow: hidden;
+    min-height: 420px;
+    max-height: 520px;
+    margin-bottom: -36px;
+    position: relative;
+    z-index: 2;
+    box-shadow: var(--od-shadow);
+}
+
+.oteldetay-page .gallery-main-image {
+    position: relative;
+    min-height: 100%;
+    border-radius: 0;
+}
+
+.oteldetay-page .gallery-main-image img,
+.oteldetay-page .gallery-main-trigger img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    min-height: 420px;
+}
+
+.oteldetay-page .gallery-side-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+}
+
+.oteldetay-page .gallery-thumb {
+    border: 0;
+    padding: 0;
+    overflow: hidden;
+    cursor: pointer;
+    border-radius: 0;
+}
+
+.oteldetay-page .gallery-thumb img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    min-height: 100px;
+    transition: transform 0.3s ease;
+}
+
+.oteldetay-page .gallery-thumb:hover img {
+    transform: scale(1.04);
+}
+
+.oteldetay-page .gallery-star-badge,
+.oteldetay-page .gallery-count-badge,
+.oteldetay-page .gallery-all-photos-btn {
+    z-index: 3;
+}
+
+.oteldetay-page .gallery-filmstrip-wrap {
+    margin-top: 12px;
+    margin-bottom: 8px;
+}
+
+.oteldetay-page .gallery-filmstrip {
+    display: flex;
+    gap: 8px;
+    overflow-x: auto;
+    scrollbar-width: none;
+    padding: 4px 0;
+}
+
+.oteldetay-page .gallery-filmstrip-thumb {
+    flex-shrink: 0;
+    width: 72px;
+    height: 52px;
+    border-radius: 10px;
+    overflow: hidden;
+    border: 2px solid transparent;
+    padding: 0;
+    cursor: pointer;
+}
+
+.oteldetay-page .gallery-filmstrip-thumb.active {
+    border-color: var(--od-crimson);
+}
+
+.oteldetay-page .gallery-filmstrip-thumb img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.oteldetay-page .od-gallery--mobile {
+    display: none;
+}
+
+/* —— Otel bilgi kartı —— */
+.oteldetay-page .detail-header.hotel-title-section {
+    background: #fff;
+    border-radius: var(--od-radius-lg);
+    border: 1px solid var(--od-border);
+    box-shadow: var(--od-shadow);
+    padding: 24px 28px;
+    margin-top: 0;
+    position: relative;
+    z-index: 5;
+}
+
+.oteldetay-page .detail-hero-head {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 20px;
+    flex-wrap: wrap;
+}
+
+.oteldetay-page .hotel-name h1 {
+    font-size: clamp(1.5rem, 2.4vw, 2rem);
+    font-weight: 800;
+    letter-spacing: -0.025em;
+    line-height: 1.15;
+    margin: 0 0 8px;
+    color: var(--od-dark);
+}
+
+.oteldetay-page .detail-location,
+.oteldetay-page .od-header__location-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-size: var(--od-type-card-location);
+    font-weight: 600;
+    color: var(--od-muted);
+    margin: 0 0 12px;
+}
+
+.oteldetay-page .detail-rating-chip {
+    background: #1F2A3A;
+    color: #fff;
+    border-radius: 999px;
+    padding: 10px 16px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    cursor: pointer;
+    border: 0;
+    flex-shrink: 0;
+}
+
+.oteldetay-page .rating-number {
+    font-size: 18px;
+    font-weight: 800;
+}
+
+.oteldetay-page .rating-text strong {
+    display: block;
+    font-size: 13px;
+}
+
+.oteldetay-page .rating-text span {
+    font-size: 11px;
+    opacity: 0.85;
+}
+
+.oteldetay-page .detail-title-subnav-badge.is-campaign,
+.oteldetay-page .detail-title-subnav-btn {
+    border-radius: 999px;
+    font-size: var(--od-type-card-meta);
+    font-weight: 700;
+}
+
+.oteldetay-page .detail-title-subnav-badge.is-campaign {
+    background: var(--od-sun);
+    color: var(--od-dark);
+    padding: 4px 14px;
+}
+
+/* —— Hızlı bilgiler —— */
+.oteldetay-page .od-quick-facts {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin: 16px auto 20px;
+    padding: 0 4px;
+}
+
+.oteldetay-page .od-quick-facts__list {
+    display: flex;
+    gap: 16px;
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+.oteldetay-page .od-quick-facts__item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.oteldetay-page .od-quick-facts__label {
+    font-size: 10px;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--od-muted);
+}
+
+.oteldetay-page .od-quick-facts__value {
+    font-size: var(--od-type-card-title);
+    font-weight: 800;
+}
+
+.oteldetay-page .od-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 14px;
+    border-radius: 999px;
+    background: #F4F3F0;
+    font-size: var(--od-type-card-meta);
+    font-weight: 700;
+    color: var(--od-dark);
+    border: 1px solid var(--od-border);
+}
+
+.oteldetay-page .od-chip i {
+    color: var(--od-sun);
+    font-size: 11px;
+}
+
+/* —— Ana grid —— */
+.oteldetay-page .detail-grid.od-detail__layout {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 380px;
+    gap: 32px;
+    align-items: start;
+    margin-top: 8px;
+    margin-bottom: 32px;
+}
+
+.oteldetay-page .content-card {
+    background: #fff;
+    border: 1px solid var(--od-border);
+    border-radius: var(--od-radius-lg);
+    padding: 22px 24px;
+    margin-bottom: 20px;
+    box-shadow: 0 4px 14px rgba(26, 25, 25, 0.03);
+}
+
+.oteldetay-page .tabler-section-head h2,
+.oteldetay-page .detail-collapsible__summary h2 {
+    font-size: var(--od-type-section);
+    font-weight: 800;
+    letter-spacing: -0.02em;
+    margin: 0;
+    padding-left: 14px;
+    border-left: 5px solid var(--od-sun);
+    line-height: 1.2;
+}
+
+.oteldetay-page .tabler-section-head p,
+.oteldetay-page .detail-collapsible__hint {
+    font-size: var(--od-type-card-location);
+    color: var(--od-muted);
+    font-weight: 600;
+    margin: 6px 0 0 19px;
+}
+
+.oteldetay-page .hotel-about-text {
+    font-size: var(--od-type-card-location);
+    line-height: 1.65;
+    color: #2c2c2c;
+    background: #FEFCF9;
+    padding: 16px 18px;
+    border-radius: var(--od-radius);
+    border: 1px solid var(--od-border);
+    margin-top: 14px;
+}
+
+/* —— Olanaklar —— */
+.oteldetay-page .od-amenity-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 14px;
+    border-radius: 999px;
+    background: #F4F3F0;
+    border: 1px solid var(--od-border);
+    font-size: var(--od-type-card-meta);
+    font-weight: 700;
+    color: var(--od-dark);
+    cursor: pointer;
+    transition: border-color 0.15s ease;
+}
+
+.oteldetay-page .od-amenity-chip:hover {
+    border-color: rgba(255, 158, 0, 0.45);
+}
+
+.oteldetay-page .amenities-list-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    background: #fff;
+    padding: 12px 14px;
+    border-radius: var(--od-radius);
+    border: 1px solid var(--od-border);
+    transition: transform 0.18s ease, border-color 0.18s ease;
+}
+
+.oteldetay-page .amenities-list-item:hover {
+    transform: translateX(3px);
+    border-color: rgba(255, 158, 0, 0.4);
+}
+
+.oteldetay-page .amenities-list-clean {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+    margin-top: 14px;
+}
+
+/* —— Oda kartları —— */
+.oteldetay-page .room-card.od-room-card {
+    background: #fff;
+    border: 1px solid var(--od-border);
+    border-radius: 22px;
+    overflow: hidden;
+    margin-bottom: 18px;
+    transition: transform 0.22s ease, box-shadow 0.22s ease;
+}
+
+.oteldetay-page .room-card.od-room-card:hover {
+    transform: translateY(-4px);
+    box-shadow: var(--od-shadow);
+}
+
+.oteldetay-page .room-card-main.od-room-card__body {
+    display: flex;
+    flex-wrap: nowrap;
+    gap: 0;
+}
+
+.oteldetay-page .room-card-media {
+    width: 220px;
+    flex-shrink: 0;
+}
+
+.oteldetay-page .room-card-cover img {
+    width: 100%;
+    height: 100%;
+    min-height: 180px;
+    object-fit: cover;
+}
+
+.oteldetay-page .od-room-card__title {
+    font-size: 18px;
+    font-weight: 800;
+    margin: 0 0 8px;
+}
+
+.oteldetay-page .od-room-card__content {
+    flex: 1;
+    padding: 20px 22px;
+}
+
+.oteldetay-page .od-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--od-muted);
+    margin-right: 8px;
+}
+
+.oteldetay-page .room-card .btn-detail,
+.oteldetay-page .room-select-btn {
+    background: var(--od-dark);
+    color: #fff;
+    border: 0;
+    padding: 9px 22px;
+    border-radius: 999px;
+    font-weight: 800;
+    font-size: var(--od-type-btn);
+    cursor: pointer;
+    transition: background 0.18s ease;
+}
+
+.oteldetay-page .room-card .btn-detail:hover,
+.oteldetay-page .room-select-btn:hover {
+    background: var(--od-crimson);
+}
+
+/* —— Yorumlar —— */
+.oteldetay-page .review-card,
+.oteldetay-page .review-feed-item {
+    background: #fff;
+    border-radius: var(--od-radius);
+    padding: 18px 20px;
+    margin-bottom: 14px;
+    border: 1px solid var(--od-border);
+}
+
+/* —— Harita —— */
+.oteldetay-page .detail-location-map,
+.oteldetay-page .map-card .detail-location-map {
+    height: 220px;
+    border-radius: var(--od-radius);
+    overflow: hidden;
+    margin-top: 12px;
+}
+
+/* —— Rezervasyon sidebar —— */
+.oteldetay-page .booking-sidebar.od-detail__booking {
+    position: sticky;
+    top: calc(var(--home-header-sticky-h, 99px) + 12px);
+}
+
+.oteldetay-page .booking-card {
+    background: #fff;
+    border-radius: 28px;
+    padding: 24px;
+    border: 1px solid var(--od-border);
+    box-shadow: 0 12px 28px rgba(0, 0, 0, 0.05);
+}
+
+.oteldetay-page .booking-price-total {
+    font-size: clamp(1.6rem, 2.2vw, 2.1rem);
+    font-weight: 900;
+    color: var(--od-crimson);
+    letter-spacing: -0.02em;
+}
+
+.oteldetay-page .booking-form label,
+.oteldetay-page .booking-form .booking-field-label {
+    font-size: var(--od-type-field-sub, 12px);
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--od-muted);
+}
+
+.oteldetay-page .booking-form input,
+.oteldetay-page .booking-form select {
+    width: 100%;
+    padding: 12px 14px;
+    border: 1px solid var(--od-border);
+    border-radius: 14px;
+    font-size: var(--od-type-input-value, 14px);
+    font-weight: 600;
+    font-family: inherit;
+    margin-top: 6px;
+}
+
+.oteldetay-page .booking-form input:focus,
+.oteldetay-page .booking-form select:focus {
+    outline: 0;
+    border-color: rgba(227, 10, 23, 0.35);
+    box-shadow: 0 0 0 3px rgba(227, 10, 23, 0.08);
+}
+
+.oteldetay-page .btn-reserve,
+.oteldetay-page .booking-form button[type="submit"],
+.oteldetay-page .reservation-create-btn {
+    width: 100%;
+    min-height: 48px;
+    margin-top: 12px;
+    border: 0;
+    border-radius: 999px;
+    background: linear-gradient(105deg, var(--od-crimson), #B00010);
+    color: #fff;
+    font-weight: 800;
+    font-size: 15px;
+    cursor: pointer;
+    transition: transform 0.12s ease, box-shadow 0.18s ease;
+}
+
+.oteldetay-page .btn-reserve:hover,
+.oteldetay-page .booking-form button[type="submit"]:hover {
+    box-shadow: 0 8px 20px rgba(227, 10, 23, 0.25);
+}
+
+.oteldetay-page .price-breakdown {
+    margin-top: 14px;
+    padding-top: 14px;
+    border-top: 1px dashed var(--od-border);
+}
+
+.oteldetay-page .price-breakdown .price-row.total {
+    background: #F8F7F5;
+    padding: 12px;
+    border-radius: 14px;
+    font-weight: 800;
+    margin-top: 8px;
+}
+
+.oteldetay-page .booking-trust-row {
+    display: flex;
+    justify-content: center;
+    gap: 14px;
+    flex-wrap: wrap;
+    margin-top: 14px;
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--od-muted);
+}
+
+.oteldetay-page .mobile-booking-bar {
+    display: none;
+}
+
+.oteldetay-page .tabler-section-action-btn {
+    border-radius: 999px;
+    font-weight: 700;
+    font-size: var(--od-type-btn);
+    border: 1px solid var(--od-border);
+    background: #fff;
+    padding: 8px 14px;
+    color: var(--od-dark);
+    text-decoration: none;
+    cursor: pointer;
+}
+
+.oteldetay-page .tabler-section-action-btn.is-primary {
+    background: var(--od-dark);
+    border-color: var(--od-dark);
+    color: #fff;
+}
+
+.oteldetay-page .tabler-section-action-btn.is-primary:hover {
+    background: var(--od-crimson);
+    border-color: var(--od-crimson);
+}
+
+@media (max-width: 1100px) {
+    .oteldetay-page .detail-grid.od-detail__layout {
+        grid-template-columns: minmax(0, 1fr) 340px;
+        gap: 24px;
+    }
+}
+
+@media (max-width: 1000px) {
+    .oteldetay-page .detail-grid.od-detail__layout {
+        grid-template-columns: 1fr;
+    }
+
+    .oteldetay-page .booking-sidebar.od-detail__booking {
+        position: relative;
+        top: 0;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .oteldetay-page .room-card.od-room-card,
+    .oteldetay-page .gallery-thumb img,
+    .oteldetay-page .amenities-list-item {
+        transition: none;
+    }
+}

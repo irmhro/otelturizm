@@ -1,0 +1,8 @@
+ID|KATEGORI_ADI|KATEGORI_IKON|SIRALAMA|AKTIF_MI|OLUSTURULMA_TARIHI|GUNCELLENME_TARIHI
+--|------------|-------------|--------|--------|------------------|------------------
+1|Banyo|fa-bath|20|1|2026-05-31 08:11:04|NULL
+2|Dış Alan ve Manzara|fa-mountain-sun|60|1|2026-05-31 08:11:04|NULL
+3|Erişilebilirlik|fa-universal-access|50|1|2026-05-31 08:11:04|NULL
+4|Konfor|fa-bed|10|1|2026-05-31 08:11:04|NULL
+5|Medya ve Teknoloji|fa-tv|30|1|2026-05-31 08:11:04|NULL
+6|Mutfak ve İkram|fa-mug-hot|40|1|2026-05-31 08:11:04|NULL

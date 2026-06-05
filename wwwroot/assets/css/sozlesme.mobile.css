@@ -1,1 +1,44 @@
-@import url("./legal-contract.mobile.css");
+/* sozlesme.mobile.css */
+@media (max-width: 900px) {
+    .public-premium-main {
+        padding: 16px 0 36px;
+    }
+
+    .sozlesme-hero {
+        grid-template-columns: 1fr;
+        padding: 20px 16px;
+        border-radius: 14px;
+    }
+
+    .sozlesme-title {
+        font-size: 24px;
+    }
+
+    .sozlesme-subtitle {
+        font-size: 13px;
+    }
+
+    .sozlesme-meta > span {
+        font-size: 11px;
+        white-space: normal;
+    }
+
+    .sozlesme-layout {
+        grid-template-columns: 1fr;
+        gap: 14px;
+        margin-top: 14px;
+    }
+
+    .sozlesme-body {
+        padding: 18px 16px;
+    }
+
+    .sozlesme-sidebar-card {
+        position: static;
+        padding: 16px;
+    }
+
+    .sozlesme-content {
+        font-size: 13.5px;
+    }
+}

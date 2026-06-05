@@ -1,0 +1,30 @@
+@model otelturizmnew.Models.Paneller.Partner.PartnerShellViewModel
+@{
+    var currentAction = ViewContext.RouteData.Values["action"]?.ToString() ?? "Index";
+    var currentPath = Context.Request.Path.Value ?? string.Empty;
+    var hotelQuery = Model.SelectedHotelId.HasValue ? $"?otelId={Model.SelectedHotelId.Value}" : string.Empty;
+    bool IsCurrent(params string[] actions) => actions.Any(a => string.Equals(currentAction, a, StringComparison.OrdinalIgnoreCase));
+    bool IsPath(params string[] paths) => paths.Any(p => currentPath.Equals(p, StringComparison.OrdinalIgnoreCase) || currentPath.StartsWith(p + "/", StringComparison.OrdinalIgnoreCase));
+    string PartnerUrl(string path) => $"{path}{hotelQuery}";
+
+    var dashboardActive = IsCurrent("Index") || IsPath("/panel/partner/dashboard");
+    var reservationOpen = IsPath("/panel/partner/rezervasyonlar") || IsCurrent("Reservations", "Reviews");
+    var priceOpen = IsPath("/panel/partner/takvim-fiyatlar", "/panel/partner/fiyat", "/panel/partner/kampanyalar", "/panel/partner/aboneliklerim", "/panel/partner/performans");
+    var facilityOpen = IsPath("/panel/partner/otel", "/panel/partner/tesis", "/panel/partner/oda", "/panel/partner/fotograflar", "/panel/partner/basvuru-ve-evraklar");
+    var companyOpen = IsPath("/panel/partner/firma-fiyatlari", "/panel/partner/firmalar");
+    var financeOpen = IsPath("/panel/partner/finans", "/panel/partner/odeme", "/panel/partner/komisyon");
+    var growthOpen = IsPath("/panel/partner/pazarlama", "/panel/partner/performans", "/panel/partner/aboneliklerim", "/panel/partner/kampanyalar", "/panel/partner/platform-paketleri");
+    var accountOpen = IsPath("/panel/partner/guvenlik", "/panel/partner/tercihler", "/panel/partner/724-destek", "/panel/partner/hesap-bilgileri", "/panel/partner/bildirim-tercihleri");
+}
+<nav class="admin-mobile-nav partner-mobile-nav" aria-label="Hızlı gezinme">
+    <a href="@PartnerUrl("/panel/partner/dashboard")" class="@(dashboardActive ? "active" : null)"><i class="fas fa-chart-pie" aria-hidden="true"></i><span>Kokpit</span></a>
+    <a href="@PartnerUrl("/panel/partner/rezervasyonlar")" class="@(reservationOpen ? "active" : null)"><i class="fas fa-bookmark" aria-hidden="true"></i><span>Rez.</span></a>
+    <a href="@PartnerUrl("/panel/partner/takvim-fiyatlar")" class="@(priceOpen ? "active" : null)"><i class="fas fa-calendar-alt" aria-hidden="true"></i><span>Fiyat</span></a>
+    <a href="@PartnerUrl("/panel/partner/otel-bilgileri")" class="@(facilityOpen ? "active" : null)"><i class="fas fa-hotel" aria-hidden="true"></i><span>Tesis</span></a>
+    <a href="@PartnerUrl("/panel/partner/finans")" class="@(financeOpen ? "active" : null)"><i class="fas fa-coins" aria-hidden="true"></i><span>Finans</span></a>
+    <a href="@PartnerUrl("/panel/partner/724-destek")" class="@(accountOpen ? "active" : null)"><i class="fas fa-headset" aria-hidden="true"></i><span>Destek</span></a>
+    <form method="post" action="/cikis-yap" class="panel-mobile-logout-form">
+        @Html.AntiForgeryToken()
+        <button type="submit"><i class="fas fa-right-from-bracket" aria-hidden="true"></i><span>Çıkış</span></button>
+    </form>
+</nav>

@@ -1,0 +1,7 @@
+ID|KANAL_ADI|KANAL_TURU|IKON|ACIKLAMA|BUTON_METIN|BAGLANTI_URL|EK_BILGI|RENK_TONU|SIRALAMA|AKTIF_MI|OLUSTURULMA_TARIHI|GUNCELLENME_TARIHI
+--|---------|----------|----|--------|-----------|------------|--------|---------|--------|--------|------------------|------------------
+1|Canlı Destek|canli_destek|fa-headset|Mesai saatlerinde anlık destek alın.|Görüşmeyi başlat|/yardim-merkezi#destek-kanallari|Operasyon saatlerinde öncelikli yanıt.|primary|10|1|2026-05-31 08:11:04|2026-05-31 08:11:04
+2|E-posta Desteği|eposta|fa-envelope|Teknik ve operasyonel taleplerinizi e-posta ile iletin.|E-posta gönder|mailto:destek@otelturizm.com|destek@otelturizm.com|info|20|1|2026-05-31 08:11:04|2026-05-31 08:11:04
+3|Kurumsal Satış Hattı|kurumsal_satis|fa-building|Firma ve toplu konaklama talepleri için satış ekibine ulaşın.|Satış ekibine yaz|mailto:info+satis@gmail.com|Kurumsal rezervasyon ve teklif akışı|success|30|1|2026-05-31 08:11:04|2026-05-31 08:11:04
+4|Yardım Merkezi|yardim_merkezi|fa-circle-question|Kategori bazlı makale ve SSS içeriklerine ulaşın.|Yardım merkezini aç|/yardim-merkezi|24/7 self servis içerik|warning|40|1|2026-05-31 08:11:04|2026-05-31 08:11:04
+5|Güvenlik Bildirimi|guvenlik|fa-shield-halved|Güvenlik ve hesap ihlali bildirimleri için özel kanal.|Güvenliğe yaz|mailto:guvenlik@otelturizm.com|Hesap güvenliği ve şüpheli işlem bildirimleri|danger|50|1|2026-05-31 08:11:04|2026-05-31 08:11:04

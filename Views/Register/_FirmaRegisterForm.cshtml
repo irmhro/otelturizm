@@ -167,6 +167,16 @@
         </div>
     </div>
 
+    <div class="form-group">
+        <label for="firmaCountry">Ülke</label>
+        <div class="input-wrap select-wrap">
+            <i class="fas fa-globe"></i>
+            <select id="firmaCountry" name="CountryName" class="form-control form-select" data-address-country required>
+                <option value="">Ülke seçiniz</option>
+            </select>
+        </div>
+    </div>
+
     <div class="double-field">
         <div class="form-group">
             <label for="firmaCity">İl</label>
@@ -244,14 +254,13 @@
     <div class="auth-form-checks">
         <label class="checkbox-stack">
             <input type="checkbox" name="AcceptAgreement" value="true" required />
-            <span><a href="/sozlesmeler/firma-kurumsal-kullanim-kosullari" data-contract-popup data-contract-title="Firma Kurumsal Kullanim Kosullari">Firma sözleşmesi ve kurumsal kullanım koşullarını</a> kabul ediyorum.</span>
+            <span><a href="/sozlesmeler/firma-kurumsal-kullanim-kosullari" target="_blank" rel="noopener noreferrer">Firma sözleşmesi ve kurumsal kullanım koşullarını</a> kabul ediyorum.</span>
         </label>
         <label class="checkbox-stack">
             <input type="checkbox" name="AcceptKvkk" value="true" required />
-            <span><a href="/sozlesmeler/firma-kvkk-aydinlatma" data-contract-popup data-contract-title="Firma KVKK Aydinlatma Metni">KVKK aydınlatma metnini</a> okuyup başvuru bilgilerimin incelenmesini onaylıyorum.</span>
+            <span><a href="/sozlesmeler/firma-kvkk-aydinlatma" target="_blank" rel="noopener noreferrer">KVKK aydınlatma metnini</a> okuyup başvuru bilgilerimin incelenmesini onaylıyorum.</span>
         </label>
     </div>
 
     <button type="submit" class="auth-submit-btn firma-submit-btn">Firma Hesabı Başvurusu Oluştur <i class="fas fa-arrow-right"></i></button>
 </form>
-<partial name="~/Views/Register/_ContractPopupModal.cshtml" />

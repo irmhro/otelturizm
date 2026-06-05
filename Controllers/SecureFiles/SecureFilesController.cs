@@ -38,7 +38,9 @@ public class SecureFilesController : Controller
         Response.Headers["X-Content-Type-Options"] = "nosniff";
 
         var safeName = SanitizeDownloadName(file.OriginalFileName);
-        Response.Headers["Content-Disposition"] = BuildContentDispositionAttachment(safeName);
+        Response.Headers["Content-Disposition"] = file.ContentType.StartsWith("image/", StringComparison.OrdinalIgnoreCase)
+            ? BuildContentDispositionInline(safeName)
+            : BuildContentDispositionAttachment(safeName);
         return PhysicalFile(file.AbsolutePath, file.ContentType, safeName, enableRangeProcessing: true);
     }
 
@@ -73,5 +75,11 @@ public class SecureFilesController : Controller
         // RFC 5987
         var encoded = Uri.EscapeDataString(fileName);
         return $"attachment; filename=\"{fileName.Replace("\"", string.Empty)}\"; filename*=UTF-8''{encoded}";
+    }
+
+    private static string BuildContentDispositionInline(string fileName)
+    {
+        var encoded = Uri.EscapeDataString(fileName);
+        return $"inline; filename=\"{fileName.Replace("\"", string.Empty)}\"; filename*=UTF-8''{encoded}";
     }
 }

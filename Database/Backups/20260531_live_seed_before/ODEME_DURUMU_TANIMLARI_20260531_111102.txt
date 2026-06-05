@@ -1,0 +1,9 @@
+ID|KOD|AD|ACIKLAMA|SIRA_NO|AKTIF_MI|BEKLEYEN_MI|BASARI_MI|TAM_MI|IADE_MI|OLUSTURULMA_TARIHI
+--|---|--|--------|-------|--------|-----------|---------|------|-------|------------------
+1|BASARISIZ|Başarısız|Ödeme girişimi başarısız oldu|70|1|0|0|0|0|2026-05-31 08:11:04.1273054
+2|BEKLEMEDE|Beklemede|Ödeme kaydı oluşturuldu ancak tahsilat tamamlanmadı|10|1|1|0|0|0|2026-05-31 08:11:04.1273054
+3|IADE_EDILDI|İade Edildi|Tutar tamamen iade edildi|50|1|0|0|0|1|2026-05-31 08:11:04.1273054
+4|KISMEN_ODENDI|Kısmen Ödendi|Ödemenin bir bölümü tahsil edildi|30|1|0|0|0|0|2026-05-31 08:11:04.1273054
+5|KISMI_IADE|Kısmi İade|Tutarın bir bölümü iade edildi|60|1|0|0|0|1|2026-05-31 08:11:04.1273054
+6|ON_ODEME_ALINDI|Ön Ödeme Alındı|Kısmi ön ödeme başarılı şekilde alındı|20|1|0|0|0|0|2026-05-31 08:11:04.1273054
+7|TAMAMLANDI|Tamamlandı|Ödeme tamamen tahsil edildi|40|1|0|1|1|0|2026-05-31 08:11:04.1273054

@@ -1,0 +1,231 @@
+/* ===== footer_masaustu.css — gelişmiş premium footer (masaüstü) ===== */
+
+.footer-logo-link {
+    display: inline-flex;
+    align-items: center;
+    position: static;
+    transform: none;
+    left: auto;
+    top: auto;
+    max-width: none;
+    z-index: auto;
+    margin-bottom: 12px;
+    padding: 7px 12px;
+    border-radius: 10px;
+    background: var(--bg-warm, #FCFBF9);
+    border: 1px solid rgba(235, 233, 228, 0.72);
+    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.14);
+    text-decoration: none;
+    width: fit-content;
+    transition: opacity 0.2s ease;
+}
+
+.footer-logo-link:hover {
+    opacity: 0.9;
+}
+
+.footer-logo-link:hover .logo-turizm {
+    filter: brightness(1.05);
+}
+
+.footer-logo-link .logo-otel {
+    color: var(--logo-otel-color, #1A1919);
+}
+
+.footer-logo-link .logo-turizm {
+    color: var(--logo-turizm-color, #d9480f);
+    font-weight: 800;
+}
+
+.footer {
+    background: #1A1919;
+    color: #ffffff;
+    padding: 36px 0 18px;
+    margin-top: 36px;
+    border-top: 2px solid var(--flag-crimson, #E30A17);
+    font-family: "Inter", "Segoe UI", sans-serif;
+}
+
+.footer .container {
+    max-width: 1240px;
+    margin: 0 auto;
+    padding: 0 24px;
+}
+
+/* Marka solda, link grupları sağda — yan yana */
+.footer-top {
+    display: grid;
+    grid-template-columns: minmax(240px, 1fr) minmax(0, 2.4fr);
+    gap: 40px 48px;
+    align-items: start;
+    padding-bottom: 24px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+/* 4 link grubu tek satırda yan yana */
+.footer-columns {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 24px 28px;
+    align-items: start;
+}
+
+.footer-col {
+    display: contents;
+}
+
+.footer-brand p,
+.footer-links a,
+.footer-bottom,
+.newsletter-box p {
+    color: rgba(255, 255, 255, 0.68);
+}
+
+.footer-brand p {
+    margin: 10px 0 0;
+    max-width: 320px;
+    font-size: 12.5px;
+    line-height: 1.55;
+}
+
+.footer-concierge-anchor {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    margin-top: 14px;
+    padding: 10px 12px;
+    border-radius: 16px;
+    background: rgba(255, 255, 255, 0.08);
+    color: #ffffff;
+    text-decoration: none;
+}
+
+.concierge-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: #22C55E;
+    box-shadow: 0 0 0 6px rgba(34, 197, 94, 0.16);
+}
+
+.concierge-text {
+    font-size: 13px;
+    font-weight: 800;
+}
+
+.footer-links {
+    min-width: 0;
+}
+
+.footer-links h5,
+.newsletter-box h5 {
+    margin: 0 0 10px;
+    color: #ffffff;
+    font-size: 12px;
+    font-weight: 900;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+}
+
+.footer-links ul {
+    display: grid;
+    gap: 7px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.footer-links a {
+    text-decoration: none;
+    font-size: 12.5px;
+    font-weight: 650;
+    transition: color 0.18s ease, transform 0.18s ease;
+}
+
+.footer-links a:hover {
+    color: #FF9E00;
+    transform: translateX(3px);
+}
+
+.newsletter-box {
+    padding: 22px;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 24px;
+    background: linear-gradient(145deg, rgba(255, 255, 255, 0.10), rgba(255, 255, 255, 0.04));
+}
+
+.newsletter-box p {
+    margin: 0 0 16px;
+    line-height: 1.6;
+}
+
+.newsletter-form {
+    display: flex;
+    gap: 8px;
+}
+
+.newsletter-form input {
+    min-width: 0;
+    flex: 1;
+    height: 44px;
+    border: 1px solid rgba(255, 255, 255, 0.16);
+    border-radius: 999px;
+    padding: 0 14px;
+    background: rgba(255, 255, 255, 0.08);
+    color: #ffffff;
+    outline: 0;
+}
+
+.newsletter-form input::placeholder {
+    color: rgba(255, 255, 255, 0.48);
+}
+
+.newsletter-form button {
+    height: 44px;
+    border: 0;
+    border-radius: 999px;
+    padding: 0 18px;
+    background: #E30A17;
+    color: #ffffff;
+    font-weight: 900;
+}
+
+.footer-bottom {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 18px;
+    padding-top: 14px;
+    font-size: 12px;
+}
+
+.footer-bottom p {
+    margin: 0;
+}
+
+.secure-logos {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    gap: 8px;
+}
+
+.secure-logos span {
+    padding: 7px 10px;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 999px;
+    color: rgba(255, 255, 255, 0.72);
+    background: rgba(255, 255, 255, 0.05);
+}
+
+@media (min-width: 901px) and (max-width: 1100px) {
+    .footer-top {
+        grid-template-columns: minmax(200px, 0.9fr) minmax(0, 2fr);
+        gap: 28px 32px;
+    }
+
+    .footer-columns {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 22px 24px;
+    }
+}

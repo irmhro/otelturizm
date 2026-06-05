@@ -1,0 +1,6 @@
+/* firma_login.css — firma giriş/kayıt */
+@import url('kullanici_login.css');
+
+.login-page .auth-info-badge {
+    background: rgba(255, 158, 0, 0.18);
+}

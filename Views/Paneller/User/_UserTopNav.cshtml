@@ -1,0 +1,87 @@
+@using System.Security.Claims
+@using otelturizmnew.Constants
+@using otelturizmnew.Models.Paneller.Common
+@inject otelturizmnew.Services.Abstractions.IHeaderBildiriService HeaderBildiriService
+@{
+    var userRaw = Context.User.FindFirstValue(AuthClaimTypes.UserId)
+        ?? Context.User.FindFirstValue(ClaimTypes.NameIdentifier);
+    var userId = long.TryParse(userRaw, out var parsedUserId) ? parsedUserId : 0;
+    var headerBildiri = await HeaderBildiriService.GetForPanelAsync(PanelHeaderAudience.User, userId, Context.RequestAborted);
+    var fullName = Context.User.FindFirst("otelturizm:full_name")?.Value ?? Context.User.Identity?.Name ?? "Kullanıcı";
+    var email = Context.User.FindFirstValue(ClaimTypes.Email) ?? string.Empty;
+    var initial = string.IsNullOrWhiteSpace(fullName) ? "K" : fullName.Trim()[0].ToString().ToUpperInvariant();
+    var profileImageUrl = ViewData["UserProfileImageUrl"] as string ?? string.Empty;
+    var returnUrl = Uri.EscapeDataString(Context.Request.Path + Context.Request.QueryString);
+    var messageCount = ViewData["MessageCount"] is int msg ? msg : 0;
+}
+<header class="global-topbar" role="banner">
+    <div class="topbar-left">
+        <button type="button" class="menu-trigger" id="userSidebarToggle" aria-label="Menüyü aç/kapat">
+            <i class="fas fa-bars-staggered"></i>
+        </button>
+        <div class="header-search">
+            <i class="fas fa-search"></i>
+            <input type="search" id="userGlobalSearch" placeholder="Otel adı, şehir veya rezervasyon numarası ara..." autocomplete="off" />
+            <span class="search-shortcut">Ctrl+K</span>
+        </div>
+    </div>
+
+    <div class="topbar-right">
+        <a href="/panel/user/puanlarim" class="member-status-chip ap-hide-mobile" title="OtelPuan seviyeniz">
+            <i class="fas fa-crown"></i>
+            <span>Üye Statüsü: <b>OtelPuan</b></span>
+        </a>
+        <a href="/locale/set?lang=tr&returnUrl=@returnUrl" class="lang-currency-btn ap-hide-mobile" title="Dil">
+            <span>TR</span>
+        </a>
+        <a href="/currency/set?currency=TRY&returnUrl=@returnUrl" class="lang-currency-btn ap-hide-mobile" title="Para birimi">
+            <span>TRY</span>
+        </a>
+        <button type="button" class="utility-btn ap-hide-mobile" id="userThemeOpen" aria-label="Tema ayarları">
+            <i class="fas fa-palette"></i>
+        </button>
+        <partial name="~/Views/Paneller/Common/_DeveloperFeedbackWidget.cshtml" />
+        <partial name="~/Views/Shared/_HeaderBildiri.cshtml" model="headerBildiri" />
+        <a class="btn-quick-add" href="/oteller">
+            <i class="fas fa-plus"></i>
+            <span class="ap-hide-mobile">Otel Keşfet</span>
+        </a>
+
+        <div class="profile-dropdown-wrapper">
+            <div class="avatar-trigger" id="userAvatarBtn" role="button" tabindex="0" aria-haspopup="true" aria-expanded="false">
+                @if (!string.IsNullOrWhiteSpace(profileImageUrl))
+                {
+                    <img src="@profileImageUrl" alt="" class="header-avatar" />
+                }
+                else
+                {
+                    <span class="header-avatar">@initial</span>
+                }
+                <i class="fas fa-chevron-down"></i>
+            </div>
+            <div class="profile-dropdown" id="userProfileDropdown">
+                <div class="dropdown-header">
+                    <strong>@fullName</strong>
+                    <span>@email</span>
+                </div>
+                <ul class="dropdown-menu-list">
+                    <li><a href="/panel/user/profil-bilgilerim"><i class="fas fa-user"></i> Profil Bilgilerim</a></li>
+                    <li><a href="/panel/user/puanlarim"><i class="fas fa-wallet"></i> Cüzdan & Puanlar</a></li>
+                    <li><a href="/panel/user/guvenlik-ve-giris"><i class="fas fa-shield-alt"></i> Güvenlik Ayarları</a></li>
+                    <li><a href="/panel/user/dashboard"><i class="fas fa-th-large"></i> Genel Bakış</a></li>
+                    @if (messageCount > 0)
+                    {
+                        <li><a href="/panel/user/mesajlarim"><i class="fas fa-envelope"></i> Mesajlarım (@messageCount)</a></li>
+                    }
+                    <li><div class="dropdown-divider"></div></li>
+                    <li>
+                        <form method="post" action="/cikis-yap" class="m-0">
+                            @Html.AntiForgeryToken()
+                            <button type="submit" class="text-danger"><i class="fas fa-sign-out-alt"></i> Güvenli Çıkış</button>
+                        </form>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</header>

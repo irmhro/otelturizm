@@ -1,0 +1,22 @@
+@model otelturizmnew.Models.OzelGun.OzelGunTodayViewModel?
+
+
+
+@if (Model is not null)
+
+{
+
+    <div class="hero-ozel-gun" role="status" aria-live="polite">
+
+        <span class="hero-meta-chip hero-meta-chip--ozel">
+
+            <span class="hero-meta-chip-label">Bugün</span>
+
+            <span class="hero-meta-chip-text">@Model.DisplayText</span>
+
+        </span>
+
+    </div>
+
+}
+

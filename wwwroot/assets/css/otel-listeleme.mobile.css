@@ -649,8 +649,12 @@
     .listing-hotel-card .listing-card-mobile-lines {
         display: grid !important;
         gap: 4px;
-        margin: 0 0 8px;
+        margin: 0 0 6px;
         min-width: 0;
+    }
+
+    .listing-hotel-card .rating-row {
+        display: none !important;
     }
 
     .listing-hotel-card .listing-mobile-city {
@@ -754,8 +758,10 @@
 
     .listing-hotel-card .card-content {
         min-width: 0;
-        padding: 10px 12px;
-        gap: 6px;
+        display: grid;
+        grid-template-columns: minmax(0, 1fr);
+        gap: 10px;
+        padding: 10px 12px 12px;
     }
 
     .listing-hotel-card .wishlist-btn {
@@ -782,6 +788,8 @@
         left: 6px;
         padding: 4px 8px;
         gap: 2px;
+        max-width: calc(100% - 52px);
+        overflow: hidden;
     }
 
     .listing-hotel-card .card-star-badge i {
@@ -828,9 +836,10 @@
         grid-area: info;
         width: 100%;
         display: flex;
+        flex-wrap: wrap;
         align-items: baseline;
         justify-content: flex-start;
-        gap: 8px;
+        gap: 6px 8px;
     }
 
     .hotel-card .price-section .price-tax-note {
@@ -856,9 +865,10 @@
     }
 
     .listing-hotel-card .price-actions-row {
+        display: grid;
         flex-direction: column;
         align-items: stretch;
-        gap: 12px;
+        gap: 10px;
     }
 
     .listing-hotel-card .price-actions-row .btn-detail {
@@ -876,6 +886,7 @@
         font-size: 22px;
         font-weight: 950;
         letter-spacing: -0.01em;
+        line-height: 1;
     }
     .hotel-card .old-price { font-size: 13px; }
 
@@ -1096,5 +1107,48 @@
         .listing-toolbar-actions {
             max-width: 100%;
         }
+    }
+}
+
+/* 2026-06-01 yeni şablon mobil liste kartları */
+@media (max-width: 900px) {
+    .listing-template-v41 {
+        background: #F8F7F5 !important;
+    }
+
+    .listing-template-v41 .listing-cards {
+        gap: 18px !important;
+    }
+
+    .listing-template-v41 .listing-hotel-card {
+        border-radius: 20px !important;
+        box-shadow: 0 14px 34px rgba(26,25,25,.08) !important;
+    }
+
+    .listing-template-v41 .listing-hotel-card .card-image,
+    .listing-template-v41 .listing-hotel-card .card-image-link {
+        aspect-ratio: 16 / 9 !important;
+        max-height: none !important;
+    }
+
+    .listing-template-v41 .card-content {
+        padding: 16px !important;
+    }
+
+    .listing-template-v41 .price-section {
+        grid-template-columns: 1fr !important;
+        align-items: stretch !important;
+    }
+
+    .listing-template-v41 .btn-detail {
+        grid-column: 1 / -1;
+        grid-row: auto;
+        width: 100%;
+        min-height: 48px;
+        margin-top: 6px;
+    }
+
+    .listing-template-v41 .current-price {
+        font-size: 25px !important;
     }
 }

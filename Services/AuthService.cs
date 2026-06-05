@@ -854,6 +854,7 @@ public class AuthService : IAuthService
         var city = model.City.Trim();
         var district = model.District.Trim();
         var neighborhood = string.IsNullOrWhiteSpace(model.Neighborhood) ? null : model.Neighborhood.Trim();
+        var country = string.IsNullOrWhiteSpace(model.Country) ? "Türkiye" : model.Country.Trim();
         var taxOffice = model.TaxOffice.Trim();
         var taxNumber = model.TaxNumber.Trim();
         var contactTcNo = model.ContactTcNo.Trim();
@@ -985,7 +986,7 @@ public class AuthService : IAuthService
                 "1",
                 "'tr'",
                 "'TRY'",
-                "'Turkiye'",
+                "@country",
                 CurrentUtcSql
             };
 
@@ -1052,6 +1053,7 @@ public class AuthService : IAuthService
                 insertUserCommand.Parameters.AddWithValue("@phone", phone);
                 insertUserCommand.Parameters.AddWithValue("@phoneE164", (object?)normalizedPhone ?? DBNull.Value);
                 insertUserCommand.Parameters.AddWithValue("@password", model.Password);
+                insertUserCommand.Parameters.AddWithValue("@country", country);
 
                 var result = await insertUserCommand.ExecuteScalarAsync(cancellationToken);
                 userId = Convert.ToInt64(result);
@@ -1156,7 +1158,7 @@ public class AuthService : IAuthService
                 )
                 VALUES
                 (
-                    @hotelCode, @partnerId, @userId, @hotelName, @hotelTypeName, @hotelTypeId, 'Türkiye', @city, @district, @neighborhood, @address,
+                    @hotelCode, @partnerId, @userId, @hotelName, @hotelTypeName, @hotelTypeId, @country, @city, @district, @neighborhood, @address,
                     @phone, @email, @website, @phone, @contactName, @phone, @email,
                     '14:00:00', '12:00:00', @roomCount, @shortDescription, @description,
                     15.00, 'Çıkış Günü', 'Havale/EFT', 'Otel Keser',
@@ -1175,6 +1177,7 @@ public class AuthService : IAuthService
                 insertHotelCommand.Parameters.AddWithValue("@hotelName", hotelName);
                 insertHotelCommand.Parameters.AddWithValue("@hotelTypeId", hotelType.Value.Id);
                 insertHotelCommand.Parameters.AddWithValue("@hotelTypeName", hotelType.Value.Name);
+                insertHotelCommand.Parameters.AddWithValue("@country", country);
                 insertHotelCommand.Parameters.AddWithValue("@city", city);
                 insertHotelCommand.Parameters.AddWithValue("@district", district);
                 insertHotelCommand.Parameters.AddWithValue("@neighborhood", (object?)neighborhood ?? DBNull.Value);
@@ -1323,6 +1326,15 @@ public class AuthService : IAuthService
                 },
                 cancellationToken);
 
+            await _contractContentService.QueueRegistrationContractBundleAsync(
+                connection,
+                (SqlTransaction)transaction,
+                userId,
+                email,
+                null,
+                null,
+                cancellationToken);
+
             await transaction.CommitAsync(cancellationToken);
 
             try
@@ -1393,6 +1405,7 @@ public class AuthService : IAuthService
         var neighborhood = string.IsNullOrWhiteSpace(model.Neighborhood) ? null : model.Neighborhood.Trim();
         var postalCode = string.IsNullOrWhiteSpace(model.PostalCode) ? null : model.PostalCode.Trim();
         var address = model.Address.Trim();
+        var country = string.IsNullOrWhiteSpace(model.CountryName) ? "Türkiye" : model.CountryName.Trim();
         var employeeCount = Math.Max(0, model.EmployeeCount ?? 0);
         var monthlyTravelBudget = model.MonthlyTravelBudget;
 
@@ -1497,7 +1510,8 @@ public class AuthService : IAuthService
                     [FIRMA_EPOSTA], [FIRMA_TELEFON], [WEB_SITESI], [SEKTOR], [CALISAN_SAYISI], [AYLIK_SEYAHAT_BUTCESI],
                     [ACIK_ADRES], [SEHIR], ilce, [POSTA_KODU], [YETKILI_AD_SOYAD], [YETKILI_UNVANI], [YETKILI_EPOSTA],
                     [YETKILI_TELEFON], [ONAY_DURUMU], [BASVURU_TARIHI], [AKTIF_MI], [GIRIS_IZNI_AKTIF_MI],
-                    [PLANLANAN_ONAY_SURESI_SAAT], [KAYIT_KAYNAGI], [SOZLESME_ONAY_TARIHI], [KVKK_ONAY_TARIHI], [NOTLAR], [OLUSTURULMA_TARIHI]
+                    [PLANLANAN_ONAY_SURESI_SAAT], [KAYIT_KAYNAGI], [SOZLESME_ONAY_TARIHI], [KVKK_ONAY_TARIHI], [NOTLAR], [OLUSTURULMA_TARIHI],
+                    [VARSAYILAN_PARA_BIRIMI]
                 )
                 VALUES
                 (
@@ -1505,7 +1519,8 @@ public class AuthService : IAuthService
                     @companyEmail, @companyPhone, @website, @sector, @employeeCount, @monthlyTravelBudget,
                     @address, @city, @district, @postalCode, @contactName, @contactTitle, @contactEmail,
                     @contactPhone, 'Beklemede', SYSUTCDATETIME(), 1, 0,
-                    24, 'web_firma_register', SYSUTCDATETIME(), SYSUTCDATETIME(), @note, SYSUTCDATETIME()
+                    24, 'web_firma_register', SYSUTCDATETIME(), SYSUTCDATETIME(), @note, SYSUTCDATETIME(),
+                    @defaultCurrency
                 );
 
                 SELECT CAST(SCOPE_IDENTITY() AS bigint);
@@ -1536,6 +1551,7 @@ public class AuthService : IAuthService
                 insertFirmaCommand.Parameters.AddWithValue("@contactEmail", contactEmail);
                 insertFirmaCommand.Parameters.AddWithValue("@contactPhone", contactPhone);
                 insertFirmaCommand.Parameters.AddWithValue("@note", "Web üzerinden alınan firma hesabı başvurusu. Yönetici onayı bekleniyor.");
+                insertFirmaCommand.Parameters.AddWithValue("@defaultCurrency", "TRY");
 
                 var result = await insertFirmaCommand.ExecuteScalarAsync(cancellationToken);
                 firmaId = Convert.ToInt64(result);
@@ -1573,7 +1589,7 @@ public class AuthService : IAuthService
                 "1",
                 "'tr'",
                 "'TRY'",
-                "'Türkiye'",
+                "@country",
                 CurrentUtcSql
             };
 
@@ -1634,6 +1650,7 @@ public class AuthService : IAuthService
                 insertUserCommand.Parameters.AddWithValue("@password", model.Password);
                 insertUserCommand.Parameters.AddWithValue("@firmaId", firmaId);
                 insertUserCommand.Parameters.AddWithValue("@contactTitle", contactTitle);
+                insertUserCommand.Parameters.AddWithValue("@country", country);
                 insertUserCommand.Parameters.AddWithValue("@personelCode", $"{firmaCode}-ADM");
                 var userIdResult = await insertUserCommand.ExecuteScalarAsync(cancellationToken);
                 userId = Convert.ToInt64(userIdResult);
@@ -1711,7 +1728,7 @@ public class AuthService : IAuthService
 
         const string sql = """
             SELECT TOP (1) id, [KULLANICI_ID], [GECERLILIK_SURESI], [KULLANILDI_MI], [DENEME_SAYISI], [MAKSIMUM_DENEME], [TOKEN]
-            FROM email_dogrulama_tokenlari
+            FROM [dbo].[EPOSTA_DOGRULAMA_TOKENLARI]
             WHERE [EPOSTA] = @email
               AND [DOGRULAMA_KODU] = @code
             ORDER BY [OLUSTURULMA_TARIHI] DESC;
@@ -3072,7 +3089,7 @@ public class AuthService : IAuthService
         var verificationLink = $"{_publicBaseUrl}/eposta-dogrula?email={Uri.EscapeDataString(email)}&token={Uri.EscapeDataString(token)}&code={Uri.EscapeDataString(code)}";
 
         await using (var insertCommand = new SqlCommand("""
-            INSERT INTO email_dogrulama_tokenlari
+            INSERT INTO [dbo].[EPOSTA_DOGRULAMA_TOKENLARI]
             ([KULLANICI_ID], [EPOSTA], [TOKEN], [DOGRULAMA_KODU], [KULLANILDI_MI], [DENEME_SAYISI], [MAKSIMUM_DENEME], [IP_ADRESI], [KULLANICI_ARACISI], [GECERLILIK_SURESI], [OLUSTURULMA_TARIHI])
             VALUES
             (@userId, @email, @token, @code, 0, 0, 5, @ipAddress, @userAgent, DATEADD(HOUR, 24, SYSUTCDATETIME()), SYSUTCDATETIME());
@@ -3122,7 +3139,7 @@ public class AuthService : IAuthService
     private static async Task MarkVerificationTokenUsedAsync(SqlConnection connection, SqlTransaction transaction, long tokenId, CancellationToken cancellationToken)
     {
         await using var command = new SqlCommand("""
-            UPDATE email_dogrulama_tokenlari
+            UPDATE [dbo].[EPOSTA_DOGRULAMA_TOKENLARI]
             SET [KULLANILDI_MI] = 1,
                 [KULLANILMA_TARIHI] = SYSUTCDATETIME()
             WHERE id = @tokenId;
@@ -3134,7 +3151,7 @@ public class AuthService : IAuthService
     private static async Task IncrementVerificationAttemptAsync(SqlConnection connection, SqlTransaction transaction, long tokenId, CancellationToken cancellationToken)
     {
         await using var command = new SqlCommand("""
-            UPDATE email_dogrulama_tokenlari
+            UPDATE [dbo].[EPOSTA_DOGRULAMA_TOKENLARI]
             SET [DENEME_SAYISI] = COALESCE([DENEME_SAYISI], 0) + 1
             WHERE id = @tokenId;
             """, connection, (SqlTransaction)transaction);
@@ -3331,3 +3348,4 @@ public class AuthService : IAuthService
         }
     }
 }
+

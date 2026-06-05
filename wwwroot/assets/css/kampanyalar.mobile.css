@@ -1,29 +1,149 @@
-/* Bu dosya yalnızca (max-width: 900px) ile yüklenir; tek sütunu garanti et */
-.campaign-index-hero {
-    grid-template-columns: 1fr;
-    padding: 18px var(--space-5) 6px;
-    gap: 14px;
-}
+@import url("./public-premium-pages.mobile.css");
 
-.campaign-index-hero__stats {
-    justify-content: flex-start;
-}
+@media (max-width: 900px) {
+    .kampanyalar-page .public-premium-main {
+        padding-bottom: 24px;
+    }
 
-.campaign-stat-chip {
-    min-height: 44px;
-    touch-action: manipulation;
-}
+    .kampanyalar-page .kmp-main {
+        padding-top: 8px;
+    }
 
-.campaign-index-grid {
-    grid-template-columns: minmax(0, 1fr) !important;
-    width: 100%;
-    max-width: 100%;
-    box-sizing: border-box;
-}
+    .kampanyalar-page .kmp-body.container {
+        padding: 0 12px;
+    }
 
-.campaign-card {
-    min-width: 0;
-    max-width: 100%;
-    width: 100%;
-    box-sizing: border-box;
+    .kampanyalar-page .kmp-trust-strip {
+        margin-bottom: 8px;
+    }
+
+    .kampanyalar-page .kmp-page-title {
+        margin-top: 4px;
+        margin-bottom: 8px;
+        font-size: 18px;
+    }
+
+    .kampanyalar-page .kmp-filter-bar {
+        display: grid;
+        gap: 10px;
+        margin-bottom: 12px;
+    }
+
+    .kampanyalar-page .kmp-filter-search {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 0 12px;
+        min-height: 42px;
+        border: 1px solid var(--border-subtle, #EBE9E4);
+        border-radius: 12px;
+        background: #fff;
+        box-shadow: 0 4px 14px rgba(26, 25, 25, 0.04);
+    }
+
+    .kampanyalar-page .kmp-filter-search i {
+        color: var(--text-muted, #6E6E77);
+        font-size: 13px;
+    }
+
+    .kampanyalar-page .kmp-filter-input {
+        flex: 1;
+        min-width: 0;
+        border: 0;
+        background: transparent;
+        font-size: 14px;
+        font-weight: 600;
+        color: var(--luxury-dark, #1A1919);
+        outline: none;
+    }
+
+    .kampanyalar-page .kmp-filter-input::placeholder {
+        color: var(--text-muted, #6E6E77);
+        font-weight: 500;
+    }
+
+    .kampanyalar-page .kmp-filter-chips {
+        display: flex;
+        gap: 6px;
+        overflow-x: auto;
+        padding-bottom: 2px;
+        -webkit-overflow-scrolling: touch;
+        scrollbar-width: none;
+    }
+
+    .kampanyalar-page .kmp-filter-chips::-webkit-scrollbar {
+        display: none;
+    }
+
+    .kampanyalar-page .kmp-filter-chip {
+        flex: 0 0 auto;
+        min-height: 32px;
+        padding: 0 12px;
+        border-radius: 999px;
+        border: 1px solid var(--border-subtle, #EBE9E4);
+        background: #fff;
+        color: var(--luxury-dark, #1A1919);
+        font-size: 11px;
+        font-weight: 700;
+        white-space: nowrap;
+        cursor: pointer;
+    }
+
+    .kampanyalar-page .kmp-filter-chip.is-active {
+        border-color: rgba(227, 10, 23, 0.35);
+        background: rgba(227, 10, 23, 0.08);
+        color: var(--flag-crimson, #E30A17);
+    }
+
+    .kampanyalar-page .kmp-filter-result {
+        margin: 0;
+        font-size: 11px;
+        font-weight: 700;
+        color: var(--text-muted, #6E6E77);
+    }
+
+    .kampanyalar-page .kmp-grid {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 8px;
+        padding-bottom: 16px;
+    }
+
+    .kampanyalar-page .kmp-card {
+        border-radius: 10px;
+    }
+
+    .kampanyalar-page .kmp-card__media {
+        aspect-ratio: 4 / 5;
+    }
+
+    .kampanyalar-page .kmp-card__badge,
+    .kampanyalar-page .kmp-card__promo {
+        top: 4px;
+        left: 4px;
+        padding: 2px 5px;
+        font-size: 7px;
+    }
+
+    .kampanyalar-page .kmp-card__promo {
+        right: 4px;
+        bottom: 4px;
+        left: auto;
+        top: auto;
+    }
+
+    .kampanyalar-page .kmp-card__body {
+        padding: 6px 5px 5px;
+        gap: 2px;
+    }
+
+    .kampanyalar-page .kmp-card__head h2 {
+        font-size: 0.62rem;
+        line-height: 1.2;
+        -webkit-line-clamp: 3;
+    }
+
+    .kampanyalar-page .kmp-empty-state,
+    .kampanyalar-page .kmp-empty-filter {
+        padding: 20px 14px;
+    }
 }

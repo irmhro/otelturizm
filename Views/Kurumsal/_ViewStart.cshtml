@@ -1,0 +1,10 @@
+@{
+    Layout = "~/Views/Shared/_PublicPremiumPageLayout.cshtml";
+    ViewData["BodyClass"] ??= "kurumsal-page anasayfa-page";
+    ViewData["IncludeAnasayfaStyles"] ??= true;
+    ViewData["PageCssBase"] ??= "kurumsal";
+    if (ViewData["PageCssMobile"] is null && ViewData["PageCss"] is string pageCss)
+    {
+        ViewData["PageCssMobile"] = pageCss;
+    }
+}

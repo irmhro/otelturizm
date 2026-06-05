@@ -1,0 +1,263 @@
+@using otelturizmnew.Services
+@{
+    var headerPath = Context.Request.Path.Value ?? "/";
+    var isHomeActive = headerPath == "/" || string.Equals(headerPath, "/anasayfa", StringComparison.OrdinalIgnoreCase);
+    var isKurumsalPage = headerPath.StartsWith("/kurumsal", StringComparison.OrdinalIgnoreCase);
+
+    var pathHasLocalePrefix = InternationalSeoPaths.HasLocalePathPrefix(headerPath);
+    var currentLang = "tr";
+    if (pathHasLocalePrefix)
+    {
+        currentLang = InternationalSeoPaths.ResolveCultureFromPath(headerPath);
+    }
+    else if (Context.Request.Query.TryGetValue("lang", out var langQuery))
+    {
+        var rawLang = langQuery.ToString().Trim().ToLowerInvariant();
+        currentLang = rawLang.Length >= 2 ? rawLang[..2] : rawLang;
+        if (currentLang is not ("en" or "de" or "fr" or "es" or "ru" or "tr"))
+        {
+            currentLang = "tr";
+        }
+    }
+
+    var currentCurrency = (Context.Request.Cookies[UserPreferenceService.CurrencyCookieName] ?? "TRY").Trim().ToUpperInvariant();
+    if (currentCurrency is not ("TRY" or "USD" or "EUR"))
+    {
+        currentCurrency = "TRY";
+    }
+
+    var currentLangLabel = currentLang.ToUpperInvariant();
+    var currentCurrencyLabel = currentCurrency switch
+    {
+        "USD" => "$",
+        "EUR" => "€",
+        _ => "₺"
+    };
+
+    string BuildPrefLangUrl(string langCode)
+    {
+        var two = (langCode ?? "tr").Trim().ToLowerInvariant();
+        if (two.Length > 2)
+        {
+            two = two[..2];
+        }
+
+        var path = Context.Request.Path.HasValue ? Context.Request.Path.Value! : "/";
+        var targetPath = path.StartsWith("/oteller", StringComparison.OrdinalIgnoreCase) || pathHasLocalePrefix
+            ? InternationalSeoPaths.LocalizePath(path, two)
+            : path;
+
+        var query = Microsoft.AspNetCore.WebUtilities.QueryHelpers.ParseQuery(Context.Request.QueryString.Value);
+        var dict = query
+            .Where(kvp => !string.Equals(kvp.Key, "lang", StringComparison.OrdinalIgnoreCase))
+            .ToDictionary(k => k.Key, v => v.Value.ToString(), StringComparer.OrdinalIgnoreCase);
+
+        var usesLangQuery = !path.StartsWith("/oteller", StringComparison.OrdinalIgnoreCase)
+            && !InternationalSeoPaths.HasLocalePathPrefix(targetPath);
+        if (usesLangQuery && !string.Equals(two, "tr", StringComparison.OrdinalIgnoreCase))
+        {
+            dict["lang"] = two;
+        }
+
+        return dict.Count == 0
+            ? targetPath
+            : Microsoft.AspNetCore.WebUtilities.QueryHelpers.AddQueryString(targetPath, dict!);
+    }
+
+    var prefLanguages = new (string Code, string Label, string Title)[]
+    {
+        ("tr", "TR", "Türkçe (TR)"),
+        ("en", "EN", "English (EN)"),
+        ("de", "DE", "Deutsch (DE)")
+    };
+
+    var prefCurrencies = new (string Code, string Label, string Title)[]
+    {
+        ("TRY", "₺", "TRY (₺)"),
+        ("USD", "$", "USD ($)"),
+        ("EUR", "€", "EUR (€)")
+    };
+}
+<div class="home-header-shell" data-current-lang="@currentLang" data-current-currency="@currentCurrency">
+<div class="utility-bar">
+    <div class="container utility-container">
+        <div class="utility-left">
+            <span>TÜRSAB Belge No: <strong>10424</strong> <span class="tursab-badge">A GRUBU</span></span>
+            <span>• Anlık Üye Seyahat Kredisi Oranı: <strong>%5 Şafak İndirimi</strong></span>
+        </div>
+        <div class="utility-right">
+            <a href="/yardim-merkezi">Yardım &amp; Destek</a>
+            <a href="/rezervasyon-sorgula" class="utility-reservation-link">★ Rezervasyon Sorgula</a>
+        </div>
+    </div>
+</div>
+
+<header class="navbar">
+    <div class="container navbar-container">
+        <a class="logo-area" href="/" aria-label="Otelturizm anasayfa">
+            <partial name="~/Views/Anasayfa/_AnasayfaLogo.cshtml" />
+        </a>
+        <nav aria-label="Ana menü">
+            <ul class="nav-menu">
+                <li><a class="@(isHomeActive ? "active" : null)" href="/">Keşfet</a></li>
+                <li><a href="/oteller?etiket=koleksiyonlar">Koleksiyonlar</a></li>
+                <li><a href="/kampanyalar">Fırsatlar</a></li>
+                <li><a href="/deneyimler">Deneyimler</a></li>
+                <li><a href="/kurumsal">VIP Lounge</a></li>
+            </ul>
+        </nav>
+        <div class="nav-actions">
+            <div class="nav-actions-main">
+                <button type="button" class="btn-route-modal" data-route-picker-open aria-haspopup="dialog" aria-expanded="false">
+                    <i class="fas fa-route" aria-hidden="true"></i>
+                    <span>Rotalar</span>
+                </button>
+                <a class="btn-kurumsal@(isKurumsalPage ? " is-active" : string.Empty)" href="/kurumsal">Kurumsal</a>
+                @if (isKurumsalPage)
+                {
+                    <a class="btn-firma" href="/firma">Firma</a>
+                }
+                <a class="btn-login" href="/kullanici-giris">Giriş Yap</a>
+                <div class="nav-pref-dropdown" data-nav-pref-dropdown>
+                    <button type="button" class="nav-pref-icon-btn" data-nav-pref-trigger aria-haspopup="listbox" aria-expanded="false" aria-label="Dil seçimi">
+                        <i class="fas fa-language" aria-hidden="true"></i>
+                        <span class="nav-pref-icon-code" data-pref-value>@currentLangLabel</span>
+                    </button>
+                    <div class="nav-pref-menu" data-nav-pref-menu role="listbox" aria-label="Dil seçenekleri" hidden>
+                        @foreach (var lang in prefLanguages)
+                        {
+                            var isActiveLang = string.Equals(lang.Code, currentLang, StringComparison.OrdinalIgnoreCase);
+                            <a class="nav-pref-option@(isActiveLang ? " active" : string.Empty)" href="@BuildPrefLangUrl(lang.Code)" data-pref-label="@lang.Label">@lang.Title</a>
+                        }
+                    </div>
+                </div>
+                <div class="nav-pref-dropdown" data-nav-pref-dropdown>
+                    <button type="button" class="nav-pref-icon-btn nav-pref-icon-btn--currency" data-nav-pref-trigger aria-haspopup="listbox" aria-expanded="false" aria-label="Para birimi seçimi">
+                        <i class="fas fa-coins" aria-hidden="true"></i>
+                        <span class="nav-pref-icon-code" data-pref-value>@currentCurrencyLabel</span>
+                    </button>
+                    <div class="nav-pref-menu" data-nav-pref-menu role="listbox" aria-label="Para birimi seçenekleri" hidden>
+                        @foreach (var currency in prefCurrencies)
+                        {
+                            var isActiveCurrency = string.Equals(currency.Code, currentCurrency, StringComparison.OrdinalIgnoreCase);
+                            <button type="button" class="nav-pref-option@(isActiveCurrency ? " active" : string.Empty)" data-pref-label="@currency.Label" data-currency="@currency.Code">@currency.Title</button>
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="navbar-mobile-actions">
+            <button class="home-mobile-menu-toggle" id="homeMenuToggle" type="button" aria-label="Mobil menüyü aç">
+                <i class="fas fa-bars"></i>
+            </button>
+        </div>
+    </div>
+</header>
+</div>
+
+<div class="home-drawer-overlay" id="homeDrawerOverlay"></div>
+<aside class="home-drawer-menu" id="homeDrawerMenu" aria-label="Mobil menü">
+    <div class="home-drawer-header">
+        <span class="home-drawer-title">Menü</span>
+        <button class="home-drawer-close" id="homeDrawerClose" type="button" aria-label="Menüyü kapat">Kapat</button>
+    </div>
+    <div class="home-drawer-auth-bar">
+        <div class="home-mobile-actions">
+            <a href="/kullanici-giris" class="btn-primary-mobile">Giriş Yap</a>
+            <a href="/kullanici-giris?sekme=kayit" class="btn-outline-mobile">Kayıt Ol</a>
+        </div>
+        <a href="/kampanyalar" class="btn-kampanya-mobile"><i class="fas fa-tags" aria-hidden="true"></i> Kampanyalar</a>
+    </div>
+    <div class="home-drawer-content">
+        <div class="home-menu-section">
+            <div class="home-menu-title">KEŞFET</div>
+            <div class="home-menu-list">
+                <button type="button" class="home-menu-route-open" data-route-picker-open aria-haspopup="dialog" aria-expanded="false">
+                    <i class="fas fa-route"></i> Popüler rotalar
+                </button>
+                <a href="/oteller"><i class="fas fa-hotel"></i> Oteller</a>
+                <a href="/kurumsal"><i class="fas fa-building"></i> Kurumsal</a>
+                @if (isKurumsalPage)
+                {
+                    <a href="/firma"><i class="fas fa-briefcase"></i> Firma</a>
+                }
+                <a href="/oteller/harita"><i class="fas fa-globe"></i> Destinasyonlar</a>
+                <a href="/kurumsal"><i class="fas fa-star"></i> VIP Club</a>
+                <a href="/panel/user/favorilerim"><i class="fas fa-heart"></i> Favorilerim</a>
+            </div>
+        </div>
+
+        <div class="home-menu-section">
+            <div class="home-menu-title"><i class="fas fa-fire"></i> ÖZEL FIRSATLAR</div>
+            <div class="home-menu-list">
+                <a href="/oteller?etiket=butik-oteller"><i class="fas fa-spa"></i> Butik</a>
+                <a href="/oteller?etiket=aile-otelleri"><i class="fas fa-users"></i> Aile</a>
+                <a href="/oteller?etiket=butceme-uygun-oteller"><i class="fas fa-chart-line"></i> Bütçeme Uygun</a>
+            </div>
+        </div>
+
+        <div class="home-menu-section">
+            <div class="home-menu-title">HIZLI ERİŞİM</div>
+            <div class="home-menu-list">
+                <a href="/yardim-merkezi"><i class="fas fa-phone-alt"></i> Müşteri Hizmetleri</a>
+                <a href="/yardim-merkezi"><i class="fas fa-chart-line"></i> Seyahat Rehberi</a>
+                <a href="/yardim-merkezi"><i class="fas fa-shield-alt"></i> Güvenli Rezervasyon</a>
+                <a href="/yardim-merkezi"><i class="fas fa-headset"></i> 7/24 Destek</a>
+            </div>
+        </div>
+
+        <div class="home-menu-section home-prefs-section">
+            <div class="home-menu-title">TERCİHLER</div>
+            <div class="home-prefs-accordions">
+                <div class="home-pref-accordion" data-pref-accordion>
+                    <button type="button" class="home-pref-trigger" data-pref-trigger aria-expanded="false">
+                        <span class="home-pref-trigger-main">
+                            <i class="fas fa-language" aria-hidden="true"></i>
+                            <span>Dil</span>
+                        </span>
+                        <span class="home-pref-trigger-value" data-pref-value>@currentLangLabel</span>
+                        <i class="fas fa-chevron-down home-pref-chevron" aria-hidden="true"></i>
+                    </button>
+                    <div class="home-pref-panel" data-pref-panel hidden>
+                        <div class="home-pref-options">
+                            @foreach (var lang in prefLanguages)
+                            {
+                                var isActiveLang = string.Equals(lang.Code, currentLang, StringComparison.OrdinalIgnoreCase);
+                                <a class="home-pref-btn@(isActiveLang ? " active" : string.Empty)" href="@BuildPrefLangUrl(lang.Code)" data-pref-label="@lang.Label">@lang.Label</a>
+                            }
+                        </div>
+                    </div>
+                </div>
+                <div class="home-pref-accordion" data-pref-accordion>
+                    <button type="button" class="home-pref-trigger" data-pref-trigger aria-expanded="false">
+                        <span class="home-pref-trigger-main">
+                            <i class="fas fa-coins" aria-hidden="true"></i>
+                            <span>Para</span>
+                        </span>
+                        <span class="home-pref-trigger-value" data-pref-value>@currentCurrencyLabel</span>
+                        <i class="fas fa-chevron-down home-pref-chevron" aria-hidden="true"></i>
+                    </button>
+                    <div class="home-pref-panel" data-pref-panel hidden>
+                        <div class="home-pref-options">
+                            @foreach (var currency in prefCurrencies)
+                            {
+                                var isActiveCurrency = string.Equals(currency.Code, currentCurrency, StringComparison.OrdinalIgnoreCase);
+                                <button class="home-pref-btn@(isActiveCurrency ? " active" : string.Empty)" type="button" data-pref-label="@currency.Label" data-currency="@currency.Code">@currency.Label</button>
+                            }
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="home-menu-section home-menu-section-last">
+            <div class="home-menu-title">ORTAKLARIMIZ</div>
+            <div class="home-corp-links">
+                <a class="home-corp-btn" href="/partner-giris"><i class="fas fa-handshake"></i> Partner Giriş</a>
+                <a class="home-corp-btn" href="/firma-giris"><i class="fas fa-building"></i> Firma Giriş</a>
+                <a class="home-corp-btn" href="/partner-giris?sekme=kayit"><i class="fas fa-hotel"></i> Oteli Kaydet</a>
+                <a class="home-corp-btn" href="/firma-giris?sekme=kayit"><i class="fas fa-building-circle-check"></i> Firmanı Kaydet</a>
+            </div>
+        </div>
+    </div>
+</aside>

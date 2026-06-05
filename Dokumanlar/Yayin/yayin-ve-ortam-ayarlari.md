@@ -1,5 +1,7 @@
 # Studio, Veritabanı ve Yayın Ayarları
 
+> **Ana rehber:** [`canlıdeploy.md`](../../canlıdeploy.md) (proje kök dizini)
+
 Bu dosya, projeyi localde canlıya en yakın şekilde çalıştırıp ardından Visual Studio ile güvenli yayımlama yapmak için ana referans dokümandır.
 
 ## Temel Kural

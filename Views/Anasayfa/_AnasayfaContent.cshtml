@@ -1,590 +1,808 @@
 @model otelturizmnew.Models.Anasayfa.AnasayfaViewModel
-
 @{
-    var todayIso = DateTime.Today.ToString("yyyy-MM-dd");
-    var nonce = Context.Items["CspNonce"] as string;
-    var homepageCategorySections = Model.CategorySections;
-    var heroLcpImage = Model.CampaignSlides.FirstOrDefault()?.ImageUrl;
-}
-@if (!string.IsNullOrWhiteSpace(heroLcpImage))
-{
-    <link rel="preload" as="image" href="@heroLcpImage" fetchpriority="high" />
+    var featuredHotels = (Model.PopularHotels?.Any() == true ? Model.PopularHotels : Model.WeekendHotels)?.Take(4).ToList() ?? new();
+    var fallbackImages = new[]
+    {
+        "https://images.unsplash.com/photo-1566073771259-6a8506099945?w=700&auto=format&fit=crop&q=80",
+        "https://images.unsplash.com/photo-1520250497591-112f2f40a3f4?w=700&auto=format&fit=crop&q=80",
+        "https://images.unsplash.com/photo-1584132967334-10e028bd69f7?w=700&auto=format&fit=crop&q=80",
+        "https://images.unsplash.com/photo-1540555700478-4be289fbecef?w=700&auto=format&fit=crop&q=80"
+    };
+    var fallbackNames = new[] { "Bodrum Premium Resort", "Kapadokya Cave Suite", "İstanbul Boğaz Oteli", "Antalya Eko Resort" };
+    var fallbackLocations = new[] { "Bodrum, Muğla", "Ürgüp, Nevşehir", "Beşiktaş, İstanbul", "Kemer, Antalya" };
+    var homeToday = DateTime.Today;
+    var homeCheckInDefault = homeToday.ToString("yyyy-MM-dd");
+    var homeCheckOutDefault = homeToday.AddDays(7).ToString("yyyy-MM-dd");
+    var homeCheckOutMinDefault = homeToday.AddDays(1).ToString("yyyy-MM-dd");
+    var heroHeadlines = new[]
+    {
+        "Global güven ve Türk misafirperverliğiyle dünyayı keşfedin.",
+        "Hayalinizdeki tatili güvenle planlayın, dünyayı keşfedin.",
+        "Binlerce otel ve tur seçeneğiyle seyahatin yeni adresi.",
+        "Yerel samimiyetle global seyahat deneyimini bir araya getiriyoruz.",
+        "Dünyanın her yerinde güvenli, kolay ve konforlu rezervasyon."
+    };
+    var heroHeadline = heroHeadlines[Random.Shared.Next(heroHeadlines.Length)];
+    var heroWords = heroHeadline.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+    var heroSplitAt = 1;
+    if (heroWords.Length > 1)
+    {
+        var bestScore = double.MaxValue;
+        for (var k = 1; k < heroWords.Length; k++)
+        {
+            var line1Len = string.Join(" ", heroWords.Take(k)).Length;
+            var line2Len = string.Join(" ", heroWords.Skip(k)).Length;
+            var score = Math.Max(line1Len, line2Len) * 2 + Math.Abs(line1Len - line2Len);
+            if (score < bestScore)
+            {
+                bestScore = score;
+                heroSplitAt = k;
+            }
+        }
+    }
+    var heroLine1 = heroWords.Take(heroSplitAt).ToArray();
+    var heroLine2 = heroWords.Skip(heroSplitAt).ToArray();
+    string HeroWordTone(int index) => $"hero-title-word--tone-{index % 5}";
 }
 
-<section class="hero-section">
-    <div class="container-xl px-4">
-        <div class="hero-layout">
-
-            <div class="hero-slider-shell desktop-only">
-                @if (Model.CampaignSlides.Count == 0)
-                {
-                    <div class="hero-slide-empty">
-                        <strong>Kampanya vitrini henüz hazır değil</strong>
-                        <span>Yayındaki kampanya görselleri eklendikçe bu alan otomatik dolacaktır.</span>
-                    </div>
-                }
-                else
-                {
-                    <div class="swiper hero-swiper">
-                        <div class="swiper-wrapper">
-                            @{ var slideIndex = 0; }
-                            @foreach (var slide in Model.CampaignSlides)
+<main>
+    <section class="hero-section">
+        <div class="hero-section-atmosphere" aria-hidden="true">
+            <span class="hero-atmosphere-orb hero-atmosphere-orb--warm"></span>
+            <span class="hero-atmosphere-orb hero-atmosphere-orb--crimson"></span>
+            <span class="hero-atmosphere-orb hero-atmosphere-orb--mist"></span>
+        </div>
+        <div class="container">
+            <div class="hero-stage">
+                <div class="hero-stage-veil" aria-hidden="true"></div>
+            <div class="hero-top-grid hero-top-grid--solo">
+                <div class="hero-headline-pro">
+                    @await Component.InvokeAsync("LogoOzelGun")
+                    <h1 class="hero-title hero-title-pro hero-title-pro--headline" aria-label="@heroHeadline">
+                        <span class="hero-title-row hero-title-row--spread" aria-hidden="false">
+                            @for (var i = 0; i < heroLine1.Length; i++)
                             {
-                                <div class="swiper-slide">
-                                    <a href="@slide.TargetUrl" class="hero-slide-card campaign-slide-card">
-                                        <img src="@slide.ImageUrl" alt="@slide.CampaignName" @(slideIndex == 0 ? "fetchpriority=\"high\" decoding=\"async\"" : "loading=\"lazy\" decoding=\"async\"") />
-                                        <span class="hero-slide-tag">@slide.BadgeText</span>
-                                        <div class="hero-slide-overlay">
-                                            <h3>@slide.CampaignName</h3>
-                                            <p>@slide.Slogan</p>
-                                            <span class="hero-slide-cta">Kampanyayı incele <i class="fas fa-arrow-right"></i></span>
-                                        </div>
-                                    </a>
-                                </div>
-                                slideIndex++;
+                                <span class="hero-title-word @HeroWordTone(i)">@heroLine1[i]</span>
                             }
-                        </div>
-                        <div class="swiper-pagination hero-pagination"></div>
-                    </div>
-                    <div class="mt-3" style="display:flex; justify-content:flex-end;">
-                        <a href="/kampanyalar" class="section-link">Tüm kampanyalar <i class="fas fa-arrow-right"></i></a>
-                    </div>
-                }
+                        </span>
+                        @if (heroLine2.Length > 0)
+                        {
+                            <span class="hero-title-row hero-title-row--spread">
+                                @for (var i = 0; i < heroLine2.Length; i++)
+                                {
+                                    <span class="hero-title-word @HeroWordTone(i + heroLine1.Length)">@heroLine2[i]</span>
+                                }
+                            </span>
+                        }
+                    </h1>
+                </div>
             </div>
 
-            <div class="hero-copy" style="text-align:center;">
-                <h1 class="hero-title">Türkiye'nin <span class="rose-gradient-text">Seçkin</span> Otellerini Keşfet</h1>
-                <p class="hero-text">Şehir otelleri, butik tesisler ve hafta sonu indirimleri tek platformda; güvenli rezervasyon ve şeffaf fiyatlarla karşılaştırın.</p>
-
-                <form class="fancy-search-card" asp-controller="Oteller" asp-action="OtelListeleme" method="get" aria-label="Gelişmiş arama">
-                    <div class="fancy-main">
-                        <label class="fancy-label">Nereye gidiyorsun?</label>
-                        <div class="fancy-input-wrap">
-                            <div class="fancy-pin"><i class="fas fa-location-crosshairs"></i></div>
-                            <input class="fancy-input" type="text" name="q" value="" data-seeded-value="" placeholder="İl, ilçe, mahalle veya otel adı yazın" autocomplete="off" />
-                            <input type="hidden" class="fancy-selected-type" value="" />
-                            <input type="hidden" class="fancy-selected-slug" value="" />
+            <div class="search-engine-shell">
+                <form class="search-engine search-engine-pro" method="get" action="/oteller" data-search-pro-form>
+                    <div class="search-pro-row search-pro-row-trip">
+                        <div class="search-pro-field search-pro-destination input-group input-destination">
+                            <label for="home-q"><i class="fas fa-location-dot"></i> Nereye gitmek istersiniz ?</label>
+                            <div class="search-pro-input typewriter-field">
+                                <input id="home-q" name="q" type="text" placeholder=" " autocomplete="off" aria-describedby="home-q-hint" />
+                                <span id="home-q-hint" class="typewriter-hint" aria-hidden="true"></span>
+                            </div>
                         </div>
-                        <div class="fancy-search-suggestions" id="homeSearchSuggestions" hidden></div>
-                        <div class="fancy-suggestions" aria-hidden="true">İpucu: İl · İlçe · Mahalle · Otel adı ile arayın</div>
+                        <div class="search-pro-field search-pro-checkin input-group input-checkin">
+                            <label for="home-checkin"><i class="far fa-calendar"></i> Giriş</label>
+                            <div class="search-pro-input">
+                                <input id="home-checkin" name="checkIn" type="date" min="@homeCheckInDefault" value="@homeCheckInDefault" />
+                            </div>
+                        </div>
+                        <div class="search-pro-field search-pro-checkout input-group input-checkout">
+                            <label for="home-checkout"><i class="far fa-calendar-check"></i> Çıkış</label>
+                            <div class="search-pro-input">
+                                <input id="home-checkout" name="checkOut" type="date" min="@homeCheckOutMinDefault" value="@homeCheckOutDefault" />
+                            </div>
+                        </div>
                     </div>
-
-                    <div class="fancy-controls">
-                        <label class="pill pill-checkin">
-                            <i class="fa-regular fa-calendar"></i>
-                            <input type="date" name="checkIn" min="@todayIso" />
-                        </label>
-
-                        <label class="pill pill-checkout">
-                            <i class="fa-regular fa-calendar"></i>
-                            <input type="date" name="checkOut" min="@todayIso" />
-                        </label>
-
-                        <label class="pill pill-guests">
-                            <i class="fas fa-user"></i>
-                            <select name="guests">
-                                <option value="2">2 Yetişkin</option>
-                                <option value="1">1 Yetişkin</option>
-                                <option value="3">3 Yetişkin</option>
-                                <option value="4">4 Yetişkin</option>
-                            </select>
-                        </label>
-
-                        <button type="submit" class="fancy-cta"><span class="fancy-cta-text">Ara</span> <i class="fas fa-search"></i></button>
+                    <div class="search-pro-row search-pro-row-meta">
+                        <div class="search-pro-guests-group">
+                            <label class="search-pro-guests-title"><i class="fas fa-user-group"></i> Konuk &amp; Oda</label>
+                            <div class="search-pro-guests-row">
+                                <div class="search-pro-field search-pro-adults input-group input-adults">
+                                    <label for="home-adults">Yetişkin</label>
+                                    <div class="search-pro-input">
+                                        <select id="home-adults" name="adults" aria-label="Yetişkin sayısı">
+                                            <option value="1">1</option>
+                                            <option value="2" selected>2</option>
+                                            <option value="3">3</option>
+                                            <option value="4">4</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="search-pro-field search-pro-children input-group input-children">
+                                    <label for="home-children">Çocuk</label>
+                                    <div class="search-pro-input">
+                                        <select id="home-children" name="children" aria-label="Çocuk sayısı">
+                                            <option value="0" selected>0</option>
+                                            <option value="1">1</option>
+                                            <option value="2">2</option>
+                                            <option value="3">3</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="search-pro-field search-pro-rooms input-group input-rooms">
+                                    <label for="home-rooms">Oda</label>
+                                    <div class="search-pro-input">
+                                        <select id="home-rooms" name="rooms" aria-label="Oda sayısı">
+                                            <option value="1" selected>1</option>
+                                            <option value="2">2</option>
+                                            <option value="3">3</option>
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="search-pro-action">
+                            <button type="submit" class="btn-search btn-search-pro"><span>Otel Bul</span><i class="fas fa-magnifying-glass"></i></button>
+                        </div>
+                    </div>
+                    <div class="search-pro-row search-pro-row-tags is-collapsed" data-search-ai-tags>
+                        <div class="search-pro-ai-bar">
+                            <button type="button" class="search-pro-ai-toggle" data-search-ai-toggle aria-expanded="false" aria-controls="search-ai-panel">
+                                <span class="search-pro-ai-toggle-main">
+                                    <i class="fas fa-wand-magic-sparkles" aria-hidden="true"></i>
+                                    <span>Yapay Zeka Destekli Akıllı Rota</span>
+                                </span>
+                                <span class="search-pro-ai-toggle-meta">
+                                    <span class="search-pro-ai-selected-count" data-search-ai-count hidden></span>
+                                    <i class="fas fa-chevron-down search-pro-ai-chevron" aria-hidden="true"></i>
+                                </span>
+                            </button>
+                        </div>
+                        <div class="search-pro-ai-panel" id="search-ai-panel" data-search-ai-panel hidden>
+                            <p class="search-pro-ai-label" data-search-ai-label>Etiket önerileri <small>(çoklu seçim · aramaya eklenir)</small></p>
+                            <div class="search-pro-ai-pills ai-pills ai-pills-grid" role="group" aria-label="Arama etiketleri">
+                                <button type="button" class="ai-pill ai-pill--sage" data-search-tag="sakin ve huzurlu ortam"><span class="ai-pill-dot" aria-hidden="true"></span>#SakinlikArayanlar</button>
+                                <button type="button" class="ai-pill ai-pill--amber" data-search-tag="çocuk dostu, aile oteli"><span class="ai-pill-dot" aria-hidden="true"></span>#ÇocukDostu</button>
+                                <button type="button" class="ai-pill ai-pill--wine" data-search-tag="gurme deneyim, fine dining"><span class="ai-pill-dot" aria-hidden="true"></span>#GurmeDeneyimi</button>
+                                <button type="button" class="ai-pill ai-pill--sky" data-search-tag="özel havuz, suite"><span class="ai-pill-dot" aria-hidden="true"></span>#ÖzelHavuzlu</button>
+                                <button type="button" class="ai-pill ai-pill--ocean" data-search-tag="denize sıfır, plaj"><span class="ai-pill-dot" aria-hidden="true"></span>#DenizeSıfır</button>
+                                <button type="button" class="ai-pill ai-pill--violet" data-search-tag="spa ve wellness"><span class="ai-pill-dot" aria-hidden="true"></span>#SpaWellness</button>
+                            </div>
+                        </div>
                     </div>
                 </form>
             </div>
-        </div>
+            </div>
 
-        <div class="page-feature-section" aria-label="Öne çıkan özellikler">
-            <div class="feature-hub">
-                <a asp-controller="Oteller" asp-action="OtelListeleme" asp-route-etiket="butceme-uygun-oteller" class="feature-card" title="Bütçeye Uygun Oteller">
-                    <div class="feature-icon gradient-budget"><i class="fas fa-wallet"></i></div>
-                    <div class="feature-content">
-                        <div class="feature-title">Bütçeye Uygun</div>
-                        <div class="feature-sub">Ekonomik ve kaliteli seçenekler</div>
+            <div class="route-picker" data-route-picker>
+                <button type="button" class="route-picker-marquee-btn" data-route-picker-open aria-haspopup="dialog" aria-expanded="false" aria-label="Popüler rotalar — tümünü gör">
+                    <div class="route-picker-marquee">
+                        <div class="route-picker-marquee-viewport">
+                            <div class="route-picker-marquee-track" data-route-marquee-track>
+                                <span class="route-marquee-chip route-marquee-chip--sun">🌅 Ege Şafakları</span>
+                                <span class="route-marquee-chip route-marquee-chip--rose">🎈 Kapadokya Mağara</span>
+                                <span class="route-marquee-chip route-marquee-chip--gold">🕌 Tarihi Yarımada</span>
+                                <span class="route-marquee-chip route-marquee-chip--sea">🌊 Turkuaz Akdeniz</span>
+                                <span class="route-marquee-chip route-marquee-chip--forest">🌲 Karadeniz Yayla</span>
+                                <span class="route-marquee-chip route-marquee-chip--steam">♨️ Termal Lüks</span>
+                            </div>
+                        </div>
+                        <span class="route-picker-marquee-action" aria-hidden="true">
+                            <i class="fas fa-th-large"></i>
+                            <span>Tümü</span>
+                        </span>
                     </div>
-                </a>
-
-                <a asp-controller="Oteller" asp-action="OtelListeleme" asp-route-etiket="flash-indirim" class="feature-card" title="İndirimli Oteller">
-                    <div class="feature-icon gradient-discount"><i class="fas fa-tag"></i></div>
-                    <div class="feature-content">
-                        <div class="feature-title">İndirimli Oteller</div>
-                        <div class="feature-sub">Güncel kampanyalarla tasarruf edin</div>
-                    </div>
-                </a>
-
-                <a asp-controller="Oteller" asp-action="OtelListeleme" asp-route-etiket="hafta-sonu-firsatlari" class="feature-card" title="Hafta Sonu Fırsatları">
-                    <div class="feature-icon gradient-weekend"><i class="fas fa-calendar-week"></i></div>
-                    <div class="feature-content">
-                        <div class="feature-title">Hafta Sonu</div>
-                        <div class="feature-sub">Kısa tatil fırsatları</div>
-                    </div>
-                </a>
-
-                <a asp-controller="Oteller" asp-action="OtelListeleme" asp-route-etiket="havuzlu-oteller" class="feature-card" title="Havuzlu Oteller">
-                    <div class="feature-icon gradient-pool"><i class="fas fa-swimming-pool"></i></div>
-                    <div class="feature-content">
-                        <div class="feature-title">Havuzlu Oteller</div>
-                        <div class="feature-sub">Havuz keyfini yaşayın</div>
-                    </div>
-                </a>
-
-                <a asp-controller="Oteller" asp-action="OtelListeleme" asp-route-etiket="kampanyaya-dahil-oteller" class="feature-card" title="Kampanyalı Oteller">
-                    <div class="feature-icon gradient-campaign"><i class="fas fa-bolt"></i></div>
-                    <div class="feature-content">
-                        <div class="feature-title">Kampanyalı</div>
-                        <div class="feature-sub">Özel fırsatlar ve erken rezervasyon</div>
-                    </div>
-                </a>
-
-                <a href="/seyahat-planlama" class="feature-card" title="Seyahat Planlama">
-                    <div class="feature-icon gradient-plan"><i class="fas fa-route"></i></div>
-                    <div class="feature-content">
-                        <div class="feature-title">Seyahat Planlama</div>
-                        <div class="feature-sub">Rota, bütçe ve kampanya önerileri</div>
-                    </div>
-                </a>
+                </button>
             </div>
         </div>
-    </div>
-</section>
+    </section>
 
-<section class="home-section home-campaign-section mobile-only">
-    <div class="container-xl px-4">
-        <div class="section-header">
-            <h2 class="section-title">Kampanyalar</h2>
-            <a href="/kampanyalar" class="section-link">Tüm kampanyalar <i class="fas fa-arrow-right"></i></a>
-        </div>
-
-        <div class="campaign-slider-shell">
-            @if (Model.CampaignSlides.Count == 0)
-            {
-                <div class="hero-slide-empty">
-                    <strong>Kampanya vitrini henüz hazır değil</strong>
-                    <span>Yayındaki kampanya görselleri eklendikçe bu alan otomatik dolacaktır.</span>
+    <div class="container">
+        <section class="flash-mystery-box" id="dawnSurpriseBanner" data-dawn-surprise-banner>
+            <div class="mystery-left">
+                <span class="mystery-icon" aria-hidden="true">🎁</span>
+                <div class="mystery-details">
+                    <h4>Şanslı Şafak Sürpriz Kutusu Aktif!</h4>
+                    <p data-dawn-surprise-copy>Hesabınıza özel ek %3 ila %10 arasında rastgele ekstra indirim kazanın.</p>
                 </div>
-            }
-            else
-            {
-                <div class="swiper hero-swiper campaign-swiper">
-                    <div class="swiper-wrapper">
-                        @for (var mobileSlideIndex = 0; mobileSlideIndex < Model.CampaignSlides.Count; mobileSlideIndex++)
-                        {
-                            var slide = Model.CampaignSlides[mobileSlideIndex];
-                            <div class="swiper-slide">
-                                <a href="@slide.TargetUrl" class="hero-slide-card campaign-slide-card">
-                                    <img src="@slide.ImageUrl" alt="@slide.CampaignName" @(mobileSlideIndex == 0 ? "fetchpriority=\"high\" decoding=\"async\"" : "loading=\"lazy\" decoding=\"async\"") />
-                                    <span class="hero-slide-tag">@slide.BadgeText</span>
-                                    <div class="hero-slide-overlay">
-                                        <h3>@slide.CampaignName</h3>
-                                        <p>@slide.Slogan</p>
-                                        <span class="hero-slide-cta">Kampanyayı incele <i class="fas fa-arrow-right"></i></span>
-                                    </div>
-                                </a>
-                            </div>
-                        }
+            </div>
+            <div class="mystery-action-row">
+                <span class="mystery-countdown" id="dawnSurpriseCountdown" data-dawn-countdown>⏱ Kalan Süre: 15:00</span>
+                <button type="button" class="btn-open-box" id="dawnSurpriseOpenBtn" data-dawn-open>Kutuyu Aç ve Uygula</button>
+            </div>
+        </section>
+
+        <div class="dawn-surprise-modal" id="dawnSurpriseModal" hidden aria-hidden="true">
+            <div class="dawn-surprise-backdrop" data-dawn-close tabindex="-1"></div>
+            <div class="dawn-surprise-dialog" role="dialog" aria-modal="true" aria-labelledby="dawnSurpriseTitle">
+                <button type="button" class="dawn-surprise-close" data-dawn-close aria-label="Kapat"><i class="fas fa-times"></i></button>
+                <h3 id="dawnSurpriseTitle" class="dawn-surprise-title">Şanslı Şafak Kutusu</h3>
+                <div class="dawn-surprise-stage">
+                    <div class="dawn-surprise-box" id="dawnSurpriseBox" aria-hidden="true">
+                        <div class="dawn-surprise-lid"></div>
+                        <div class="dawn-surprise-base">
+                            <span class="dawn-surprise-gift">🎁</span>
+                        </div>
+                        <div class="dawn-surprise-sparkles" aria-hidden="true"></div>
                     </div>
-                    <div class="swiper-pagination hero-pagination"></div>
+                    <div class="dawn-surprise-result" id="dawnSurpriseResult" hidden>
+                        <div class="dawn-surprise-percent-badge"><span id="dawnSurprisePercentValue">0</span>%</div>
+                        <p class="dawn-surprise-result-text">Ek indirim rezervasyon toplamından düşülecek.</p>
+                        <a class="dawn-surprise-go-hotels" href="/oteller">Otelleri Keşfet</a>
+                    </div>
                 </div>
-            }
+            </div>
         </div>
-    </div>
-</section>
 
-<script nonce="@nonce">
-    (function () {
-        const input = document.querySelector('.hero-section .fancy-input[name="q"]');
-        if (!input) return;
-
-        const checkInEl = document.querySelector('.hero-section input[type="date"][name="checkIn"]');
-        const checkOutEl = document.querySelector('.hero-section input[type="date"][name="checkOut"]');
-        const today = new Date();
-
-        function toLocalIso(dateValue) {
-            const d = new Date(dateValue.getFullYear(), dateValue.getMonth(), dateValue.getDate());
-            const y = d.getFullYear();
-            const m = String(d.getMonth() + 1).padStart(2, '0');
-            const day = String(d.getDate()).padStart(2, '0');
-            return y + '-' + m + '-' + day;
-        }
-
-        const todayIso = toLocalIso(today);
-
-        function addDaysIso(isoDate, dayCount) {
-            const base = new Date(isoDate + 'T00:00:00');
-            base.setDate(base.getDate() + (dayCount || 0));
-            return toLocalIso(base);
-        }
-
-        function syncDateMins() {
-            if (checkInEl) {
-                checkInEl.min = todayIso;
-            }
-            if (checkOutEl) {
-                const minOut = checkInEl?.value ? addDaysIso(checkInEl.value, 1) : todayIso;
-                checkOutEl.min = minOut;
-                if (checkOutEl.value && checkOutEl.value < minOut) {
-                    checkOutEl.value = '';
+        <h2 class="section-headline"><span class="headline-left">Seçilen Özel Rotalar</span><a class="headline-link" href="/oteller">Tümünü gör</a></h2>
+        <section class="hotel-grid">
+            @if (featuredHotels.Count > 0)
+            {
+                var index = 0;
+                foreach (var hotel in featuredHotels)
+                {
+                    var image = !string.IsNullOrWhiteSpace(hotel.ImageUrl) ? hotel.ImageUrl : fallbackImages[index % fallbackImages.Length];
+                    var detailUrl = string.IsNullOrWhiteSpace(hotel.DetailSlug) ? "/oteller" : $"/oteller/{Uri.EscapeDataString(hotel.DetailSlug)}";
+                    var location = !string.IsNullOrWhiteSpace(hotel.LocationText) ? hotel.LocationText : $"{hotel.District}, {hotel.City}".Trim(' ', ',');
+                    var hasDiscount = hotel.HasDiscount && hotel.OriginalPrice.HasValue && hotel.DiscountedPrice.HasValue;
+                    <article class="hotel-card">
+                        <a href="@detailUrl" class="home-premium-card-link" aria-label="@hotel.Name detay">
+                            <div class="img-holder">
+                                <img src="@image" alt="@hotel.Name" loading="lazy" decoding="async" />
+                                <span class="badge-lux">★★★★★</span>
+                            </div>
+                            <div class="hotel-card-body">
+                                <h3 class="hotel-title">@hotel.Name</h3>
+                                <p class="hotel-desc"><i class="fas fa-location-dot"></i> @location</p>
+                                <div class="price-row">
+                                    <div class="price-inline">
+                                        @if (hasDiscount)
+                                        {
+                                            <strong>₺@hotel.DiscountedPrice!.Value.ToString("N0")</strong>
+                                            <small class="price-tax-note">Vergiler dahil · %@hotel.DiscountPercent indirim</small>
+                                        }
+                                        else if (hotel.StartingPrice.HasValue)
+                                        {
+                                            <strong>₺@hotel.StartingPrice.Value.ToString("N0")</strong>
+                                            <small class="price-tax-note">Vergiler dahil</small>
+                                        }
+                                        else
+                                        {
+                                            <strong>@hotel.PriceText</strong>
+                                            <small class="price-tax-note">Vergiler dahil</small>
+                                        }
+                                    </div>
+                                    <span class="card-link">İncele →</span>
+                                </div>
+                            </div>
+                        </a>
+                    </article>
+                    index++;
                 }
             }
-        }
-
-        checkInEl?.addEventListener('change', function () {
-            syncDateMins();
-        });
-        checkOutEl?.addEventListener('change', function () {
-            syncDateMins();
-        });
-        syncDateMins();
-
-        const basePlaceholder = input.getAttribute('placeholder') || '';
-        const phrases = [
-            'İstanbul, Kadıköy',
-            'Kapadokya, Ürgüp',
-            'Bodrum, Yalıkavak',
-            'Otel adı: 216 Suites Hotel'
-        ];
-
-        let timer = null;
-        let phraseIndex = 0;
-        let charIndex = 0;
-        let deleting = false;
-
-        function clearTimer() {
-            if (timer) window.clearTimeout(timer);
-            timer = null;
-        }
-
-        function tick() {
-            if (document.activeElement === input) return;
-            if ((input.value || '').trim().length > 0) return;
-
-            const full = phrases[phraseIndex] || '';
-            const current = full.slice(0, charIndex);
-            input.setAttribute('placeholder', current.length > 0 ? current : basePlaceholder);
-
-            if (!deleting && charIndex < full.length) {
-                charIndex += 1;
-                timer = window.setTimeout(tick, 34);
-                return;
-            }
-
-            if (!deleting && charIndex >= full.length) {
-                deleting = true;
-                timer = window.setTimeout(tick, 900);
-                return;
-            }
-
-            if (deleting && charIndex > 0) {
-                charIndex -= 1;
-                timer = window.setTimeout(tick, 18);
-                return;
-            }
-
-            deleting = false;
-            phraseIndex = (phraseIndex + 1) % phrases.length;
-            timer = window.setTimeout(tick, 250);
-        }
-
-        input.addEventListener('focus', function () {
-            clearTimer();
-            input.setAttribute('placeholder', basePlaceholder);
-        });
-
-        input.addEventListener('blur', function () {
-            clearTimer();
-            charIndex = 0;
-            deleting = false;
-            timer = window.setTimeout(tick, 450);
-        });
-
-        // Start only if empty
-        if ((input.value || '').trim().length === 0) {
-            timer = window.setTimeout(tick, 700);
-        }
-    })();
-</script>
-
-<!-- Populer Konaklama Yerleri removed as requested; placeholder kept for future feature -->
-
-
-<section class="home-section">
-    <div class="container-xl px-4">
-        <div class="section-header">
-            <h2 class="section-title">Öne Çıkan Oteller</h2>
-            <a asp-controller="Oteller" asp-action="OtelListeleme" class="section-link">Tümünü Gör <i class="fas fa-arrow-right"></i></a>
-        </div>
-
-        @if (Model.PopularHotels.Count == 0)
-        {
-            <div class="hotel-empty-state">
-                <h3>Yayınlanmış otel bulunamadı</h3>
-                <p>`oteller` tablosunda yayın ve onay durumu aktif kayıtlar geldiğinde bu alan otomatik dolacak.</p>
-            </div>
-        }
-        else
-        {
-            <div class="swiper popular-swiper">
-                <div class="swiper-wrapper">
-                    @foreach (var hotel in Model.PopularHotels.Take(8))
-                    {
-                        <div class="swiper-slide">
-                            <partial name="~/Views/Anasayfa/_HomeHotelCard.cshtml" model="hotel" />
-                        </div>
-                    }
-                </div>
-                <div class="swiper-button-prev popular-prev"></div>
-                <div class="swiper-button-next popular-next"></div>
-            </div>
-        }
-    </div>
-</section>
-
-<section class="home-section weekend-section">
-    <div class="container-xl px-4">
-        <div class="section-header">
-            <h2 class="section-title">İstanbul'da Hafta Sonu</h2>
-            <a asp-controller="Oteller" asp-action="OtelListeleme" asp-route-city="istanbul" class="section-link">Tümünü Gör <i class="fas fa-arrow-right"></i></a>
-        </div>
-
-        @if (Model.WeekendHotels.Count == 0)
-        {
-            <div class="hotel-empty-state">
-                <h3>İstanbul için önerilen otel bulunamadı</h3>
-                <p>`tavsiye_edilen_otel` veya İstanbul yayındaki tesis kayıtlarını kontrol ederek bu alanı doldurabiliriz.</p>
-            </div>
-        }
-        else
-        {
-            <div class="swiper weekend-swiper">
-                <div class="swiper-wrapper">
-                    @foreach (var hotel in Model.WeekendHotels)
-                    {
-                        <div class="swiper-slide">
-                            <partial name="~/Views/Anasayfa/_HomeHotelCard.cshtml" model="hotel" />
-                        </div>
-                    }
-                </div>
-                <div class="swiper-button-prev weekend-prev"></div>
-                <div class="swiper-button-next weekend-next"></div>
-            </div>
-        }
-    </div>
-</section>
-
-@foreach (var categorySection in homepageCategorySections)
-{
-    <section class="home-section home-category-section">
-        <div class="container-xl px-4">
-            <div class="section-header">
-                <h2 class="section-title">@categorySection.Title</h2>
-                <a asp-controller="Oteller" asp-action="OtelListeleme" asp-route-etiket="@categorySection.Etiket" class="section-link">Tümünü Gör <i class="fas fa-arrow-right"></i></a>
-            </div>
-
-            @if (categorySection.Hotels.Count == 0)
-            {
-                <div class="hotel-empty-state">
-                    <h3>Gösterilecek otel bulunamadı</h3>
-                    <p>Bu kategori için yayındaki İstanbul otelleri eklendikçe liste dolacaktır.</p>
-                </div>
-            }
             else
             {
-                <div class="swiper home-category-swiper" data-swiper-key="@categorySection.Key">
-                    <div class="swiper-wrapper">
-                        @foreach (var hotel in categorySection.Hotels)
-                        {
-                            <div class="swiper-slide">
-                                <partial name="~/Views/Anasayfa/_HomeHotelCard.cshtml" model="hotel" />
+                for (var i = 0; i < 4; i++)
+                {
+                    <article class="hotel-card">
+                        <a href="/oteller" class="home-premium-card-link">
+                            <div class="img-holder"><img src="@fallbackImages[i]" alt="@fallbackNames[i]" loading="lazy" decoding="async" /><span class="badge-lux">★★★★★</span></div>
+                            <div class="hotel-card-body">
+                                <h3 class="hotel-title">@fallbackNames[i]</h3>
+                                <p class="hotel-desc"><i class="fas fa-location-dot"></i> @fallbackLocations[i]</p>
+                                <div class="price-row"><div class="price-inline"><strong>₺3.900</strong><small class="price-tax-note">Vergiler dahil</small></div><span class="card-link">İncele →</span></div>
                             </div>
-                        }
+                        </a>
+                    </article>
+                }
+            }
+        </section>
+
+        <div class="section-headline"><span class="headline-left">Güncel Fırsatlar</span></div>
+        <section class="deals-row">
+            <a class="deal-card" href="/kampanyalar">
+                <div class="deal-head"><h3>%35 Bodrum Erken Rezervasyon Fırsatı</h3><span class="deal-tag">-35% İndirim</span></div>
+                <p class="deal-body">Seçili ultra lüks resortlarda bu gece yarısına özel sınırlı kontenjan ve premium transfer hediyeli.</p>
+                <div class="deal-foot"><span class="deal-timer"><i class="far fa-clock"></i> Sayaç: 04sa : 12dk kaldı</span><span class="deal-cta">Yer Ayır →</span></div>
+            </a>
+            <a class="deal-card" href="/oteller?filter=weekend">
+                <div class="deal-head"><h3>Kapadokya Hafta Sonu Premium Paket</h3><span class="deal-tag deal-tag-gold">Club Özel</span></div>
+                <p class="deal-body">Mağara suit konaklamalarında ücretsiz sabah balonu turu ikramı ve havalimanı karşılama dahil.</p>
+                <div class="deal-foot"><span class="deal-timer"><i class="far fa-clock"></i> Sayaç: 08sa : 44dk kaldı</span><span class="deal-cta deal-cta-light">Detayları Gör →</span></div>
+            </a>
+        </section>
+
+        <div class="section-headline"><span class="headline-left">Akıllı Fiyat Kalkanı</span></div>
+        <section class="price-lock-banner" aria-label="Fiyat alarmı ve favori takibi">
+            <div class="lock-content">
+                <div class="lock-text">
+                    <div class="lock-title-row">
+                        <span class="lock-badge" aria-hidden="true"><i class="fas fa-bell"></i></span>
+                        <h4>Fiyat alarmı ve favori takibi</h4>
                     </div>
-                    <div class="swiper-button-prev home-category-prev"></div>
-                    <div class="swiper-button-next home-category-next"></div>
+                    <p>Beğendiğiniz otelleri favorilere ekleyin, hedef fiyat belirleyin. Fiyat hedefinize düştüğünde sizi e-posta ile bilgilendiririz.</p>
+                    <ul class="price-lock-steps">
+                        <li><i class="fas fa-heart" aria-hidden="true"></i> Oteli favorile</li>
+                        <li><i class="fas fa-bullseye" aria-hidden="true"></i> Hedef fiyat gir</li>
+                        <li><i class="fas fa-envelope" aria-hidden="true"></i> E-posta bildirimi</li>
+                    </ul>
                 </div>
-            }
+            </div>
+            <a class="btn-lock-action" href="/panel/user/favorilerim">Fiyat takibini başlat</a>
+        </section>
+
+        <div class="section-headline"><span class="headline-left">Seyahat Rozetleri & Görevler</span></div>
+        <section class="quest-layout" aria-label="Seyahat rozetleri ve görevler">
+            <div class="quest-grid">
+                <div class="quest-item">
+                    <div class="quest-info">
+                        <h5>Ege Kaşifi · Seviye 2</h5>
+                        <p>3 Ege konaklaması · %5 kalıcı indirim</p>
+                        <div class="quest-progress-bar"><div class="quest-progress-fill" style="width: 66%;"></div></div>
+                        <span class="quest-status">2 / 3 tamamlandı</span>
+                    </div>
+                </div>
+                <div class="quest-item">
+                    <div class="quest-info">
+                        <h5>Gurme Gurusu</h5>
+                        <p>Deneyim rezervasyonu · gurme ikramı</p>
+                        <div class="quest-progress-bar"><div class="quest-progress-fill" style="width: 33%;"></div></div>
+                        <span class="quest-status">Devam ediyor</span>
+                    </div>
+                </div>
+                <div class="quest-item">
+                    <div class="quest-info">
+                        <h5>Business Üstat</h5>
+                        <p>Kurumsal profil · lounge hakkı</p>
+                        <div class="quest-progress-bar"><div class="quest-progress-fill quest-progress-done" style="width: 100%;"></div></div>
+                        <span class="quest-status quest-status-done">Tamamlandı</span>
+                    </div>
+                </div>
+                <div class="quest-item">
+                    <div class="quest-info">
+                        <h5>Yaz Gezgini</h5>
+                        <p>İlk yaz rezervasyonu · %8 kupon</p>
+                        <div class="quest-progress-bar"><div class="quest-progress-fill" style="width: 45%;"></div></div>
+                        <span class="quest-status">Devam ediyor</span>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <div class="section-headline">
+            <span class="headline-left">Bölgelere Göre Keşfet</span>
+            <a href="/oteller/harita" class="headline-link">Tüm Haritayı Gör →</a>
         </div>
-    </section>
-}
+        <section class="destinations-grid">
+            <a class="dest-card" href="/oteller/bodrum">
+                <img class="dest-img" src="https://images.unsplash.com/photo-1540555700478-4be289fbecef?w=100&auto=format&fit=crop&q=80" alt="Bodrum" />
+                <div class="dest-meta"><h4>Bodrum</h4><p>142 Otel</p></div>
+            </a>
+            <a class="dest-card" href="/oteller/kapadokya">
+                <img class="dest-img" src="https://images.unsplash.com/photo-1520250497591-112f2f40a3f4?w=100&auto=format&fit=crop&q=80" alt="Kapadokya" />
+                <div class="dest-meta"><h4>Kapadokya</h4><p>89 Otel</p></div>
+            </a>
+            <a class="dest-card" href="/oteller/istanbul">
+                <img class="dest-img" src="https://images.unsplash.com/photo-1584132967334-10e028bd69f7?w=100&auto=format&fit=crop&q=80" alt="İstanbul" />
+                <div class="dest-meta"><h4>İstanbul</h4><p>210 Otel</p></div>
+            </a>
+            <a class="dest-card" href="/oteller/antalya">
+                <img class="dest-img" src="https://images.unsplash.com/photo-1566073771259-6a8506099945?w=100&auto=format&fit=crop&q=80" alt="Antalya" />
+                <div class="dest-meta"><h4>Antalya</h4><p>165 Otel</p></div>
+            </a>
+            <a class="dest-card" href="/oteller/fethiye">
+                <img class="dest-img" src="https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=100&auto=format&fit=crop&q=80" alt="Fethiye" />
+                <div class="dest-meta"><h4>Fethiye</h4><p>78 Otel</p></div>
+            </a>
+            <a class="dest-card" href="/oteller/cesme">
+                <img class="dest-img" src="https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=100&auto=format&fit=crop&q=80" alt="Çeşme" />
+                <div class="dest-meta"><h4>Çeşme</h4><p>96 Otel</p></div>
+            </a>
+        </section>
 
-<button type="button" class="floating-live-support-btn" aria-label="Canlı destek" hidden>
-    <i class="fas fa-comments"></i>
-    <span>Canlı Destek</span>
-</button>
+        <h2 class="section-headline"><span class="headline-left">Editoryal Koleksiyonlar</span></h2>
+        <section class="collections-grid">
+            <article class="collection-card"><img src="https://images.unsplash.com/photo-1566073771259-6a8506099945?w=600&auto=format&fit=crop&q=80" alt="Ege taş evleri"><div class="collection-overlay"><h3>Ege'nin Gizli Taş Evleri</h3><p>Sakinlik ve tasarım tutkunları için 12 özel seçki</p></div></article>
+            <article class="collection-card"><img src="https://images.unsplash.com/photo-1520250497591-112f2f40a3f4?w=400&auto=format&fit=crop&q=80" alt="Şarap bağları"><div class="collection-overlay"><h3>Şaraf Bağları ve Gurme Oteller</h3><p>Gurme damaklar için tasarlanan rotalar</p></div></article>
+            <article class="collection-card"><img src="https://images.unsplash.com/photo-1540555700478-4be289fbecef?w=400&auto=format&fit=crop&q=80" alt="Infinity pool"><div class="collection-overlay"><h3>Infinity Pools Sınır Tanımayanlar</h3><p>Türkiye'nin en iddialı havuz mimarileri</p></div></article>
+        </section>
 
-<div class="discount-modal" id="discountModal" hidden aria-hidden="true">
-    <div class="discount-modal-backdrop" data-discount-close></div>
-    <section class="discount-modal-card" role="dialog" aria-modal="true" aria-labelledby="discountModalTitle">
-        <button type="button" class="discount-modal-close" data-discount-close aria-label="Kapat">
-            <i class="fas fa-times" aria-hidden="true"></i>
-        </button>
-        <div class="discount-modal-head">
-            <div class="discount-modal-kicker">İndirim Detayı</div>
-            <h3 id="discountModalTitle">İndirim</h3>
-            <p id="discountModalDesc"></p>
-        </div>
-        <div class="discount-modal-visual" id="discountModalVisual" hidden>
-            <img id="discountModalImage" alt="İndirim görseli" />
-        </div>
-    </section>
-</div>
+        <h2 class="section-headline"><span class="headline-left">Gurme & Benzersiz Yerel Deneyim</span></h2>
+        <section class="experience-row">
+            <div class="exp-card"><img class="exp-img" src="https://images.unsplash.com/photo-1544025162-d76694265947?w=150&auto=format&fit=crop&q=80" alt="Michelin yemeği" /><div class="exp-body"><h4>Michelin Yıldızlı Akşam Yemeği</h4><p>Bodrum'un en seçkin şef masasında öncelikli rezervasyon.</p><div class="exp-foot"><span>+ Rezervasyon Ekle</span><span>2.500 TL</span></div></div></div>
+            <div class="exp-card"><img class="exp-img" src="https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=150&auto=format&fit=crop&q=80" alt="Katamaran" /><div class="exp-body"><h4>Özel Katamaran Günbatımı</h4><p>Kişiye özel kaptanlı yat ile adalar turu ve tadım menüsü.</p><div class="exp-foot"><span>+ Rezervasyon Ekle</span><span>12.000 TL</span></div></div></div>
+            <div class="exp-card"><img class="exp-img" src="https://images.unsplash.com/photo-1533105079780-92b9be482077?w=150&auto=format&fit=crop&q=80" alt="Balon safarisi" /><div class="exp-body"><h4>Kapadokya VIP Balon Safarisi</h4><p>Maksimum 4 kişilik sepetlerde şampanyalı lüks uçuş deneyimi.</p><div class="exp-foot"><span>+ Rezervasyon Ekle</span><span>6.500 TL</span></div></div></div>
+        </section>
 
-<style>
-    .discount-info-btn {
-        margin-left: 8px;
-        width: 28px;
-        height: 28px;
-        border-radius: 999px;
-        border: 1px solid rgba(29, 78, 216, 0.22);
-        background: rgba(239, 246, 255, 0.9);
-        color: #1d4ed8;
-        cursor: pointer;
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        vertical-align: middle;
-    }
+        <h2 class="section-headline"><span class="headline-left">Misafir Ayrıcalıkları</span></h2>
+        <section class="club-banner club-banner-pro">
+            <div class="club-pro-glow" aria-hidden="true"></div>
+            <div class="club-pro-main">
+                <div class="club-pro-head">
+                    <span class="club-pro-badge">ÜCRETSİZ ÜYELİK</span>
+                    <h3>Üye olun, konaklarken ayrıcalık kazanın</h3>
+                    <p>Her rezervasyonda Şafak Puanı biriktirin; öncelikli ağırlanma ve erken giriş gibi ayrıcalıklar sizi bekliyor.</p>
+                </div>
+                <div class="club-pro-perks">
+                    <span>Şafak Puanı kazanımı</span>
+                    <span>Öncelikli ağırlanma</span>
+                    <span>Erken giriş</span>
+                </div>
+            </div>
+            <div class="club-pro-actions">
+                <a class="btn-club-pro" href="/kullanici-giris?sekme=kayit">Üye Ol</a>
+                <a class="btn-club-pro-outline" href="/kullanici-giris">Giriş Yap</a>
+            </div>
+            <p class="club-pro-firma">Toplu konaklama mı planlıyorsunuz? <a href="/firma-giris?sekme=kayit">Firma hesabı açın</a></p>
+        </section>
 
-    .discount-modal {
-        position: fixed;
-        inset: 0;
-        z-index: 5200;
-        display: grid;
-        place-items: center;
-    }
+        <h2 class="section-headline"><span class="headline-left">Yapay Zeka Destekli Akıllı Rota</span></h2>
+        <section class="ai-card ai-card-pro" data-ai-route>
+            <div class="ai-header">
+                <span class="ai-sparkle">✨</span>
+                <div class="ai-title">
+                    <h3>Yapay Zeka Seyahat Asistanı</h3>
+                    <p>Kriterlerinizi yazın veya etiketlere dokunarak arama alanına ekleyin; birden fazla konaklama segmenti seçerek akıllı plan oluşturun.</p>
+                </div>
+            </div>
+            <div class="ai-query-stack">
+                <div class="ai-input-box">
+                    <input id="home-ai-query" type="text" data-ai-query placeholder="Örn: Çocuklarımla gidebileceğim, denizi sığ, sakin Ege otelleri..." autocomplete="off" />
+                </div>
+            </div>
+            <div class="ai-pills-wrap">
+                <span class="ai-field-label">Etiket önerileri <small>(çoklu seçim · arama alanına eklenir)</small></span>
+                <div class="ai-pills ai-pills-grid" role="group" aria-label="Arama etiketleri">
+                    <button type="button" class="ai-pill ai-pill--sage" data-ai-tag="sakin ve huzurlu ortam"><span class="ai-pill-dot" aria-hidden="true"></span>#SakinlikArayanlar</button>
+                    <button type="button" class="ai-pill ai-pill--amber" data-ai-tag="çocuk dostu, aile oteli"><span class="ai-pill-dot" aria-hidden="true"></span>#ÇocukDostu</button>
+                    <button type="button" class="ai-pill ai-pill--wine" data-ai-tag="gurme deneyim, fine dining"><span class="ai-pill-dot" aria-hidden="true"></span>#GurmeDeneyimi</button>
+                    <button type="button" class="ai-pill ai-pill--sky" data-ai-tag="özel havuz, suite"><span class="ai-pill-dot" aria-hidden="true"></span>#ÖzelHavuzlu</button>
+                    <button type="button" class="ai-pill ai-pill--ocean" data-ai-tag="denize sıfır, plaj"><span class="ai-pill-dot" aria-hidden="true"></span>#DenizeSıfır</button>
+                    <button type="button" class="ai-pill ai-pill--violet" data-ai-tag="spa ve wellness"><span class="ai-pill-dot" aria-hidden="true"></span>#SpaWellness</button>
+                </div>
+            </div>
+            <div class="ai-segments-wrap">
+                <div class="ai-segments-head">
+                    <span class="ai-field-label">Konaklama segmenti <small>çoklu seçim · fiyat profiline göre filtreler</small></span>
+                    <span class="ai-segment-count" data-ai-segment-count hidden aria-live="polite"></span>
+                </div>
+                <div class="ai-segments-controls">
+                    <div class="ai-segment-dropdown" data-ai-segment-dropdown>
+                        <button type="button" class="ai-segment-trigger" data-ai-segment-trigger aria-expanded="false" aria-haspopup="listbox">
+                            <span class="ai-segment-trigger-text" data-ai-segment-label>Premium Lüks</span>
+                            <i class="fas fa-chevron-down ai-segment-chevron" aria-hidden="true"></i>
+                        </button>
+                        <div class="ai-segment-panel" data-ai-segment-panel role="listbox" aria-multiselectable="true" hidden>
+                            <label class="ai-segment-option">
+                                <input type="checkbox" checked data-ai-segment="premium-luks" />
+                                <span class="ai-segment-check" aria-hidden="true"></span>
+                                <span class="ai-segment-option-body">
+                                    <span class="ai-segment-option-title">Premium Lüks</span>
+                                    <span class="ai-segment-option-desc">5★ üst segment · concierge ve VIP hizmet</span>
+                                </span>
+                            </label>
+                            <label class="ai-segment-option">
+                                <input type="checkbox" data-ai-segment="butik" />
+                                <span class="ai-segment-check" aria-hidden="true"></span>
+                                <span class="ai-segment-option-body">
+                                    <span class="ai-segment-option-title">Butik</span>
+                                    <span class="ai-segment-option-desc">Özgün tasarım · kişisel misafirperverlik</span>
+                                </span>
+                            </label>
+                            <label class="ai-segment-option">
+                                <input type="checkbox" data-ai-segment="aile" />
+                                <span class="ai-segment-check" aria-hidden="true"></span>
+                                <span class="ai-segment-option-body">
+                                    <span class="ai-segment-option-title">Aile Dostu</span>
+                                    <span class="ai-segment-option-desc">Çocuk kulübü · geniş odalar · güvenli tesis</span>
+                                </span>
+                            </label>
+                            <label class="ai-segment-option">
+                                <input type="checkbox" data-ai-segment="is-seyahati" />
+                                <span class="ai-segment-check" aria-hidden="true"></span>
+                                <span class="ai-segment-option-body">
+                                    <span class="ai-segment-option-title">İş Seyahati</span>
+                                    <span class="ai-segment-option-desc">Merkezi konum · hızlı check-in · toplantı alanı</span>
+                                </span>
+                            </label>
+                            <label class="ai-segment-option">
+                                <input type="checkbox" data-ai-segment="ekonomik" />
+                                <span class="ai-segment-check" aria-hidden="true"></span>
+                                <span class="ai-segment-option-body">
+                                    <span class="ai-segment-option-title">Ekonomik</span>
+                                    <span class="ai-segment-option-desc">Akıllı fiyat · temel konfor · yüksek memnuniyet</span>
+                                </span>
+                            </label>
+                        </div>
+                    </div>
+                    <button type="button" class="btn-ai btn-ai-pro" data-ai-submit>Akıllı Plan Oluştur</button>
+                </div>
+                <div class="ai-segment-selected" data-ai-segment-chips aria-live="polite"></div>
+            </div>
+            <div class="ai-foot ai-foot-pro">
+                <div class="ai-foot-summary" data-ai-summary aria-live="polite">
+                    <span class="ai-summary-empty">Aramada kullanılacak kriterler burada görünür</span>
+                </div>
+            </div>
+        </section>
 
-    .discount-modal-backdrop {
-        position: absolute;
-        inset: 0;
-        background: rgba(15, 23, 42, 0.55);
-        backdrop-filter: blur(10px);
-        -webkit-backdrop-filter: blur(10px);
-    }
+        <h2 class="section-headline"><span class="headline-left">Canlı Oda &amp; Bölge Radarı</span></h2>
+        <section class="radar-row" aria-label="Oda ve bölge fırsatları">
+            <article class="radar-card" data-radar-card data-radar-live-type="viewers" data-radar-live-value="14" data-radar-timer-sec="134">
+                <div class="radar-top">
+                    <div class="radar-info"><h5>Bodrum Elite Suit</h5><p>Son 1 Boş Oda</p></div>
+                    <span class="radar-timer" data-radar-timer><i class="far fa-clock" aria-hidden="true"></i> 02:14</span>
+                </div>
+                <div class="radar-urgency">
+                    <span class="live-viewers live-viewers--fire" data-radar-live><i class="fas fa-fire" aria-hidden="true"></i> 14 Kişi İnceliyor</span>
+                    <div class="radar-price">₺4.200</div>
+                </div>
+            </article>
+            <article class="radar-card" data-radar-card data-radar-live-type="viewers" data-radar-live-value="8" data-radar-timer-sec="344">
+                <div class="radar-top">
+                    <div class="radar-info"><h5>Kapadokya Cave Suite</h5><p>İptal Fırsatı</p></div>
+                    <span class="radar-timer" data-radar-timer><i class="far fa-clock" aria-hidden="true"></i> 05:44</span>
+                </div>
+                <div class="radar-urgency">
+                    <span class="live-viewers live-viewers--fire" data-radar-live><i class="fas fa-fire" aria-hidden="true"></i> 8 Kişi İnceliyor</span>
+                    <div class="radar-price">₺9.800</div>
+                </div>
+            </article>
+            <article class="radar-card" data-radar-card data-radar-live-type="occupancy" data-radar-live-value="94" data-radar-timer-sec="62">
+                <div class="radar-top">
+                    <div class="radar-info"><h5>Antalya All Inclusive</h5><p>Flaş Fiyat</p></div>
+                    <span class="radar-timer" data-radar-timer><i class="far fa-clock" aria-hidden="true"></i> 01:02</span>
+                </div>
+                <div class="radar-urgency">
+                    <span class="live-viewers live-viewers--occupancy" data-radar-live><i class="fas fa-bolt" aria-hidden="true"></i> %94 Doluluk</span>
+                    <div class="radar-price">₺7.400</div>
+                </div>
+            </article>
+            <article class="radar-card" data-radar-card data-radar-live-type="viewers" data-radar-live-value="6" data-radar-timer-sec="48">
+                <div class="radar-top">
+                    <div class="radar-info"><h5>Bodrum Villa</h5><p>Anlık %40 İndirim</p></div>
+                    <span class="radar-timer" data-radar-timer><i class="far fa-clock" aria-hidden="true"></i> 00:48</span>
+                </div>
+                <div class="radar-urgency">
+                    <span class="live-viewers live-viewers--fire" data-radar-live><i class="fas fa-fire" aria-hidden="true"></i> 6 Kişi İnceliyor</span>
+                    <div class="radar-price">₺9.800</div>
+                </div>
+            </article>
+        </section>
 
-    .discount-modal-card {
-        position: relative;
-        width: min(720px, calc(100vw - 22px));
-        border-radius: 24px;
-        background: linear-gradient(180deg, rgba(239, 246, 255, 0.92) 0%, rgba(255, 255, 255, 1) 55%);
-        border: 1px solid rgba(29, 78, 216, 0.18);
-        box-shadow: 0 30px 90px rgba(2, 6, 23, 0.32);
-        padding: 18px 18px 16px;
-        overflow: hidden;
-    }
+        <h2 class="section-headline"><span class="headline-left">Finansal Konfor & Rezervasyon</span></h2>
+        <section class="fintech-strip">
+            <div class="fin-card"><span class="fin-icon">🛡️</span><div class="fin-text"><h5>Son 24 Saate Kadar Koşulsuz İptal</h5><p>Planlarınız değişirse kesintisiz, anında %100 para iadesi güvencesi.</p></div></div>
+            <div class="fin-card"><span class="fin-icon">💳</span><div class="fin-text"><h5>Şimdi Konakla, 3 Ay Sonra Öde</h5><p>Kredi kartı limitinizi zorlamadan vade farksız esnek ödeme planları.</p></div></div>
+            <div class="fin-card"><span class="fin-icon">🤝</span><div class="fin-text"><h5>En İyi Fiyat Garantisi Kurumsal Pay</h5><p>Aynı odayı daha uygun fiyata bulursanız, aradaki farkın iki katını ödüyoruz.</p></div></div>
+        </section>
 
-    .discount-modal-close {
-        position: absolute;
-        top: 12px;
-        right: 12px;
-        width: 40px;
-        height: 40px;
-        border-radius: 999px;
-        border: 1px solid rgba(148, 163, 184, 0.35);
-        background: rgba(255, 255, 255, 0.95);
-        cursor: pointer;
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-    }
+        <h2 class="section-headline"><span class="headline-left">Sürdürülebilir Seyahat</span></h2>
+        <section class="eco-ribbon eco-ribbon-stack">
+            <div class="eco-meta"><span>🌱</span> Çevre dostu eko-lüks tesisler</div>
+            <div class="eco-pills">
+                <a class="eco-pill" href="/oteller?etiket=sifir-atik">#SıfırAtıkSertifikalı</a>
+                <a class="eco-pill" href="/oteller?etiket=gunes-enerjili">#GüneşEnerjiliTesisler</a>
+                <a class="eco-pill" href="/oteller?etiket=karbon-notr">#KarbonNötrKonaklama</a>
+            </div>
+        </section>
 
-    .discount-modal-kicker {
-        display: inline-flex;
-        align-items: center;
-        padding: 6px 10px;
-        border-radius: 999px;
-        background: rgba(29, 78, 216, 0.10);
-        border: 1px solid rgba(29, 78, 216, 0.14);
-        color: #1d4ed8;
-        font-size: 0.74rem;
-        font-weight: 900;
-        letter-spacing: 0.03em;
-        margin-bottom: 10px;
-    }
+        <h2 class="section-headline"><span class="headline-left">OtelTurizm Dergi'den Keşif</span></h2>
+        <section class="blog-grid">
+            <article class="blog-card">
+                <a class="blog-card-link" href="/oteller/bodrum">
+                    <div class="blog-img-box"><img src="https://images.unsplash.com/photo-1540555700478-4be289fbecef?w=400&auto=format&fit=crop&q=80" alt="Bodrum koyları" /></div>
+                    <span class="blog-tag">Rotalar & Keşif</span>
+                    <h4>Bodrum'un Bilinmeyen Akvaryum Koyları</h4>
+                    <p class="blog-meta">OtelTurizm Dergi · Bodrum Editör Ekibi</p>
+                </a>
+            </article>
+            <article class="blog-card">
+                <a class="blog-card-link" href="/oteller/kapadokya">
+                    <div class="blog-img-box"><img src="https://images.unsplash.com/photo-1520250497591-112f2f40a3f4?w=400&auto=format&fit=crop&q=80" alt="Kapadokya taş işçiliği" /></div>
+                    <span class="blog-tag">Kültür & Mimari</span>
+                    <h4>Kapadokya Taş İşçiliğinin Bin Yıllık Sırrı</h4>
+                    <p class="blog-meta">OtelTurizm Dergi · Kapadokya Kültür Masası</p>
+                </a>
+            </article>
+            <article class="blog-card">
+                <a class="blog-card-link" href="/oteller/istanbul">
+                    <div class="blog-img-box"><img src="https://images.unsplash.com/photo-1584132967334-10e028bd69f7?w=400&auto=format&fit=crop&q=80" alt="Karaköy restoranları" /></div>
+                    <span class="blog-tag">Gurme Rehberi</span>
+                    <h4>Karaköy'ün En İyi Tarihi Restoran Haritası</h4>
+                    <p class="blog-meta">OtelTurizm Dergi · İstanbul Gurme Editörü</p>
+                </a>
+            </article>
+        </section>
 
-    .discount-modal-head h3 {
-        margin: 0 0 6px;
-        font-size: 1.55rem;
-        letter-spacing: -0.01em;
-        color: #0f172a;
-    }
 
-    .discount-modal-head p {
-        margin: 0;
-        color: #475569;
-        line-height: 1.6;
-        font-weight: 600;
-    }
+        <h2 class="section-headline"><span class="headline-left">Kurumsal Konaklama</span></h2>
+        <section class="business-lounge business-lounge-teaser">
+            <div class="biz-teaser-copy">
+                <span class="biz-teaser-kicker">Firma paneli</span>
+                <h3>Bireysel fiyatla aynı mı, gerçekten?</h3>
+                <p class="biz-teaser-lead">Hayır. Oteller, anlaşmalı kurumsal hesaplara oda adedine göre indirimli oran tanımlar; bireysel arama ekranındaki fiyat ile firma panelinde gördüğünüz teklif aynı değildir.</p>
+                <ul class="biz-teaser-points">
+                    <li><i class="fas fa-door-open" aria-hidden="true"></i><span>Minimum oda eşiğine ulaşınca kurumsal fiyat otomatik devreye girer — otel kendi kuralını belirler.</span></li>
+                    <li><i class="fas fa-users-gear" aria-hidden="true"></i><span>Satın alma, operasyon ve finans ekipleri harcamayı aynı panelden izler; onay akışı merkezidir.</span></li>
+                    <li><i class="fas fa-file-invoice" aria-hidden="true"></i><span>Rezervasyon sonrası faturalar panelde toplanır; dönemsel harcama raporları tek tıkla alınır.</span></li>
+                </ul>
+                <div class="biz-teaser-actions">
+                    <a class="btn-biz-lounge" href="/firma-giris?sekme=kayit">Hesap Aç</a>
+                    <a class="btn-biz-lounge-outline" href="/firma">Keşfet</a>
+                </div>
+            </div>
+            <div class="biz-teaser-examples" aria-label="Örnek fiyat karşılaştırmaları">
+                <div class="biz-teaser-compare">
+                    <span class="biz-teaser-compare-label">Örnek · 5 oda · 1 gece</span>
+                    <div class="biz-teaser-compare-row">
+                        <span class="biz-teaser-compare-item">Bireysel <strong>₺3.600</strong></span>
+                        <i class="fas fa-arrow-right biz-teaser-compare-arrow" aria-hidden="true"></i>
+                        <span class="biz-teaser-compare-item biz-teaser-compare-item--corp">Firma <strong>₺2.880</strong></span>
+                        <span class="biz-teaser-compare-save"><i class="fas fa-arrow-down" aria-hidden="true"></i> %20</span>
+                    </div>
+                </div>
+                <div class="biz-teaser-compare">
+                    <span class="biz-teaser-compare-label">Örnek · 10 oda · 2 gece</span>
+                    <div class="biz-teaser-compare-row">
+                        <span class="biz-teaser-compare-item">Bireysel <strong>₺14.400</strong></span>
+                        <i class="fas fa-arrow-right biz-teaser-compare-arrow" aria-hidden="true"></i>
+                        <span class="biz-teaser-compare-item biz-teaser-compare-item--corp">Firma <strong>₺10.800</strong></span>
+                        <span class="biz-teaser-compare-save"><i class="fas fa-arrow-down" aria-hidden="true"></i> %25</span>
+                    </div>
+                </div>
+            </div>
+        </section>
 
-    .discount-modal-visual {
-        margin-top: 14px;
-        border-radius: 18px;
-        overflow: hidden;
-        border: 1px solid rgba(148, 163, 184, 0.22);
-        background: #fff;
-    }
+        <div class="section-headline"><span class="headline-left">Akıllı Fiyat Isı Haritası</span></div>
+        <section class="heatmap-panel heatmap-panel-stack">
+            <div class="heat-meta heat-meta-compact">
+                <h4><span class="heat-live-dot" aria-hidden="true"></span> Canlı sezon endeksi</h4>
+                <p>En avantajlı bütçe dönemine sahip destinasyonlar — segment puanı ve haftalık fiyat hareketi.</p>
+                <div class="heat-analysis-text">Fethiye bu hafta lüks segmentte %20 daha avantajlı.</div>
+            </div>
+            <div class="heat-radar-grid" role="img" aria-label="Bodrum, Çeşme, Fethiye ve Kemer canlı fiyat ısı haritası">
+                <article class="heat-radar-card heat-radar-card--peak">
+                    <div class="heat-radar-visual" aria-hidden="true">
+                        <svg class="heat-radar-svg" viewBox="0 0 120 120" focusable="false">
+                            <defs>
+                                <radialGradient id="heatGradBodrum" cx="50%" cy="58%" r="52%">
+                                    <stop offset="0%" stop-color="#ff6b00" stop-opacity="0.95" />
+                                    <stop offset="45%" stop-color="#e30a17" stop-opacity="0.55" />
+                                    <stop offset="100%" stop-color="#1a1919" stop-opacity="0" />
+                                </radialGradient>
+                                <linearGradient id="heatArcBodrum" x1="0%" y1="0%" x2="100%" y2="0%">
+                                    <stop offset="0%" stop-color="#ff9e00" />
+                                    <stop offset="100%" stop-color="#e30a17" />
+                                </linearGradient>
+                            </defs>
+                            <circle class="heat-radar-ring" cx="60" cy="60" r="48" />
+                            <circle class="heat-radar-ring heat-radar-ring--mid" cx="60" cy="60" r="34" />
+                            <circle class="heat-radar-ring heat-radar-ring--inner" cx="60" cy="60" r="20" />
+                            <circle class="heat-radar-bloom" cx="60" cy="64" r="28" fill="url(#heatGradBodrum)" />
+                            <path class="heat-radar-arc" d="M 22 72 A 38 38 0 0 1 98 72" fill="none" stroke="url(#heatArcBodrum)" stroke-width="4" stroke-linecap="round" pathLength="100" stroke-dasharray="78 100" />
+                            <g class="heat-radar-bars">
+                                <rect x="28" y="82" width="5" height="14" rx="2" /><rect x="36" y="76" width="5" height="20" rx="2" /><rect x="44" y="70" width="5" height="26" rx="2" /><rect x="52" y="64" width="5" height="32" rx="2" /><rect x="60" y="58" width="5" height="38" rx="2" /><rect x="68" y="52" width="5" height="44" rx="2" /><rect x="76" y="46" width="5" height="50" rx="2" /><rect x="84" y="40" width="5" height="56" rx="2" />
+                            </g>
+                            <circle class="heat-radar-core" cx="60" cy="60" r="5" />
+                        </svg>
+                        <span class="heat-radar-sweep"></span>
+                    </div>
+                    <h5 class="heat-radar-name">Bodrum</h5>
+                    <div class="heat-radar-stars" aria-label="Segment puanı 4.8">
+                        <span class="heat-star-row">
+                            <i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star-half-alt"></i>
+                        </span>
+                        <span class="heat-star-score">4.8</span>
+                    </div>
+                    <div class="heat-radar-delta trend-up"><span class="heat-delta-icon">↗</span> +18%</div>
+                </article>
+                <article class="heat-radar-card heat-radar-card--stable">
+                    <div class="heat-radar-visual" aria-hidden="true">
+                        <svg class="heat-radar-svg" viewBox="0 0 120 120" focusable="false">
+                            <defs>
+                                <radialGradient id="heatGradCesme" cx="50%" cy="55%" r="50%">
+                                    <stop offset="0%" stop-color="#ffb347" stop-opacity="0.75" />
+                                    <stop offset="55%" stop-color="#ff9e00" stop-opacity="0.35" />
+                                    <stop offset="100%" stop-color="#1a1919" stop-opacity="0" />
+                                </radialGradient>
+                                <linearGradient id="heatArcCesme" x1="0%" y1="0%" x2="100%" y2="0%">
+                                    <stop offset="0%" stop-color="#ffd28a" />
+                                    <stop offset="100%" stop-color="#ff9e00" />
+                                </linearGradient>
+                            </defs>
+                            <circle class="heat-radar-ring" cx="60" cy="60" r="48" />
+                            <circle class="heat-radar-ring heat-radar-ring--mid" cx="60" cy="60" r="34" />
+                            <circle class="heat-radar-ring heat-radar-ring--inner" cx="60" cy="60" r="20" />
+                            <circle class="heat-radar-bloom" cx="60" cy="62" r="24" fill="url(#heatGradCesme)" />
+                            <path class="heat-radar-arc heat-radar-arc--flat" d="M 26 68 A 34 34 0 0 1 94 68" fill="none" stroke="url(#heatArcCesme)" stroke-width="4" stroke-linecap="round" pathLength="100" stroke-dasharray="52 100" />
+                            <g class="heat-radar-bars heat-radar-bars--flat">
+                                <rect x="30" y="78" width="5" height="18" rx="2" /><rect x="38" y="74" width="5" height="22" rx="2" /><rect x="46" y="72" width="5" height="24" rx="2" /><rect x="54" y="70" width="5" height="26" rx="2" /><rect x="62" y="71" width="5" height="25" rx="2" /><rect x="70" y="73" width="5" height="23" rx="2" /><rect x="78" y="75" width="5" height="21" rx="2" /><rect x="86" y="77" width="5" height="19" rx="2" />
+                            </g>
+                            <circle class="heat-radar-core heat-radar-core--warm" cx="60" cy="60" r="5" />
+                        </svg>
+                        <span class="heat-radar-sweep heat-radar-sweep--slow"></span>
+                    </div>
+                    <h5 class="heat-radar-name">Çeşme</h5>
+                    <div class="heat-radar-stars" aria-label="Segment puanı 4.5">
+                        <span class="heat-star-row">
+                            <i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="far fa-star"></i>
+                        </span>
+                        <span class="heat-star-score">4.5</span>
+                    </div>
+                    <div class="heat-radar-delta trend-stable"><span class="heat-delta-icon">→</span> −3%</div>
+                </article>
+                <article class="heat-radar-card heat-radar-card--cool">
+                    <div class="heat-radar-visual" aria-hidden="true">
+                        <svg class="heat-radar-svg" viewBox="0 0 120 120" focusable="false">
+                            <defs>
+                                <radialGradient id="heatGradFethiye" cx="50%" cy="62%" r="54%">
+                                    <stop offset="0%" stop-color="#34d399" stop-opacity="0.9" />
+                                    <stop offset="48%" stop-color="#22c55e" stop-opacity="0.45" />
+                                    <stop offset="100%" stop-color="#1a1919" stop-opacity="0" />
+                                </radialGradient>
+                                <linearGradient id="heatArcFethiye" x1="0%" y1="0%" x2="100%" y2="0%">
+                                    <stop offset="0%" stop-color="#6ee7b7" />
+                                    <stop offset="100%" stop-color="#22c55e" />
+                                </linearGradient>
+                            </defs>
+                            <circle class="heat-radar-ring" cx="60" cy="60" r="48" />
+                            <circle class="heat-radar-ring heat-radar-ring--mid" cx="60" cy="60" r="34" />
+                            <circle class="heat-radar-ring heat-radar-ring--inner" cx="60" cy="60" r="20" />
+                            <circle class="heat-radar-bloom" cx="60" cy="66" r="30" fill="url(#heatGradFethiye)" />
+                            <path class="heat-radar-arc heat-radar-arc--dip" d="M 24 74 A 36 36 0 0 0 96 74" fill="none" stroke="url(#heatArcFethiye)" stroke-width="4" stroke-linecap="round" pathLength="100" stroke-dasharray="64 100" />
+                            <g class="heat-radar-bars heat-radar-bars--dip">
+                                <rect x="28" y="48" width="5" height="48" rx="2" /><rect x="36" y="54" width="5" height="42" rx="2" /><rect x="44" y="60" width="5" height="36" rx="2" /><rect x="52" y="66" width="5" height="30" rx="2" /><rect x="60" y="72" width="5" height="24" rx="2" /><rect x="68" y="76" width="5" height="20" rx="2" /><rect x="76" y="80" width="5" height="16" rx="2" /><rect x="84" y="84" width="5" height="12" rx="2" />
+                            </g>
+                            <circle class="heat-radar-core heat-radar-core--cool" cx="60" cy="60" r="5" />
+                        </svg>
+                        <span class="heat-radar-sweep heat-radar-sweep--cool"></span>
+                    </div>
+                    <h5 class="heat-radar-name">Fethiye</h5>
+                    <div class="heat-radar-stars" aria-label="Segment puanı 4.6">
+                        <span class="heat-star-row">
+                            <i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star-half-alt"></i>
+                        </span>
+                        <span class="heat-star-score">4.6</span>
+                    </div>
+                    <div class="heat-radar-delta trend-down"><span class="heat-delta-icon">↘</span> −20%</div>
+                </article>
+                <article class="heat-radar-card heat-radar-card--surge">
+                    <div class="heat-radar-visual" aria-hidden="true">
+                        <svg class="heat-radar-svg" viewBox="0 0 120 120" focusable="false">
+                            <defs>
+                                <radialGradient id="heatGradKemer" cx="50%" cy="50%" r="56%">
+                                    <stop offset="0%" stop-color="#ff4500" stop-opacity="1" />
+                                    <stop offset="40%" stop-color="#e30a17" stop-opacity="0.7" />
+                                    <stop offset="100%" stop-color="#1a1919" stop-opacity="0" />
+                                </radialGradient>
+                                <linearGradient id="heatArcKemer" x1="0%" y1="0%" x2="100%" y2="0%">
+                                    <stop offset="0%" stop-color="#ff9e00" />
+                                    <stop offset="100%" stop-color="#ff4500" />
+                                </linearGradient>
+                            </defs>
+                            <circle class="heat-radar-ring" cx="60" cy="60" r="48" />
+                            <circle class="heat-radar-ring heat-radar-ring--mid" cx="60" cy="60" r="34" />
+                            <circle class="heat-radar-ring heat-radar-ring--inner" cx="60" cy="60" r="20" />
+                            <circle class="heat-radar-bloom heat-radar-bloom--intense" cx="60" cy="58" r="32" fill="url(#heatGradKemer)" />
+                            <path class="heat-radar-arc heat-radar-arc--surge" d="M 20 76 A 40 40 0 0 1 100 76" fill="none" stroke="url(#heatArcKemer)" stroke-width="4" stroke-linecap="round" pathLength="100" stroke-dasharray="88 100" />
+                            <g class="heat-radar-bars heat-radar-bars--surge">
+                                <rect x="26" y="86" width="5" height="10" rx="2" /><rect x="34" y="78" width="5" height="18" rx="2" /><rect x="42" y="68" width="5" height="28" rx="2" /><rect x="50" y="56" width="5" height="40" rx="2" /><rect x="58" y="44" width="5" height="52" rx="2" /><rect x="66" y="34" width="5" height="62" rx="2" /><rect x="74" y="26" width="5" height="70" rx="2" /><rect x="82" y="18" width="5" height="78" rx="2" />
+                            </g>
+                            <circle class="heat-radar-core heat-radar-core--hot" cx="60" cy="60" r="5" />
+                        </svg>
+                        <span class="heat-radar-sweep"></span>
+                    </div>
+                    <h5 class="heat-radar-name">Kemer</h5>
+                    <div class="heat-radar-stars" aria-label="Segment puanı 4.7">
+                        <span class="heat-star-row">
+                            <i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star-half-alt"></i>
+                        </span>
+                        <span class="heat-star-score">4.7</span>
+                    </div>
+                    <div class="heat-radar-delta trend-up"><span class="heat-delta-icon">↗</span> +24%</div>
+                </article>
+            </div>
+        </section>
+    </div>
+</main>
 
-    .discount-modal-visual img {
-        width: 100%;
-        height: 220px;
-        object-fit: cover;
-        display: block;
-    }
-</style>
-
-<script nonce="@nonce">
-    (function () {
-        const modal = document.getElementById('discountModal');
-        const title = document.getElementById('discountModalTitle');
-        const desc = document.getElementById('discountModalDesc');
-        const visual = document.getElementById('discountModalVisual');
-        const image = document.getElementById('discountModalImage');
-        if (!modal || !title || !desc || !visual || !image) return;
-
-        function openDiscount(data) {
-            title.textContent = data.title || 'İndirim';
-            desc.textContent = data.desc || '';
-            const img = (data.image || '').trim();
-            if (img) {
-                image.src = img;
-                visual.hidden = false;
-            } else {
-                image.src = '';
-                visual.hidden = true;
-            }
-            modal.hidden = false;
-            modal.setAttribute('aria-hidden', 'false');
-            document.body.style.overflow = 'hidden';
-        }
-
-        function closeDiscount() {
-            modal.hidden = true;
-            modal.setAttribute('aria-hidden', 'true');
-            document.body.style.overflow = '';
-        }
-
-        document.addEventListener('click', function (event) {
-            const btn = event.target.closest('[data-discount-open]');
-            if (btn) {
-                event.preventDefault();
-                openDiscount({
-                    title: btn.getAttribute('data-discount-title') || '',
-                    desc: btn.getAttribute('data-discount-desc') || '',
-                    image: btn.getAttribute('data-discount-image') || ''
-                });
-                return;
-            }
-
-            if (event.target.closest('[data-discount-close]')) {
-                closeDiscount();
-            }
-        });
-
-        document.addEventListener('keydown', function (event) {
-            if (event.key === 'Escape' && !modal.hidden) {
-                closeDiscount();
-            }
-        });
-    })();
-</script>
-
+<script src="~/assets/js/home-search-typewriter.js" asp-append-version="true"></script>

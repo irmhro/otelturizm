@@ -1,0 +1,10 @@
+ID|KOD|AD|ACIKLAMA|SIRA_NO|AKTIF_MI|SISTEM_SATIR_MI|KAPIDA_MI|KART_MI|HAVALE_MI|ONLINE_MI|OLUSTURULMA_TARIHI
+--|---|--|--------|-------|--------|---------------|---------|-------|---------|---------|------------------
+1|BANKA_HAVALESI|Banka Havalesi|Banka havalesi ile tahsilat|60|1|1|0|0|1|0|2026-05-31 08:11:04.1273054
+2|DIGER|Diğer|Sistem dışı veya özel ödeme yöntemi|80|1|1|0|0|0|0|2026-05-31 08:11:04.1273054
+3|DIJITAL_CUZDAN|Dijital Cüzdan|Dijital cüzdan veya QR ödeme|70|1|1|0|0|0|1|2026-05-31 08:11:04.1273054
+4|HAVALE_EFT|Havale / EFT|Banka havalesi veya EFT ile tahsilat|50|1|1|0|0|1|0|2026-05-31 08:11:04.1273054
+5|KAPIDA_ODEME|Kapıda Ödeme|Tesis sırasında tahsil edilen ödeme|10|1|1|1|0|0|0|2026-05-31 08:11:04.1273054
+6|KREDI_KARTI|Kredi Kartı|Kredi kartı ile tahsilat|40|1|1|0|1|0|1|2026-05-31 08:11:04.1273054
+7|NAKIT|Nakit|Nakit tahsilat yöntemi|20|1|1|0|0|0|0|2026-05-31 08:11:04.1273054
+8|SANAL_POS|Sanal POS|Online kart ile tahsilat|30|1|1|0|1|0|1|2026-05-31 08:11:04.1273054

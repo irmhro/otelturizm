@@ -117,6 +117,9 @@ public class PublicReservationPriceQuoteViewModel
     public decimal AccommodationTaxAmount { get; set; }
     public decimal TaxAmount { get; set; }
     public decimal TotalAmount { get; set; }
+    public decimal OriginalTotalAmount { get; set; }
+    public int DawnSurprisePercent { get; set; }
+    public decimal DawnSurpriseDiscountAmount { get; set; }
     public bool IsAvailable { get; set; } = true;
     public string? AvailabilityMessage { get; set; }
     public List<PublicReservationNightlyBreakdownItemViewModel> NightlyBreakdown { get; set; } = new();

@@ -1,0 +1,14 @@
+ID|ROL_KODU|ROL_ADI|DEPARTMAN|SEVIYE|UST_ROL_ID|VARSAYILAN_MI|ACIKLAMA|OLUSTURULMA_TARIHI
+--|--------|-------|---------|------|----------|-------------|--------|------------------
+1|SISTEM_YONETICISI|Sistem Yöneticisi|GENEL_YONETIM|90|NULL|0|Tüm platform yönetim yetkileri|2026-05-31 08:11:04
+2|PLATFORM_OPERASYON_YONETICISI|Platform Operasyon Yöneticisi|OPERASYON|80|1|0|Operasyon ve onay süreçlerini yönetir|2026-05-31 08:11:04
+3|TEKNOLOJI_YONETICISI|Teknoloji Yöneticisi|TEKNOLOJI|80|1|0|Sistem, güvenlik ve içerik altyapısını yönetir|2026-05-31 08:11:04
+4|HUKUK_UYUM_UZMANI|Hukuk ve Uyum Uzmanı|HUKUK_UYUM|70|2|0|Sözleşme ve uyum kayıtlarını yönetir|2026-05-31 08:11:04
+5|IK_YONETICISI|İK Yöneticisi|INSAN_KAYNAKLARI|70|1|0|Organizasyon ve ekip kayıtlarını yönetir|2026-05-31 08:11:04
+6|DESTEK_UZMANI|Destek Uzmanı|DESTEK|60|2|0|Destek, yorum ve rezervasyon müdahale yetkileri|2026-05-31 08:11:04
+7|SATIS_UZMANI|Satış Uzmanı|SATIS|60|2|0|Satış talepleri ve rezervasyon dönüşüm süreçleri|2026-05-31 08:11:04
+8|MUHASEBE_UZMANI|Muhasebe Uzmanı|MUHASEBE|60|2|0|Fatura ve mutabakat yönetimi|2026-05-31 08:11:04
+9|FINANS_UZMANI|Finans Uzmanı|FINANS|60|2|0|Komisyon ve tahsilat yönetimi|2026-05-31 08:11:04
+10|TESIS_YONETICISI|Tesis Yöneticisi|OPERASYON|50|2|0|Partner otel ve tesis işlemleri|2026-05-31 08:11:04
+11|KURUM_YONETICISI|Kurum Yöneticisi|SATIS|50|7|0|Kurumsal firma rezervasyon süreçleri|2026-05-31 08:11:04
+12|SON_KULLANICI|Son Kullanıcı|DESTEK|10|NULL|1|Son kullanıcı paneli ve rezervasyon görünümü|2026-05-31 08:11:04

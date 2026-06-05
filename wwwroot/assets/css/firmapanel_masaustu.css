@@ -1,0 +1,1261 @@
+/* Admin Panel v6 â€” Enterprise shell (masaÃ¼stÃ¼) */
+:root {
+    --fp-primary-red: #DC2626;
+    --fp-primary-dark: #0F172A;
+    --fp-bg-main: #F1F5F9;
+    --fp-surface-card: #FFFFFF;
+    --fp-border-main: #E2E8F0;
+    --fp-text-main: #1E293B;
+    --fp-text-light: #64748B;
+    --fp-success: #10B981;
+    --fp-warning: #F59E0B;
+    --fp-info: #3B82F6;
+    --fp-purple: #8B5CF6;
+    --fp-pink: #EC4899;
+    --fp-teal: #14B8A6;
+    --fp-corporate-blue: #1E3A8A;
+    --fp-body-size: 14px;
+    --fp-radius-panel: 10px;
+    --fp-sidebar-width: 275px;
+    --fp-topbar-height: 56px;
+}
+
+.firmapanel-v6-shell {
+    background: var(--fp-bg-main);
+    color: var(--fp-text-main);
+    font-size: var(--fp-body-size);
+    overflow-x: hidden;
+}
+
+.firmapanel-v6-shell .admin-shell-container {
+    display: flex;
+    min-height: 100vh;
+}
+
+/* Logo */
+.firmapanel-v6-shell .logo-wordmark-wrapper {
+    display: flex;
+    align-items: center;
+    padding: 2px 0;
+    user-select: none;
+    text-decoration: none;
+}
+
+.firmapanel-v6-shell .logo-otel {
+    font-family: 'Plus Jakarta Sans', Inter, sans-serif;
+    font-weight: 800;
+    font-size: 17px;
+    letter-spacing: 0.22em;
+    color: var(--fp-primary-dark);
+    text-transform: uppercase;
+}
+
+.firmapanel-v6-shell .logo-sep {
+    width: 1px;
+    height: 14px;
+    background: linear-gradient(135deg, var(--fp-corporate-blue), var(--fp-primary-dark));
+    margin: 0 8px;
+}
+
+.firmapanel-v6-shell .logo-turizm {
+    font-family: 'Plus Jakarta Sans', Inter, sans-serif;
+    font-weight: 800;
+    font-size: 14px;
+    letter-spacing: 0.12em;
+    color: var(--fp-corporate-blue);
+    text-transform: uppercase;
+}
+
+.firmapanel-v6-shell .fp-company-chip,
+.firmapanel-v6-shell .kp-user-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    height: 34px;
+    padding: 0 12px;
+    border: 1px solid var(--fp-border-main);
+    border-radius: 6px;
+    background: #F8FAFC;
+    font-size: 12px;
+    font-weight: 600;
+    color: #334155;
+    max-width: 220px;
+}
+
+.firmapanel-v6-shell .kp-user-chip i {
+    color: var(--fp-warning);
+}
+
+.firmapanel-v6-shell .kp-user-chip span {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.firmapanel-v6-shell .kp-topbar-stat {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    height: 34px;
+    padding: 0 10px;
+    border: 1px solid var(--fp-border-main);
+    border-radius: 6px;
+    background: white;
+    font-size: 12px;
+    font-weight: 600;
+    color: #334155;
+    text-decoration: none;
+}
+
+.firmapanel-v6-shell .kp-topbar-stat i {
+    color: var(--fp-primary-red);
+}
+
+.firmapanel-v6-shell .global-topbar .header-bildiri-btn {
+    width: 34px;
+    height: 34px;
+    border-radius: 6px;
+    border: 1px solid transparent;
+    background: transparent;
+}
+
+.firmapanel-v6-shell .global-topbar .header-bildiri {
+    position: relative;
+}
+
+.firmapanel-v6-shell .sidebar-hotel-line {
+    margin: 0 8px 10px;
+    padding: 10px 12px;
+    border-radius: 8px;
+    background: #FFF5F5;
+    border: 1px solid #FECACA;
+    font-size: 12px;
+}
+
+.firmapanel-v6-shell .sidebar-hotel-line strong {
+    display: block;
+    color: var(--fp-primary-dark);
+    font-size: 13px;
+    margin-top: 2px;
+}
+
+.firmapanel-v6-shell .ap-btn-sidebar.primary {
+    background: var(--fp-corporate-blue);
+    border-color: var(--fp-corporate-blue);
+    color: white;
+    grid-column: 1 / -1;
+}
+
+.firmapanel-v6-shell .user-footer-tabler {
+    margin-top: auto;
+    padding: 12px 24px;
+    border-top: 1px solid var(--fp-border-main);
+    background: var(--fp-surface-card, #fff);
+}
+
+@media (max-width: 991px) {
+    .firmapanel-v6-shell .user-footer-tabler {
+        display: none;
+    }
+}
+
+/* Dashboard geçiş (kullanıcı panelinden kalan — firma alias) */
+.firmapanel-dashboard-page .ap-page-header,
+.kullanicipanel-dashboard-page .ap-page-header,
+.firmapanel-dashboard-page .user-dashboard-hero,
+.kullanicipanel-dashboard-page .user-dashboard-hero {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    gap: 16px;
+    flex-wrap: wrap;
+    padding: 0;
+    border: none;
+    background: transparent;
+    box-shadow: none;
+    border-radius: 0;
+}
+
+.firmapanel-dashboard-page .ap-page-pretitle,
+.kullanicipanel-dashboard-page .ap-page-pretitle,
+.firmapanel-dashboard-page .page-pretitle,
+.kullanicipanel-dashboard-page .page-pretitle {
+    font-size: 11px;
+    font-weight: 800;
+    color: var(--fp-corporate-blue);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    margin-bottom: 4px;
+}
+
+.kullanicipanel-dashboard-page .ap-page-header h1,
+.kullanicipanel-dashboard-page .page-title {
+    font-size: 24px;
+    font-weight: 800;
+    color: var(--fp-primary-dark);
+    letter-spacing: -0.02em;
+    margin: 0;
+}
+
+.kullanicipanel-dashboard-page .user-hero-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.kullanicipanel-dashboard-page .user-widget-strip {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 16px;
+    overflow: visible;
+    padding: 0;
+}
+
+.kullanicipanel-dashboard-page .user-widget {
+    background: var(--fp-surface-card, #fff);
+    border: 1px solid var(--fp-border-main, #E2E8F0);
+    border-radius: 10px;
+    padding: 10px 14px;
+    min-width: 0;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02);
+}
+
+@media (max-width: 1200px) {
+    .kullanicipanel-dashboard-page .user-widget-strip {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
+@media (max-width: 991px) {
+    .kullanicipanel-dashboard-page .user-widget-strip {
+        grid-template-columns: 1fr;
+    }
+}
+
+
+/* Sidebar */
+.firmapanel-v6-shell .admin-sidebar {
+    width: var(--fp-sidebar-width);
+    background: var(--fp-surface-card);
+    border-right: 1px solid var(--fp-border-main);
+    position: fixed;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    z-index: 1040;
+    display: flex;
+    flex-direction: column;
+    transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.firmapanel-v6-shell .sidebar-header {
+    height: var(--fp-topbar-height);
+    display: flex;
+    align-items: center;
+    padding: 0 16px;
+    border-bottom: 1px solid var(--fp-border-main);
+    background: #FAFAFA;
+    flex-shrink: 0;
+}
+
+.firmapanel-v6-shell .sidebar-scroll {
+    flex: 1;
+    overflow-y: auto;
+    padding: 12px 10px 12px;
+}
+
+.firmapanel-v6-shell .sidebar-scroll::-webkit-scrollbar {
+    width: 4px;
+}
+
+.firmapanel-v6-shell .sidebar-scroll::-webkit-scrollbar-thumb {
+    background: #CBD5E1;
+    border-radius: 4px;
+}
+
+.firmapanel-v6-shell .sidebar-group-label {
+    font-size: 11px;
+    font-weight: 800;
+    color: #94A3B8;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    margin: 18px 0 6px 8px;
+    display: block;
+}
+
+.firmapanel-v6-shell .sidebar-group-label:first-child {
+    margin-top: 4px;
+}
+
+.firmapanel-v6-shell .nav-menu-item {
+    margin-bottom: 2px;
+}
+
+.firmapanel-v6-shell .nav-main-link {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+    padding: 8px 10px;
+    color: #334155;
+    font-size: 13px;
+    font-weight: 600;
+    text-decoration: none;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: background 0.15s;
+    border: none;
+    background: transparent;
+    text-align: left;
+    font-family: inherit;
+}
+
+.firmapanel-v6-shell .nav-main-link:hover,
+.firmapanel-v6-shell .nav-menu-item.active > .nav-main-link {
+    background: #F8FAFC;
+    color: var(--fp-primary-dark);
+}
+
+.firmapanel-v6-shell .nav-link-left {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.firmapanel-v6-shell .nav-link-left i {
+    width: 20px;
+    text-align: center;
+    font-size: 14px;
+    transition: transform 0.2s;
+}
+
+.firmapanel-v6-shell .ic-core { color: var(--fp-primary-dark); }
+.firmapanel-v6-shell .ic-staff { color: var(--fp-info); }
+.firmapanel-v6-shell .ic-travel { color: var(--fp-teal); }
+.firmapanel-v6-shell .ic-finance { color: var(--fp-success); }
+.firmapanel-v6-shell .ic-report { color: var(--fp-purple); }
+.firmapanel-v6-shell .ic-settings { color: #64748B; }
+.firmapanel-v6-shell .ic-inv { color: var(--fp-warning); }
+.firmapanel-v6-shell .ic-book { color: var(--fp-info); }
+.firmapanel-v6-shell .ic-fin { color: var(--fp-success); }
+.firmapanel-v6-shell .ic-crm { color: var(--fp-pink); }
+.firmapanel-v6-shell .ic-set { color: #64748B; }
+.firmapanel-v6-shell .ic-content { color: var(--fp-purple); }
+.firmapanel-v6-shell .ic-trip { color: var(--fp-info); }
+.firmapanel-v6-shell .ic-fav { color: var(--fp-pink); }
+.firmapanel-v6-shell .ic-wallet { color: var(--fp-success); }
+.firmapanel-v6-shell .ic-support { color: var(--fp-warning); }
+.firmapanel-v6-shell .ic-ai { color: var(--fp-teal); }
+.firmapanel-v6-shell .ic-settings { color: #64748B; }
+
+.firmapanel-v6-shell .kpi-card-pro.kpi-pink::before { background: var(--fp-pink); }
+.firmapanel-v6-shell .icon-pink { background: #FCE7F3; color: var(--fp-pink); }
+
+.firmapanel-v6-shell .sidebar-user-line {
+    margin: 0 8px 10px;
+    padding: 10px 12px;
+    border-radius: 8px;
+    background: #EFF6FF;
+    border: 1px solid #BFDBFE;
+    font-size: 12px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.firmapanel-v6-shell .sidebar-user-line .header-avatar {
+    width: 36px;
+    height: 36px;
+    flex-shrink: 0;
+}
+
+.firmapanel-v6-shell .sidebar-user-line strong {
+    display: block;
+    color: var(--fp-primary-dark);
+    font-size: 13px;
+}
+
+.firmapanel-v6-shell .sidebar-user-line span {
+    display: block;
+    color: var(--fp-text-light);
+    font-size: 11px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    max-width: 180px;
+}
+
+.firmapanel-v6-shell .nav-menu-item:hover .nav-link-left i {
+    transform: scale(1.05);
+}
+
+.firmapanel-v6-shell .chevron-icon {
+    font-size: 10px;
+    color: #94A3B8;
+    transition: transform 0.2s ease;
+}
+
+.firmapanel-v6-shell .nav-menu-item.open .chevron-icon {
+    transform: rotate(180deg);
+}
+
+.firmapanel-v6-shell .sub-links-container {
+    display: none;
+    padding-left: 14px;
+    margin-top: 2px;
+    border-left: 1px solid var(--fp-border-main);
+    margin-left: 18px;
+}
+
+.firmapanel-v6-shell .nav-menu-item.open .sub-links-container {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.firmapanel-v6-shell .sub-links-container a {
+    padding: 6px 12px;
+    font-size: 12.5px;
+    color: #64748B;
+    text-decoration: none;
+    border-radius: 4px;
+    font-weight: 500;
+    transition: all 0.1s;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.firmapanel-v6-shell .sub-links-container a:hover,
+.firmapanel-v6-shell .sub-links-container a.active {
+    color: var(--fp-corporate-blue);
+    font-weight: 600;
+    background: #EFF6FF;
+}
+
+.firmapanel-v6-shell .sub-links-container .ap-nav-badge {
+    font-size: 10px;
+    font-weight: 700;
+    padding: 1px 6px;
+    border-radius: 999px;
+    background: #FEE2E2;
+    color: #991B1B;
+    margin-left: auto;
+}
+
+.firmapanel-v6-shell .admin-sidebar-footer {
+    padding: 12px;
+    border-top: 1px solid var(--fp-border-main);
+    background: #FAFAFA;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    flex-shrink: 0;
+}
+
+.firmapanel-v6-shell .admin-sidebar-footer .ap-sidebar-user {
+    font-size: 12px;
+    color: var(--fp-text-light);
+    padding: 0 4px 4px;
+}
+
+.firmapanel-v6-shell .admin-sidebar-footer .ap-sidebar-user strong {
+    display: block;
+    color: var(--fp-primary-dark);
+    font-size: 13px;
+}
+
+.firmapanel-v6-shell .admin-sidebar-footer-actions {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+}
+
+.firmapanel-v6-shell .ap-btn-sidebar {
+    height: 34px;
+    font-size: 12px;
+    font-weight: 600;
+    border-radius: 6px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    text-decoration: none;
+    border: 1px solid var(--fp-border-main);
+    background: white;
+    color: #334155;
+    cursor: pointer;
+}
+
+.firmapanel-v6-shell .ap-btn-sidebar:hover {
+    background: #F8FAFC;
+}
+
+.firmapanel-v6-shell .ap-btn-sidebar.danger {
+    border-color: #FECACA;
+    color: var(--fp-primary-red);
+}
+
+/* Main layout */
+.firmapanel-v6-shell .main-layout {
+    flex: 1;
+    margin-left: var(--fp-sidebar-width);
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+    min-width: 0;
+    transition: margin-left 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.firmapanel-v6-shell.sidebar-collapsed .main-layout {
+    margin-left: 0;
+}
+
+.firmapanel-v6-shell.sidebar-collapsed .admin-sidebar {
+    transform: translateX(-100%);
+}
+
+/* Topbar */
+.firmapanel-v6-shell .global-topbar {
+    height: var(--fp-topbar-height);
+    background: var(--fp-surface-card);
+    border-bottom: 1px solid var(--fp-border-main);
+    padding: 0 16px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    position: sticky;
+    top: 0;
+    z-index: 1030;
+}
+
+.firmapanel-v6-shell .topbar-left {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex: 1;
+    min-width: 0;
+}
+
+.firmapanel-v6-shell .menu-trigger {
+    background: none;
+    border: none;
+    color: #475569;
+    font-size: 15px;
+    cursor: pointer;
+    width: 32px;
+    height: 32px;
+    border-radius: 6px;
+    flex-shrink: 0;
+}
+
+.firmapanel-v6-shell .menu-trigger:hover {
+    background: #F1F5F9;
+    color: var(--fp-primary-dark);
+}
+
+.firmapanel-v6-shell .header-search {
+    position: relative;
+    max-width: 420px;
+    width: 100%;
+    margin-left: 8px;
+}
+
+.firmapanel-v6-shell .header-search i {
+    position: absolute;
+    left: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #94A3B8;
+    font-size: 12px;
+    pointer-events: none;
+}
+
+.firmapanel-v6-shell .header-search input {
+    width: 100%;
+    height: 34px;
+    padding: 0 12px 0 32px;
+    background: #F1F5F9;
+    border: 1px solid transparent;
+    border-radius: 6px;
+    font-size: 13px;
+    outline: none;
+    transition: 0.2s;
+}
+
+.firmapanel-v6-shell .header-search input:focus {
+    border-color: var(--fp-primary-red);
+    background: white;
+    box-shadow: 0 0 0 2px rgba(220, 38, 38, 0.1);
+}
+
+.firmapanel-v6-shell .topbar-right {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-shrink: 0;
+}
+
+.firmapanel-v6-shell .utility-btn {
+    background: none;
+    border: 1px solid transparent;
+    color: #475569;
+    font-size: 14px;
+    width: 34px;
+    height: 34px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: 0.15s;
+    position: relative;
+    text-decoration: none;
+}
+
+.firmapanel-v6-shell .utility-btn:hover {
+    background: #F1F5F9;
+    border-color: var(--fp-border-main);
+}
+
+.firmapanel-v6-shell .btn-quick-add {
+    background: var(--fp-corporate-blue);
+    color: white;
+    border: none;
+    padding: 0 14px;
+    height: 36px;
+    font-size: 13px;
+    font-weight: 600;
+    border-radius: 6px;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    text-decoration: none;
+}
+
+.firmapanel-v6-shell .btn-quick-add:hover {
+    background: #172554;
+    color: white;
+}
+
+.firmapanel-v6-shell .bell-dot {
+    position: absolute;
+    top: 6px;
+    right: 6px;
+    width: 7px;
+    height: 7px;
+    background: var(--fp-primary-red);
+    border-radius: 50%;
+    border: 1px solid white;
+}
+
+.firmapanel-v6-shell .profile-dropdown-wrapper {
+    position: relative;
+    display: flex;
+    align-items: center;
+    margin-left: 4px;
+}
+
+.firmapanel-v6-shell .avatar-trigger {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+    padding: 4px;
+    border-radius: 30px;
+    border: 1px solid transparent;
+    transition: 0.2s;
+}
+
+.firmapanel-v6-shell .avatar-trigger:hover {
+    background: #F1F5F9;
+    border-color: var(--fp-border-main);
+}
+
+.firmapanel-v6-shell .header-avatar {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    object-fit: cover;
+    background: var(--fp-primary-red);
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 13px;
+    font-weight: 700;
+}
+
+.firmapanel-v6-shell .avatar-trigger > i {
+    font-size: 11px;
+    color: #64748B;
+    margin-right: 4px;
+}
+
+.firmapanel-v6-shell .profile-dropdown {
+    position: absolute;
+    top: 48px;
+    right: 0;
+    width: 240px;
+    background: white;
+    border: 1px solid var(--fp-border-main);
+    border-radius: 10px;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.08);
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(10px);
+    transition: all 0.2s ease;
+    z-index: 2000;
+}
+
+.firmapanel-v6-shell .profile-dropdown.active {
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0);
+}
+
+.firmapanel-v6-shell .dropdown-header {
+    padding: 16px;
+    border-bottom: 1px solid var(--fp-border-main);
+    display: flex;
+    flex-direction: column;
+    background: #FAFAFA;
+    border-radius: 10px 10px 0 0;
+}
+
+.firmapanel-v6-shell .dropdown-header strong {
+    font-size: 14px;
+    color: var(--fp-primary-dark);
+}
+
+.firmapanel-v6-shell .dropdown-header span {
+    font-size: 12px;
+    color: var(--fp-text-light);
+    margin-top: 2px;
+}
+
+.firmapanel-v6-shell .dropdown-menu-list {
+    padding: 8px 0;
+    list-style: none;
+    margin: 0;
+}
+
+.firmapanel-v6-shell .dropdown-menu-list li a,
+.firmapanel-v6-shell .dropdown-menu-list li button {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    width: 100%;
+    padding: 10px 16px;
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--fp-text-main);
+    text-decoration: none;
+    transition: 0.15s;
+    border: none;
+    background: transparent;
+    cursor: pointer;
+    text-align: left;
+    font-family: inherit;
+}
+
+.firmapanel-v6-shell .dropdown-menu-list li a:hover,
+.firmapanel-v6-shell .dropdown-menu-list li button:hover {
+    background: #F1F5F9;
+    color: var(--fp-primary-red);
+}
+
+.firmapanel-v6-shell .dropdown-menu-list li a i,
+.firmapanel-v6-shell .dropdown-menu-list li button i {
+    width: 16px;
+    text-align: center;
+    color: var(--fp-text-light);
+    font-size: 14px;
+}
+
+.firmapanel-v6-shell .dropdown-menu-list li a:hover i,
+.firmapanel-v6-shell .dropdown-menu-list li button:hover i {
+    color: var(--fp-primary-red);
+}
+
+.firmapanel-v6-shell .dropdown-divider {
+    height: 1px;
+    background: var(--fp-border-main);
+    margin: 4px 0;
+}
+
+.firmapanel-v6-shell .text-danger {
+    color: var(--fp-primary-red) !important;
+}
+
+/* Content area */
+.firmapanel-v6-shell .content-body {
+    padding: 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+    flex: 1;
+    padding-bottom: calc(24px + env(safe-area-inset-bottom));
+}
+
+.firmapanel-v6-shell .ap-page-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    gap: 16px;
+    flex-wrap: wrap;
+}
+
+.firmapanel-v6-shell .ap-page-header h1 {
+    font-size: 24px;
+    font-weight: 800;
+    color: var(--fp-primary-dark);
+    letter-spacing: -0.02em;
+    margin: 0;
+}
+
+.firmapanel-v6-shell .ap-page-pretitle {
+    font-size: 11px;
+    font-weight: 800;
+    color: var(--fp-corporate-blue);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    margin-bottom: 4px;
+}
+
+.firmapanel-v6-shell .ap-page-header p {
+    font-size: 13.5px;
+    color: var(--fp-text-light);
+    margin: 6px 0 0;
+}
+
+/* Shared page components */
+.firmapanel-v6-shell .btn-outline-ap {
+    height: 36px;
+    padding: 0 16px;
+    font-size: 13px;
+    font-weight: 600;
+    border-radius: 8px;
+    border: 1px solid #CBD5E1;
+    background: white;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    transition: 0.2s;
+    color: #334155;
+    text-decoration: none;
+}
+
+.firmapanel-v6-shell .btn-outline-ap:hover {
+    background: #F8FAFC;
+    border-color: #94A3B8;
+    color: var(--fp-primary-dark);
+}
+
+.firmapanel-v6-shell .btn-primary-ap {
+    background: var(--fp-corporate-blue);
+    color: white;
+    border: none;
+    padding: 0 16px;
+    height: 36px;
+    font-size: 13px;
+    font-weight: 600;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: 0.2s;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    text-decoration: none;
+}
+
+.firmapanel-v6-shell .btn-primary-ap:hover {
+    background: #172554;
+    color: white;
+}
+
+.firmapanel-v6-shell .quick-actions-bar {
+    display: flex;
+    gap: 12px;
+    overflow-x: auto;
+    padding-bottom: 4px;
+}
+
+.firmapanel-v6-shell .action-chip {
+    background: white;
+    border: 1px solid var(--fp-border-main);
+    border-radius: 8px;
+    padding: 10px 16px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    cursor: pointer;
+    font-size: 13px;
+    font-weight: 600;
+    color: #334155;
+    transition: all 0.2s;
+    white-space: nowrap;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.02);
+    text-decoration: none;
+}
+
+.firmapanel-v6-shell .action-chip:hover {
+    border-color: var(--fp-primary-red);
+    color: var(--fp-primary-red);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.04);
+}
+
+.firmapanel-v6-shell .kpi-grid-pro {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 16px;
+}
+
+.firmapanel-v6-shell .kpi-card-pro {
+    background: var(--fp-surface-card);
+    border: 1px solid var(--fp-border-main);
+    border-radius: var(--fp-radius-panel);
+    padding: 10px 14px;
+    position: relative;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02);
+    text-decoration: none;
+    color: inherit;
+    transition: transform 0.15s, box-shadow 0.15s;
+}
+
+.firmapanel-v6-shell .kpi-card-pro:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
+}
+
+.firmapanel-v6-shell .kpi-card-pro::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 3px;
+    background: var(--fp-border-main);
+}
+
+.firmapanel-v6-shell .kpi-card-pro.kpi-green::before { background: var(--fp-success); }
+.firmapanel-v6-shell .kpi-card-pro.kpi-blue::before { background: var(--fp-info); }
+.firmapanel-v6-shell .kpi-card-pro.kpi-purple::before { background: var(--fp-purple); }
+.firmapanel-v6-shell .kpi-card-pro.kpi-red::before { background: var(--fp-primary-red); }
+.firmapanel-v6-shell .kpi-card-pro.kpi-teal::before { background: var(--fp-teal); }
+.firmapanel-v6-shell .kpi-card-pro.kpi-warning::before { background: var(--fp-warning); }
+
+.firmapanel-v6-shell .kpi-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 6px;
+}
+
+.firmapanel-v6-shell .kpi-title {
+    font-size: 11.5px;
+    font-weight: 700;
+    color: var(--fp-text-light);
+    text-transform: uppercase;
+    letter-spacing: 0.02em;
+}
+
+.firmapanel-v6-shell .kpi-icon {
+    width: 26px;
+    height: 26px;
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+}
+
+.firmapanel-v6-shell .icon-green { background: #DEF7EC; color: var(--fp-success); }
+.firmapanel-v6-shell .icon-blue { background: #DBEAFE; color: var(--fp-info); }
+.firmapanel-v6-shell .icon-purple { background: #EDE9FE; color: var(--fp-purple); }
+.firmapanel-v6-shell .icon-red { background: #FEE2E2; color: var(--fp-primary-red); }
+.firmapanel-v6-shell .icon-teal { background: #CCFBF1; color: var(--fp-teal); }
+.firmapanel-v6-shell .icon-warning { background: #FEF3C7; color: #B45309; }
+
+.firmapanel-v6-shell .kpi-value {
+    font-size: 22px;
+    font-weight: 800;
+    color: var(--fp-primary-dark);
+    letter-spacing: -0.03em;
+    line-height: 1;
+}
+
+.firmapanel-v6-shell .kpi-bottom {
+    margin-top: 6px;
+    font-size: 11px;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    color: var(--fp-text-light);
+}
+
+.firmapanel-v6-shell .kpi-bottom.up { color: var(--fp-success); }
+.firmapanel-v6-shell .kpi-bottom.down { color: var(--fp-primary-red); }
+
+.firmapanel-v6-shell .complex-grid {
+    display: grid;
+    grid-template-columns: 2.2fr 1fr;
+    gap: 20px;
+}
+
+.firmapanel-v6-shell .panel-card {
+    background: var(--fp-surface-card);
+    border: 1px solid var(--fp-border-main);
+    border-radius: var(--fp-radius-panel);
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02);
+}
+
+.firmapanel-v6-shell .panel-header {
+    padding: 14px 18px;
+    border-bottom: 1px solid var(--fp-border-main);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: #FAFAFA;
+    border-radius: 10px 10px 0 0;
+    gap: 12px;
+}
+
+.firmapanel-v6-shell .panel-header h3 {
+    font-size: 14.5px;
+    font-weight: 700;
+    color: var(--fp-primary-dark);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin: 0;
+}
+
+.firmapanel-v6-shell .panel-body {
+    padding: 0;
+    flex: 1;
+    overflow-x: auto;
+}
+
+.firmapanel-v6-shell .panel-body-padded {
+    padding: 18px;
+}
+
+.firmapanel-v6-shell .pro-table {
+    width: 100%;
+    border-collapse: collapse;
+    text-align: left;
+}
+
+.firmapanel-v6-shell .pro-table th {
+    background: white;
+    padding: 12px 18px;
+    font-size: 12px;
+    font-weight: 700;
+    color: #64748B;
+    border-bottom: 1px solid var(--fp-border-main);
+    text-transform: uppercase;
+    letter-spacing: 0.02em;
+}
+
+.firmapanel-v6-shell .pro-table td {
+    padding: 14px 18px;
+    font-size: 13px;
+    color: #334155;
+    border-bottom: 1px solid #F1F5F9;
+    font-weight: 500;
+}
+
+.firmapanel-v6-shell .pro-table tr:hover td {
+    background: #F8FAFC;
+}
+
+.firmapanel-v6-shell .status-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 4px 10px;
+    border-radius: 6px;
+    font-size: 11px;
+    font-weight: 700;
+}
+
+.firmapanel-v6-shell .status-confirmed { background: #DEF7EC; color: #03543F; }
+.firmapanel-v6-shell .status-pending { background: #FEF3C7; color: #92400E; }
+.firmapanel-v6-shell .status-cancel { background: #FEE2E2; color: #991B1B; }
+.firmapanel-v6-shell .status-info { background: #DBEAFE; color: #1E40AF; }
+
+.firmapanel-v6-shell .guest-info {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+}
+
+.firmapanel-v6-shell .guest-name {
+    font-weight: 700;
+    color: var(--fp-primary-dark);
+    font-size: 13.5px;
+}
+
+.firmapanel-v6-shell .guest-meta {
+    font-size: 11.5px;
+    color: #64748B;
+}
+
+/* Legacy admin pages inside new shell */
+.firmapanel-v6-shell .content-body .container-fluid {
+    padding: 0;
+    max-width: none;
+}
+
+.firmapanel-v6-shell .content-body .page-header {
+    display: none;
+}
+
+.firmapanel-v6-shell .admin-sidebar-backdrop {
+    display: none;
+}
+
+.firmapanel-v6-shell .admin-mobile-nav {
+    display: none;
+}
+
+.firmapanel-v6-shell .user-footer-tabler {
+    margin-top: auto;
+    padding: 12px 24px;
+    border-top: 1px solid var(--fp-border-main);
+    background: var(--fp-surface-card);
+}
+
+@media (max-width: 991px) {
+    .firmapanel-v6-shell .user-footer-tabler {
+        display: none;
+    }
+}
+
+@media (max-width: 1200px) {
+    .firmapanel-v6-shell .kpi-grid-pro {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    .firmapanel-v6-shell .complex-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* B2B topbar: para birimi seçici & profil */
+.firmapanel-v6-shell .currency-switcher {
+    display: flex;
+    background: #F1F5F9;
+    border-radius: 6px;
+    padding: 2px;
+    border: 1px solid var(--fp-border-main);
+}
+
+.firmapanel-v6-shell .currency-btn {
+    background: transparent;
+    border: none;
+    padding: 4px 10px;
+    font-size: 11px;
+    font-weight: 700;
+    color: #64748B;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: 0.2s;
+}
+
+.firmapanel-v6-shell .currency-btn.active {
+    background: white;
+    color: var(--fp-primary-dark);
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+}
+
+.firmapanel-v6-shell .company-logo-mini {
+    width: 28px;
+    height: 28px;
+    border-radius: 6px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: #EFF6FF;
+    color: var(--fp-corporate-blue);
+    font-size: 11px;
+    font-weight: 800;
+    border: 1px solid #E2E8F0;
+}
+
+.firmapanel-v6-shell .comp-info {
+    display: flex;
+    flex-direction: column;
+}
+
+.firmapanel-v6-shell .comp-name {
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--fp-primary-dark);
+    line-height: 1;
+}
+
+.firmapanel-v6-shell .comp-role {
+    font-size: 10px;
+    font-weight: 600;
+    color: #94A3B8;
+    margin-top: 3px;
+}
+
+.firmapanel-v6-shell .firma-footer-tabler {
+    margin-top: auto;
+    padding: 12px 24px;
+    border-top: 1px solid var(--fp-border-main);
+    background: var(--fp-surface-card);
+}
+
+@media (max-width: 991px) {
+    .firmapanel-v6-shell .firma-footer-tabler {
+        display: none;
+    }
+}
+
+/* Dashboard geçiş: mevcut firma-dash sınıflarını v6'ya yaklaştır */
+.firmapanel-dashboard-page .firma-dash-identity {
+    background: var(--fp-surface-card);
+    border: 1px solid var(--fp-border-main);
+    border-radius: var(--fp-radius-panel);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02);
+}
+
+.firmapanel-dashboard-page .firma-kpi-grid {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 16px;
+}
+
+.firmapanel-dashboard-page .firma-kpi-tile {
+    background: var(--fp-surface-card);
+    border: 1px solid var(--fp-border-main);
+    border-radius: var(--fp-radius-panel);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02);
+}
+
+@media (max-width: 1200px) {
+    .firmapanel-dashboard-page .firma-kpi-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
+@media (max-width: 991px) {
+    .firmapanel-dashboard-page .firma-kpi-grid {
+        grid-template-columns: 1fr;
+    }
+}
+

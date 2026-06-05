@@ -50,14 +50,16 @@ public class PartnerPanelController : Controller
         {
             var model = await _partnerService.GetDashboardAsync(GetUserId(), otelId, dateFrom, dateTo, status, paymentMethod, pageSize, conversationId, cancellationToken);
             ViewData["Title"] = "Partner Paneli";
-            ViewData["PageCssPath"] = "paneller/partner/dashboard";
+            ViewData["PageCssPath"] = "partnerpanel_dashboard_masaustu";
+            ViewData["PageCssMobilePath"] = "partnerpanel_dashboard_mobil";
             ViewData["BodyClass"] = "layout-boxed";
             return View("~/Views/Paneller/Partner/Dashboard.cshtml", model);
         }
         catch (InvalidOperationException ex) when (ex.Message.Contains("yetkili otel", StringComparison.OrdinalIgnoreCase))
         {
             ViewData["Title"] = "Partner Paneli";
-            ViewData["PageCssPath"] = "paneller/partner/dashboard";
+            ViewData["PageCssPath"] = "partnerpanel_dashboard_masaustu";
+            ViewData["PageCssMobilePath"] = "partnerpanel_dashboard_mobil";
             ViewData["BodyClass"] = "layout-boxed";
             return View("~/Views/Paneller/Partner/NoHotelAssigned.cshtml");
         }
@@ -1388,7 +1390,8 @@ public class PartnerPanelController : Controller
             var dashboard = await _partnerService.GetDashboardAsync(GetUserId(), otelId, cancellationToken: cancellationToken);
             ViewData["PartnerShell"] = dashboard.Shell;
             ViewData["Title"] = GetPlannedModuleTitle(Request.Path.Value);
-            ViewData["PageCssPath"] = "paneller/partner/dashboard";
+            ViewData["PageCssPath"] = "partnerpanel_dashboard_masaustu";
+            ViewData["PageCssMobilePath"] = "partnerpanel_dashboard_mobil";
             ViewData["ModulePath"] = Request.Path.Value ?? string.Empty;
             ViewData["ModuleTables"] = GetPlannedModuleTables(Request.Path.Value);
             return View("~/Views/Paneller/Partner/PlannedModule.cshtml");
@@ -2061,7 +2064,8 @@ public class PartnerPanelController : Controller
             var dashboard = await _partnerService.GetDashboardAsync(GetUserId(), otelId, cancellationToken: cancellationToken);
             ViewData["PartnerShell"] = dashboard.Shell;
             ViewData["Title"] = "Genel Tanımlar";
-            ViewData["PageCssPath"] = "paneller/partner/dashboard";
+            ViewData["PageCssPath"] = "partnerpanel_dashboard_masaustu";
+            ViewData["PageCssMobilePath"] = "partnerpanel_dashboard_mobil";
             ViewData["ModuleTables"] = GetPlannedModuleTables("/panel/partner/tesis/genel-tanimlar");
             return View("~/Views/Paneller/Partner/FacilityDefinitions.cshtml");
         }

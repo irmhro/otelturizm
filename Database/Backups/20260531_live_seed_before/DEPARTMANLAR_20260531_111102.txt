@@ -1,0 +1,2 @@
+ID|DEPARTMAN_KODU|DEPARTMAN_ADI|UST_DEPARTMAN_ID|YONETICI_ROL_ID|BINA_KAT|DAHILI_TELEFON|ACIKLAMA|AKTIF_MI|OLUSTURULMA_TARIHI
+--|--------------|-------------|----------------|---------------|--------|--------------|--------|--------|------------------

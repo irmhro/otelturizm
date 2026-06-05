@@ -41,7 +41,7 @@ public class AuthController : Controller
             return Redirect(ResolvePostLoginRedirectByClaims());
         }
 
-        ViewData["PageCss"] = "user-login";
+        ViewData["PageCss"] = "kullanici_login";
         ViewData["ReturnUrl"] = GetSafeReturnUrl();
         return View("~/Views/Login/UserLogin.cshtml");
     }
@@ -54,7 +54,7 @@ public class AuthController : Controller
             return Redirect(GetRedirectPathByClaims());
         }
 
-        ViewData["PageCss"] = "admin-login";
+        ViewData["PageCss"] = "admin_login";
         return View("~/Views/Login/AdminLogin.cshtml");
     }
 
@@ -66,7 +66,7 @@ public class AuthController : Controller
             return Redirect(GetRedirectPathByClaims());
         }
 
-        ViewData["PageCss"] = "firma-login";
+        ViewData["PageCss"] = "firma_login";
         return View("~/Views/Login/FirmaLogin.cshtml");
     }
 
@@ -74,6 +74,26 @@ public class AuthController : Controller
     public IActionResult LegacyAdminLogin()
     {
         return Redirect(AdminLoginPath);
+    }
+
+    [HttpGet("/giris")]
+    public IActionResult LegacyUserLogin()
+    {
+        var returnUrl = Request.Query["ReturnUrl"].FirstOrDefault()
+            ?? Request.Query["returnUrl"].FirstOrDefault();
+        if (!string.IsNullOrWhiteSpace(returnUrl) && Url.IsLocalUrl(returnUrl))
+        {
+            return Redirect($"{UserLoginPath}?ReturnUrl={Uri.EscapeDataString(returnUrl)}");
+        }
+
+        return Redirect(UserLoginPath);
+    }
+
+    [HttpGet("/kayit")]
+    public IActionResult LegacyUserRegister()
+    {
+        TempData["OpenUserRegisterTab"] = "1";
+        return Redirect($"{UserLoginPath}?sekme=kayit");
     }
 
     [HttpPost(UserLoginPath)]
@@ -124,7 +144,7 @@ public class AuthController : Controller
     [HttpGet("/kullanici-giris-2fa")]
     public IActionResult UserLoginTwoFactor()
     {
-        ViewData["PageCss"] = "user-login";
+        ViewData["PageCss"] = "kullanici_login";
         if (!TryReadLogin2FaCookie(out _, out _, out _, out var loginPath, out var channel, out var destinationHint))
         {
             TempData["UserLoginError"] = "Güvenlik doğrulaması bulunamadı. Lütfen tekrar giriş yapın.";
@@ -139,7 +159,7 @@ public class AuthController : Controller
     [EnableRateLimiting("auth-strict")]
     public async Task<IActionResult> UserLoginTwoFactorPost(LoginTwoFactorViewModel model, CancellationToken cancellationToken = default)
     {
-        ViewData["PageCss"] = "user-login";
+        ViewData["PageCss"] = "kullanici_login";
         if (!TryReadLogin2FaCookie(out var userId, out var rememberMe, out var redirectPath, out var loginPath, out _, out _))
         {
             TempData["UserLoginError"] = "Güvenlik doğrulaması bulunamadı. Lütfen tekrar giriş yapın.";
@@ -433,7 +453,7 @@ public class AuthController : Controller
             return Redirect(GetRedirectPathByClaims());
         }
 
-        ViewData["PageCss"] = "partner-login";
+        ViewData["PageCss"] = "partner_login";
         return View("~/Views/Login/PartnerLogin.cshtml");
     }
 
@@ -501,7 +521,7 @@ public class AuthController : Controller
     [HttpGet(VerifyEmailPath)]
     public async Task<IActionResult> VerifyEmail(string? email, string? token, string? code, CancellationToken cancellationToken = default)
     {
-        ViewData["PageCss"] = "user-login";
+        ViewData["PageCss"] = "kullanici_login";
 
         if (!string.IsNullOrWhiteSpace(email) && !string.IsNullOrWhiteSpace(token) && !string.IsNullOrWhiteSpace(code))
         {
@@ -522,7 +542,7 @@ public class AuthController : Controller
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> VerifyEmailPost(EmailVerificationViewModel model, CancellationToken cancellationToken = default)
     {
-        ViewData["PageCss"] = "user-login";
+        ViewData["PageCss"] = "kullanici_login";
         if (!ModelState.IsValid)
         {
             return View("~/Views/Login/VerifyEmail.cshtml", model);
@@ -552,7 +572,7 @@ public class AuthController : Controller
     [HttpGet(ForgotPasswordPath)]
     public IActionResult ForgotPassword()
     {
-        ViewData["PageCss"] = "user-login";
+        ViewData["PageCss"] = "kullanici_login";
         return View("~/Views/Login/ForgotPassword.cshtml", new ForgotPasswordViewModel());
     }
 
@@ -560,7 +580,7 @@ public class AuthController : Controller
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> ForgotPassword(ForgotPasswordViewModel model, CancellationToken cancellationToken = default)
     {
-        ViewData["PageCss"] = "user-login";
+        ViewData["PageCss"] = "kullanici_login";
         if (!ModelState.IsValid)
         {
             return View("~/Views/Login/ForgotPassword.cshtml", model);
@@ -575,7 +595,7 @@ public class AuthController : Controller
     [HttpGet(ResetPasswordPath)]
     public IActionResult ResetPassword(string token)
     {
-        ViewData["PageCss"] = "user-login";
+        ViewData["PageCss"] = "kullanici_login";
         return View("~/Views/Login/ResetPassword.cshtml", new ResetPasswordViewModel
         {
             Token = token ?? string.Empty
@@ -586,7 +606,7 @@ public class AuthController : Controller
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> ResetPassword(ResetPasswordViewModel model, CancellationToken cancellationToken = default)
     {
-        ViewData["PageCss"] = "user-login";
+        ViewData["PageCss"] = "kullanici_login";
         if (!ModelState.IsValid)
         {
             return View("~/Views/Login/ResetPassword.cshtml", model);
@@ -701,8 +721,11 @@ public class AuthController : Controller
 
     private string? GetSafeReturnUrl()
     {
-        var fromForm = Request.HasFormContentType ? Request.Form["ReturnUrl"].FirstOrDefault() : null;
-        var fromQuery = Request.Query["ReturnUrl"].FirstOrDefault();
+        var fromForm = Request.HasFormContentType
+            ? Request.Form["ReturnUrl"].FirstOrDefault() ?? Request.Form["returnUrl"].FirstOrDefault()
+            : null;
+        var fromQuery = Request.Query["ReturnUrl"].FirstOrDefault()
+            ?? Request.Query["returnUrl"].FirstOrDefault();
         var candidate = !string.IsNullOrWhiteSpace(fromForm) ? fromForm : fromQuery;
         return !string.IsNullOrWhiteSpace(candidate) && Url.IsLocalUrl(candidate) ? candidate : null;
     }

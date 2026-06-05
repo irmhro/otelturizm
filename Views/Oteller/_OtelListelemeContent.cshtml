@@ -1,0 +1,351 @@
+@model otelturizmnew.Models.Oteller.HotelListingPageViewModel
+@using System.Globalization
+@using otelturizmnew.Services
+@{
+    var hotels = Model.Hotels ?? new List<otelturizmnew.Models.Oteller.HotelListingCardViewModel>();
+    var listingPathLang = InternationalSeoPaths.ResolveCultureFromPath(Context.Request.Path.Value ?? "/");
+    string HotelDetailUrl(string slug) => InternationalSeoPaths.BuildPublicPath(listingPathLang, InternationalSeoPaths.PageKindDetail, null, slug);
+    var mapListingUrl = InternationalSeoPaths.BuildPublicPath(listingPathLang, InternationalSeoPaths.PageKindMap, null, null)
+        + "?q=" + Uri.EscapeDataString(Model.SearchTerm ?? string.Empty);
+    var allHotelsUrl = InternationalSeoPaths.BuildPublicPath(listingPathLang, InternationalSeoPaths.PageKindListing, null, null)
+        ?? Url.Action("OtelListeleme", "Oteller") ?? "/oteller";
+    var resultCountDisplay = Model.TotalCount > 0 ? Model.TotalCount : hotels.Count;
+    var titleText = string.IsNullOrWhiteSpace(Model.SearchLabel) ? "Oteller" : Model.SearchLabel;
+    var criteriaChips = new List<string>();
+    if (!string.IsNullOrWhiteSpace(Model.SearchTerm))
+    {
+        criteriaChips = Model.SearchTerm
+            .Split(new[] { ',', ';' }, StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+            .Where(x => x.Length > 1)
+            .Take(10)
+            .ToList();
+    }
+    var isLongSearch = (Model.SearchLabel?.Length ?? 0) > 64 || criteriaChips.Count > 3;
+    var headlineTitle = string.IsNullOrWhiteSpace(Model.SearchTerm)
+        ? "Oteller"
+        : (isLongSearch ? "Arama Sonuçları" : titleText);
+    var listingAction = Url.Action("OtelListeleme", "Oteller") ?? "/oteller";
+    string BuildConceptFilterUrl(string etiket) =>
+        Url.Action("OtelListeleme", "Oteller", new { q = Model.SearchTerm, city = (string?)null, etiket, kampanya = Model.CampaignSlug, page = 1 })
+        ?? $"/oteller?etiket={Uri.EscapeDataString(etiket)}";
+    var conceptFilters = new (string Slug, string Label, string Icon)[]
+    {
+        ("akilli-fiyat", "En İyi Fiyat", "fa-fire"),
+        ("hafta-sonu-firsatlari", "Hafta Sonu", "fa-calendar-week"),
+        ("butceme-uygun-oteller", "Bütçeme Uygun", "fa-wallet"),
+        ("havuzlu-oteller", "Havuzlu", "fa-person-swimming"),
+        ("kampanyaya-dahil-oteller", "Kampanyalı", "fa-tag")
+    };
+
+    string NormalizeToken(string value)
+    {
+        return (value ?? string.Empty)
+            .Replace("ı", "i", StringComparison.OrdinalIgnoreCase)
+            .Replace("İ", "i", StringComparison.OrdinalIgnoreCase)
+            .Replace("ö", "o", StringComparison.OrdinalIgnoreCase)
+            .Replace("Ö", "o", StringComparison.OrdinalIgnoreCase)
+            .Replace("ü", "u", StringComparison.OrdinalIgnoreCase)
+            .Replace("Ü", "u", StringComparison.OrdinalIgnoreCase)
+            .Replace("ş", "s", StringComparison.OrdinalIgnoreCase)
+            .Replace("Ş", "s", StringComparison.OrdinalIgnoreCase)
+            .Replace("ç", "c", StringComparison.OrdinalIgnoreCase)
+            .Replace("Ç", "c", StringComparison.OrdinalIgnoreCase)
+            .Replace("ğ", "g", StringComparison.OrdinalIgnoreCase)
+            .Replace("Ğ", "g", StringComparison.OrdinalIgnoreCase)
+            .ToLowerInvariant()
+            .Trim();
+    }
+}
+
+<section class="otelliste-page" id="otellistePage" data-total-count="@resultCountDisplay">
+    <div class="otelliste-page-hero">
+        <div class="otelliste-page-hero-inner">
+            <div class="otelliste-top-search-panel">
+                <form class="otelliste-top-search-form" method="get" action="@listingAction">
+                    <div class="otelliste-top-search-row">
+                        <label class="visually-hidden" for="otellisteTopQuery">Otel ara</label>
+                        <span class="otelliste-top-search-icon" aria-hidden="true"><i class="fas fa-magnifying-glass"></i></span>
+                        <input type="search"
+                               id="otellisteTopQuery"
+                               name="q"
+                               class="otelliste-top-search-input"
+                               value="@Model.SearchTerm"
+                               placeholder="Şehir, bölge, otel adı veya konsept yazın..."
+                               autocomplete="off" />
+                        @if (!string.IsNullOrWhiteSpace(Model.ActiveTag))
+                        {
+                            <input type="hidden" name="etiket" value="@Model.ActiveTag" />
+                        }
+                        @if (!string.IsNullOrWhiteSpace(Model.CampaignSlug))
+                        {
+                            <input type="hidden" name="kampanya" value="@Model.CampaignSlug" />
+                        }
+                        <button type="submit" class="otelliste-top-search-btn">Ara</button>
+                    </div>
+                </form>
+                @if (criteriaChips.Count > 0 || !string.IsNullOrWhiteSpace(Model.ActiveTag))
+                {
+                    <div class="otelliste-active-criteria" aria-label="Aktif arama kriterleri">
+                        @foreach (var chip in criteriaChips)
+                        {
+                            <span class="otelliste-criteria-chip">@chip</span>
+                        }
+                        @if (!string.IsNullOrWhiteSpace(Model.ActiveTag))
+                        {
+                            <span class="otelliste-criteria-chip otelliste-criteria-chip--tag">@Model.ActiveTag.Replace("-", " ")</span>
+                        }
+                        @if (!string.IsNullOrWhiteSpace(Model.SearchTerm))
+                        {
+                            <a class="otelliste-criteria-clear" href="@allHotelsUrl">Temizle</a>
+                        }
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+
+    <div class="otelliste-mobile-bar" aria-label="Mobil filtre ve sıralama">
+        <button type="button" class="otelliste-mobile-filter-btn" id="otellisteOpenDrawer" aria-controls="otellisteFilterDrawer">
+            <i class="fas fa-sliders-h" aria-hidden="true"></i>
+            Filtrele
+            <span class="otelliste-filter-count" id="otellisteActiveFilterCount" data-count="0"></span>
+        </button>
+        <div class="otelliste-mobile-sort">
+            <select id="otellisteSortMobile" class="otelliste-sort" aria-label="Sıralama">
+                <option value="recommended">Önerilen</option>
+                <option value="price-asc">Fiyat ↑</option>
+                <option value="price-desc">Fiyat ↓</option>
+                <option value="rating-desc">Puan</option>
+            </select>
+        </div>
+        <a class="otelliste-mobile-map-btn" href="@mapListingUrl" aria-label="Harita görünümü">
+            <i class="fas fa-map-location-dot" aria-hidden="true"></i>
+        </a>
+    </div>
+
+    <div class="otelliste-filter-overlay" id="otellisteFilterOverlay" hidden></div>
+    <aside class="otelliste-filter-drawer" id="otellisteFilterDrawer" aria-hidden="true" aria-label="Filtreleme seçenekleri">
+        <div class="otelliste-filter-drawer-head">
+            <h2>Filtreleme</h2>
+            <button type="button" class="otelliste-filter-drawer-close" id="otellisteCloseDrawer" aria-label="Kapat">
+                <i class="fas fa-times" aria-hidden="true"></i>
+            </button>
+        </div>
+        <div class="otelliste-filter-drawer-body">
+            <partial name="~/Views/Oteller/_OtelListelemeFilters.cshtml" model="Model" view-data="@(new ViewDataDictionary(ViewData) { { "FilterScope", "mobile" } })" />
+        </div>
+        <div class="otelliste-filter-drawer-foot">
+            <button type="button" class="otelliste-btn-reset otelliste-filter-reset">Sıfırla</button>
+            <button type="button" class="otelliste-btn-apply otelliste-filter-apply" id="otellisteApplyDrawer">Uygula</button>
+        </div>
+    </aside>
+
+    <div class="otelliste-container">
+        <aside class="otelliste-filter-sidebar" aria-label="Detaylı filtre">
+            <header class="otelliste-sidebar-head">
+                <h2 class="otelliste-sidebar-title">Filtrele</h2>
+                <p class="otelliste-sidebar-sub">Arama sonuçlarını daraltın</p>
+            </header>
+            <partial name="~/Views/Oteller/_OtelListelemeFilters.cshtml" model="Model" view-data="@(new ViewDataDictionary(ViewData) { { "FilterScope", "desktop" } })" />
+        </aside>
+
+        <div class="otelliste-results">
+            <header class="otelliste-results-head">
+                <div class="otelliste-page-title-wrap">
+                    <h1 class="otelliste-page-title" id="otellisteHeadline">@headlineTitle</h1>
+                    @if (!string.IsNullOrWhiteSpace(Model.SearchTerm) && isLongSearch)
+                    {
+                        <p class="otelliste-page-sub otelliste-page-sub--clamp" title="@Model.SearchTerm">
+                            <i class="fas fa-magnifying-glass" aria-hidden="true"></i>
+                            <span>@Model.SearchTerm</span>
+                        </p>
+                    }
+                    else if (!string.IsNullOrWhiteSpace(Model.SearchTerm) && !isLongSearch)
+                    {
+                        <p class="otelliste-page-sub"><i class="fas fa-magnifying-glass" aria-hidden="true"></i> @Model.SearchTerm</p>
+                    }
+                </div>
+                <div class="otelliste-results-meta">
+                    <span class="otelliste-count" id="otellisteResultCount" aria-live="polite">@resultCountDisplay otel</span>
+                    <select id="otellisteSortDesktop" class="otelliste-sort" aria-label="Sıralama">
+                        <option value="recommended">Önerilen</option>
+                        <option value="price-asc">Fiyat (Düşük → Yüksek)</option>
+                        <option value="price-desc">Fiyat (Yüksek → Düşük)</option>
+                        <option value="rating-desc">Değerlendirme</option>
+                    </select>
+                    <div class="otelliste-toolbar-actions">
+                        <a class="otelliste-map-link" href="@mapListingUrl">
+                            <i class="fas fa-map-location-dot" aria-hidden="true"></i> Harita
+                        </a>
+                    </div>
+                </div>
+            </header>
+
+            <div class="otelliste-concept-bar" role="group" aria-label="Hızlı konsept filtreleri">
+                @foreach (var concept in conceptFilters)
+                {
+                    var active = string.Equals(Model.ActiveTag, concept.Slug, StringComparison.OrdinalIgnoreCase);
+                    <a class="otelliste-concept-pill @(active ? "is-active" : null)" href="@BuildConceptFilterUrl(concept.Slug)">
+                        <i class="fas @concept.Icon" aria-hidden="true"></i> @concept.Label
+                    </a>
+                }
+            </div>
+
+            <div class="otelliste-hotel-grid" id="otellisteHotelGrid">
+                @if (!hotels.Any())
+                {
+                    <div class="otelliste-empty" id="otellisteServerEmpty">
+                        <h2>Bu kriterlerde otel bulunamadı</h2>
+                        <p>Filtreleri sıfırlayın veya tüm otellere dönün.</p>
+                        <div class="otelliste-empty-actions">
+                            <a class="otelliste-card-cta" href="@allHotelsUrl">Tüm Oteller</a>
+                            <a class="otelliste-map-link" href="@mapListingUrl">Haritada Ara</a>
+                        </div>
+                    </div>
+                }
+                else
+                {
+                    @foreach (var hotel in hotels)
+                    {
+                        var price = hotel.StartingPrice ?? 0m;
+                        var isFirst = ReferenceEquals(hotel, hotels[0]);
+                        var amenitiesSafe = hotel.Amenities ?? new List<string>();
+                        var campaignSlugsSafe = hotel.CampaignSlugs ?? new List<string>();
+                        var amenityText = string.Join(" ", amenitiesSafe.Select(NormalizeToken));
+                        var keywords = NormalizeToken($"{hotel.Name} {hotel.City} {hotel.District} {hotel.Neighborhood} {hotel.PropertyType} {string.Join(" ", amenitiesSafe)}");
+                        var locationText = string.IsNullOrWhiteSpace(hotel.Neighborhood)
+                            ? $"{hotel.District} · {hotel.City}"
+                            : $"{hotel.Neighborhood} · {hotel.District} · {hotel.City}";
+                        var imageUrl = string.IsNullOrWhiteSpace(hotel.ImageUrl) ? "/assets/img/placeholder-hotel.jpg" : hotel.ImageUrl;
+                        var detailUrl = HotelDetailUrl(hotel.Slug);
+                        var badgeText = !string.IsNullOrWhiteSpace(hotel.CampaignBadgeText)
+                            ? hotel.CampaignBadgeText
+                            : (hotel.HasDiscount ? "İndirim" : (hotel.IsFeatured ? "Öne Çıkan" : string.Empty));
+                        <article class="otelliste-hotel-card"
+                                 data-hotel-id="@hotel.Id"
+                                 data-keywords="@keywords"
+                                 data-city="@NormalizeToken(hotel.City)"
+                                 data-district="@NormalizeToken(hotel.District)"
+                                 data-neighborhood="@NormalizeToken(hotel.Neighborhood)"
+                                 data-price="@price.ToString(CultureInfo.InvariantCulture)"
+                                 data-rating="@hotel.Rating.ToString(CultureInfo.InvariantCulture)"
+                                 data-stars="@(hotel.StarCount ?? 0)"
+                                 data-amenities="@amenityText"
+                                 data-campaign-slugs="@string.Join(" ", campaignSlugsSafe.Where(x => !string.IsNullOrWhiteSpace(x)).Select(NormalizeToken).Distinct())"
+                                 data-featured="@(hotel.IsFeatured ? "1" : "0")">
+                            <div class="otelliste-card-media-wrap">
+                            <a class="otelliste-card-media" href="@detailUrl" aria-label="@hotel.Name detay">
+                                <img src="@imageUrl"
+                                     alt="@hotel.Name"
+                                     @(isFirst ? "fetchpriority=\"high\" loading=\"eager\"" : "loading=\"lazy\"")
+                                     decoding="async" />
+                                @if (!string.IsNullOrWhiteSpace(badgeText))
+                                {
+                                    <span class="otelliste-card-badge">@badgeText</span>
+                                }
+                                @if (hotel.Rating > 0)
+                                {
+                                    <span class="otelliste-card-rating">@hotel.Rating.ToString("0.0", CultureInfo.InvariantCulture) ★</span>
+                                }
+                            </a>
+                            <button type="button"
+                                    class="otelliste-fav-btn favorite-btn @(hotel.IsFavorite ? "is-active" : string.Empty)"
+                                    data-hotel-id="@hotel.Id"
+                                    data-source-page="OtelListeleme"
+                                    aria-label="Favorilere ekle"
+                                    aria-pressed="@(hotel.IsFavorite ? "true" : "false")">
+                                <i class="@(hotel.IsFavorite ? "fas" : "far") fa-heart" aria-hidden="true"></i>
+                            </button>
+                            </div>
+                            <div class="otelliste-card-body">
+                                <h3 class="otelliste-card-title">
+                                    <a href="@detailUrl">@hotel.Name</a>
+                                </h3>
+                                <p class="otelliste-card-location">
+                                    <i class="fas fa-map-marker-alt" aria-hidden="true"></i> @locationText
+                                </p>
+                                @if (hotel.AmenityItems?.Count > 0 || hotel.StarCount > 0)
+                                {
+                                    <div class="otelliste-card-amenities">
+                                        @if (hotel.StarCount > 0)
+                                        {
+                                            <span><i class="fas fa-star" aria-hidden="true"></i> @hotel.StarCount yıldız</span>
+                                        }
+                                        @foreach (var amenity in (hotel.AmenityItems ?? new List<otelturizmnew.Models.Oteller.HotelAmenityViewModel>()).Take(3))
+                                        {
+                                            <span><i class="fas @amenity.IconClass" aria-hidden="true"></i> @amenity.Name</span>
+                                        }
+                                    </div>
+                                }
+                                <div class="otelliste-card-foot">
+                                    <div class="otelliste-card-price">
+                                        @if (price > 0m)
+                                        {
+                                            @($"{price:N0} ₺")
+                                            <small>/ gece</small>
+                                        }
+                                        else
+                                        {
+                                            <small>Fiyat sor</small>
+                                        }
+                                    </div>
+                                    <a class="otelliste-card-cta" href="@detailUrl">İncele</a>
+                                </div>
+                            </div>
+                        </article>
+                    }
+
+                    <div class="otelliste-empty" id="otellisteClientEmpty" hidden role="status" aria-live="polite">
+                        <h2>Filtrelere uygun otel yok</h2>
+                        <p>Filtreleri değiştirin veya sıfırlayın.</p>
+                        <div class="otelliste-empty-actions">
+                            <button type="button" class="otelliste-card-cta otelliste-filter-reset">Filtreleri Sıfırla</button>
+                            <a class="otelliste-map-link" href="@mapListingUrl">Haritada Ara</a>
+                        </div>
+                    </div>
+                }
+            </div>
+
+            @if (Model.TotalPages > 1)
+            {
+                <nav class="otelliste-pagination" aria-label="Sayfalama">
+                    @{
+                        var current = Math.Max(Model.CurrentPage, 1);
+                        var total = Math.Max(Model.TotalPages, 1);
+                        var start = Math.Max(1, current - 2);
+                        var end = Math.Min(total, current + 2);
+                        if (current <= 3) { start = 1; end = Math.Min(total, 5); }
+                        if (current >= total - 2) { end = total; start = Math.Max(1, total - 4); }
+                    }
+                    <a class="@(current <= 1 ? "is-disabled" : string.Empty)"
+                       href="@(current <= 1 ? "#" : Url.Action("OtelListeleme", "Oteller", new { q = Model.SearchTerm, city = (string?)null, etiket = Model.ActiveTag, kampanya = Model.CampaignSlug, page = current - 1 }))"
+                       aria-disabled="@(current <= 1 ? "true" : "false")">Önceki</a>
+                    @for (var p = start; p <= end; p++)
+                    {
+                        <a class="@(p == current ? "is-active" : string.Empty)"
+                           href="@Url.Action("OtelListeleme", "Oteller", new { q = Model.SearchTerm, city = (string?)null, etiket = Model.ActiveTag, kampanya = Model.CampaignSlug, page = p })"
+                           aria-current="@(p == current ? "page" : null)">@p</a>
+                    }
+                    <a class="@(current >= total ? "is-disabled" : string.Empty)"
+                       href="@(current >= total ? "#" : Url.Action("OtelListeleme", "Oteller", new { q = Model.SearchTerm, city = (string?)null, etiket = Model.ActiveTag, kampanya = Model.CampaignSlug, page = current + 1 }))"
+                       aria-disabled="@(current >= total ? "true" : "false")">Sonraki</a>
+                </nav>
+            }
+        </div>
+    </div>
+</section>
+
+<script type="application/json" id="otellisteLocationMap">
+@Html.Raw(System.Text.Json.JsonSerializer.Serialize(new
+{
+    cities = hotels.Select(h => h.City).Where(x => !string.IsNullOrWhiteSpace(x)).Distinct(StringComparer.OrdinalIgnoreCase).OrderBy(x => x).ToList(),
+    districts = hotels
+        .Where(h => !string.IsNullOrWhiteSpace(h.District))
+        .GroupBy(h => h.City ?? string.Empty, StringComparer.OrdinalIgnoreCase)
+        .ToDictionary(g => g.Key, g => g.Select(x => x.District).Distinct(StringComparer.OrdinalIgnoreCase).OrderBy(x => x).ToList()),
+    neighborhoods = hotels
+        .Where(h => !string.IsNullOrWhiteSpace(h.Neighborhood))
+        .GroupBy(h => $"{h.City}|{h.District}", StringComparer.OrdinalIgnoreCase)
+        .ToDictionary(g => g.Key, g => g.Select(x => x.Neighborhood).Distinct(StringComparer.OrdinalIgnoreCase).OrderBy(x => x).ToList())
+}))
+</script>

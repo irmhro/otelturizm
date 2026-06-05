@@ -1,5 +1,5 @@
 @{
-    var currentAction = ViewContext.RouteData.Values["action"]?.ToString() ?? "Index";
+    var currentAction = ViewContext.RouteData.Values["action"]?.ToString() ?? "Dashboard";
     var currentPath = Context.Request.Path.Value ?? string.Empty;
     var email = User.FindFirst(System.Security.Claims.ClaimTypes.Email)?.Value ?? string.Empty;
     var fullName = User.FindFirst("otelturizm:full_name")?.Value ?? User.Identity?.Name ?? "Kullanıcı";
@@ -8,128 +8,141 @@
         @"^\s*[\p{Lu}]{1,3}[\s\.\-_]+",
         string.Empty).Trim();
     if (string.IsNullOrWhiteSpace(displayName)) { displayName = "Kullanıcı"; }
-    var favoriteCount = ViewData["FavoriteCount"] is int count ? count : (int?)null;
-    var reservationCount = ViewData["ReservationCount"] is int reservationBadge ? reservationBadge : (int?)null;
-    var messageCount = ViewData["MessageCount"] is int messageBadge ? messageBadge : (int?)null;
+    var favoriteCount = ViewData["FavoriteCount"] is int fav ? fav : 0;
+    var reservationCount = ViewData["ReservationCount"] is int res ? res : 0;
+    var messageCount = ViewData["MessageCount"] is int msg ? msg : 0;
     var profileImageUrl = ViewData["UserProfileImageUrl"] as string ?? string.Empty;
+    var initial = displayName.Length > 0 ? displayName[0].ToString().ToUpperInvariant() : "K";
+
     bool IsCurrent(params string[] actions) => actions.Any(a => string.Equals(currentAction, a, StringComparison.OrdinalIgnoreCase));
     bool IsPath(params string[] paths) => paths.Any(p => currentPath.Equals(p, StringComparison.OrdinalIgnoreCase) || currentPath.StartsWith(p + "/", StringComparison.OrdinalIgnoreCase));
+    string ActivePath(params string[] paths) => IsPath(paths) ? "active" : string.Empty;
+
+    var dashboardActive = IsCurrent("Dashboard") || IsPath("/panel/user", "/panel/user/dashboard");
+    var tripOpen = IsCurrent("Reservations", "ReservationReview", "Reviews") || IsPath("/panel/user/rezervasyonlarim", "/panel/user/yorumlarim");
+    var financeOpen = IsCurrent("Invoices", "PaymentMethods") || IsPath("/panel/user/faturalarim", "/panel/user/odeme-yontemleri");
+    var accountOpen = IsCurrent("Profile", "Notifications", "Security") || IsPath("/panel/user/profil-bilgilerim", "/panel/user/bildirim-tercihleri", "/panel/user/guvenlik-ve-giris");
 }
-<aside class="navbar navbar-vertical navbar-expand-lg user-sidebar" id="userSidebar" aria-label="Kullanıcı menüsü">
-    <div class="container-fluid">
-        <button class="navbar-toggler user-sidebar-close" type="button" data-user-sidebar-toggle aria-controls="userSidebarMenu" aria-expanded="false" aria-label="Menüyü kapat">
-            <i class="fas fa-xmark"></i>
-        </button>
+<aside class="admin-sidebar" id="appSidebar" aria-label="Kullanıcı menüsü">
+    <div class="sidebar-header">
+        <a href="/panel/user/dashboard" class="logo-wordmark-wrapper">
+            <span class="logo-otel">Misafir</span>
+            <div class="logo-sep"></div>
+            <span class="logo-turizm">Portal</span>
+        </a>
+    </div>
 
-        <h1 class="navbar-brand navbar-brand-autodark">
-            <a href="/panel/user" class="user-brand-link">
-                <img src="~/uploads/logo/logo.png" alt="Otelturizm" class="user-brand-logo" />
+    <div class="sidebar-scroll">
+        <div class="sidebar-user-line">
+            @if (!string.IsNullOrWhiteSpace(profileImageUrl))
+            {
+                <img src="@profileImageUrl" alt="" class="header-avatar" />
+            }
+            else
+            {
+                <span class="header-avatar">@initial</span>
+            }
+            <div>
+                <strong>@displayName</strong>
+                <span>@email</span>
+            </div>
+        </div>
+
+        <span class="sidebar-group-label">Kişisel Kokpit</span>
+        <div class="nav-menu-item @(dashboardActive ? "active" : "")">
+            <a class="nav-main-link" href="/panel/user/dashboard">
+                <div class="nav-link-left"><i class="fas fa-th-large ic-core"></i><span>Genel Bakış</span></div>
             </a>
-        </h1>
+        </div>
 
-        <div class="collapse navbar-collapse" id="userSidebarMenu">
-            <div class="user-sidebar-profile">
-                @if (!string.IsNullOrWhiteSpace(profileImageUrl))
+        <span class="sidebar-group-label">Seyahatlerim</span>
+        <div class="nav-menu-item @(tripOpen ? "open active" : "")" data-nav-group>
+            <button type="button" class="nav-main-link" data-user-nav-toggle aria-expanded="@(tripOpen ? "true" : "false")">
+                <div class="nav-link-left"><i class="fas fa-suitcase ic-trip"></i><span>Rezervasyonlarım</span></div>
+                @if (reservationCount > 0)
                 {
-                    <span class="avatar bg-blue-lt text-blue" style="background-image:url('@profileImageUrl')"></span>
+                    <span class="ap-nav-badge">@reservationCount</span>
                 }
-                else
+                <i class="fas fa-chevron-down chevron-icon"></i>
+            </button>
+            <div class="sub-links-container">
+                <a class="@ActivePath("/panel/user/rezervasyonlarim")" href="/panel/user/rezervasyonlarim">Aktif & Geçmiş Seyahatler</a>
+                <a class="@ActivePath("/panel/user/yorumlarim")" href="/panel/user/yorumlarim">Yorumlarım</a>
+            </div>
+        </div>
+
+        <span class="sidebar-group-label">Keşif & Planlama</span>
+        <div class="nav-menu-item @(IsCurrent("Favorites") ? "active" : "")">
+            <a class="nav-main-link" href="/panel/user/favorilerim">
+                <div class="nav-link-left"><i class="fas fa-heart ic-fav"></i><span>Favori Otellerim</span></div>
+                @if (favoriteCount > 0)
                 {
-                    <span class="avatar bg-blue-lt text-blue">@displayName[0].ToString().ToUpperInvariant()</span>
+                    <span class="ap-nav-badge">@favoriteCount</span>
                 }
-                <div class="min-w-0">
-                    <strong>@displayName</strong>
-                    <small>@email</small>
-                </div>
-            </div>
+            </a>
+        </div>
+        <div class="nav-menu-item @(IsCurrent("Loyalty") ? "active" : "")">
+            <a class="nav-main-link" href="/panel/user/puanlarim">
+                <div class="nav-link-left"><i class="fas fa-gift ic-fav"></i><span>Puan & Ödüllerim</span></div>
+            </a>
+        </div>
 
-            <div class="user-sidebar-scroll">
-                <ul class="navbar-nav user-sidebar-nav">
-                    <li class="nav-item">
-                        <a class="nav-link @(IsCurrent("Dashboard") ? "active" : string.Empty)" href="/panel/user/dashboard">
-                            <span class="nav-link-icon"><i class="fas fa-house"></i></span>
-                            <span class="nav-link-title">Dashboard</span>
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link @(IsCurrent("Reservations", "ReservationReview") || IsPath("/panel/user/rezervasyonlarim") ? "active" : string.Empty)" href="/panel/user/rezervasyonlarim">
-                            <span class="nav-link-icon"><i class="fas fa-calendar-check"></i></span>
-                            <span class="nav-link-title">Rezervasyonlarım</span>
-                            @if (reservationCount.HasValue && reservationCount.Value > 0) { <span class="badge bg-primary-lt text-primary ms-auto">@reservationCount.Value</span> }
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link @(IsCurrent("Favorites") ? "active" : string.Empty)" href="/panel/user/favorilerim">
-                            <span class="nav-link-icon"><i class="fas fa-heart"></i></span>
-                            <span class="nav-link-title">Favorilerim</span>
-                            @if (favoriteCount.HasValue) { <span class="badge bg-success-lt text-success ms-auto">@favoriteCount.Value</span> }
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link @(IsCurrent("Reviews", "ReservationReview") || IsPath("/panel/user/yorumlarim") ? "active" : string.Empty)" href="/panel/user/yorumlarim">
-                            <span class="nav-link-icon"><i class="fas fa-comment-dots"></i></span>
-                            <span class="nav-link-title">Yorumlarım</span>
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <button class="nav-link user-nav-disabled" type="button" disabled aria-disabled="true" title="Puanlarım sayfası tasarım aşamasında">
-                            <span class="nav-link-icon"><i class="fas fa-star"></i></span>
-                            <span class="nav-link-title">Puanlarım</span>
-                            <span class="badge bg-secondary-lt text-secondary ms-auto">Yakında</span>
-                        </button>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link @(IsCurrent("Messages") ? "active" : string.Empty)" href="/panel/user/mesajlarim">
-                            <span class="nav-link-icon"><i class="fas fa-envelope"></i></span>
-                            <span class="nav-link-title">Mesajlarım</span>
-                            @if (messageCount.HasValue && messageCount.Value > 0) { <span class="badge bg-orange-lt text-orange ms-auto">@messageCount.Value</span> }
-                        </a>
-                    </li>
-
-                    <li class="nav-item user-nav-section">Hesap</li>
-                    <li class="nav-item">
-                        <a class="nav-link @(IsCurrent("Profile") ? "active" : string.Empty)" href="/panel/user/profil-bilgilerim">
-                            <span class="nav-link-icon"><i class="fas fa-user-circle"></i></span>
-                            <span class="nav-link-title">Profil Bilgilerim</span>
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link @(IsCurrent("Invoices") ? "active" : string.Empty)" href="/panel/user/faturalarim">
-                            <span class="nav-link-icon"><i class="fas fa-file-invoice"></i></span>
-                            <span class="nav-link-title">Faturalarım</span>
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link @(IsCurrent("PaymentMethods") ? "active" : string.Empty)" href="/panel/user/odeme-yontemleri">
-                            <span class="nav-link-icon"><i class="fas fa-credit-card"></i></span>
-                            <span class="nav-link-title">Ödeme Yöntemleri</span>
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link @(IsCurrent("Notifications") ? "active" : string.Empty)" href="/panel/user/bildirim-tercihleri">
-                            <span class="nav-link-icon"><i class="fas fa-bell"></i></span>
-                            <span class="nav-link-title">Bildirim Tercihleri</span>
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link @(IsCurrent("Security") ? "active" : string.Empty)" href="/panel/user/guvenlik-ve-giris">
-                            <span class="nav-link-icon"><i class="fas fa-shield-halved"></i></span>
-                            <span class="nav-link-title">Güvenlik ve Giriş</span>
-                        </a>
-                    </li>
-                </ul>
+        <span class="sidebar-group-label">Ödemeler & Finans</span>
+        <div class="nav-menu-item @(financeOpen ? "open active" : "")" data-nav-group>
+            <button type="button" class="nav-main-link" data-user-nav-toggle aria-expanded="@(financeOpen ? "true" : "false")">
+                <div class="nav-link-left"><i class="fas fa-wallet ic-wallet"></i><span>Dijital Cüzdan</span></div>
+                <i class="fas fa-chevron-down chevron-icon"></i>
+            </button>
+            <div class="sub-links-container">
+                <a class="@ActivePath("/panel/user/faturalarim")" href="/panel/user/faturalarim">Faturalarım</a>
+                <a class="@ActivePath("/panel/user/odeme-yontemleri")" href="/panel/user/odeme-yontemleri">Ödeme Yöntemleri</a>
             </div>
+        </div>
 
-            <div class="user-sidebar-footer">
-                <a class="btn btn-primary w-100" href="/oteller"><i class="fas fa-magnifying-glass me-2"></i>Otel Ara</a>
-                <div class="user-footer-actions">
-                    <a class="btn btn-outline-light" href="/"><i class="fas fa-arrow-left me-2"></i>Site</a>
-                    <form method="post" action="/cikis-yap" class="m-0">
-                        @Html.AntiForgeryToken()
-                        <button type="submit" class="btn btn-outline-light"><i class="fas fa-right-from-bracket me-2"></i>Çıkış</button>
-                    </form>
-                </div>
+        <span class="sidebar-group-label">Müşteri İlişkileri</span>
+        <div class="nav-menu-item @(IsCurrent("Messages") ? "active" : "")">
+            <a class="nav-main-link" href="/panel/user/mesajlarim">
+                <div class="nav-link-left"><i class="fas fa-headset ic-support"></i><span>Mesajlarım</span></div>
+                @if (messageCount > 0)
+                {
+                    <span class="ap-nav-badge">@messageCount</span>
+                }
+            </a>
+        </div>
+        <div class="nav-menu-item">
+            <a class="nav-main-link" href="/yardim-merkezi" target="_blank" rel="noopener">
+                <div class="nav-link-left"><i class="fas fa-circle-question ic-support"></i><span>Yardım Merkezi</span></div>
+            </a>
+        </div>
+
+        <span class="sidebar-group-label">Hesap Yapılandırma</span>
+        <div class="nav-menu-item @(accountOpen ? "open active" : "")" data-nav-group>
+            <button type="button" class="nav-main-link" data-user-nav-toggle aria-expanded="@(accountOpen ? "true" : "false")">
+                <div class="nav-link-left"><i class="fas fa-user-cog ic-settings"></i><span>Profil Ayarları</span></div>
+                <i class="fas fa-chevron-down chevron-icon"></i>
+            </button>
+            <div class="sub-links-container">
+                <a class="@ActivePath("/panel/user/profil-bilgilerim")" href="/panel/user/profil-bilgilerim">Kişisel Bilgiler</a>
+                <a class="@ActivePath("/panel/user/bildirim-tercihleri")" href="/panel/user/bildirim-tercihleri">Bildirim Tercihleri</a>
+                <a class="@ActivePath("/panel/user/guvenlik-ve-giris")" href="/panel/user/guvenlik-ve-giris">Güvenlik ve Giriş</a>
             </div>
+        </div>
+    </div>
+
+    <div class="admin-sidebar-footer">
+        <div class="admin-sidebar-footer-actions">
+            <a href="/oteller" class="ap-btn-sidebar primary">
+                <i class="fas fa-magnifying-glass"></i> Otel Ara
+            </a>
+            <a href="/" class="ap-btn-sidebar">
+                <i class="fas fa-arrow-left"></i> Site
+            </a>
+            <form method="post" action="/cikis-yap" class="m-0">
+                @Html.AntiForgeryToken()
+                <button type="submit" class="ap-btn-sidebar danger w-100">
+                    <i class="fas fa-right-from-bracket"></i> Çıkış
+                </button>
+            </form>
         </div>
     </div>
 </aside>

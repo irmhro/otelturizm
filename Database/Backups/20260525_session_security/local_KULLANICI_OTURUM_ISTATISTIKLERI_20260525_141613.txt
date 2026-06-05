@@ -1,0 +1,2 @@
+ID|KULLANICI_ID|HESAP_TIPI|PARTNER_ID|CIHAZ_ANAHTARI|CIHAZ_ETIKETI|BENI_HATIRLA_TERCIHI|TOPLAM_ZIYARET_SAYISI|TOPLAM_OTURUM_SURESI_SANIYE|SON_OTURUM_BASLANGICI|SON_OTURUM_BITISI|SON_AKTIVITE_TARIHI|SON_IP_HASH|SON_KULLANICI_ARACISI_HASH|OLUSTURULMA_TARIHI|GUNCELLENME_TARIHI
+--|------------|----------|----------|--------------|-------------|--------------------|---------------------|---------------------------|---------------------|-----------------|-------------------|-----------|--------------------------|------------------|------------------

@@ -2,15 +2,37 @@
 .admin-contracts-hero,.admin-contract-list-card,.admin-contract-form-card{background:#fff;border-radius:28px;box-shadow:0 18px 40px rgba(15,23,42,.08);padding:28px;}
 .admin-contracts-kicker{font-size:.78rem;font-weight:800;letter-spacing:.08em;color:#0f4aa3;margin:0 0 8px;}
 .admin-contracts-hero h1{margin:0 0 10px;font-size:2rem;}
+.admin-contracts-hero p{margin:0;color:#475569;line-height:1.7;max-width:820px;}
 .admin-contract-summary-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:18px;}
 .admin-contract-summary-card{padding:22px;border-radius:24px;background:#f8fafc;border:1px solid #e2e8f0;}
 .admin-contract-summary-card strong{display:block;font-size:1.8rem;margin:8px 0;color:#0f172a;}
 .admin-contract-layout{display:grid;grid-template-columns:minmax(0,1.2fr) minmax(360px,.9fr);gap:24px;}
 .admin-contract-list-card header,.admin-contract-form-card header{margin-bottom:18px;}
+.admin-contract-list-card header h2,.admin-contract-form-card header h2{margin:0 0 6px;font-size:1.3rem;color:#0f172a;}
+.admin-contract-list-card header p,.admin-contract-form-card header p{margin:0;color:#64748b;line-height:1.6;}
 .admin-contract-table-wrap{overflow:auto;}.admin-contract-table{width:100%;border-collapse:collapse;}
 .admin-contract-table th,.admin-contract-table td{padding:14px 12px;border-bottom:1px solid #e2e8f0;text-align:left;vertical-align:top;}
 .admin-contract-table td strong{display:block;color:#0f172a;}.admin-contract-table td span{display:block;color:#64748b;font-size:.88rem;margin-top:4px;}
 .admin-contract-actions{display:flex;gap:10px;flex-wrap:wrap;}.secondary-btn,.ghost-btn,.primary-btn{display:inline-flex;align-items:center;justify-content:center;border-radius:999px;padding:10px 16px;font-weight:700;text-decoration:none;border:none;cursor:pointer;}.secondary-btn{background:#eff6ff;color:#0f4aa3;}.ghost-btn{background:#f8fafc;color:#0f172a;border:1px solid #cbd5e1;}.primary-btn{background:#e11d48;color:#fff;}
 .admin-contract-form{display:flex;flex-direction:column;gap:14px;}.admin-contract-form label{display:flex;flex-direction:column;gap:8px;font-weight:700;color:#0f172a;}.admin-contract-form input,.admin-contract-form select,.admin-contract-form textarea{width:100%;border:1px solid #cbd5e1;border-radius:18px;padding:14px 16px;font:inherit;}.admin-contract-grid{display:grid;gap:14px;}.admin-contract-grid.two{grid-template-columns:repeat(2,minmax(0,1fr));}.admin-contract-grid.three{grid-template-columns:repeat(3,minmax(0,1fr));}.admin-contract-checks{display:grid;gap:10px;color:#334155;}
+.admin-contract-editor-note{margin:-2px 0 2px;color:#64748b;font-size:.9rem;line-height:1.5;}
+.admin-contract-inline-check{display:flex;align-items:flex-start;gap:10px;padding:12px 14px;border:1px solid #dbe3ee;border-radius:18px;background:#f8fafc;}
+.admin-contract-inline-check input{width:18px;height:18px;margin-top:2px;flex:0 0 auto;}
+.admin-contract-inline-check span{display:block;font-weight:700;color:#0f172a;}
+.admin-contract-inline-check small{display:block;color:#64748b;font-weight:500;line-height:1.45;margin-top:2px;}
+.admin-contract-form-actions{display:flex;justify-content:flex-end;gap:10px;padding-top:4px;}
+.admin-contract-side-stack{display:flex;flex-direction:column;gap:18px;}
+.contract-pdf-upload-card{border:1px dashed rgba(2,6,23,.18);border-radius:20px;padding:18px;background:rgba(248,250,252,.75);}
+.contract-pdf-upload-card h3{margin:0 0 6px;font-size:1.05rem;color:#0f172a;}
+.contract-pdf-upload-card p{margin:0 0 14px;color:#64748b;line-height:1.6;}
+.contract-pdf-upload-row{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:12px;align-items:center;}
+.contract-pdf-upload-row input[type=file]{padding:12px 14px;background:#fff;}
+.contract-preview-shell{max-width:min(980px,calc(100vw - 28px));}
+.contract-preview-shell .modal-content{border-radius:22px;overflow:hidden;border:1px solid rgba(2,6,23,.10);box-shadow:0 26px 70px rgba(15,23,42,.25);}
+.contract-preview-shell .modal-header{background:linear-gradient(180deg,#f8fbff 0%,#ffffff 100%);}
+.contract-admin-preview-body{padding:18px;max-height:min(72vh,860px);overflow:auto;background:#fff;}
+.contract-admin-preview-body :is(h1,h2,h3){letter-spacing:-.01em;color:#0f172a;}
+.contract-admin-preview-body :is(p,li){color:#0f172a;line-height:1.7;}
+@media (max-width: 900px){.contract-pdf-upload-row{grid-template-columns:1fr;}.admin-contract-form-actions{flex-direction:column;}.admin-contract-form-actions .secondary-btn,.admin-contract-form-actions .primary-btn{width:100%;}}
 @media (max-width: 1100px){.admin-contract-layout{grid-template-columns:1fr;}}
 @media (max-width: 720px){.admin-contract-grid.two,.admin-contract-grid.three{grid-template-columns:1fr;}}

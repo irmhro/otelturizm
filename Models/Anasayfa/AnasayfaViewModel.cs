@@ -36,7 +36,9 @@ public class HomeCampaignSlideViewModel
     public string CampaignName { get; set; } = string.Empty;
     public string Slogan { get; set; } = string.Empty;
     public string ImageUrl { get; set; } = string.Empty;
+    public string Slug { get; set; } = string.Empty;
     public string TargetUrl { get; set; } = string.Empty;
+    public string DetailUrl { get; set; } = string.Empty;
     public string BadgeText { get; set; } = string.Empty;
 }
 

@@ -1,0 +1,13 @@
+@media (max-width: 767.98px) {
+    .admin-slow-sql-table .table {
+        font-size: 0.85rem;
+    }
+
+    .admin-slow-sql-sample code {
+        display: block;
+        white-space: pre-wrap;
+        word-break: break-word;
+        max-height: 6rem;
+        overflow: auto;
+    }
+}

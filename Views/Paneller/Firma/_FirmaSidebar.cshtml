@@ -1,128 +1,139 @@
 @model otelturizmnew.Models.Paneller.Firma.FirmaPanelShellViewModel
 @{
     var currentAction = ViewContext.RouteData.Values["action"]?.ToString() ?? "Index";
-    var navGroups = new[]
-    {
-        new
-        {
-            Title = "Özet",
-            Icon = "fa-chart-pie",
-            Items = new[]
-            {
-                new { Action = "Index", Label = "Dashboard", Icon = "fa-chart-pie", Route = "/panel/firma/dashboard" }
-            }
-        },
-        new
-        {
-            Title = "Satış & rezervasyon",
-            Icon = "fa-calendar-days",
-            Items = new[]
-            {
-                new { Action = "Deals", Label = "Firma Fiyatları", Icon = "fa-hotel", Route = "/panel/firma/firma-fiyatlari" },
-                new { Action = "CreateReservation", Label = "Yeni Rezervasyon", Icon = "fa-plus-circle", Route = "/panel/firma/yeni-rezervasyon" },
-                new { Action = "Reservations", Label = "Rezervasyonlar", Icon = "fa-calendar-check", Route = "/panel/firma/rezervasyonlar" },
-                new { Action = "Messages", Label = "Mesajlar", Icon = "fa-envelope-open-text", Route = "/panel/firma/mesajlar" }
-            }
-        },
-        new
-        {
-            Title = "Yönetim",
-            Icon = "fa-briefcase",
-            Items = new[]
-            {
-                new { Action = "Employees", Label = "Çalışanlar", Icon = "fa-users", Route = "/panel/firma/calisanlar" },
-                new { Action = "Limits", Label = "Limitler & Onaylar", Icon = "fa-sliders", Route = "/panel/firma/limitler-onaylar" },
-                new { Action = "Invoices", Label = "Faturalar", Icon = "fa-file-invoice", Route = "/panel/firma/faturalar" }
-            }
-        },
-        new
-        {
-            Title = "Raporlar",
-            Icon = "fa-chart-line",
-            Items = new[]
-            {
-                new { Action = "Spending", Label = "Harcama Raporları", Icon = "fa-chart-column", Route = "/panel/firma/harcama-raporlari" },
-                new { Action = "Hotels", Label = "Otel Bazlı Rapor", Icon = "fa-building", Route = "/panel/firma/otel-bazli-rapor" }
-            }
-        },
-        new
-        {
-            Title = "Hesap",
-            Icon = "fa-shield-halved",
-            Items = new[]
-            {
-                new { Action = "Security", Label = "Güvenlik", Icon = "fa-shield-halved", Route = "/panel/firma/guvenlik" },
-                new { Action = "ContractsNav", Label = "Sözleşmeler", Icon = "fa-file-signature", Route = "/panel/firma/guvenlik#firma-sozlesmeler-panel" }
-            }
-        }
-    };
+    var currentPath = Context.Request.Path.Value ?? string.Empty;
+    bool IsCurrent(params string[] actions) => actions.Any(a => string.Equals(currentAction, a, StringComparison.OrdinalIgnoreCase));
+    bool IsPath(params string[] paths) => paths.Any(p => currentPath.Equals(p, StringComparison.OrdinalIgnoreCase) || currentPath.StartsWith(p + "/", StringComparison.OrdinalIgnoreCase));
+    string ActivePath(params string[] paths) => IsPath(paths) ? "active" : string.Empty;
 
-    string? GetBadge(string action) => action switch
-    {
-        "Limits" when Model.PendingApprovalCount > 0 => Model.PendingApprovalCount.ToString(),
-        "Employees" when Model.EmployeeCount > 0 => Model.EmployeeCount.ToString(),
-        "Deals" when Model.DealCount > 0 => Model.DealCount.ToString(),
-        _ => null
-    };
-
-    bool IsItemActive(string action) => action switch
-    {
-        "ContractsNav" => false,
-        "Deals" => string.Equals(currentAction, "Deals", StringComparison.OrdinalIgnoreCase)
-            || string.Equals(currentAction, "CompareDeals", StringComparison.OrdinalIgnoreCase),
-        _ => string.Equals(currentAction, action, StringComparison.OrdinalIgnoreCase)
-    };
+    var dashboardActive = IsCurrent("Index") || IsPath("/panel/firma/dashboard");
+    var travelOpen = IsPath("/panel/firma/firma-fiyatlari", "/panel/firma/yeni-rezervasyon", "/panel/firma/rezervasyonlar", "/panel/firma/mesajlar")
+        || IsCurrent("Deals", "CompareDeals", "CreateReservation", "Reservations", "Messages");
+    var orgOpen = IsPath("/panel/firma/calisanlar", "/panel/firma/limitler-onaylar", "/panel/firma/faturalar")
+        || IsCurrent("Employees", "Limits", "Invoices");
+    var reportOpen = IsPath("/panel/firma/harcama-raporlari", "/panel/firma/otel-bazli-rapor")
+        || IsCurrent("Spending", "Hotels");
+    var accountOpen = IsPath("/panel/firma/guvenlik") || IsCurrent("Security");
+    var companyName = string.IsNullOrWhiteSpace(Model.CompanyName) ? "Kurumsal hesap" : Model.CompanyName;
 }
-
-<aside class="firma-sidebar">
-    <div class="firma-sidebar-inner">
-        <a href="/panel/firma/dashboard" class="firma-brand" aria-label="Otelturizm Firma paneli">
-            <img src="~/uploads/logo/logo.png" alt="Otelturizm" />
+<aside class="admin-sidebar" id="appSidebar" aria-label="Firma menüsü">
+    <div class="sidebar-header">
+        <a href="/panel/firma/dashboard" class="logo-wordmark-wrapper">
+            <span class="logo-otel">B2B</span>
+            <div class="logo-sep"></div>
+            <span class="logo-turizm">Kurumsal</span>
         </a>
-        <div class="firma-profile-card">
-            <div class="firma-avatar" aria-hidden="true">@string.Concat(Model.FullName.Split(' ', StringSplitOptions.RemoveEmptyEntries).Take(2).Select(static x => x[0]))</div>
-            <div>
-                <h3>@Model.CompanyName</h3>
-                <p>@Model.FullName</p>
-                <small>@Model.UserRole</small>
+    </div>
+
+    <div class="sidebar-scroll">
+        <div class="sidebar-hotel-line">
+            Aktif şirket
+            <strong>@companyName</strong>
+        </div>
+
+        <span class="sidebar-group-label">Kurumsal Kokpit</span>
+        <div class="nav-menu-item @(dashboardActive ? "active" : "")">
+            <a class="nav-main-link" href="/panel/firma/dashboard">
+                <div class="nav-link-left"><i class="fas fa-chart-line ic-core"></i><span>Genel Bakış</span></div>
+            </a>
+        </div>
+
+        <span class="sidebar-group-label">Organizasyon</span>
+        <div class="nav-menu-item @(orgOpen ? "open active" : "")" data-nav-group>
+            <button type="button" class="nav-main-link" data-firma-nav-toggle aria-expanded="@(orgOpen ? "true" : "false")">
+                <div class="nav-link-left"><i class="fas fa-users ic-staff"></i><span>Çalışan & Limitler</span></div>
+                @if (Model.PendingApprovalCount > 0)
+                {
+                    <span class="ap-nav-badge">@Model.PendingApprovalCount</span>
+                }
+                <i class="fas fa-chevron-down chevron-icon"></i>
+            </button>
+            <div class="sub-links-container">
+                <a class="@ActivePath("/panel/firma/calisanlar")" href="/panel/firma/calisanlar">
+                    Çalışanlar
+                    @if (Model.EmployeeCount > 0)
+                    {
+                        <span class="ap-nav-badge">@Model.EmployeeCount</span>
+                    }
+                </a>
+                <a class="@ActivePath("/panel/firma/limitler-onaylar")" href="/panel/firma/limitler-onaylar">
+                    Limitler & Onaylar
+                    @if (Model.PendingApprovalCount > 0)
+                    {
+                        <span class="ap-nav-badge">@Model.PendingApprovalCount</span>
+                    }
+                </a>
+                <a class="@ActivePath("/panel/firma/faturalar")" href="/panel/firma/faturalar">Faturalar</a>
             </div>
         </div>
 
-        @foreach (var group in navGroups)
-        {
-            var groupIsActive = group.Items.Any(item => IsItemActive(item.Action));
-            <details class="firma-nav-category @(groupIsActive ? "active" : string.Empty)" open="@groupIsActive">
-                <summary>
-                    <span class="firma-nav-category-title">
-                        <i class="fas @group.Icon" aria-hidden="true"></i>
-                        <span>@group.Title</span>
-                    </span>
-                    <span class="firma-nav-category-count">@group.Items.Length</span>
-                    <i class="fas fa-chevron-down firma-nav-category-chevron" aria-hidden="true"></i>
-                </summary>
-                <nav class="firma-sidebar-nav" aria-label="@group.Title">
-                @foreach (var item in group.Items)
+        <span class="sidebar-group-label">Seyahat Operasyonları</span>
+        <div class="nav-menu-item @(travelOpen ? "open active" : "")" data-nav-group>
+            <button type="button" class="nav-main-link" data-firma-nav-toggle aria-expanded="@(travelOpen ? "true" : "false")">
+                <div class="nav-link-left"><i class="fas fa-plane-departure ic-travel"></i><span>Rezervasyon Akışı</span></div>
+                @if (Model.DealCount > 0)
                 {
-                    var badge = GetBadge(item.Action);
-                    var isActive = IsItemActive(item.Action);
-                    <a href="@item.Route" class="@(isActive ? "active" : string.Empty)">
-                        <i class="fas @item.Icon" aria-hidden="true"></i>
-                        <span>@item.Label</span>
-                        @if (!string.IsNullOrWhiteSpace(badge))
-                        {
-                            <b class="firma-nav-badge">@badge</b>
-                        }
-                    </a>
+                    <span class="ap-nav-badge">@Model.DealCount</span>
                 }
-                </nav>
-            </details>
-        }
+                <i class="fas fa-chevron-down chevron-icon"></i>
+            </button>
+            <div class="sub-links-container">
+                <a class="@(IsCurrent("Deals", "CompareDeals") ? "active" : string.Empty)" href="/panel/firma/firma-fiyatlari">
+                    Firma Fiyatları
+                    @if (Model.DealCount > 0)
+                    {
+                        <span class="ap-nav-badge">@Model.DealCount</span>
+                    }
+                </a>
+                <a class="@ActivePath("/panel/firma/yeni-rezervasyon")" href="/panel/firma/yeni-rezervasyon">Yeni Rezervasyon</a>
+                <a class="@ActivePath("/panel/firma/rezervasyonlar")" href="/panel/firma/rezervasyonlar">Rezervasyonlar</a>
+                <a class="@ActivePath("/panel/firma/mesajlar")" href="/panel/firma/mesajlar">Mesajlar</a>
+            </div>
+        </div>
+
+        <span class="sidebar-group-label">Raporlar</span>
+        <div class="nav-menu-item @(reportOpen ? "open active" : "")" data-nav-group>
+            <button type="button" class="nav-main-link" data-firma-nav-toggle aria-expanded="@(reportOpen ? "true" : "false")">
+                <div class="nav-link-left"><i class="fas fa-chart-column ic-report"></i><span>Analiz & Rapor</span></div>
+                <i class="fas fa-chevron-down chevron-icon"></i>
+            </button>
+            <div class="sub-links-container">
+                <a class="@ActivePath("/panel/firma/harcama-raporlari")" href="/panel/firma/harcama-raporlari">Harcama Raporları</a>
+                <a class="@ActivePath("/panel/firma/otel-bazli-rapor")" href="/panel/firma/otel-bazli-rapor">Otel Bazlı Rapor</a>
+            </div>
+        </div>
+
+        <span class="sidebar-group-label">Hesap</span>
+        <div class="nav-menu-item @(accountOpen ? "open active" : "")" data-nav-group>
+            <button type="button" class="nav-main-link" data-firma-nav-toggle aria-expanded="@(accountOpen ? "true" : "false")">
+                <div class="nav-link-left"><i class="fas fa-shield-halved ic-settings"></i><span>Güvenlik & Sözleşme</span></div>
+                <i class="fas fa-chevron-down chevron-icon"></i>
+            </button>
+            <div class="sub-links-container">
+                <a class="@ActivePath("/panel/firma/guvenlik")" href="/panel/firma/guvenlik">Güvenlik</a>
+                <a href="/panel/firma/guvenlik#firma-sozlesmeler-panel">Sözleşmeler</a>
+            </div>
+        </div>
     </div>
-    <div class="firma-sidebar-footer">
-        <a href="/firma"><i class="fas fa-arrow-left" aria-hidden="true"></i> Firma sayfasına dön</a>
-        <form method="post" action="/cikis-yap" class="panel-logout-form">
-            @Html.AntiForgeryToken()
-            <button type="submit" class="logout-link"><i class="fas fa-right-from-bracket" aria-hidden="true"></i> Çıkış Yap</button>
-        </form>
+
+    <div class="admin-sidebar-footer">
+        <div class="ap-sidebar-user">
+            <strong>@Model.FullName</strong>
+            @Model.Email
+        </div>
+        <div class="admin-sidebar-footer-actions">
+            <a href="/panel/firma/yeni-rezervasyon" class="ap-btn-sidebar primary">
+                <i class="fas fa-plus"></i> Yeni Rezervasyon
+            </a>
+            <a href="/firma" class="ap-btn-sidebar">
+                <i class="fas fa-arrow-left"></i> Firma Sayfası
+            </a>
+            <form method="post" action="/cikis-yap" class="m-0">
+                @Html.AntiForgeryToken()
+                <button type="submit" class="ap-btn-sidebar danger w-100">
+                    <i class="fas fa-right-from-bracket"></i> Çıkış
+                </button>
+            </form>
+        </div>
     </div>
 </aside>

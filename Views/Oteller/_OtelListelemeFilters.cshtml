@@ -1,0 +1,157 @@
+@model otelturizmnew.Models.Oteller.HotelListingPageViewModel
+@using System.Globalization
+@{
+    var scope = ViewData["FilterScope"] as string ?? "desktop";
+    var prefix = scope == "mobile" ? "otelliste-m-" : "otelliste-";
+    var hotels = Model.Hotels ?? new List<otelturizmnew.Models.Oteller.HotelListingCardViewModel>();
+    var amenityCounts = hotels
+        .SelectMany(h => h.Amenities ?? new List<string>())
+        .Where(a => !string.IsNullOrWhiteSpace(a))
+        .GroupBy(a => a, StringComparer.OrdinalIgnoreCase)
+        .OrderByDescending(g => g.Count())
+        .ThenBy(g => g.Key)
+        .Take(10)
+        .ToList();
+    var cityOptions = (Model.Cities?.Any() == true
+        ? Model.Cities
+        : hotels.Select(h => h.City).Where(x => !string.IsNullOrWhiteSpace(x)).Distinct(StringComparer.OrdinalIgnoreCase))
+        .OrderBy(x => x)
+        .ToList();
+    var districtOptions = (Model.Districts?.Any() == true
+        ? Model.Districts
+        : hotels.Select(h => h.District).Where(x => !string.IsNullOrWhiteSpace(x)).Distinct(StringComparer.OrdinalIgnoreCase))
+        .OrderBy(x => x)
+        .ToList();
+    var neighborhoodOptions = (Model.Neighborhoods?.Any() == true
+        ? Model.Neighborhoods
+        : hotels.Select(h => h.Neighborhood).Where(x => !string.IsNullOrWhiteSpace(x)).Distinct(StringComparer.OrdinalIgnoreCase))
+        .OrderBy(x => x)
+        .ToList();
+    var starOptions = (Model.StarOptions?.Any() == true
+        ? Model.StarOptions
+        : hotels.Where(h => h.StarCount.HasValue).Select(h => h.StarCount!.Value).Distinct())
+        .OrderByDescending(x => x)
+        .ToList();
+    var priced = hotels.Where(x => (x.StartingPrice ?? 0m) > 0m).ToList();
+    var priceMin = priced.Select(x => x.StartingPrice ?? 0m).DefaultIfEmpty(0m).Min();
+    var priceMax = priced.Select(x => x.StartingPrice ?? 0m).DefaultIfEmpty(0m).Max();
+    var hasPriceRange = priceMin > 0m && priceMax >= priceMin;
+}
+
+<div class="otelliste-filters" data-filter-scope="@scope">
+    <div class="otelliste-filter-group">
+        <label for="@(prefix)keyword">Konum / Otel Ara</label>
+        <input type="search"
+               id="@(prefix)keyword"
+               class="otelliste-field otelliste-filter-keyword"
+               placeholder="Otel adı, il, ilçe veya mahalle"
+               autocomplete="off" />
+    </div>
+
+    <div class="otelliste-filter-group">
+        <label for="@(prefix)city">İl</label>
+        <select id="@(prefix)city" class="otelliste-field otelliste-filter-city">
+            <option value="">Tüm iller</option>
+            @foreach (var city in cityOptions)
+            {
+                <option value="@city">@city</option>
+            }
+        </select>
+    </div>
+
+    <div class="otelliste-filter-group">
+        <label for="@(prefix)district">İlçe</label>
+        <select id="@(prefix)district" class="otelliste-field otelliste-filter-district">
+            <option value="">Tüm ilçeler</option>
+            @foreach (var district in districtOptions)
+            {
+                <option value="@district">@district</option>
+            }
+        </select>
+    </div>
+
+    <div class="otelliste-filter-group">
+        <label for="@(prefix)neighborhood">Mahalle</label>
+        <select id="@(prefix)neighborhood" class="otelliste-field otelliste-filter-neighborhood">
+            <option value="">Tüm mahalleler</option>
+            @foreach (var neighborhood in neighborhoodOptions)
+            {
+                <option value="@neighborhood">@neighborhood</option>
+            }
+        </select>
+    </div>
+
+    @if (hasPriceRange)
+    {
+        <div class="otelliste-filter-group">
+            <span class="otelliste-filter-label">Fiyat Aralığı (₺)</span>
+            <div class="otelliste-price-row">
+                <input type="number"
+                       id="@(prefix)minPrice"
+                       class="otelliste-field otelliste-filter-min-price"
+                       placeholder="Min"
+                       min="0"
+                       step="1"
+                       value="@((int)Math.Floor(priceMin))" />
+                <input type="number"
+                       id="@(prefix)maxPrice"
+                       class="otelliste-field otelliste-filter-max-price"
+                       placeholder="Max"
+                       min="0"
+                       step="1"
+                       value="@((int)Math.Ceiling(priceMax))" />
+            </div>
+        </div>
+    }
+
+    @if (starOptions.Count > 0)
+    {
+        <div class="otelliste-filter-group">
+            <span class="otelliste-filter-label">Yıldız</span>
+            <div class="otelliste-star-options otelliste-filter-stars" role="group" aria-label="Yıldız filtresi">
+                @foreach (var star in starOptions)
+                {
+                    <button type="button" class="otelliste-star-btn" data-star="@star">@star★</button>
+                }
+            </div>
+        </div>
+    }
+
+    @if (amenityCounts.Count > 0)
+    {
+        <div class="otelliste-filter-group">
+            <span class="otelliste-filter-label">Özellikler</span>
+            <div class="otelliste-check-list otelliste-filter-amenities">
+                @foreach (var amenity in amenityCounts)
+                {
+                    <label class="otelliste-check">
+                        <input type="checkbox" class="otelliste-filter-amenity" value="@amenity.Key.ToLowerInvariant()" />
+                        <span>@amenity.Key</span>
+                    </label>
+                }
+            </div>
+        </div>
+    }
+
+    @if (Model.Campaigns?.Any(x => !string.IsNullOrWhiteSpace(x.Slug)) == true)
+    {
+        <div class="otelliste-filter-group">
+            <span class="otelliste-filter-label">Kampanyalar</span>
+            <div class="otelliste-check-list otelliste-filter-campaigns">
+                @foreach (var campaign in Model.Campaigns.Where(x => !string.IsNullOrWhiteSpace(x.Slug)).Take(8))
+                {
+                    <label class="otelliste-check">
+                        <input type="checkbox"
+                               class="otelliste-filter-campaign"
+                               value="@campaign.Slug"
+                               @(campaign.IsActive ? "checked" : null) />
+                        <span>@campaign.Name</span>
+                    </label>
+                }
+            </div>
+        </div>
+    }
+
+    <button type="button" class="otelliste-btn-reset otelliste-filter-reset">Filtreleri Sıfırla</button>
+    <button type="button" class="otelliste-btn-apply otelliste-filter-apply">Filtreleri Uygula</button>
+</div>

@@ -1,11 +1,15 @@
 /* Site footer — mobil ultra-lux (≤900 px) */
 @media (max-width: 900px) {
     .site-footer {
-        background: #003B95;
-        color: #fff;
+        background: transparent;
+        color: #0f172a;
         margin-top: 32px;
-        border-top: 0;
+        border-top: 1px solid rgba(203, 213, 225, 0.8);
         padding-bottom: calc(88px + env(safe-area-inset-bottom));
+    }
+
+    .site-footer .footer-pattern {
+        display: none;
     }
 
     body:has(.mobile-booking-bar) .site-footer,
@@ -21,31 +25,40 @@
     .site-footer .footer-links a,
     .site-footer .footer-copyright,
     .site-footer .footer-bottom-links a {
-        color: rgba(255, 255, 255, 0.88);
-        font-size: 16px;
+        color: #475569;
+        font-size: 15px;
         line-height: 1.55;
     }
 
     .site-footer .footer-title,
     .site-footer .footer-logo {
-        color: #fff;
+        color: #0f172a;
     }
 
     .site-footer .footer-grid {
-        display: flex;
-        flex-direction: column;
-        gap: 0;
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 12px;
         margin-bottom: 18px;
     }
 
     .site-footer .footer-col:first-child {
-        margin-bottom: 18px;
-        padding-bottom: 18px;
-        border-bottom: 1px solid rgba(255, 255, 255, 0.14);
+        grid-column: 1 / -1;
+        margin-bottom: 0;
+        padding: 18px;
+        border: 1px solid rgba(203, 213, 225, 0.9);
+        border-radius: 22px;
+        background: linear-gradient(180deg, rgba(255,255,255,.98), rgba(248,250,252,.96));
+        box-shadow: 0 12px 28px rgba(15, 23, 42, 0.06);
     }
 
     .site-footer .footer-col--accordion .footer-accordion {
-        border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+        height: 100%;
+        border: 1px solid rgba(203, 213, 225, 0.9);
+        border-radius: 20px;
+        background: rgba(255, 255, 255, 0.92);
+        box-shadow: 0 10px 24px rgba(15, 23, 42, 0.04);
+        overflow: hidden;
     }
 
     .site-footer .footer-col--accordion .footer-accordion summary {
@@ -55,10 +68,10 @@
         align-items: center;
         justify-content: space-between;
         gap: 12px;
-        padding: 14px 0;
-        font-size: 17px;
+        padding: 14px 14px 10px;
+        font-size: 15px;
         font-weight: 800;
-        color: #fff;
+        color: #0f172a;
     }
 
     .site-footer .footer-col--accordion .footer-accordion summary::-webkit-details-marker {
@@ -70,7 +83,7 @@
         font-family: "Font Awesome 6 Free";
         font-weight: 900;
         font-size: 12px;
-        opacity: 0.85;
+        opacity: 0.65;
         transition: transform 0.2s ease;
     }
 
@@ -79,22 +92,22 @@
     }
 
     .site-footer .footer-col--accordion .footer-links {
-        padding: 0 0 14px;
-        gap: 10px;
+        padding: 0 14px 14px;
+        gap: 8px;
     }
 
     .site-footer .footer-links a:hover {
-        color: #fff;
+        color: #0f172a;
     }
 
     .site-footer .footer-social .social-link {
-        background: rgba(255, 255, 255, 0.12);
-        border-color: rgba(255, 255, 255, 0.18);
-        color: #fff;
+        background: rgba(37, 99, 235, 0.08);
+        border-color: rgba(59, 130, 246, 0.14);
+        color: #1d4ed8;
     }
 
     .site-footer .footer-bottom {
-        border-top: 1px solid rgba(255, 255, 255, 0.14);
+        border-top: 1px solid rgba(203, 213, 225, 0.9);
         padding-top: 16px;
         gap: 14px;
     }
@@ -107,26 +120,25 @@
     }
 
     .site-footer .trust-badges {
-        display: flex;
-        flex-wrap: wrap;
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
         gap: 8px;
         width: 100%;
     }
 
     .site-footer .trust-badge {
-        flex: 1 1 calc(50% - 4px);
         min-width: 0;
         justify-content: center;
         text-align: center;
-        background: rgba(255, 255, 255, 0.1);
-        border-color: rgba(255, 255, 255, 0.18);
-        color: rgba(255, 255, 255, 0.92);
+        background: rgba(255, 255, 255, 0.9);
+        border-color: rgba(203, 213, 225, 0.85);
+        color: #334155;
         font-size: 12px;
         padding: 8px 10px;
     }
 
     .site-footer .footer-bottom-links a {
-        color: #fff;
+        color: #0f172a;
         font-weight: 700;
     }
 }

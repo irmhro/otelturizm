@@ -455,7 +455,9 @@ public class HotelService : IHotelService
                         ? "Seçili otellerde güncel fiyat ve kampanya avantajı sizi bekliyor."
                         : campaignReader.GetString(2),
                     ImageUrl = NormalizeImageUrl(imageUrl),
+                    Slug = campaignSlug,
                     TargetUrl = $"/oteller?kampanya={Uri.EscapeDataString(campaignSlug)}",
+                    DetailUrl = $"/kampanyalar/{Uri.EscapeDataString(campaignSlug)}",
                     BadgeText = campaignReader.IsDBNull(4) ? "Aktif Kampanya" : campaignReader.GetString(4)
                 });
             }
@@ -3219,7 +3221,7 @@ public class HotelService : IHotelService
             "aile-dostu" => ("Aile Dostu Oteller", "Çocuklu ailelerin ihtiyaçlarına uygun, dengeli konaklama seçenekleri."),
             "spa-wellness" => ("Spa & Wellness", "Dinlenme ve bakım odaklı spa/wellness deneyimi sunan oteller."),
             "kampanyaya-dahil-oteller" => ("Kampanyaya Dahil Oteller", "Yayınlanan kampanya ve görünürlük avantajı taşıyan otelleri tek ekranda görün."),
-            "hafta-sonu-firsatlari" => ("Hafta Sonu Fırsatları", "Kısa kaçamaklar için rezervasyona hazır, kullanıcıların en çok baktığı hafta sonu otelleri."),
+            "hafta-sonu-firsatlari" => ("Hafta Sonu Fırsatları", "Kısa konaklamalar için rezervasyona hazır, kullanıcıların en çok baktığı hafta sonu otelleri."),
             "butceme-uygun-oteller" => ("Bütçeme Uygun Oteller", "Daha erişilebilir fiyat bandındaki otelleri hızlıca filtreleyin ve karşılaştırın."),
             "ultra-luks" => ("Ultra Lüks Seçkisi", "Yüksek segment, premium deneyim ve güçlü puan kombinasyonu sunan seçili tesisler."),
             "ay-sonu-ozel" => ("Ay Sonu Özel", "Ay sonu kampanyaları ve hızlı dönüş sağlayan fiyat avantajları burada toplanır."),

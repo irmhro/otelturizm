@@ -1,6 +1,10 @@
 @using otelturizmnew.Services
 @{
-    var footerLang = InternationalSeoPaths.ResolveCultureFromPath(Context.Request.Path.Value ?? "/");
+    var footerPath = Context.Request.Path.Value ?? "/";
+    var footerHasLocalePrefix = InternationalSeoPaths.HasLocalePathPrefix(footerPath);
+    var footerLang = footerHasLocalePrefix
+        ? InternationalSeoPaths.ResolveCultureFromPath(footerPath)
+        : "tr";
     var footerHotelsPath = InternationalSeoPaths.BuildPublicPath(footerLang, InternationalSeoPaths.PageKindListing, null, null);
     var footerIsTurkish = string.Equals(footerLang, "tr", StringComparison.OrdinalIgnoreCase);
     var footerDescription = footerIsTurkish
@@ -76,13 +80,6 @@
         <div class="footer-bottom">
             <div class="footer-bottom-top">
                 <div class="footer-copyright">&copy; @DateTime.Now.Year Otelturizm. @SharedLocalizer["Footer.Copyright"]</div>
-                <div class="footer-agency-wrap">
-                    <div class="trust-badges" role="group" aria-label="@SharedLocalizer["Footer.TrustCommitments"].Value">
-                        <a class="trust-badge" href="/" title="HTTPS"><i class="fas fa-lock" aria-hidden="true"></i> @SharedLocalizer["Footer.Https"].Value</a>
-                        <a class="trust-badge" href="/panel/user/rezervasyonlarim" title="@SharedLocalizer["Footer.ReservationSummary"].Value"><i class="fas fa-user-check" aria-hidden="true"></i> @SharedLocalizer["Footer.ReservationSummary"].Value</a>
-                        <a class="trust-badge" href="/sozlesmeler/kullanici-kvkk-aydinlatma" title="@SharedLocalizer["Footer.Kvkk"].Value"><i class="fas fa-scale-balanced" aria-hidden="true"></i> @SharedLocalizer["Footer.KvkkProcessing"].Value</a>
-                    </div>
-                </div>
             </div>
             <div class="footer-bottom-links">
                 <a asp-controller="Home" asp-action="Privacy">@SharedLocalizer["Footer.Privacy"]</a>

@@ -19,6 +19,7 @@ public class ContractDetailPageViewModel
     public string? SummaryHtml { get; set; }
     public string ContentHtml { get; set; } = string.Empty;
     public string? HeroImageUrl { get; set; }
+    public string? PdfUrl { get; set; }
     public string VersionText { get; set; } = string.Empty;
     public string EffectiveDateText { get; set; } = string.Empty;
     public List<ContractLinkViewModel> RelatedContracts { get; set; } = new();

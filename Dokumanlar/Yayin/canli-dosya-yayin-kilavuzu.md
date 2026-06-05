@@ -1,5 +1,7 @@
 # Dosyaları Canlıya Yükleme - Eksiksiz Yayın Kılavuzu
 
+> **Ana rehber:** [`canlıdeploy.md`](../../canlıdeploy.md) (proje kök dizini)
+
 Bu doküman, uygulama dosyalarını canlı sunucuya güvenli biçimde taşıma adımlarını içerir.
 
 ## 1) Yayın Öncesi Hazırlık

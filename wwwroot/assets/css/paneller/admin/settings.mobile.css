@@ -1,7 +1,0 @@
-@import url("./payments.mobile.css");
-
-@media (max-width: 720px) {
-    .admin-settings-grid {
-        grid-template-columns: 1fr;
-    }
-}

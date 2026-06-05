@@ -984,6 +984,10 @@ INNER JOIN agg ON agg.[OTEL_ID] = o.id;";
         model.Countries = (await _addressLookupService.GetCountriesAsync(cancellationToken)).ToList();
         model.PresetAvatarUrls = BuildPresetAvatarUrls();
         model.UploadedProfileAvatars = await LoadUploadedProfileAvatarsAsync(connection, userId, cancellationToken);
+        model.RoomPreferenceOptions = BuildRoomPreferenceOptions();
+        model.BedPreferenceOptions = BuildBedPreferenceOptions();
+        model.SpokenLanguageOptions = BuildSpokenLanguageOptions();
+        model.TravelPurposeOptions = BuildTravelPurposeOptions();
         if (hasGeoIds && model.Form.IlId is > 0)
         {
             model.SelectedCountryId = model.Form.UlkeId ?? model.SelectedCountryId;
@@ -1075,6 +1079,18 @@ INNER JOIN agg ON agg.[OTEL_ID] = o.id;";
             "/uploads/demo/avatars/avatar-09.svg",
             "/uploads/demo/avatars/avatar-10.svg"
         };
+
+    private static List<string> BuildRoomPreferenceOptions()
+        => new() { "Fark etmez", "Standart oda", "Deluxe oda", "Suit oda", "Aile odası", "Sessiz kat", "Sigara içilmeyen oda" };
+
+    private static List<string> BuildBedPreferenceOptions()
+        => new() { "Fark etmez", "Tek büyük yatak", "İki ayrı yatak", "Çift kişilik yatak", "Aile yatağı", "Ek yatak uygun olsun" };
+
+    private static List<string> BuildSpokenLanguageOptions()
+        => new() { "Türkçe", "İngilizce", "Almanca", "Fransızca", "Arapça", "Rusça" };
+
+    private static List<string> BuildTravelPurposeOptions()
+        => new() { "İş", "Tatil", "Aile ziyareti", "Sağlık", "Etkinlik", "Karışık" };
 
     private async Task<List<UserUploadedProfileAvatarViewModel>> LoadUploadedProfileAvatarsAsync(SqlConnection connection, long userId, CancellationToken cancellationToken)
     {
@@ -1374,7 +1390,7 @@ INNER JOIN agg ON agg.[OTEL_ID] = o.id;";
 
         await using (var rateLimitCommand = new SqlCommand("""
             SELECT TOP (1) [OLUSTURULMA_TARIHI]
-            FROM email_dogrulama_tokenlari
+            FROM [dbo].[EPOSTA_DOGRULAMA_TOKENLARI]
             WHERE [KULLANICI_ID] = @userId
               AND [KULLANILDI_MI] = 0
             ORDER BY [OLUSTURULMA_TARIHI] DESC;
@@ -1396,7 +1412,7 @@ INNER JOIN agg ON agg.[OTEL_ID] = o.id;";
         try
         {
             await using (var invalidateCommand = new SqlCommand("""
-                UPDATE email_dogrulama_tokenlari
+                UPDATE [dbo].[EPOSTA_DOGRULAMA_TOKENLARI]
                 SET [KULLANILDI_MI] = 1,
                     [KULLANILMA_TARIHI] = SYSUTCDATETIME()
                 WHERE [KULLANICI_ID] = @userId
@@ -1408,7 +1424,7 @@ INNER JOIN agg ON agg.[OTEL_ID] = o.id;";
             }
 
             await using (var insertCommand = new SqlCommand("""
-                INSERT INTO email_dogrulama_tokenlari
+                INSERT INTO [dbo].[EPOSTA_DOGRULAMA_TOKENLARI]
                 ([KULLANICI_ID], [EPOSTA], [TOKEN], [DOGRULAMA_KODU], [KULLANILDI_MI], [DENEME_SAYISI], [MAKSIMUM_DENEME], [IP_ADRESI], [KULLANICI_ARACISI], [GECERLILIK_SURESI], [OLUSTURULMA_TARIHI])
                 VALUES
                 (@userId, @email, @token, @code, 0, 0, 5, @ipAddress, @userAgent, DATEADD(MINUTE, 30, SYSUTCDATETIME()), SYSUTCDATETIME());
@@ -1475,7 +1491,7 @@ INNER JOIN agg ON agg.[OTEL_ID] = o.id;";
 
         const string tokenSql = """
             SELECT TOP (1) id, [GECERLILIK_SURESI], [KULLANILDI_MI], [DENEME_SAYISI], [MAKSIMUM_DENEME], [TOKEN]
-            FROM email_dogrulama_tokenlari
+            FROM [dbo].[EPOSTA_DOGRULAMA_TOKENLARI]
             WHERE [KULLANICI_ID] = @userId
               AND [EPOSTA] = @email
               AND [DOGRULAMA_KODU] = @code
@@ -1645,7 +1661,7 @@ INNER JOIN agg ON agg.[OTEL_ID] = o.id;";
     private static async Task MarkEmailTokenUsedAsync(SqlConnection connection, SqlTransaction transaction, long tokenId, CancellationToken cancellationToken)
     {
         await using var command = new SqlCommand("""
-            UPDATE email_dogrulama_tokenlari
+            UPDATE [dbo].[EPOSTA_DOGRULAMA_TOKENLARI]
             SET [KULLANILDI_MI] = 1,
                 [KULLANILMA_TARIHI] = SYSUTCDATETIME()
             WHERE id = @tokenId;
@@ -1657,7 +1673,7 @@ INNER JOIN agg ON agg.[OTEL_ID] = o.id;";
     private static async Task IncrementEmailTokenAttemptAsync(SqlConnection connection, SqlTransaction transaction, long tokenId, CancellationToken cancellationToken)
     {
         await using var command = new SqlCommand("""
-            UPDATE email_dogrulama_tokenlari
+            UPDATE [dbo].[EPOSTA_DOGRULAMA_TOKENLARI]
             SET [DENEME_SAYISI] = COALESCE([DENEME_SAYISI], 0) + 1
             WHERE id = @tokenId;
             """, connection, transaction);
@@ -3222,45 +3238,42 @@ INNER JOIN agg ON agg.[OTEL_ID] = o.id;";
         => $"₺{amount:N0}";
 
     private static string GetReservationStatusTone(string status, string hotelApprovalStatus, DateTime checkIn)
-        => status switch
+        => GetStandardReservationStatusText(status, hotelApprovalStatus) switch
         {
-            "İptal Edildi" => "danger",
             "Reddedildi" => "danger",
             "Tamamlandı" => "completed",
-            "Giriş Yaptı" => "completed",
             "Onaylandı" when checkIn <= DateTime.Today.AddDays(2) => "info",
             "Onaylandı" => "ok",
-            "Onay Bekliyor" => "wait",
-            "Değişiklik Bekliyor" => "wait",
-            _ when string.Equals(hotelApprovalStatus, "Beklemede", StringComparison.OrdinalIgnoreCase) => "wait",
-            _ when string.Equals(hotelApprovalStatus, "Reddedildi", StringComparison.OrdinalIgnoreCase) => "danger",
             _ => "wait"
         };
 
     private static string GetStandardReservationStatusText(string status, string hotelApprovalStatus)
     {
-        if (string.Equals(hotelApprovalStatus, "Reddedildi", StringComparison.OrdinalIgnoreCase)
-            || string.Equals(status, "İptal Edildi", StringComparison.OrdinalIgnoreCase)
-            || string.Equals(status, "Reddedildi", StringComparison.OrdinalIgnoreCase))
+        var normalizedStatus = NormalizeTurkishStatus(status);
+        var normalizedApproval = NormalizeTurkishStatus(hotelApprovalStatus);
+        if (normalizedApproval == "REDDEDILDI"
+            || normalizedStatus is "IPTAL EDILDI" or "REDDEDILDI")
         {
             return "Reddedildi";
         }
 
-        if (string.Equals(status, "Tamamlandı", StringComparison.OrdinalIgnoreCase)
-            || string.Equals(status, "Giriş Yaptı", StringComparison.OrdinalIgnoreCase)
-            || string.Equals(status, "Onaylandı", StringComparison.OrdinalIgnoreCase))
+        if (normalizedStatus is "TAMAMLANDI" or "GIRIS YAPTI")
         {
             return "Tamamlandı";
         }
 
-        if (string.Equals(hotelApprovalStatus, "Beklemede", StringComparison.OrdinalIgnoreCase)
-            || string.Equals(status, "Onay Bekliyor", StringComparison.OrdinalIgnoreCase)
-            || string.Equals(status, "Değişiklik Bekliyor", StringComparison.OrdinalIgnoreCase))
+        if (normalizedStatus == "ONAYLANDI")
+        {
+            return "Onaylandı";
+        }
+
+        if (normalizedApproval == "BEKLEMEDE"
+            || normalizedStatus is "ONAY BEKLIYOR" or "DEGISIKLIK BEKLIYOR" or "")
         {
             return "Bekliyor";
         }
 
-        return "Tamamlandı";
+        return "Bekliyor";
     }
 
     private static bool CanUserCancelReservation(string status, string hotelApprovalStatus, DateTime checkOut)
@@ -3270,11 +3283,8 @@ INNER JOIN agg ON agg.[OTEL_ID] = o.id;";
             return false;
         }
 
-        if (string.Equals(hotelApprovalStatus, "Reddedildi", StringComparison.OrdinalIgnoreCase)
-            || string.Equals(status, "İptal Edildi", StringComparison.OrdinalIgnoreCase)
-            || string.Equals(status, "Reddedildi", StringComparison.OrdinalIgnoreCase)
-            || string.Equals(status, "Tamamlandı", StringComparison.OrdinalIgnoreCase)
-            || string.Equals(status, "Giriş Yaptı", StringComparison.OrdinalIgnoreCase))
+        var displayStatus = GetStandardReservationStatusText(status, hotelApprovalStatus);
+        if (displayStatus is "Reddedildi" or "Tamamlandı")
         {
             return false;
         }
@@ -3284,11 +3294,29 @@ INNER JOIN agg ON agg.[OTEL_ID] = o.id;";
 
     private static string BuildReservationNote(string status, DateTime checkIn, DateTime checkOut)
     {
-        if (string.Equals(status, "İptal Edildi", StringComparison.OrdinalIgnoreCase)) return "Rezervasyon iptal edildi.";
-        if (string.Equals(status, "Onaylandı", StringComparison.OrdinalIgnoreCase) && checkIn <= DateTime.Today.AddDays(2) && checkOut >= DateTime.Today) return "Check-in tarihi yaklaşıyor.";
-        if (string.Equals(status, "Onaylandı", StringComparison.OrdinalIgnoreCase)) return "Rezervasyon onaylı ve konaklama planı hazır.";
+        var normalizedStatus = NormalizeTurkishStatus(status);
+        if (normalizedStatus == "IPTAL EDILDI") return "Rezervasyon iptal edildi.";
+        if (normalizedStatus is "TAMAMLANDI" or "GIRIS YAPTI") return "Konaklama tamamlandı.";
+        if (normalizedStatus == "ONAYLANDI" && checkIn <= DateTime.Today.AddDays(2) && checkOut >= DateTime.Today) return "Check-in tarihi yaklaşıyor.";
+        if (normalizedStatus == "ONAYLANDI") return "Rezervasyon onaylı ve konaklama planı hazır.";
         return "Rezervasyon otel onay sürecinde.";
     }
+
+    private static string NormalizeTurkishStatus(string? value)
+        => (value ?? string.Empty).Trim()
+            .Replace('ı', 'i')
+            .Replace('ş', 's')
+            .Replace('ğ', 'g')
+            .Replace('ü', 'u')
+            .Replace('ö', 'o')
+            .Replace('ç', 'c')
+            .ToUpperInvariant()
+            .Replace('İ', 'I')
+            .Replace('Ş', 'S')
+            .Replace('Ğ', 'G')
+            .Replace('Ü', 'U')
+            .Replace('Ö', 'O')
+            .Replace('Ç', 'C');
 
     private static string NormalizeReservationStatusFilter(string? statusFilter)
     {
@@ -3466,3 +3494,4 @@ INNER JOIN agg ON agg.[OTEL_ID] = o.id;";
         string RoomName,
         string HotelName);
 }
+

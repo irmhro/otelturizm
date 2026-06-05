@@ -1,0 +1,45 @@
+@import url("./dashboard.css");
+
+@media (max-width: 900px) {
+  .firma-dash-alert {
+    grid-template-columns: auto 1fr;
+    align-items: start;
+  }
+
+  .firma-dash-alert__cta {
+    grid-column: 1 / -1;
+    width: 100%;
+    text-align: center;
+    justify-self: stretch;
+  }
+
+  .firma-dash-identity {
+    flex-direction: column;
+  }
+
+  .firma-dash-identity__metrics {
+    grid-template-columns: 1fr;
+    min-width: 0;
+  }
+
+  .firma-kpi-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .firma-kpi-tile {
+    border-left: 4px solid var(--firma-panel-primary, #003b95);
+  }
+
+  .firma-kpi-tile.is-savings,
+  .firma-kpi-tile__value.is-savings {
+    border-left-color: var(--firma-panel-success, #00a86b);
+  }
+
+  .firma-dash-identity__title {
+    color: var(--firma-panel-primary, #003b95);
+  }
+
+  .firma-two-column {
+    grid-template-columns: 1fr;
+  }
+}

@@ -17,9 +17,9 @@ if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 $requiredFiles = @(
     "otelturizm.dll",
     "Views\Email\tr\RezervasyonOnaylandi.cshtml",
-    "Views\Email\tr\Rezervasyon Talebi Alindi.cshtml",
-    "Views\Email\tr\Partner Yeni Rezervasyon.cshtml",
-    "Views\Email\tr\Rezervasyon Reddedildi.cshtml",
+    "Views\Email\tr\Rezervasyon_Talebi_Alindi.cshtml",
+    "Views\Email\tr\Partner_Yeni_Rezervasyon.cshtml",
+    "Views\Email\tr\Rezervasyon_Reddedildi.cshtml",
     "Views\Paneller\Partner\Dashboard.cshtml",
     "Views\Paneller\Partner\_PartnerSidebar.cshtml",
     "wwwroot\assets\css\paneller\partner\dashboard.css",
@@ -43,4 +43,3 @@ if ($missing.Count -gt 0) {
 Write-Host ""
 Write-Host "Publish OK. Output: $OutDir"
 Write-Host "Required runtime cshtml/css files OK."
-
