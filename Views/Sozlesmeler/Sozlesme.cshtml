@@ -4,38 +4,43 @@
     ViewData["Title"] = Model.Title;
     ViewData["BodyClass"] = "sozlesme-page anasayfa-page";
     ViewData["PageCss"] = "sozlesme";
+    ViewData["PageCssMobile"] = "sozlesme";
+    ViewData["IncludeAnasayfaStyles"] = true;
 }
 
-<div class="container sozlesme-shell">
-    <header class="sozlesme-hero">
-        <div class="sozlesme-hero-copy">
-            <p class="sozlesme-kicker"><i class="fas fa-scale-balanced" aria-hidden="true"></i> @Model.Audience.ToUpperInvariant() · Sözleşme Merkezi</p>
-            <h1 class="sozlesme-title">@Model.Title</h1>
-            @if (!string.IsNullOrWhiteSpace(Model.Subtitle))
-            {
-                <p class="sozlesme-subtitle">@Model.Subtitle</p>
-            }
-            <div class="sozlesme-meta">
-                <span>@Model.VersionText</span>
-                <span>@Model.EffectiveDateText itibarıyla yürürlükte</span>
+<div class="sozlesme-main">
+    <div class="container sozlesme-body">
+        <section class="eco-ribbon eco-ribbon-stack sozlesme-trust-strip" aria-label="Sözleşme bilgisi">
+            <div class="eco-meta"><span><i class="fas fa-scale-balanced" aria-hidden="true"></i></span> @Model.Audience.ToUpperInvariant() · Sözleşme Merkezi</div>
+            <div class="eco-pills sozlesme-trust-pills">
+                <span class="eco-pill">@Model.VersionText</span>
+                <span class="eco-pill"><i class="fas fa-calendar-check" aria-hidden="true"></i> @Model.EffectiveDateText</span>
             </div>
-            @if (!string.IsNullOrWhiteSpace(Model.PdfUrl))
-            {
-                <a class="sozlesme-pdf-btn" href="@Model.PdfUrl" target="_blank" rel="noopener noreferrer">
-                    <i class="fas fa-file-pdf" aria-hidden="true"></i> PDF formatında aç
-                </a>
-            }
-        </div>
-        @if (!string.IsNullOrWhiteSpace(Model.HeroImageUrl))
-        {
-            <div class="sozlesme-hero-visual">
-                <img src="@Model.HeroImageUrl" alt="@Model.Title" loading="lazy" />
-            </div>
-        }
-    </header>
+        </section>
 
-    <div class="sozlesme-layout">
-        <article class="sozlesme-body">
+        <header class="sozlesme-hero">
+            <div class="sozlesme-hero-copy">
+                <h1 class="sozlesme-title">@Model.Title</h1>
+                @if (!string.IsNullOrWhiteSpace(Model.Subtitle))
+                {
+                    <p class="sozlesme-subtitle">@Model.Subtitle</p>
+                }
+                @if (!string.IsNullOrWhiteSpace(Model.PdfUrl))
+                {
+                    <a class="sozlesme-pdf-btn" href="@Model.PdfUrl" target="_blank" rel="noopener noreferrer">
+                        <i class="fas fa-file-pdf" aria-hidden="true"></i> PDF formatında aç
+                    </a>
+                }
+            </div>
+            @if (!string.IsNullOrWhiteSpace(Model.HeroImageUrl))
+            {
+                <div class="sozlesme-hero-visual">
+                    <img src="@Model.HeroImageUrl" alt="@Model.Title" loading="lazy" />
+                </div>
+            }
+        </header>
+
+        <article class="sozlesme-content-card">
             @if (!string.IsNullOrWhiteSpace(Model.SummaryHtml))
             {
                 <div class="sozlesme-summary">@Html.Raw(Model.SummaryHtml)</div>
@@ -45,17 +50,17 @@
 
         @if (Model.RelatedContracts?.Count > 0)
         {
-            <aside class="sozlesme-sidebar">
-                <div class="sozlesme-sidebar-card">
-                    <h2>İlgili sözleşmeler</h2>
-                    <ul>
-                        @foreach (var item in Model.RelatedContracts)
-                        {
-                            <li><a href="@item.Url">@item.Title</a></li>
-                        }
-                    </ul>
+            <section class="sozlesme-related" aria-labelledby="sozlesme-related-title">
+                <h2 id="sozlesme-related-title" class="section-headline sozlesme-related-title">
+                    <span class="headline-left">İlgili sözleşmeler</span>
+                </h2>
+                <div class="sozlesme-related-grid">
+                    @foreach (var item in Model.RelatedContracts)
+                    {
+                        <a class="sozlesme-related-card" href="@item.Url">@item.Title</a>
+                    }
                 </div>
-            </aside>
+            </section>
         }
     </div>
 </div>

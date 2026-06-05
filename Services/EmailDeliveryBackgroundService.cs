@@ -74,7 +74,7 @@ public sealed class EmailDeliveryBackgroundService : BackgroundService
         await using var connection = new SqlConnection(connectionString);
         await connection.OpenAsync(cancellationToken);
 
-        var defaultSmtp = await LoadSmtpConfigAsync(connection, null, null, cancellationToken);
+        var defaultSmtp = await ResolveSmtpConfigAsync(connection, null, null, cancellationToken);
         if (defaultSmtp is null)
         {
             // Dev ortamında DB'de EPOSTA_SERVISLERI kaydı yoksa bile kuyruk akışını test edebilmek için
@@ -87,7 +87,26 @@ public sealed class EmailDeliveryBackgroundService : BackgroundService
                 {
                     _logger.LogWarning(
                         "E-posta kuyrugu calismiyor: veritabaninda aktif SMTP yok (EPOSTA_SERVISLERI.AKTIF_MI=1 ve gecerli SMTP_HOST/SIFRE). " +
-                        "bildirim_loglari kayitlari Birikir ancak gonderilmez. Admin: Database/MigrationsSql/20260502_enable_live_email_delivery.sql ve smtp_sifre.");
+                        "bildirim_loglari kayitlari Birikir ancak gonderilmez. Admin: /admin/mail-merkezi veya Email:SharedMailboxPassword.");
+                }
+                return;
+            }
+        }
+        else if (defaultSmtp is not null && !IsReadyForSmtpSend(defaultSmtp) && !defaultSmtp.UsePickupDirectoryOnly)
+        {
+            if (_environment.IsDevelopment())
+            {
+                defaultSmtp = TryBuildDevPickupFallback(defaultSmtp);
+            }
+
+            if (!IsReadyForSmtpSend(defaultSmtp) && !defaultSmtp.UsePickupDirectoryOnly)
+            {
+                if (Interlocked.CompareExchange(ref _missingActiveSmtpLogged, 1, 0) == 0)
+                {
+                    _logger.LogWarning(
+                        "E-posta kuyrugu calismiyor: aktif SMTP kaydi var ancak sifre eksik. " +
+                        "Admin > Mail Merkezi veya ortam degiskeni Email__SharedMailboxPassword kullanin. Sender={Sender}",
+                        defaultSmtp.SenderEmail);
                 }
                 return;
             }
@@ -184,8 +203,12 @@ public sealed class EmailDeliveryBackgroundService : BackgroundService
         {
             try
             {
-                var smtp = await LoadSmtpConfigAsync(connection, item.ServiceCode, item.SenderEmailOverride, cancellationToken)
+                var smtp = await ResolveSmtpConfigAsync(connection, item.ServiceCode, item.SenderEmailOverride, cancellationToken)
                     ?? defaultSmtp;
+                if (!IsReadyForSmtpSend(smtp) && !smtp.UsePickupDirectoryOnly)
+                {
+                    throw new InvalidOperationException("Aktif SMTP servisi icin sifre tanimli degil.");
+                }
                 var sendResult = await SendEmailAsync(smtp, item, cancellationToken);
                 await MarkEmailAcceptedAsync(connection, item.Id, sendResult, cancellationToken);
                 await MarkSmtpSuccessAsync(connection, smtp.ServiceCode, cancellationToken);
@@ -435,12 +458,75 @@ public sealed class EmailDeliveryBackgroundService : BackgroundService
         return scalar is not null && scalar != DBNull.Value;
     }
 
-    private static async Task<SmtpConfig?> LoadSmtpConfigAsync(SqlConnection connection, string? preferredServiceCode, string? preferredSenderEmail, CancellationToken cancellationToken)
+    private SmtpConfig? TryBuildDevPickupFallback(SmtpConfig source)
+    {
+        var devPickup = ResolveDevPickupDirectory();
+        if (string.IsNullOrWhiteSpace(devPickup) || !OperatingSystem.IsWindows())
+        {
+            return source;
+        }
+
+        return new SmtpConfig
+        {
+            ServiceCode = source.ServiceCode,
+            SenderName = source.SenderName,
+            SenderEmail = source.SenderEmail,
+            ReplyToEmail = source.ReplyToEmail,
+            Host = source.Host,
+            Port = source.Port,
+            Username = source.Username,
+            Password = source.Password,
+            SecurityType = source.SecurityType,
+            TimeoutSeconds = source.TimeoutSeconds,
+            TestMode = true,
+            PickupDirectory = devPickup,
+            UsePickupDirectoryOnly = true,
+            CanUsePickupDirectoryFallback = false
+        };
+    }
+
+    private async Task<SmtpConfig?> ResolveSmtpConfigAsync(SqlConnection connection, string? preferredServiceCode, string? preferredSenderEmail, CancellationToken cancellationToken)
+    {
+        var config = await LoadSmtpConfigFromDbAsync(connection, preferredServiceCode, preferredSenderEmail, cancellationToken);
+        if (config is null)
+        {
+            return null;
+        }
+
+        ApplyPasswordOverrides(config);
+        return config;
+    }
+
+    private void ApplyPasswordOverrides(SmtpConfig config)
+    {
+        if (!string.IsNullOrWhiteSpace(config.Password))
+        {
+            return;
+        }
+
+        var byService = _configuration[$"Email:SmtpPasswords:{config.ServiceCode}"];
+        var byEmail = _configuration[$"Email:SmtpPasswords:{config.SenderEmail}"];
+        var shared = _configuration["Email:SharedMailboxPassword"];
+        config.Password = !string.IsNullOrWhiteSpace(byService)
+            ? byService
+            : !string.IsNullOrWhiteSpace(byEmail)
+                ? byEmail
+                : shared ?? string.Empty;
+    }
+
+    private static bool IsReadyForSmtpSend(SmtpConfig smtp)
+        => !string.IsNullOrWhiteSpace(smtp.Host)
+           && !string.IsNullOrWhiteSpace(smtp.Username)
+           && !string.IsNullOrWhiteSpace(smtp.Password);
+
+    private static async Task<SmtpConfig?> LoadSmtpConfigFromDbAsync(SqlConnection connection, string? preferredServiceCode, string? preferredSenderEmail, CancellationToken cancellationToken)
     {
         const string sql = """
             SELECT TOP (1) [SERVIS_KODU], [GONDEREN_AD], [GONDEREN_EPOSTA], [YANITLA_EPOSTA], [SMTP_HOST], [SMTP_PORT], [SMTP_KULLANICI_ADI], [SMTP_SIFRE], [GUVENLIK_TIPI], [BAGLANTI_ZAMAN_ASIMI_SANIYE], [TEST_MODU], [METADATA]
             FROM [dbo].[EPOSTA_SERVISLERI]
             WHERE [AKTIF_MI] = 1
+              AND NULLIF(LTRIM(RTRIM([SMTP_HOST])), N'') IS NOT NULL
+              AND NULLIF(LTRIM(RTRIM([SMTP_KULLANICI_ADI])), N'') IS NOT NULL
             ORDER BY
                 CASE
                     WHEN @serviceCode IS NOT NULL AND LOWER([SERVIS_KODU]) = LOWER(@serviceCode) THEN 3
@@ -966,7 +1052,7 @@ public sealed class EmailDeliveryBackgroundService : BackgroundService
         public string Host { get; init; } = string.Empty;
         public int Port { get; init; } = 465;
         public string Username { get; init; } = string.Empty;
-        public string Password { get; init; } = string.Empty;
+        public string Password { get; set; } = string.Empty;
         public string SecurityType { get; init; } = "SSL";
         public int TimeoutSeconds { get; init; } = 30;
         public bool TestMode { get; init; }

@@ -99,6 +99,11 @@
     .firma-page .fir-main .container,
     .firma-page .fir-body.container,
     .kampanyalar-page .kmp-body.container {
+    padding-left: 16px;
+    padding-right: 16px;
+}
+
+    .sozlesme-page .sozlesme-body.container {
         padding-left: 16px;
         padding-right: 16px;
     }
