@@ -1889,6 +1889,16 @@ a.eco-pill:hover {
     border: 1px solid rgba(235, 233, 228, 0.65);
 }
 
+.hero-section .search-engine.search-engine-pro {
+    background: transparent;
+    border: none;
+    box-shadow: none;
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+    border-radius: 0;
+    overflow: visible;
+}
+
 .search-pro-row-tags {
     display: none;
     border-top: 1px solid rgba(235, 233, 228, 0.4);
@@ -2343,8 +2353,8 @@ a.eco-pill:hover {
 
     .hero-stage {
         position: relative;
-        padding: 34px 0 30px;
-        margin-bottom: 10px;
+        padding: 8px 0 12px;
+        margin-bottom: 0;
     }
 
     .hero-top-grid--solo {
@@ -2352,20 +2362,7 @@ a.eco-pill:hover {
     }
 
     .hero-stage-veil {
-        display: block;
-        position: absolute;
-        inset: 0;
-        border-radius: 28px;
-        background:
-            linear-gradient(145deg, rgba(255, 255, 255, 0.24) 0%, rgba(255, 255, 255, 0.14) 48%, rgba(255, 255, 255, 0.2) 100%);
-        backdrop-filter: blur(18px) saturate(1.08);
-        -webkit-backdrop-filter: blur(18px) saturate(1.08);
-        border: 1px solid rgba(255, 255, 255, 0.26);
-        box-shadow:
-            inset 0 1px 0 rgba(255, 255, 255, 0.42),
-            0 10px 36px rgba(26, 25, 25, 0.035);
-        pointer-events: none;
-        z-index: 0;
+        display: none !important;
     }
 
     .hero-stage > :not(.hero-stage-veil) {
@@ -2379,16 +2376,16 @@ a.eco-pill:hover {
         max-width: 100%;
     }
 
-    .hero-stage .search-engine.search-engine-pro {
+    .hero-stage .search-engine.search-engine-pro,
+    .hero-section .search-engine.search-engine-pro {
         width: 100%;
         max-width: 100%;
-        background: rgba(255, 255, 255, 0.94);
-        backdrop-filter: blur(10px);
-        -webkit-backdrop-filter: blur(10px);
-        border-color: rgba(255, 255, 255, 0.85);
-        box-shadow:
-            0 16px 40px rgba(26, 25, 25, 0.06),
-            inset 0 1px 0 rgba(255, 255, 255, 0.95);
+        background: transparent;
+        border: none;
+        box-shadow: none;
+        backdrop-filter: none;
+        -webkit-backdrop-filter: none;
+        border-radius: 0;
     }
 
     .hero-top-grid:not(.hero-top-grid--solo) {
@@ -2492,10 +2489,10 @@ a.eco-pill:hover {
         max-width: 100%;
     }
 
-    .search-engine.search-engine-pro {
+    .hero-section .search-engine.search-engine-pro {
         width: 100%;
         max-width: 100%;
-        border-radius: 14px;
+        border-radius: 0;
         display: grid;
         grid-template-columns:
             minmax(0, 1.05fr)
@@ -2506,8 +2503,15 @@ a.eco-pill:hover {
             minmax(60px, 0.36fr)
             minmax(118px, auto);
         gap: 10px 10px;
-        padding: 16px 20px 14px;
+        padding: 16px 0 14px;
         align-items: end;
+        background: transparent;
+        border: none;
+        box-shadow: none;
+    }
+
+    .hero-section .search-pro-row-tags {
+        background: transparent;
     }
 
     .search-engine-pro .search-pro-field > label {
