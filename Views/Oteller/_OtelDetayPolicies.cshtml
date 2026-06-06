@@ -1,0 +1,89 @@
+@model otelturizmnew.Models.Oteller.HotelDetailConditionsViewModel
+@{
+    var hasContent = !string.IsNullOrWhiteSpace(Model.CancellationSummary)
+        || !string.IsNullOrWhiteSpace(Model.CancellationDetail)
+        || !string.IsNullOrWhiteSpace(Model.SmokingPolicy)
+        || !string.IsNullOrWhiteSpace(Model.PetPolicy)
+        || !string.IsNullOrWhiteSpace(Model.ChildPolicy)
+        || Model.HasFreeCancellation
+        || Model.PrepaymentRequired;
+}
+@if (hasContent)
+{
+    <article class="content-card od-section od-section--policies" id="hotelPoliciesSection">
+        <div class="section-head tabler-section-head od-section__head">
+            <div class="tabler-section-headrow">
+                <div class="tabler-section-titles">
+                    <h2>Otel kuralları ve koşullar</h2>
+                    <p>İptal, ödeme ve konaklama politikaları</p>
+                </div>
+            </div>
+        </div>
+        <ul class="od-policy-list">
+            @if (Model.HasFreeCancellation || !string.IsNullOrWhiteSpace(Model.CancellationSummary))
+            {
+                <li class="od-policy-item">
+                    <span class="od-policy-icon" aria-hidden="true"><i class="fas fa-calendar-check"></i></span>
+                    <div>
+                        <strong>İptal politikası</strong>
+                        <p>@(string.IsNullOrWhiteSpace(Model.CancellationSummary) ? "Ücretsiz iptal seçeneği mevcut." : Model.CancellationSummary)</p>
+                        @if (!string.IsNullOrWhiteSpace(Model.CancellationDetail))
+                        {
+                            <small class="od-policy-detail">@Model.CancellationDetail</small>
+                        }
+                    </div>
+                </li>
+            }
+            @if (!string.IsNullOrWhiteSpace(Model.SmokingPolicy))
+            {
+                <li class="od-policy-item">
+                    <span class="od-policy-icon" aria-hidden="true"><i class="fas fa-smoking-ban"></i></span>
+                    <div>
+                        <strong>Sigara politikası</strong>
+                        <p>@Model.SmokingPolicy</p>
+                    </div>
+                </li>
+            }
+            @if (!string.IsNullOrWhiteSpace(Model.PetPolicy))
+            {
+                <li class="od-policy-item">
+                    <span class="od-policy-icon" aria-hidden="true"><i class="fas fa-paw"></i></span>
+                    <div>
+                        <strong>Evcil hayvan</strong>
+                        <p>@Model.PetPolicy</p>
+                    </div>
+                </li>
+            }
+            @if (!string.IsNullOrWhiteSpace(Model.ChildPolicy))
+            {
+                <li class="od-policy-item">
+                    <span class="od-policy-icon" aria-hidden="true"><i class="fas fa-child"></i></span>
+                    <div>
+                        <strong>Çocuk politikası</strong>
+                        <p>@Model.ChildPolicy</p>
+                    </div>
+                </li>
+            }
+            @if (Model.PrepaymentRequired)
+            {
+                <li class="od-policy-item">
+                    <span class="od-policy-icon" aria-hidden="true"><i class="fas fa-credit-card"></i></span>
+                    <div>
+                        <strong>Ön ödeme</strong>
+                        <p>Rezervasyon sırasında @(Model.PrepaymentPercent > 0m ? $"%{Model.PrepaymentPercent:N0}" : "ön") ödeme gerekebilir.</p>
+                    </div>
+                </li>
+            }
+            else if (Model.CardPaymentAccepted)
+            {
+                <li class="od-policy-item">
+                    <span class="od-policy-icon" aria-hidden="true"><i class="fas fa-wallet"></i></span>
+                    <div>
+                        <strong>Ödeme</strong>
+                        <p>Kredi kartı ile online ödeme kabul edilir.</p>
+                    </div>
+                </li>
+            }
+        </ul>
+    </article>
+}

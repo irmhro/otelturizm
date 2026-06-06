@@ -25,7 +25,9 @@
         </div>
         <div class="header-search">
             <i class="fas fa-search"></i>
-            <input type="search" id="partnerGlobalSearch" placeholder="Rezervasyon, misafir veya oda ara..." autocomplete="off" />
+            <input type="search" id="partnerGlobalSearch" placeholder="Rezervasyon, misafir veya oda ara..." autocomplete="off"
+                   data-partner-search-base="/panel/partner/rezervasyonlar"
+                   data-partner-hotel-id="@(Model.SelectedHotelId?.ToString() ?? string.Empty)" />
         </div>
     </div>
 

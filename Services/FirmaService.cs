@@ -1,4 +1,6 @@
 using System.Globalization;
+using System.Text;
+using Microsoft.AspNetCore.Hosting;
 using Microsoft.Data.SqlClient;
 using SqlConnection = Microsoft.Data.SqlClient.SqlConnection;
 using SqlCommand = Microsoft.Data.SqlClient.SqlCommand;
@@ -18,14 +20,16 @@ public class FirmaService : IFirmaService
     private readonly string _connectionString;
     private readonly IMessageCenterService _messageCenterService;
     private readonly IEmailQueueService _emailQueueService;
+    private readonly IWebHostEnvironment _environment;
     private readonly ILogger<FirmaService> _logger;
 
-    public FirmaService(IConfiguration configuration, IMessageCenterService messageCenterService, IEmailQueueService emailQueueService, ILogger<FirmaService> logger)
+    public FirmaService(IConfiguration configuration, IMessageCenterService messageCenterService, IEmailQueueService emailQueueService, IWebHostEnvironment environment, ILogger<FirmaService> logger)
     {
         _connectionString = configuration.GetConnectionString("DefaultConnection")
             ?? throw new InvalidOperationException("DefaultConnection tanimli degil.");
         _messageCenterService = messageCenterService;
         _emailQueueService = emailQueueService;
+        _environment = environment;
         _logger = logger;
     }
 
@@ -186,7 +190,7 @@ public class FirmaService : IFirmaService
 
         model.HighlightDeals = await LoadDealsAsync(connection, context.FirmaId, 4, null, null, null, null, null, cancellationToken);
         model.FeaturedEmployees = await LoadEmployeesAsync(connection, context.FirmaId, 4, cancellationToken);
-        model.RecentReservations = await LoadReservationsAsync(connection, context.FirmaId, 6, cancellationToken);
+        model.RecentReservations = await LoadReservationsAsync(connection, context.FirmaId, 6, null, "all", "all", cancellationToken);
         await LoadDashboardExtrasAsync(connection, context.FirmaId, model, cancellationToken);
         return model;
     }
@@ -351,12 +355,43 @@ public class FirmaService : IFirmaService
         return model;
     }
 
-    public async Task<FirmaReservationsPageViewModel> GetReservationsAsync(long userId, CancellationToken cancellationToken = default)
+    public async Task<FirmaReservationsPageViewModel> GetReservationsAsync(long userId, string? q = null, string? status = null, string? approvalStatus = null, CancellationToken cancellationToken = default)
     {
         await using var connection = new SqlConnection(_connectionString);
         await connection.OpenAsync(cancellationToken);
         var context = await BuildContextAsync(connection, userId, "Rezervasyonlar", "Firma adına oluşturulan tüm konaklama kayıtlarını görün.", "reservations", cancellationToken);
-        return new FirmaReservationsPageViewModel { Shell = context.Shell, Reservations = await LoadReservationsAsync(connection, context.FirmaId, 200, cancellationToken) };
+        var filters = NormalizeReservationFilters(q, status, approvalStatus);
+        return new FirmaReservationsPageViewModel
+        {
+            Shell = context.Shell,
+            Filters = filters,
+            Reservations = await LoadReservationsAsync(connection, context.FirmaId, 200, filters.Query, filters.Status, filters.ApprovalStatus, cancellationToken)
+        };
+    }
+
+    public async Task<string> ExportReservationsCsvAsync(long userId, string? q = null, string? status = null, string? approvalStatus = null, CancellationToken cancellationToken = default)
+    {
+        await using var connection = new SqlConnection(_connectionString);
+        await connection.OpenAsync(cancellationToken);
+        var context = await BuildContextAsync(connection, userId, string.Empty, string.Empty, "reservations", cancellationToken);
+        var filters = NormalizeReservationFilters(q, status, approvalStatus);
+        var rows = await LoadReservationsAsync(connection, context.FirmaId, 5000, filters.Query, filters.Status, filters.ApprovalStatus, cancellationToken);
+
+        var csv = new StringBuilder();
+        csv.AppendLine("Rezervasyon No,Calisan,Otel,Sehir,Konaklama,Durum,Firma Onayi,Tutar");
+        foreach (var row in rows)
+        {
+            csv.Append(EscapeCsv(row.ReservationNo)).Append(',')
+                .Append(EscapeCsv(row.EmployeeName)).Append(',')
+                .Append(EscapeCsv(row.HotelName)).Append(',')
+                .Append(EscapeCsv(row.HotelCityText)).Append(',')
+                .Append(EscapeCsv(row.StayText)).Append(',')
+                .Append(EscapeCsv(row.StatusText)).Append(',')
+                .Append(EscapeCsv(row.ApprovalText)).Append(',')
+                .Append(EscapeCsv(row.TotalText)).AppendLine();
+        }
+
+        return csv.ToString();
     }
 
     public async Task<FirmaCreateReservationPageViewModel> GetCreateReservationAsync(
@@ -986,15 +1021,15 @@ public class FirmaService : IFirmaService
                   AND (@qLike IS NULL OR u.[AD_SOYAD] LIKE @qLike OR u.[EPOSTA] LIKE @qLike OR COALESCE(u.[DEPARTMAN], N'Tanımsız') LIKE @qLike)
                   AND (@departman IS NULL OR LTRIM(RTRIM(@departman)) = N'' OR LTRIM(RTRIM(COALESCE(u.[DEPARTMAN], N'Tanımsız'))) = LTRIM(RTRIM(@departman)))
             )
-            SELECT u.id, u.[AD_SOYAD], COALESCE(u.[DEPARTMAN], N'Tanımsız'), COALESCE(u.[GOREV_UNVANI], u.[ROL]), u.[EPOSTA],
-                   u.[HARCAMA_LIMITI], u.[ONAY_GEREKSINIMI], u.[ROL], u.[FIRMA_YONETICI_MI],
+            SELECT u.id, u.[AD_SOYAD], COALESCE(u.[DEPARTMAN], N'Tanımsız'), COALESCE(u.[GOREV_UNVANI], u.[ROL]), u.[EPOSTA], u.[TELEFON],
+                   u.[HARCAMA_LIMITI], u.[ONAY_GEREKSINIMI], u.[ROL], u.[FIRMA_YONETICI_MI], u.[HESAP_DURUMU],
                    u.[TELEFON_DOGRULAMA_TARIHI], u.[TELEFON_SON_SAHIPLIK_TEYIT_TARIHI], COALESCE(u.[TELEFON_DOGRULAMA_DURUMU], N''),
                    COUNT(r.id) AS [REZERVASYON_SAYISI], COALESCE(SUM(r.[TOPLAM_TUTAR]), 0) AS harcama_toplami,
                    (SELECT COUNT(*) FROM base_users) AS total_count
             FROM [dbo].[KULLANICILAR] u
             INNER JOIN base_users bu ON bu.id = u.id
             LEFT JOIN [dbo].[REZERVASYONLAR] r ON r.[FIRMA_CALISAN_ID] = u.id
-            GROUP BY u.id, u.[AD_SOYAD], u.[DEPARTMAN], u.[GOREV_UNVANI], u.[EPOSTA], u.[HARCAMA_LIMITI], u.[ONAY_GEREKSINIMI], u.[ROL], u.[FIRMA_YONETICI_MI],
+            GROUP BY u.id, u.[AD_SOYAD], u.[DEPARTMAN], u.[GOREV_UNVANI], u.[EPOSTA], u.[TELEFON], u.[HARCAMA_LIMITI], u.[ONAY_GEREKSINIMI], u.[ROL], u.[FIRMA_YONETICI_MI], u.[HESAP_DURUMU],
                      u.[TELEFON_DOGRULAMA_TARIHI], u.[TELEFON_SON_SAHIPLIK_TEYIT_TARIHI], u.[TELEFON_DOGRULAMA_DURUMU]
             ORDER BY u.[FIRMA_YONETICI_MI] DESC, u.[AD_SOYAD] ASC
             OFFSET @offset ROWS FETCH NEXT @take ROWS ONLY;";
@@ -1013,14 +1048,16 @@ public class FirmaService : IFirmaService
         while (await reader.ReadAsync(cancellationToken))
         {
             var fullName = reader.GetString(1);
-            var verifiedAt = reader.IsDBNull(9) ? (DateTime?)null : reader.GetDateTime(9);
-            var ownershipAt = reader.IsDBNull(10) ? (DateTime?)null : reader.GetDateTime(10);
-            var phoneStatus = reader.IsDBNull(11) ? string.Empty : reader.GetString(11);
+            var verifiedAt = reader.IsDBNull(11) ? (DateTime?)null : reader.GetDateTime(11);
+            var ownershipAt = reader.IsDBNull(12) ? (DateTime?)null : reader.GetDateTime(12);
+            var phoneStatus = reader.IsDBNull(13) ? string.Empty : reader.GetString(13);
             var isPhoneVerified = verifiedAt.HasValue
                 && (!ownershipAt.HasValue || ownershipAt.Value >= DateTime.UtcNow.AddDays(-180));
 
-            if (totalCount == 0) totalCount = SafeInt(reader, 14);
+            if (totalCount == 0) totalCount = SafeInt(reader, 16);
 
+            var roleCode = reader.IsDBNull(8) ? "firma_staff" : reader.GetString(8);
+            var nightlyLimit = reader.IsDBNull(6) ? (decimal?)null : reader.GetDecimal(6);
             items.Add(new FirmaPanelEmployeeRowViewModel
             {
                 UserId = reader.GetInt64(0),
@@ -1028,11 +1065,14 @@ public class FirmaService : IFirmaService
                 Department = reader.GetString(2),
                 Title = reader.GetString(3),
                 Email = reader.GetString(4),
-                LimitText = reader.IsDBNull(5) ? "-" : FormatMoney(reader.GetDecimal(5)),
-                ApprovalText = SafeBool(reader, 6) ? "Onaylı akış" : "Serbest rezervasyon",
+                Phone = reader.IsDBNull(5) ? null : reader.GetString(5),
+                LimitText = nightlyLimit.HasValue ? FormatMoney(nightlyLimit.Value) : "-",
+                ApprovalText = SafeBool(reader, 7) ? "Onaylı akış" : "Serbest rezervasyon",
                 Initials = GetInitials(fullName),
-                RoleText = GetRoleLabel(reader.IsDBNull(7) ? string.Empty : reader.GetString(7)),
-                IsManager = SafeBool(reader, 8),
+                RoleText = GetRoleLabel(roleCode),
+                RoleCode = roleCode,
+                IsManager = SafeBool(reader, 9),
+                IsActive = SafeBool(reader, 10),
                 IsPhoneVerified = isPhoneVerified,
                 PhoneVerificationText = isPhoneVerified
                     ? $"Telefon doğrulandı · {verifiedAt!.Value.ToLocalTime():dd.MM.yyyy}"
@@ -1040,8 +1080,10 @@ public class FirmaService : IFirmaService
                         ? "Telefon doğrulaması bekleniyor"
                         : "Telefon doğrulanmadı",
                 PhoneVerificationToneClass = isPhoneVerified ? "success" : string.Equals(phoneStatus, "Beklemede", StringComparison.OrdinalIgnoreCase) ? "warning" : "secondary",
-                ReservationCountText = SafeInt(reader, 12).ToString(CultureInfo.InvariantCulture),
-                SpendText = FormatMoney(SafeDecimal(reader, 13))
+                ReservationCountText = SafeInt(reader, 14).ToString(CultureInfo.InvariantCulture),
+                SpendText = FormatMoney(SafeDecimal(reader, 15)),
+                NightlyLimit = nightlyLimit,
+                ApprovalRequired = SafeBool(reader, 7)
             });
         }
 
@@ -1106,7 +1148,7 @@ public class FirmaService : IFirmaService
         var model = new FirmaInvoicesPageViewModel { Shell = context.Shell };
 
         const string sql = @"
-            SELECT TOP (100) [FATURA_NO], [FATURA_TARIHI], [FATURA_TURU], [FATURA_ALICI_UNVAN], [GENEL_TOPLAM], [FATURA_DURUMU]
+            SELECT TOP (100) id, [FATURA_NO], [FATURA_TARIHI], [FATURA_TURU], [FATURA_ALICI_UNVAN], [GENEL_TOPLAM], [FATURA_DURUMU], [FATURA_PDF_YOLU]
             FROM [dbo].[FATURALAR]
             WHERE [FIRMA_ID] = @firmaId
             ORDER BY [FATURA_TARIHI] DESC, id DESC;";
@@ -1116,14 +1158,17 @@ public class FirmaService : IFirmaService
         await using var reader = await command.ExecuteReaderAsync(cancellationToken);
         while (await reader.ReadAsync(cancellationToken))
         {
+            var pdfPath = reader.IsDBNull(7) ? null : reader.GetString(7);
             model.Invoices.Add(new FirmaPanelInvoiceRowViewModel
             {
-                InvoiceNo = reader.GetString(0),
-                InvoiceDateText = reader.GetDateTime(1).ToString("dd.MM.yyyy", CultureInfo.GetCultureInfo("tr-TR")),
-                InvoiceType = reader.GetString(2),
-                RecipientName = reader.GetString(3),
-                TotalText = FormatMoney(SafeDecimal(reader, 4)),
-                StatusText = reader.IsDBNull(5) ? string.Empty : reader.GetString(5)
+                InvoiceId = reader.GetInt64(0),
+                InvoiceNo = reader.GetString(1),
+                InvoiceDateText = reader.GetDateTime(2).ToString("dd.MM.yyyy", CultureInfo.GetCultureInfo("tr-TR")),
+                InvoiceType = reader.GetString(3),
+                RecipientName = reader.GetString(4),
+                TotalText = FormatMoney(SafeDecimal(reader, 5)),
+                StatusText = reader.IsDBNull(6) ? string.Empty : reader.GetString(6),
+                CanDownload = !string.IsNullOrWhiteSpace(pdfPath) || reader.GetInt64(0) > 0
             });
         }
 
@@ -1290,13 +1335,189 @@ public class FirmaService : IFirmaService
             }
 
             await transaction.CommitAsync(cancellationToken);
-            return (true, $"Çalışan oluşturuldu. İlk giriş şifresi: 1585 · E-posta: {normalizedEmail}");
+            return (true, $"Çalışan oluşturuldu. İlk giriş şifresi geçici olarak atanır; kullanıcı girişten sonra değiştirmelidir. E-posta: {normalizedEmail}");
         }
         catch (Exception ex)
         {
             await transaction.RollbackAsync(cancellationToken);
             return (false, $"Çalışan ekleme sırasında hata oluştu: {ex.Message}");
         }
+    }
+
+    public async Task<(bool Success, string Message)> UpdateEmployeeAsync(long userId, FirmaEmployeeUpdateModel model, CancellationToken cancellationToken = default)
+    {
+        if (model.UserId <= 0 || string.IsNullOrWhiteSpace(model.FullName))
+        {
+            return (false, "Geçerli bir çalışan ve ad soyad zorunludur.");
+        }
+
+        var role = NormalizeFirmaRole(model.Role);
+        await using var connection = new SqlConnection(_connectionString);
+        await connection.OpenAsync(cancellationToken);
+        var context = await BuildContextAsync(connection, userId, string.Empty, string.Empty, "employees", cancellationToken);
+
+        const string updateSql = @"
+            UPDATE [dbo].[KULLANICILAR]
+            SET [AD_SOYAD] = @fullName,
+                [TELEFON] = @phone,
+                [TELEFON_E164] = @phoneE164,
+                [DEPARTMAN] = @department,
+                [GOREV_UNVANI] = @title,
+                [HARCAMA_LIMITI] = @nightlyLimit,
+                [ONAY_GEREKSINIMI] = @approvalRequired,
+                rol = @role,
+                [FIRMA_YONETICI_MI] = @isManager,
+                [HESAP_DURUMU] = @isActive
+            WHERE id = @employeeId
+              AND [FIRMA_ID] = @firmaId
+              AND [ROL] LIKE 'firma_%';";
+
+        await using var command = new SqlCommand(updateSql, connection);
+        var normalizedPhone = PhoneVerificationService.NormalizePhoneNumber(model.Phone);
+        command.Parameters.AddWithValue("@fullName", model.FullName.Trim());
+        command.Parameters.AddWithValue("@phone", string.IsNullOrWhiteSpace(model.Phone) ? DBNull.Value : (object)model.Phone.Trim());
+        command.Parameters.AddWithValue("@phoneE164", string.IsNullOrWhiteSpace(normalizedPhone) ? DBNull.Value : (object)normalizedPhone);
+        command.Parameters.AddWithValue("@department", string.IsNullOrWhiteSpace(model.Department) ? DBNull.Value : (object)model.Department.Trim());
+        command.Parameters.AddWithValue("@title", string.IsNullOrWhiteSpace(model.Title) ? DBNull.Value : (object)model.Title.Trim());
+        command.Parameters.AddWithValue("@nightlyLimit", model.NightlyLimit.HasValue ? (object)model.NightlyLimit.Value : DBNull.Value);
+        command.Parameters.AddWithValue("@approvalRequired", model.ApprovalRequired ? 1 : 0);
+        command.Parameters.AddWithValue("@role", role);
+        command.Parameters.AddWithValue("@isManager", role is "firma_admin" or "firma_manager" ? 1 : 0);
+        command.Parameters.AddWithValue("@isActive", model.IsActive ? 1 : 0);
+        command.Parameters.AddWithValue("@employeeId", model.UserId);
+        command.Parameters.AddWithValue("@firmaId", context.FirmaId);
+
+        var affected = await command.ExecuteNonQueryAsync(cancellationToken);
+        return affected > 0
+            ? (true, model.IsActive ? "Çalışan bilgileri güncellendi." : "Çalışan pasifleştirildi.")
+            : (false, "Çalışan bulunamadı veya güncellenemedi.");
+    }
+
+    public async Task<(byte[] Content, string ContentType, string FileName)?> DownloadInvoiceAsync(long userId, long invoiceId, CancellationToken cancellationToken = default)
+    {
+        if (invoiceId <= 0)
+        {
+            return null;
+        }
+
+        await using var connection = new SqlConnection(_connectionString);
+        await connection.OpenAsync(cancellationToken);
+        var context = await BuildContextAsync(connection, userId, string.Empty, string.Empty, "invoices", cancellationToken);
+
+        const string sql = @"
+            SELECT TOP (1) [FATURA_NO], [FATURA_TARIHI], [FATURA_TURU], [FATURA_DURUMU], [GENEL_TOPLAM], [PARA_BIRIMI],
+                   [FATURA_ALICI_UNVAN], [FATURA_ALICI_ADRES], [FATURA_KESEN_UNVAN], [FATURA_KESEN_VERGI_NO], [FATURA_PDF_YOLU]
+            FROM [dbo].[FATURALAR]
+            WHERE id = @invoiceId AND [FIRMA_ID] = @firmaId;";
+
+        await using var command = new SqlCommand(sql, connection);
+        command.Parameters.AddWithValue("@invoiceId", invoiceId);
+        command.Parameters.AddWithValue("@firmaId", context.FirmaId);
+        await using var reader = await command.ExecuteReaderAsync(cancellationToken);
+        if (!await reader.ReadAsync(cancellationToken))
+        {
+            return null;
+        }
+
+        var invoiceNo = reader.GetString(0);
+        var pdfPath = reader.IsDBNull(10) ? null : reader.GetString(10);
+        if (!string.IsNullOrWhiteSpace(pdfPath))
+        {
+            var normalizedPath = pdfPath.TrimStart('/').Replace('/', Path.DirectorySeparatorChar);
+            var physicalPath = Path.Combine(_environment.WebRootPath, normalizedPath);
+            if (File.Exists(physicalPath))
+            {
+                return (await File.ReadAllBytesAsync(physicalPath, cancellationToken), "application/pdf", $"{invoiceNo}.pdf");
+            }
+        }
+
+        var invoiceHtml = BuildInvoiceHtml(
+            invoiceNo,
+            reader.IsDBNull(1) ? null : reader.GetDateTime(1),
+            reader.IsDBNull(2) ? null : reader.GetString(2),
+            reader.IsDBNull(3) ? null : reader.GetString(3),
+            SafeDecimal(reader, 4),
+            reader.IsDBNull(5) ? "TRY" : reader.GetString(5),
+            reader.IsDBNull(6) ? "Firma" : reader.GetString(6),
+            reader.IsDBNull(7) ? "-" : reader.GetString(7),
+            reader.IsDBNull(8) ? "Otelturizm" : reader.GetString(8),
+            reader.IsDBNull(9) ? "-" : reader.GetString(9));
+
+        return (Encoding.UTF8.GetBytes(invoiceHtml), "text/html; charset=utf-8", $"{invoiceNo}.html");
+    }
+
+    public async Task<FirmaAccountPageViewModel> GetAccountInfoAsync(long userId, CancellationToken cancellationToken = default)
+    {
+        await using var connection = new SqlConnection(_connectionString);
+        await connection.OpenAsync(cancellationToken);
+        var context = await BuildContextAsync(connection, userId, "Hesap Bilgileri", "Profil ve iletişim bilgilerinizi görüntüleyin.", "account", cancellationToken);
+
+        const string sql = @"
+            SELECT u.[AD_SOYAD], u.[EPOSTA], u.[TELEFON], COALESCE(u.[DEPARTMAN], N''), COALESCE(u.[GOREV_UNVANI], u.[ROL]),
+                   COALESCE(f.[ONAY_DURUMU], N'Beklemede'), COALESCE(f.[VERGI_NO], N'')
+            FROM [dbo].[KULLANICILAR] u
+            INNER JOIN [dbo].[FIRMALAR] f ON f.id = u.[FIRMA_ID]
+            WHERE u.id = @userId;";
+
+        await using var command = new SqlCommand(sql, connection);
+        command.Parameters.AddWithValue("@userId", userId);
+        await using var reader = await command.ExecuteReaderAsync(cancellationToken);
+        if (!await reader.ReadAsync(cancellationToken))
+        {
+            throw new InvalidOperationException("Firma kullanıcı kaydı bulunamadı.");
+        }
+
+        var roleCode = context.Shell.UserRole;
+        return new FirmaAccountPageViewModel
+        {
+            Shell = context.Shell,
+            CompanyStatusText = reader.IsDBNull(5) ? "Beklemede" : reader.GetString(5),
+            CompanyTaxNo = reader.IsDBNull(6) ? string.Empty : reader.GetString(6),
+            UpdateForm = new FirmaAccountUpdateModel
+            {
+                FullName = reader.GetString(0),
+                Email = reader.GetString(1),
+                Phone = reader.IsDBNull(2) ? null : reader.GetString(2),
+                Department = reader.GetString(3),
+                Title = reader.GetString(4),
+                RoleText = GetRoleLabel(roleCode)
+            }
+        };
+    }
+
+    public async Task<(bool Success, string Message)> SaveAccountInfoAsync(long userId, FirmaAccountUpdateModel model, CancellationToken cancellationToken = default)
+    {
+        if (string.IsNullOrWhiteSpace(model.FullName))
+        {
+            return (false, "Ad soyad zorunludur.");
+        }
+
+        await using var connection = new SqlConnection(_connectionString);
+        await connection.OpenAsync(cancellationToken);
+        await BuildContextAsync(connection, userId, string.Empty, string.Empty, "account", cancellationToken);
+
+        const string sql = @"
+            UPDATE [dbo].[KULLANICILAR]
+            SET [AD_SOYAD] = @fullName,
+                [TELEFON] = @phone,
+                [TELEFON_E164] = @phoneE164,
+                [DEPARTMAN] = @department,
+                [GOREV_UNVANI] = @title
+            WHERE id = @userId;";
+
+        await using var command = new SqlCommand(sql, connection);
+        var normalizedPhone = PhoneVerificationService.NormalizePhoneNumber(model.Phone);
+        command.Parameters.AddWithValue("@fullName", model.FullName.Trim());
+        command.Parameters.AddWithValue("@phone", string.IsNullOrWhiteSpace(model.Phone) ? DBNull.Value : (object)model.Phone.Trim());
+        command.Parameters.AddWithValue("@phoneE164", string.IsNullOrWhiteSpace(normalizedPhone) ? DBNull.Value : (object)normalizedPhone);
+        command.Parameters.AddWithValue("@department", string.IsNullOrWhiteSpace(model.Department) ? DBNull.Value : (object)model.Department.Trim());
+        command.Parameters.AddWithValue("@title", string.IsNullOrWhiteSpace(model.Title) ? DBNull.Value : (object)model.Title.Trim());
+        command.Parameters.AddWithValue("@userId", userId);
+
+        var affected = await command.ExecuteNonQueryAsync(cancellationToken);
+        return affected > 0
+            ? (true, "Hesap bilgileri güncellendi.")
+            : (false, "Hesap bilgileri güncellenemedi.");
     }
 
     public Task<(bool Success, string Message)> SendMessageAsync(long userId, MessageSendRequest form, IReadOnlyList<IFormFile>? attachments, HttpContext httpContext, CancellationToken cancellationToken = default)
@@ -1767,9 +1988,12 @@ public class FirmaService : IFirmaService
         return items;
     }
 
-    private async Task<List<FirmaPanelReservationRowViewModel>> LoadReservationsAsync(SqlConnection connection, long firmaId, int take, CancellationToken cancellationToken)
+    private async Task<List<FirmaPanelReservationRowViewModel>> LoadReservationsAsync(SqlConnection connection, long firmaId, int take, string? q, string? status, string? approvalStatus, CancellationToken cancellationToken)
     {
         const string sql = @"
+            DECLARE @qLike nvarchar(250) = NULL;
+            IF (@q IS NOT NULL AND LTRIM(RTRIM(@q)) <> N'') SET @qLike = N'%' + LTRIM(RTRIM(@q)) + N'%';
+
             SELECT r.id, r.[REZERVASYON_NO], COALESCE(u.[AD_SOYAD], r.[MISAFIR_AD_SOYAD]) AS employee_name, o.[OTEL_ADI],
                    CONCAT(o.[ILCE], ', ', o.[SEHIR]) AS city_text,
                    r.[GIRIS_TARIHI], r.[CIKIS_TARIHI], r.[DURUM], r.[FIRMA_ONAY_DURUMU], r.[TOPLAM_TUTAR]
@@ -1777,12 +2001,29 @@ public class FirmaService : IFirmaService
             INNER JOIN [dbo].[OTELLER] o ON o.id = r.[OTEL_ID]
             LEFT JOIN [dbo].[KULLANICILAR] u ON u.id = r.[FIRMA_CALISAN_ID]
             WHERE r.[FIRMA_ID] = @firmaId
+              AND (@qLike IS NULL OR r.[REZERVASYON_NO] LIKE @qLike OR COALESCE(u.[AD_SOYAD], r.[MISAFIR_AD_SOYAD]) LIKE @qLike OR o.[OTEL_ADI] LIKE @qLike OR o.[SEHIR] LIKE @qLike)
+              AND (
+                    @status = N'all'
+                    OR (@status = N'pending' AND r.[DURUM] IN (N'Beklemede', N'Onay Bekliyor'))
+                    OR (@status = N'approved' AND r.[DURUM] = N'Onaylandı')
+                    OR (@status = N'completed' AND r.[DURUM] IN (N'Giriş Yapıldı', N'Tamamlandı', N'Konaklama Tamamlandı'))
+                    OR (@status = N'cancelled' AND r.[DURUM] IN (N'İptal Edildi', N'Reddedildi'))
+                  )
+              AND (
+                    @approvalStatus = N'all'
+                    OR (@approvalStatus = N'pending' AND r.[FIRMA_ONAY_DURUMU] = N'Beklemede')
+                    OR (@approvalStatus = N'approved' AND r.[FIRMA_ONAY_DURUMU] = N'Onaylandı')
+                    OR (@approvalStatus = N'rejected' AND r.[FIRMA_ONAY_DURUMU] = N'Reddedildi')
+                  )
             ORDER BY r.[OLUSTURULMA_TARIHI] DESC, r.id DESC
             OFFSET 0 ROWS FETCH NEXT @take ROWS ONLY;";
 
         var items = new List<FirmaPanelReservationRowViewModel>();
         await using var command = new SqlCommand(sql, connection);
         command.Parameters.AddWithValue("@firmaId", firmaId);
+        command.Parameters.AddWithValue("@q", (object?)q ?? DBNull.Value);
+        command.Parameters.AddWithValue("@status", string.IsNullOrWhiteSpace(status) ? "all" : status.Trim());
+        command.Parameters.AddWithValue("@approvalStatus", string.IsNullOrWhiteSpace(approvalStatus) ? "all" : approvalStatus.Trim());
         command.Parameters.AddWithValue("@take", take);
         await using var reader = await command.ExecuteReaderAsync(cancellationToken);
         while (await reader.ReadAsync(cancellationToken))
@@ -1977,6 +2218,103 @@ public class FirmaService : IFirmaService
 
     private static string GetInitials(string fullName)
         => string.Concat(fullName.Split(' ', StringSplitOptions.RemoveEmptyEntries).Take(2).Select(static x => x[0])).ToUpperInvariant();
+
+    private static FirmaReservationFilterViewModel NormalizeReservationFilters(string? q, string? status, string? approvalStatus)
+    {
+        static string Normalize(string? value, params string[] allowed)
+        {
+            if (string.IsNullOrWhiteSpace(value))
+            {
+                return allowed[0];
+            }
+
+            var normalized = value.Trim().ToLowerInvariant();
+            return allowed.Contains(normalized, StringComparer.OrdinalIgnoreCase) ? normalized : allowed[0];
+        }
+
+        return new FirmaReservationFilterViewModel
+        {
+            Query = string.IsNullOrWhiteSpace(q) ? null : q.Trim(),
+            Status = Normalize(status, "all", "pending", "approved", "completed", "cancelled"),
+            ApprovalStatus = Normalize(approvalStatus, "all", "pending", "approved", "rejected")
+        };
+    }
+
+    private static string EscapeCsv(string? value)
+    {
+        if (string.IsNullOrEmpty(value))
+        {
+            return string.Empty;
+        }
+
+        var normalized = value.Replace("\"", "\"\"", StringComparison.Ordinal);
+        return $"\"{normalized}\"";
+    }
+
+    private static string BuildInvoiceHtml(
+        string invoiceNo,
+        DateTime? invoiceDate,
+        string? invoiceType,
+        string? invoiceStatus,
+        decimal totalAmount,
+        string currency,
+        string recipientName,
+        string recipientAddress,
+        string issuerName,
+        string issuerTaxNo)
+    {
+        static string Safe(string? value)
+        {
+            if (string.IsNullOrWhiteSpace(value))
+            {
+                return "-";
+            }
+
+            return value
+                .Replace("&", "&amp;", StringComparison.Ordinal)
+                .Replace("<", "&lt;", StringComparison.Ordinal)
+                .Replace(">", "&gt;", StringComparison.Ordinal)
+                .Replace("\"", "&quot;", StringComparison.Ordinal);
+        }
+
+        var formattedDate = invoiceDate?.ToString("dd.MM.yyyy", CultureInfo.GetCultureInfo("tr-TR")) ?? "-";
+        var formattedTotal = string.Format(CultureInfo.GetCultureInfo("tr-TR"), "{0:N2} {1}", totalAmount, string.IsNullOrWhiteSpace(currency) ? "TRY" : currency);
+
+        return $$"""
+<!doctype html>
+<html lang="tr">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{{Safe(invoiceNo)}} Fatura</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 24px; color: #1f2937; }
+        .card { border: 1px solid #e5e7eb; border-radius: 12px; padding: 20px; max-width: 760px; }
+        h1 { margin: 0 0 16px; font-size: 22px; }
+        .grid { display: grid; grid-template-columns: 180px 1fr; gap: 8px 12px; }
+        .label { font-weight: 700; color: #374151; }
+        .value { color: #111827; }
+        .total { margin-top: 18px; padding-top: 12px; border-top: 1px dashed #d1d5db; font-size: 20px; font-weight: 700; color: #0b4f9f; }
+    </style>
+</head>
+<body>
+    <div class="card">
+        <h1>Fatura {{Safe(invoiceNo)}}</h1>
+        <div class="grid">
+            <div class="label">Tarih</div><div class="value">{{formattedDate}}</div>
+            <div class="label">Tur</div><div class="value">{{Safe(invoiceType)}}</div>
+            <div class="label">Durum</div><div class="value">{{Safe(invoiceStatus)}}</div>
+            <div class="label">Alici</div><div class="value">{{Safe(recipientName)}}</div>
+            <div class="label">Alici Adres</div><div class="value">{{Safe(recipientAddress)}}</div>
+            <div class="label">Duzenleyen</div><div class="value">{{Safe(issuerName)}}</div>
+            <div class="label">Vergi No</div><div class="value">{{Safe(issuerTaxNo)}}</div>
+        </div>
+        <div class="total">Toplam: {{formattedTotal}}</div>
+    </div>
+</body>
+</html>
+""";
+    }
 
     private sealed record FirmaContext(long FirmaId, FirmaPanelShellViewModel Shell);
 }

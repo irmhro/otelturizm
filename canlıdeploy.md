@@ -150,7 +150,37 @@ sqlcmd -S "(localdb)\MSSQLLocalDB" -d "otelturizm_2026db" -E -I -f 65001 -b -i "
 dotnet publish "D:\otelturizm\otelturizm.csproj" -c Release /p:PublishProfile="Properties\PublishProfiles\IISProfile.pubxml"
 ```
 
-### Yöntem B — Publish klasörü + MSDeploy (canlıda mevcut dosyalara dokunmadan)
+### Yöntem B — Self-contained publish + MSDeploy (canlı — önerilen)
+
+Sunucuda .NET 10 runtime eksikse **502.5 ANCM** hatası oluşur. Bu yüzden canlıda **self-contained** (runtime pakete gömülü) yayın kullanılır:
+
+```powershell
+$out = "D:\otelturizm\artifacts\live-deploy-$(Get-Date -Format 'yyyyMMdd')"
+if (Test-Path $out) { Remove-Item -Recurse -Force $out }
+dotnet publish "D:\otelturizm\otelturizm.csproj" -c Release -r win-x64 --self-contained true -p:UseAppHost=true -o $out
+```
+
+`web.config` → `processPath=".\otelturizm.exe"` (sunucuda ayrı `dotnet` kurulumu gerekmez).
+
+**Runtime nedir?** Uygulamanın çalışması için gereken .NET motoru. Self-contained yayında bu motor `otelturizm.exe` ile birlikte site klasöründe gelir; canlıda ek kurulum gerekmez, paket biraz büyür (~200MB).
+
+**Yayın dışı (projede tutulmaz / publish'e girmez):** `wwwroot/paneltematabler`, `23.05.2026`, `artifacts/`, `bin/`, `obj/`.
+
+```powershell
+$pass = "uaD1pBe0Bp9q"
+& "C:\Program Files\IIS\Microsoft Web Deploy V3\msdeploy.exe" `
+  -verb:sync `
+  -source:contentPath="$out" `
+  -dest:contentPath="otelturizm.com",computerName="https://185.111.244.246:8172/msdeploy.axd?site=otelturizm.com",userName="administrator",password="$pass",authType="Basic" `
+  -allowUntrusted `
+  -enableRule:AppOffline `
+  -skip:objectName=dirPath,absolutePath="wwwroot\\uploads" `
+  -skip:objectName=dirPath,absolutePath="App_Data\\logs"
+```
+
+Tam senkron: pakette olmayan eski dosyalar (ör. `paneltematabler`) sunucudan silinir. `DoNotDeleteRule` **kullanma** — eski kalıntı bırakır.
+
+### Yöntem B2 — Framework-dependent (sunucuda .NET 10 gerekir)
 
 ```powershell
 $out = "D:\otelturizm\artifacts\live-deploy-$(Get-Date -Format 'yyyyMMdd')"
@@ -173,7 +203,7 @@ $pass = "uaD1pBe0Bp9q"
   -skip:objectName=dirPath,absolutePath="App_Data\\logs"
 ```
 
-**Önemli:** `DoNotDeleteRule` sunucuda pakette olmayan dosyaları silmez. Sunucuda başka dosyalar varsa güvenli yöntem budur. Tam senkron (fazla dosyaları silme) için `IISProfile.pubxml` kullanılır (`RemoveAdditionalFilesFromDestination=true`).
+**Önemli:** `DoNotDeleteRule` sunucuda pakette olmayan dosyaları silmez. Eski `paneltematabler` / yanlış DLL gibi kalıntılar canlıda kalabilir; temiz yükleme için self-contained + tam senkron tercih edin.
 
 ### Yöntem C — Paket klasörü (RDP kopyalama)
 

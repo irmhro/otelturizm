@@ -1,9 +1,0 @@
-.info-list div {
-    display: flex;
-    justify-content: space-between;
-    gap: 16px;
-}
-
-.info-list span {
-    color: #64748b;
-}

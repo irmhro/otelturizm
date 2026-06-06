@@ -1,6 +1,7 @@
 using System.Globalization;
 using System.Security.Cryptography;
 using System.Text;
+using System.Text.RegularExpressions;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Data.SqlClient;
 using SqlConnection = Microsoft.Data.SqlClient.SqlConnection;
@@ -855,6 +856,10 @@ public class AuthService : IAuthService
         var district = model.District.Trim();
         var neighborhood = string.IsNullOrWhiteSpace(model.Neighborhood) ? null : model.Neighborhood.Trim();
         var country = string.IsNullOrWhiteSpace(model.Country) ? "Türkiye" : model.Country.Trim();
+
+        await using var connection = new SqlConnection(_connectionString);
+        await connection.OpenAsync(cancellationToken);
+        (address, city, district, neighborhood) = await TryEnrichPartnerLocationAsync(connection, model, address, city, district, neighborhood, cancellationToken);
         var taxOffice = model.TaxOffice.Trim();
         var taxNumber = model.TaxNumber.Trim();
         var contactTcNo = model.ContactTcNo.Trim();
@@ -876,7 +881,7 @@ public class AuthService : IAuthService
 
         if (string.IsNullOrWhiteSpace(address) || string.IsNullOrWhiteSpace(city) || string.IsNullOrWhiteSpace(district))
         {
-            return (false, "Adres, sehir ve ilce bilgileri zorunludur.", null);
+            return (false, "Adres, şehir ve ilçe bilgileri zorunludur. Lütfen il/ilçe seçin veya adresin sonunda ilçe/il formatında yazın (ör. Pendik/İstanbul).", null);
         }
 
         if (!string.IsNullOrWhiteSpace(neighborhood) && !address.StartsWith(neighborhood, StringComparison.OrdinalIgnoreCase))
@@ -909,12 +914,10 @@ public class AuthService : IAuthService
             return (false, "Sifre tekrari eslesmiyor.", null);
         }
 
-        await using var connection = new SqlConnection(_connectionString);
-        await connection.OpenAsync(cancellationToken);
         var hotelType = await ResolveHotelTypeAsync(connection, model.HotelTypeId, model.HotelTypeCode, cancellationToken);
         if (hotelType is null)
         {
-            return (false, "Lutfen gecerli bir otel tipi seciniz.", null);
+            return (false, "Lütfen geçerli bir otel tipi seçiniz.", null);
         }
 
         var userColumns = await GetUsersTableColumnsAsync(connection, cancellationToken);
@@ -1200,7 +1203,7 @@ public class AuthService : IAuthService
                 : usersPartnerColumns.Contains("partner_id") ? "partner_id" : null;
             if (usersPartnerUserCol is not null && usersPartnerPartnerCol is not null)
             {
-                var usersPartnerTable = await Data.SchemaTableNames.ResolveExistingTableAsync(connection, "users_partner", cancellationToken)
+                var usersPartnerTable = await Data.SchemaTableNames.ResolveExistingTableAsync(connection, "users_partner", (SqlTransaction)transaction, cancellationToken)
                     ?? "KULLANICI_PARTNERLERI";
                 var usersPartnerInsertColumns = new List<string> { usersPartnerUserCol, usersPartnerPartnerCol };
                 var usersPartnerInsertValues = new List<string> { "@userId", "@partnerId" };
@@ -2770,25 +2773,181 @@ public class AuthService : IAuthService
             .ToList();
     }
 
+    private static async Task<(string Address, string City, string District, string? Neighborhood)> TryEnrichPartnerLocationAsync(
+        SqlConnection connection,
+        PartnerRegistrationModel model,
+        string address,
+        string city,
+        string district,
+        string? neighborhood,
+        CancellationToken cancellationToken)
+    {
+        if (model.IlceId is > 0 && string.IsNullOrWhiteSpace(district))
+        {
+            district = await LookupDistrictNameAsync(connection, model.IlceId.Value, cancellationToken) ?? district;
+        }
+
+        if (model.IlId is > 0 && string.IsNullOrWhiteSpace(city))
+        {
+            city = await LookupProvinceNameAsync(connection, model.IlId.Value, cancellationToken) ?? city;
+        }
+
+        if (TryParseCityDistrictFromAddress(address, out var parsedDistrict, out var parsedCity))
+        {
+            if (string.IsNullOrWhiteSpace(district))
+            {
+                district = parsedDistrict;
+            }
+
+            if (string.IsNullOrWhiteSpace(city))
+            {
+                city = parsedCity;
+            }
+        }
+
+        if (string.IsNullOrWhiteSpace(city) || string.IsNullOrWhiteSpace(district))
+        {
+            var resolved = await ResolveCityDistrictByNameAsync(connection, city, district, cancellationToken);
+            if (string.IsNullOrWhiteSpace(city) && !string.IsNullOrWhiteSpace(resolved.City))
+            {
+                city = resolved.City;
+            }
+
+            if (string.IsNullOrWhiteSpace(district) && !string.IsNullOrWhiteSpace(resolved.District))
+            {
+                district = resolved.District;
+            }
+        }
+
+        return (address, city, district, neighborhood);
+    }
+
+    private static bool TryParseCityDistrictFromAddress(string address, out string district, out string city)
+    {
+        district = string.Empty;
+        city = string.Empty;
+        if (string.IsNullOrWhiteSpace(address))
+        {
+            return false;
+        }
+
+        var match = Regex.Match(address.Trim(), @"([^/,]+)\s*/\s*([^/,]+)\s*$", RegexOptions.CultureInvariant);
+        if (!match.Success)
+        {
+            return false;
+        }
+
+        district = match.Groups[1].Value.Trim();
+        city = match.Groups[2].Value.Trim();
+        return !string.IsNullOrWhiteSpace(district) && !string.IsNullOrWhiteSpace(city);
+    }
+
+    private static async Task<string?> LookupProvinceNameAsync(SqlConnection connection, long provinceId, CancellationToken cancellationToken)
+    {
+        const string sql = "SELECT TOP (1) [IL_ADI] FROM [dbo].[ILLER] WHERE [ID] = @id AND [AKTIF_MI] = 1;";
+        await using var command = new SqlCommand(sql, connection);
+        command.Parameters.AddWithValue("@id", provinceId);
+        var value = await command.ExecuteScalarAsync(cancellationToken);
+        return value as string;
+    }
+
+    private static async Task<string?> LookupDistrictNameAsync(SqlConnection connection, long districtId, CancellationToken cancellationToken)
+    {
+        const string sql = "SELECT TOP (1) [ILCE_ADI] FROM [dbo].[ILCELER] WHERE [ID] = @id AND [AKTIF_MI] = 1;";
+        await using var command = new SqlCommand(sql, connection);
+        command.Parameters.AddWithValue("@id", districtId);
+        var value = await command.ExecuteScalarAsync(cancellationToken);
+        return value as string;
+    }
+
+    private static async Task<(string? City, string? District)> ResolveCityDistrictByNameAsync(
+        SqlConnection connection,
+        string city,
+        string district,
+        CancellationToken cancellationToken)
+    {
+        if (string.IsNullOrWhiteSpace(city) && string.IsNullOrWhiteSpace(district))
+        {
+            return (null, null);
+        }
+
+        if (!string.IsNullOrWhiteSpace(city) && !string.IsNullOrWhiteSpace(district))
+        {
+            return (city, district);
+        }
+
+        if (!string.IsNullOrWhiteSpace(district) && string.IsNullOrWhiteSpace(city))
+        {
+            const string sql = """
+                SELECT TOP (1) i.[IL_ADI], ilce.[ILCE_ADI]
+                FROM [dbo].[ILCELER] ilce
+                INNER JOIN [dbo].[ILLER] i ON i.[ID] = ilce.[IL_ID]
+                WHERE ilce.[AKTIF_MI] = 1
+                  AND ilce.[ILCE_ADI] COLLATE Turkish_CI_AI = @district
+                ORDER BY ilce.[MERKEZ_MI] DESC, ilce.[ID] ASC;
+                """;
+            await using var command = new SqlCommand(sql, connection);
+            command.Parameters.AddWithValue("@district", district.Trim());
+            await using var reader = await command.ExecuteReaderAsync(cancellationToken);
+            if (await reader.ReadAsync(cancellationToken))
+            {
+                return (reader.GetString(0), reader.GetString(1));
+            }
+        }
+
+        if (!string.IsNullOrWhiteSpace(city) && string.IsNullOrWhiteSpace(district))
+        {
+            const string sql = """
+                SELECT TOP (1) i.[IL_ADI], ilce.[ILCE_ADI]
+                FROM [dbo].[ILLER] i
+                LEFT JOIN [dbo].[ILCELER] ilce ON ilce.[IL_ID] = i.[ID] AND ilce.[AKTIF_MI] = 1
+                WHERE i.[AKTIF_MI] = 1
+                  AND i.[IL_ADI] COLLATE Turkish_CI_AI = @city
+                ORDER BY ilce.[MERKEZ_MI] DESC, ilce.[ID] ASC;
+                """;
+            await using var command = new SqlCommand(sql, connection);
+            command.Parameters.AddWithValue("@city", city.Trim());
+            await using var reader = await command.ExecuteReaderAsync(cancellationToken);
+            if (await reader.ReadAsync(cancellationToken))
+            {
+                return (reader.GetString(0), reader.IsDBNull(1) ? null : reader.GetString(1));
+            }
+        }
+
+        return (null, null);
+    }
+
     private static async Task<(int Id, string Name)?> ResolveHotelTypeAsync(SqlConnection connection, int? hotelTypeId, string? hotelTypeCode, CancellationToken cancellationToken)
     {
-        const string sql = @"
+        var normalizedCode = NormalizePartnerHotelTypeCode(hotelTypeCode);
+        const string sql = """
             SELECT TOP (1) id, [TIP_ADI]
             FROM [dbo].[OTEL_TIPLERI]
             WHERE [AKTIF_MI] = 1
               AND (
-                  (@hotelTypeCode IS NOT NULL AND kod = @hotelTypeCode)
-                  OR (@hotelTypeCode IS NULL AND id = COALESCE(@hotelTypeId, (SELECT TOP (1) id FROM [dbo].[OTEL_TIPLERI] WHERE kod = N'otel')))
+                  (@hotelTypeCode IS NOT NULL AND LOWER(LTRIM(RTRIM([KOD]))) = LOWER(LTRIM(RTRIM(@hotelTypeCode))))
+                  OR (@hotelTypeCode IS NULL AND id = COALESCE(@hotelTypeId, (SELECT TOP (1) id FROM [dbo].[OTEL_TIPLERI] WHERE LOWER([KOD]) = N'otel' OR [KOD] = N'HOTEL' ORDER BY CASE WHEN LOWER([KOD]) = N'otel' THEN 0 ELSE 1 END, id)))
               )
-            ORDER BY [SIRALAMA];";
+            ORDER BY [SIRALAMA], id;
+            """;
 
         await using var command = new SqlCommand(sql, connection);
         command.Parameters.AddWithValue("@hotelTypeId", hotelTypeId.HasValue ? hotelTypeId.Value : DBNull.Value);
-        command.Parameters.AddWithValue("@hotelTypeCode", string.IsNullOrWhiteSpace(hotelTypeCode) ? DBNull.Value : hotelTypeCode.Trim());
+        command.Parameters.AddWithValue("@hotelTypeCode", string.IsNullOrWhiteSpace(normalizedCode) ? DBNull.Value : normalizedCode.Trim());
         await using var reader = await command.ExecuteReaderAsync(cancellationToken);
         return await reader.ReadAsync(cancellationToken)
             ? (reader.GetInt32(0), reader.GetString(1))
             : null;
+    }
+
+    private static string? NormalizePartnerHotelTypeCode(string? hotelTypeCode)
+    {
+        if (string.IsNullOrWhiteSpace(hotelTypeCode))
+        {
+            return null;
+        }
+
+        return hotelTypeCode.Trim().ToLowerInvariant();
     }
 
     private static string NormalizeCompanyType(string? value)

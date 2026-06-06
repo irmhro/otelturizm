@@ -173,6 +173,9 @@
             registerForm?.addEventListener('input', persistPartnerDraft);
             registerForm?.addEventListener('change', persistPartnerDraft);
             registerForm?.addEventListener('submit', function () {
+                registerForm.querySelectorAll('select[disabled]').forEach(function (el) {
+                    if (el.value) el.disabled = false;
+                });
                 persistPartnerDraft();
                 const btn = this.querySelector('.auth-submit-btn');
                 if (btn) { btn.disabled = true; btn.innerHTML = 'Partner hesabı oluşturuluyor <i class="fas fa-spinner fa-spin"></i>'; }
@@ -193,7 +196,13 @@
                     provinceId: 'partnerCity',
                     districtId: 'partnerDistrict',
                     neighborhoodId: 'partnerNeighborhood',
-                    defaultCountryIso: 'TR'
+                    defaultCountryIso: 'TR',
+                    hiddenIds: {
+                        country: 'partnerUlkeId',
+                        province: 'partnerIlId',
+                        district: 'partnerIlceId',
+                        neighborhood: 'partnerMahalleId'
+                    }
                 }).catch(console.error);
             }
         })();

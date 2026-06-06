@@ -86,6 +86,25 @@
                 searchInput.focus();
             }
         });
+
+        searchInput.addEventListener('keydown', function (e) {
+            if (e.key !== 'Enter') {
+                return;
+            }
+
+            var query = (searchInput.value || '').trim();
+            if (!query) {
+                return;
+            }
+
+            var base = searchInput.getAttribute('data-partner-search-base') || '/panel/partner/rezervasyonlar';
+            var hotelId = searchInput.getAttribute('data-partner-hotel-id');
+            var url = base + '?q=' + encodeURIComponent(query);
+            if (hotelId) {
+                url += '&otelId=' + encodeURIComponent(hotelId);
+            }
+            window.location.href = url;
+        });
     }
 })();
 

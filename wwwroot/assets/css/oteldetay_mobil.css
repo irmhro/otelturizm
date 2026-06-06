@@ -308,6 +308,21 @@
     .oteldetay-page .detail-location-map {
         height: 200px;
     }
+
+    .oteldetay-page .od-similar-grid {
+        grid-template-columns: 1fr;
+        gap: 12px;
+    }
+
+    .oteldetay-page .od-policy-item {
+        grid-template-columns: 36px minmax(0, 1fr);
+        padding: 12px;
+    }
+
+    .oteldetay-page .od-policy-icon {
+        width: 36px;
+        height: 36px;
+    }
 }
 
 @media (prefers-reduced-motion: reduce) and (max-width: 900px) {

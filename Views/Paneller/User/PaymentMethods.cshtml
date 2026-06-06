@@ -108,9 +108,15 @@
             <p>Rezervasyon faturalarında kullanılacak temel bilgiler.</p>
         </div>
     </div>
-    <div class="info-list">
-        <div><span>Fatura Ünvanı</span><strong>@Model.Billing.InvoiceName</strong></div>
-        <div><span>Adres</span><strong>@Model.Billing.Address</strong></div>
-        <div><span>E-posta</span><strong>@Model.Billing.Email</strong></div>
-    </div>
+    <form method="post" asp-action="SaveBilling" class="form-grid">
+        @Html.AntiForgeryToken()
+        <label><span>Fatura Ünvanı</span><input asp-for="BillingForm.InvoiceName" type="text" required /></label>
+        <label><span>Adres</span><input asp-for="BillingForm.AddressLine" type="text" /></label>
+        <label><span>İlçe</span><input asp-for="BillingForm.District" type="text" /></label>
+        <label><span>Şehir</span><input asp-for="BillingForm.City" type="text" /></label>
+        <label><span>E-posta</span><input asp-for="BillingForm.Email" type="email" readonly disabled /></label>
+        <div class="payment-panel-head" style="grid-column: 1 / -1; margin-top: 8px;">
+            <button type="submit" class="btn-primary-solid"><i class="fas fa-save"></i> Fatura Bilgilerini Kaydet</button>
+        </div>
+    </form>
 </section>

@@ -1,5 +1,0 @@
-@media (max-width: 900px) {
-    .admin-development-page .admin-users-summary-grid {
-        grid-template-columns: 1fr 1fr;
-    }
-}

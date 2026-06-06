@@ -1,9 +1,0 @@
-﻿Otelturizm yayin paketi
-========================
-Klasor: 23.05.2026
-Tarih:  2026-05-23 01:20:44
-Konfig: Release
-
-Demo gorseller: wwwroot/uploads/images/{otelId}/hotel|rooms/
-DB seed: 20260523_seed_istanbul_10_ilce_oteller.sql
-         20260523_seed_demo_otel_medya_ve_ozellikler.sql

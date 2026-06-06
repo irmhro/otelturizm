@@ -56,7 +56,39 @@
 
 .auth-card--solo,
 .auth-card-admin {
-    max-width: 640px;
+    max-width: min(640px, calc(100vw - 32px));
+    width: 100%;
+    min-width: 0;
+    box-sizing: border-box;
+    overflow: clip;
+}
+
+.auth-card--solo .auth-form-panel--solo {
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    box-sizing: border-box;
+}
+
+.auth-card--solo .form-group,
+.auth-card--solo .input-wrap,
+.auth-card--solo .auth-form,
+.auth-card--solo .auth-form-actions {
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    box-sizing: border-box;
+}
+
+.auth-card--solo .input-wrap:not(.password-wrapper) .form-control {
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
+}
+
+.login-main:has(.auth-card--solo) {
+    min-height: 0;
+    padding: 32px 24px 48px;
 }
 
 .auth-card--verify {

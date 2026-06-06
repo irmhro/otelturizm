@@ -556,6 +556,21 @@ public class UserPaymentMethodsPageViewModel
     public List<UserPaymentMethodRowViewModel> Methods { get; set; } = new();
     public UserPaymentMethodForm Form { get; set; } = new();
     public UserBillingSummaryViewModel Billing { get; set; } = new();
+    public UserBillingForm BillingForm { get; set; } = new();
+}
+
+public class UserBillingForm
+{
+    public string InvoiceName { get; set; } = string.Empty;
+    public string AddressLine { get; set; } = string.Empty;
+    public string District { get; set; } = string.Empty;
+    public string City { get; set; } = string.Empty;
+    public string Email { get; set; } = string.Empty;
+}
+
+public class UserLoyaltyRedeemForm
+{
+    public long RewardId { get; set; }
 }
 
 public class UserPaymentMethodRowViewModel

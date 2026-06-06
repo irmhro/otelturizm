@@ -1,8 +1,0 @@
-@{
-    var currentAction = ViewContext.RouteData.Values["action"]?.ToString() ?? "Index";
-}
-<nav class="user-mobile-nav developer-mobile-nav">
-    <a asp-action="Index" class="@(currentAction == "Index" ? "active" : "")"><i class="fas fa-list-check"></i><span>Talepler</span></a>
-    <a asp-action="Security" class="@(currentAction == "Security" ? "active" : "")"><i class="fas fa-shield-halved"></i><span>Guvenlik</span></a>
-    <a href="/admin/gelistirme-talepleri"><i class="fas fa-user-gear"></i><span>Admin</span></a>
-</nav>

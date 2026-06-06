@@ -30,6 +30,7 @@
                 <form method="post" action="/panel/partner/finans/banka-kaydet" class="row g-3">
                     @Html.AntiForgeryToken()
                     <input type="hidden" name="HotelId" value="@Model.BankInfoForm.HotelId" />
+                    <input type="hidden" name="ReturnUrl" value="/panel/partner/odeme/ayarlari?otelId=@Model.Shell.SelectedHotelId" />
                     <div class="col-md-6">
                         <label class="form-label">Banka</label>
                         <input class="form-control" type="text" name="BankName" value="@Model.BankInfoForm.BankName" />

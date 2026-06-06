@@ -2215,7 +2215,35 @@ public class AdminPanelController : Controller
         var model = await _adminService.GetPartnerApplicationsAsync(GetFullName(), GetEmail(), GetUserRole(), cancellationToken);
         ViewData["Title"] = model.Shell.PanelTitle;
         ViewData["PageCssPath"] = "admin_panel_partner_applications_masaustu";
+        ViewData["PageCssMobilePath"] = "admin_panel_partner_applications_mobil";
         return View("~/Views/Paneller/Admin/PartnerApplications.cshtml", model);
+    }
+
+    [HttpGet("partner-basvurulari/{partnerId:long}")]
+    public async Task<IActionResult> PartnerApplicationDetail(long partnerId, CancellationToken cancellationToken)
+    {
+        if (!CanAccessAdminPanel())
+        {
+            return RedirectToAction("UserLogin", "Auth");
+        }
+
+        if (await RequirePermissionOrForbidAsync("admin.partner_applications", cancellationToken) is { } deniedDetail)
+        {
+            return deniedDetail;
+        }
+
+        var model = await _adminService.GetPartnerApplicationDetailAsync(partnerId, GetFullName(), GetEmail(), GetUserRole(), GetUserId(), cancellationToken);
+        if (model is null)
+        {
+            TempData["AdminError"] = "Partner basvurusu bulunamadi.";
+            return RedirectToAction(nameof(PartnerApplications));
+        }
+
+        ViewData["Title"] = model.Shell.PanelTitle;
+        ViewData["PageCssPath"] = "admin_panel_partner_applications_masaustu";
+        ViewData["PageCssMobilePath"] = "admin_panel_partner_applications_mobil";
+        ViewData["AdminShell"] = model.Shell;
+        return View("~/Views/Paneller/Admin/PartnerApplicationDetail.cshtml", model);
     }
 
     [HttpPost("partner-basvurulari/durum")]
@@ -2234,7 +2262,7 @@ public class AdminPanelController : Controller
 
         var result = await _adminService.ReviewPartnerApplicationAsync(GetUserId(), request, cancellationToken);
         TempData[result.Success ? "AdminMessage" : "AdminError"] = result.Message;
-        return RedirectToAction(nameof(PartnerApplications));
+        return RedirectToAction(nameof(PartnerApplicationDetail), new { partnerId = request.PartnerId });
     }
 
     [HttpGet("partner-evraklari")]

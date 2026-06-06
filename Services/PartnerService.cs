@@ -214,6 +214,7 @@ public class PartnerService : IPartnerService
             normalizedPaymentMethod,
             1,
             normalizedPageSize,
+            null,
             cancellationToken);
         model.UpcomingReservations = upcomingReservations.Items;
         model.DashboardReservationTotalCount = upcomingReservations.TotalCount;
@@ -228,6 +229,7 @@ public class PartnerService : IPartnerService
             "all",
             1,
             7,
+            null,
             cancellationToken);
         model.RecentReservations = recentReservations.Items;
         const string dashboardPolicySql = @"
@@ -300,6 +302,7 @@ public class PartnerService : IPartnerService
         int page = 1,
         int pageSize = 10,
         long? conversationId = null,
+        string? searchQuery = null,
         CancellationToken cancellationToken = default)
     {
         await using var connection = new SqlConnection(_connectionString);
@@ -309,6 +312,7 @@ public class PartnerService : IPartnerService
         var normalizedPaymentMethod = NormalizeReservationPaymentFilter(paymentMethod);
         var normalizedPageSize = pageSize is 10 or 20 or 30 ? pageSize : 7;
         var normalizedPage = page < 1 ? 1 : page;
+        var normalizedSearch = string.IsNullOrWhiteSpace(searchQuery) ? null : searchQuery.Trim();
 
         var context = await BuildContextAsync(connection, userId, hotelId, "Rezervasyonlar", "Rezervasyon akislarini, durum gecislerini ve odeme hareketlerini canli verilerle izleyin.", "reservations", cancellationToken);
         var model = new PartnerReservationsPageViewModel
@@ -320,6 +324,7 @@ public class PartnerService : IPartnerService
                 DateTo = dateTo?.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture),
                 Status = normalizedStatus,
                 PaymentMethod = normalizedPaymentMethod,
+                Query = normalizedSearch,
                 Page = normalizedPage,
                 PageSize = normalizedPageSize
             },
@@ -359,6 +364,7 @@ public class PartnerService : IPartnerService
             normalizedPaymentMethod,
             normalizedPage,
             normalizedPageSize,
+            normalizedSearch,
             cancellationToken);
         model.Reservations = reservationResult.Items;
         model.TotalCount = reservationResult.TotalCount;
@@ -3111,17 +3117,212 @@ public class PartnerService : IPartnerService
         }
     }
 
-    public async Task<PartnerRoomFeaturesPageViewModel> GetRoomFeaturesAsync(long userId, long? hotelId = null, CancellationToken cancellationToken = default)
+    private static readonly (string Type, string Label, string DefaultStart, string DefaultEnd)[] DefaultMealServiceCatalog =
+    [
+        ("kahvalti", "Kahvaltı", "07:00", "10:30"),
+        ("ogle", "Öğle Yemeği", "12:00", "14:30"),
+        ("aksam", "Akşam Yemeği", "19:00", "22:00"),
+        ("gece_servis", "7/24 Oda Servisi", "00:00", "23:59")
+    ];
+
+    public async Task<PartnerMealServicesPageViewModel> GetMealServicesAsync(long userId, long? hotelId = null, CancellationToken cancellationToken = default)
+    {
+        await using var connection = new SqlConnection(_connectionString);
+        await connection.OpenAsync(cancellationToken);
+
+        var context = await BuildContextAsync(connection, userId, hotelId, "Yemek Hizmetleri", "Kahvaltı, öğle, akşam ve oda servisi planlarını yönetin.", "hotel-info", cancellationToken);
+        var storedRows = await LoadMealServiceRowsAsync(connection, context.SelectedHotel.HotelId, cancellationToken);
+        var meals = DefaultMealServiceCatalog.Select(def =>
+        {
+            var stored = storedRows.FirstOrDefault(x => string.Equals(x.ServiceType, def.Type, StringComparison.OrdinalIgnoreCase));
+            if (stored is not null)
+            {
+                stored.Label = def.Label;
+                return stored;
+            }
+
+            return new PartnerMealServiceRowViewModel
+            {
+                ServiceType = def.Type,
+                Label = def.Label,
+                StartTime = def.DefaultStart,
+                EndTime = def.DefaultEnd
+            };
+        }).ToList();
+
+        return new PartnerMealServicesPageViewModel
+        {
+            Shell = context.Shell,
+            Meals = meals
+        };
+    }
+
+    public async Task<(bool Success, string Message)> SaveMealServicesAsync(long userId, PartnerMealServicesSaveRequest request, CancellationToken cancellationToken = default)
+    {
+        if (request.Meals is null || request.Meals.Count == 0)
+        {
+            return (false, "Kaydedilecek yemek hizmeti bulunamadı.");
+        }
+
+        await using var connection = new SqlConnection(_connectionString);
+        await connection.OpenAsync(cancellationToken);
+        var hotel = await EnsureHotelAccessAsync(connection, userId, request.HotelId, cancellationToken);
+
+        if (!await TableExistsAsync(connection, "otel_yemek_hizmetleri", cancellationToken))
+        {
+            return (false, "Yemek hizmetleri tablosu henüz uygulanmadı. Lütfen OTEL_YEMEK_HIZMETLERI migration dosyasını çalıştırın.");
+        }
+
+        var allowedTypes = DefaultMealServiceCatalog.Select(x => x.Type).ToHashSet(StringComparer.OrdinalIgnoreCase);
+        await using var transaction = await connection.BeginTransactionAsync(cancellationToken);
+        try
+        {
+            foreach (var meal in request.Meals.Where(x => !string.IsNullOrWhiteSpace(x.ServiceType)))
+            {
+                if (!allowedTypes.Contains(meal.ServiceType))
+                {
+                    continue;
+                }
+
+                var startTime = ParseOptionalPartnerTime(meal.StartTime);
+                var endTime = ParseOptionalPartnerTime(meal.EndTime);
+                const string upsertSql = @"
+                    IF EXISTS (SELECT 1 FROM [dbo].[OTEL_YEMEK_HIZMETLERI] WHERE [OTEL_ID] = @hotelId AND [HIZMET_TIPI] = @serviceType)
+                    BEGIN
+                        UPDATE [dbo].[OTEL_YEMEK_HIZMETLERI]
+                        SET [AKTIF_MI] = @active,
+                            [ODA_FIYATINA_DAHIL_MI] = @included,
+                            [KISI_BASI_FIYAT] = @perPerson,
+                            [IKI_KISI_FIYAT] = @twoPerson,
+                            [ACIKLAMA] = @description,
+                            [BASLANGIC_SAATI] = @startTime,
+                            [BITIS_SAATI] = @endTime,
+                            [GUNCELLENME_TARIHI] = SYSUTCDATETIME()
+                        WHERE [OTEL_ID] = @hotelId AND [HIZMET_TIPI] = @serviceType;
+                    END
+                    ELSE
+                    BEGIN
+                        INSERT INTO [dbo].[OTEL_YEMEK_HIZMETLERI]
+                            ([OTEL_ID], [HIZMET_TIPI], [AKTIF_MI], [ODA_FIYATINA_DAHIL_MI], [KISI_BASI_FIYAT], [IKI_KISI_FIYAT], [ACIKLAMA], [BASLANGIC_SAATI], [BITIS_SAATI])
+                        VALUES
+                            (@hotelId, @serviceType, @active, @included, @perPerson, @twoPerson, @description, @startTime, @endTime);
+                    END;";
+
+                await using var command = new SqlCommand(upsertSql, connection, (SqlTransaction)transaction);
+                command.Parameters.AddWithValue("@hotelId", hotel.HotelId);
+                command.Parameters.AddWithValue("@serviceType", meal.ServiceType.Trim());
+                command.Parameters.AddWithValue("@active", meal.IsActive);
+                command.Parameters.AddWithValue("@included", meal.IncludedInRoomPrice);
+                command.Parameters.AddWithValue("@perPerson", meal.PerPersonPrice.HasValue ? meal.PerPersonPrice.Value : DBNull.Value);
+                command.Parameters.AddWithValue("@twoPerson", meal.TwoPersonPrice.HasValue ? meal.TwoPersonPrice.Value : DBNull.Value);
+                command.Parameters.AddWithValue("@description", string.IsNullOrWhiteSpace(meal.Description) ? DBNull.Value : meal.Description.Trim());
+                command.Parameters.AddWithValue("@startTime", startTime.HasValue ? startTime.Value : DBNull.Value);
+                command.Parameters.AddWithValue("@endTime", endTime.HasValue ? endTime.Value : DBNull.Value);
+                await command.ExecuteNonQueryAsync(cancellationToken);
+            }
+
+            await transaction.CommitAsync(cancellationToken);
+            return (true, "Yemek hizmetleri kaydedildi.");
+        }
+        catch (Exception ex)
+        {
+            await transaction.RollbackAsync(cancellationToken);
+            return (false, $"Yemek hizmetleri kaydedilemedi: {ex.Message}");
+        }
+    }
+
+    private static async Task<List<PartnerMealServiceRowViewModel>> LoadMealServiceRowsAsync(SqlConnection connection, long hotelId, CancellationToken cancellationToken)
+    {
+        var rows = new List<PartnerMealServiceRowViewModel>();
+        if (!await TableExistsAsync(connection, "otel_yemek_hizmetleri", cancellationToken))
+        {
+            return rows;
+        }
+
+        const string sql = @"
+            SELECT [HIZMET_TIPI], [AKTIF_MI], [ODA_FIYATINA_DAHIL_MI], [KISI_BASI_FIYAT], [IKI_KISI_FIYAT],
+                   [ACIKLAMA], [BASLANGIC_SAATI], [BITIS_SAATI]
+            FROM [dbo].[OTEL_YEMEK_HIZMETLERI]
+            WHERE [OTEL_ID] = @hotelId;";
+
+        await using var command = new SqlCommand(sql, connection);
+        command.Parameters.AddWithValue("@hotelId", hotelId);
+        await using var reader = await command.ExecuteReaderAsync(cancellationToken);
+        while (await reader.ReadAsync(cancellationToken))
+        {
+            rows.Add(new PartnerMealServiceRowViewModel
+            {
+                ServiceType = reader.IsDBNull(0) ? string.Empty : reader.GetString(0),
+                IsActive = !reader.IsDBNull(1) && reader.GetBoolean(1),
+                IncludedInRoomPrice = !reader.IsDBNull(2) && reader.GetBoolean(2),
+                PerPersonPrice = reader.IsDBNull(3) ? null : reader.GetDecimal(3),
+                TwoPersonPrice = reader.IsDBNull(4) ? null : reader.GetDecimal(4),
+                Description = reader.IsDBNull(5) ? null : reader.GetString(5),
+                StartTime = reader.IsDBNull(6) ? null : reader.GetTimeSpan(6).ToString(@"hh\:mm", CultureInfo.InvariantCulture),
+                EndTime = reader.IsDBNull(7) ? null : reader.GetTimeSpan(7).ToString(@"hh\:mm", CultureInfo.InvariantCulture)
+            });
+        }
+
+        return rows;
+    }
+
+    private static TimeSpan? ParseOptionalPartnerTime(string? value)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+        {
+            return null;
+        }
+
+        return TimeSpan.TryParse(value.Trim(), CultureInfo.InvariantCulture, out var parsed)
+            ? parsed
+            : null;
+    }
+
+    public async Task<PartnerRoomFeaturesPageViewModel> GetRoomFeaturesAsync(long userId, long? hotelId = null, long? roomId = null, CancellationToken cancellationToken = default)
     {
         await using var connection = new SqlConnection(_connectionString);
         await connection.OpenAsync(cancellationToken);
 
         var context = await BuildContextAsync(connection, userId, hotelId, "Oda Özellikleri", "Oda tiplerinde seçilebilir özellik listesini yönetin.", "rooms", cancellationToken);
+        var selectedHotelId = context.SelectedHotel.HotelId;
+        var inclusiveTax = await LoadInclusiveTaxPercentsAsync(connection, selectedHotelId, cancellationToken);
+        var roomSummaries = await GetRoomSummariesAsync(connection, selectedHotelId, inclusiveTax, cancellationToken);
+        var featureCounts = await LoadRoomFeatureCountsAsync(connection, selectedHotelId, cancellationToken);
+
+        var rooms = roomSummaries.Select(room => new PartnerRoomFeatureRoomOptionViewModel
+        {
+            RoomId = room.RoomId,
+            RoomName = room.RoomName,
+            Category = room.Category,
+            CapacityText = room.CapacityText,
+            StockText = room.StockText,
+            PriceText = room.BasePriceText,
+            SelectedFeatureCount = featureCounts.TryGetValue(room.RoomId, out var count) ? count : 0,
+            IsActive = room.IsActive
+        }).ToList();
+
+        var selectedRoomId = roomId.HasValue && rooms.Any(item => item.RoomId == roomId.Value)
+            ? roomId.Value
+            : rooms.FirstOrDefault()?.RoomId;
+
+        var selectedFeatureIds = selectedRoomId.HasValue
+            ? await LoadSelectedRoomFeatureIdsAsync(connection, selectedRoomId.Value, cancellationToken)
+            : new List<long>();
+
         var model = new PartnerRoomFeaturesPageViewModel
         {
             Shell = context.Shell,
-            SelectedHotelId = context.SelectedHotel.HotelId,
-            AddForm = new PartnerRoomFeatureAddRequest { HotelId = context.SelectedHotel.HotelId }
+            SelectedHotelId = selectedHotelId,
+            SelectedRoomId = selectedRoomId,
+            Rooms = rooms,
+            SelectedFeatureIds = selectedFeatureIds,
+            AddForm = new PartnerRoomFeatureAddRequest { HotelId = selectedHotelId },
+            SaveForm = new PartnerRoomFeatureSaveRequest
+            {
+                HotelId = selectedHotelId,
+                RoomId = selectedRoomId ?? 0,
+                SelectedFeatureIds = selectedFeatureIds
+            }
         };
 
         const string sql = @"
@@ -3145,6 +3346,33 @@ public class PartnerService : IPartnerService
         }
 
         return model;
+    }
+
+    public async Task<(bool Success, string Message)> SaveRoomFeaturesAsync(long userId, PartnerRoomFeatureSaveRequest request, CancellationToken cancellationToken = default)
+    {
+        if (request.RoomId <= 0)
+        {
+            return (false, "Oda tipi seçilmelidir.");
+        }
+
+        await using var connection = new SqlConnection(_connectionString);
+        await connection.OpenAsync(cancellationToken);
+        await EnsureHotelAccessAsync(connection, userId, request.HotelId, cancellationToken);
+
+        const string verifySql = "SELECT TOP (1) 1 FROM [dbo].[ODA_TIPLERI] WHERE id = @roomId AND [OTEL_ID] = @hotelId;";
+        await using (var verifyCommand = new SqlCommand(verifySql, connection))
+        {
+            verifyCommand.Parameters.AddWithValue("@roomId", request.RoomId);
+            verifyCommand.Parameters.AddWithValue("@hotelId", request.HotelId);
+            var exists = await verifyCommand.ExecuteScalarAsync(cancellationToken);
+            if (exists is null)
+            {
+                return (false, "Seçilen oda tipi bu tesise ait değil.");
+            }
+        }
+
+        await SyncRoomFeatureRelationsAsync(connection, request.RoomId, request.SelectedFeatureIds, cancellationToken);
+        return (true, "Oda özellikleri kaydedildi.");
     }
 
     public async Task<(bool Success, string Message)> AddRoomFeatureAsync(long userId, PartnerRoomFeatureAddRequest request, CancellationToken cancellationToken = default)
@@ -4801,6 +5029,13 @@ END";
             PartnerId = model.Form.PartnerId
         };
         model.Documents = await LoadPartnerApplicationDocumentsAsync(connection, userId, model.Form.PartnerId, cancellationToken);
+        model.Status.MissingDocumentRequests = await LoadActiveMissingDocumentTypesAsync(connection, model.Form.PartnerId, cancellationToken);
+        model.Status.HasPendingMissingDocuments = model.Status.MissingDocumentRequests.Count > 0;
+        if (model.Status.HasPendingMissingDocuments)
+        {
+            model.Status.PublicationHint = "Admin eksik evrak talep etti. Asagidaki belgeleri yukledikten sonra basvurunuz tekrar incelemeye alinir.";
+            model.Status.StatusToneClass = "warning";
+        }
         return model;
     }
 
@@ -4952,6 +5187,8 @@ END";
             command.Parameters.AddWithValue("@userId", userId);
             await command.ExecuteNonQueryAsync(cancellationToken);
         }
+
+        await TryCompleteMissingDocumentRequestAsync(connection, request.PartnerId, request.DocumentType, cancellationToken);
 
         return (true, "Basvuru evragi guvenli alana yuklendi.");
     }
@@ -8592,6 +8829,39 @@ END";
         return rows;
     }
 
+    private static async Task<Dictionary<long, int>> LoadRoomFeatureCountsAsync(SqlConnection connection, long hotelId, CancellationToken cancellationToken)
+    {
+        var counts = new Dictionary<long, int>();
+        if (!await TableExistsAsync(connection, "oda_tipi_ozellikleri", cancellationToken))
+        {
+            return counts;
+        }
+
+        const string sql = @"
+            SELECT ot.id, COUNT(DISTINCT oto.[OZELLIK_ID])
+            FROM [dbo].[ODA_TIPLERI] ot
+            LEFT JOIN [dbo].[ODA_TIPI_OZELLIKLERI] oto ON oto.[ODA_TIP_ID] = ot.id
+            WHERE ot.[OTEL_ID] = @hotelId
+            GROUP BY ot.id;";
+
+        await using var command = new SqlCommand(sql, connection);
+        command.Parameters.AddWithValue("@hotelId", hotelId);
+        await using var reader = await command.ExecuteReaderAsync(cancellationToken);
+        while (await reader.ReadAsync(cancellationToken))
+        {
+            if (reader.IsDBNull(0))
+            {
+                continue;
+            }
+
+            var roomId = reader.GetInt64(0);
+            var count = reader.IsDBNull(1) ? 0 : reader.GetInt32(1);
+            counts[roomId] = count;
+        }
+
+        return counts;
+    }
+
     private static async Task<List<long>> LoadSelectedRoomFeatureIdsAsync(SqlConnection connection, long roomId, CancellationToken cancellationToken)
     {
         var rows = new List<long>();
@@ -8759,14 +9029,24 @@ END";
         string paymentMethodFilter,
         int page,
         int pageSize,
+        string? searchQuery,
         CancellationToken cancellationToken)
     {
+        var searchLike = string.IsNullOrWhiteSpace(searchQuery) ? null : $"%{searchQuery.Trim()}%";
         const string countSql = @"
             SELECT COUNT(*)
             FROM [dbo].[REZERVASYONLAR] r
+            LEFT JOIN [dbo].[ODA_TIPLERI] ot ON ot.id = r.[ODA_TIP_ID]
             WHERE r.[OTEL_ID] = @hotelId
               AND (@dateFrom IS NULL OR CAST(r.[GIRIS_TARIHI] AS date) >= CAST(@dateFrom AS date))
               AND (@dateTo IS NULL OR CAST(r.[CIKIS_TARIHI] AS date) <= CAST(@dateTo AS date))
+              AND (
+                    @searchLike IS NULL
+                    OR r.[REZERVASYON_NO] LIKE @searchLike
+                    OR COALESCE(r.[MISAFIR_AD_SOYAD], '') LIKE @searchLike
+                    OR COALESCE(r.[MISAFIR_EPOSTA], '') LIKE @searchLike
+                    OR COALESCE(ot.[ODA_ADI], '') LIKE @searchLike
+                  )
               AND (
                     @statusFilter = 'all'
                     OR (@statusFilter = 'pending' AND r.[DURUM] IN ('Onay Bekliyor','Değişiklik Bekliyor'))
@@ -8794,6 +9074,7 @@ END";
             countCommand.Parameters.AddWithValue("@dateTo", dateTo.HasValue ? dateTo.Value : DBNull.Value);
             countCommand.Parameters.AddWithValue("@statusFilter", statusFilter);
             countCommand.Parameters.AddWithValue("@paymentMethodFilter", paymentMethodFilter);
+            countCommand.Parameters.AddWithValue("@searchLike", searchLike is null ? DBNull.Value : searchLike);
             var scalar = await countCommand.ExecuteScalarAsync(cancellationToken);
             totalCount = Convert.ToInt32(scalar ?? 0, CultureInfo.InvariantCulture);
         }
@@ -8863,6 +9144,13 @@ END";
                                 WHERE k.[REZERVASYON_ID] = r.id)))
                     OR (@paymentMethodFilter = 'mixed' AND COALESCE(r.[ODEME_YONTEMI], '') = N'Karma Ödeme')
                   )
+              AND (
+                    @searchLike IS NULL
+                    OR r.[REZERVASYON_NO] LIKE @searchLike
+                    OR COALESCE(r.[MISAFIR_AD_SOYAD], '') LIKE @searchLike
+                    OR COALESCE(r.[MISAFIR_EPOSTA], '') LIKE @searchLike
+                    OR COALESCE(ot.[ODA_ADI], '') LIKE @searchLike
+                  )
             ORDER BY r.[OLUSTURULMA_TARIHI] DESC, r.id DESC
             OFFSET @offset ROWS FETCH NEXT @limit ROWS ONLY;";
 
@@ -8873,6 +9161,7 @@ END";
         command.Parameters.AddWithValue("@dateTo", dateTo.HasValue ? dateTo.Value : DBNull.Value);
         command.Parameters.AddWithValue("@statusFilter", statusFilter);
         command.Parameters.AddWithValue("@paymentMethodFilter", paymentMethodFilter);
+        command.Parameters.AddWithValue("@searchLike", searchLike is null ? DBNull.Value : searchLike);
         command.Parameters.AddWithValue("@limit", pageSize);
         command.Parameters.AddWithValue("@offset", (page - 1) * pageSize);
         await using var reader = await command.ExecuteReaderAsync(cancellationToken);
@@ -9639,6 +9928,86 @@ END";
         command.Parameters.AddWithValue("@iban", request.Iban.Trim().Replace(" ", string.Empty, StringComparison.Ordinal));
         command.Parameters.AddWithValue("@website", (object?)EmptyToNull(request.Website) ?? DBNull.Value);
         command.Parameters.AddWithValue("@description", (object?)EmptyToNull(request.Description) ?? DBNull.Value);
+    }
+
+    private static async Task<List<string>> LoadActiveMissingDocumentTypesAsync(SqlConnection connection, long partnerId, CancellationToken cancellationToken)
+    {
+        var items = new List<string>();
+        if (!await TableExistsAsync(connection, "partner_eksik_evrak_talepleri", cancellationToken))
+        {
+            return items;
+        }
+
+        const string sql = @"
+            SELECT [EVRAK_TIPI]
+            FROM [dbo].[PARTNER_EKSIK_EVRAK_TALEPLERI]
+            WHERE [PARTNER_ID] = @partnerId AND [AKTIF_MI] = 1
+            ORDER BY [EVRAK_TIPI];";
+
+        await using var command = new SqlCommand(sql, connection);
+        command.Parameters.AddWithValue("@partnerId", partnerId);
+        await using var reader = await command.ExecuteReaderAsync(cancellationToken);
+        while (await reader.ReadAsync(cancellationToken))
+        {
+            items.Add(reader.GetString(0));
+        }
+
+        return items;
+    }
+
+    private async Task TryCompleteMissingDocumentRequestAsync(SqlConnection connection, long partnerId, string documentType, CancellationToken cancellationToken)
+    {
+        if (!await TableExistsAsync(connection, "partner_eksik_evrak_talepleri", cancellationToken))
+        {
+            return;
+        }
+
+        const string completeSql = @"
+            UPDATE [dbo].[PARTNER_EKSIK_EVRAK_TALEPLERI]
+            SET [AKTIF_MI] = 0, [TAMAMLANDI_TARIHI] = SYSUTCDATETIME()
+            WHERE [PARTNER_ID] = @partnerId AND [AKTIF_MI] = 1 AND [EVRAK_TIPI] = @docType;";
+
+        await using (var complete = new SqlCommand(completeSql, connection))
+        {
+            complete.Parameters.AddWithValue("@partnerId", partnerId);
+            complete.Parameters.AddWithValue("@docType", documentType.Trim());
+            await complete.ExecuteNonQueryAsync(cancellationToken);
+        }
+
+        const string remainingSql = @"
+            SELECT COUNT(*)
+            FROM [dbo].[PARTNER_EKSIK_EVRAK_TALEPLERI]
+            WHERE [PARTNER_ID] = @partnerId AND [AKTIF_MI] = 1;";
+
+        await using var remaining = new SqlCommand(remainingSql, connection);
+        remaining.Parameters.AddWithValue("@partnerId", partnerId);
+        var count = Convert.ToInt32(await remaining.ExecuteScalarAsync(cancellationToken) ?? 0, CultureInfo.InvariantCulture);
+        if (count > 0)
+        {
+            return;
+        }
+
+        const string promoteSql = @"
+            UPDATE [dbo].[PARTNER_DETAYLARI]
+            SET [ONAY_DURUMU] = N'Beklemede', [GUNCELLENME_TARIHI] = SYSUTCDATETIME()
+            WHERE id = @partnerId AND [ONAY_DURUMU] = N'Askida';";
+
+        await using (var promote = new SqlCommand(promoteSql, connection))
+        {
+            promote.Parameters.AddWithValue("@partnerId", partnerId);
+            await promote.ExecuteNonQueryAsync(cancellationToken);
+        }
+
+        if (await TableExistsAsync(connection, "partner_basvuru_hareketleri", cancellationToken))
+        {
+            const string historySql = @"
+                INSERT INTO [dbo].[PARTNER_BASVURU_HAREKETLERI]
+                ([PARTNER_ID], [ONCEKI_DURUM], [YENI_DURUM], [ISLEM_TIPI], [ACIKLAMA], [ISLEM_YAPAN_KULLANICI_ID], [OLUSTURULMA_TARIHI])
+                VALUES (@partnerId, N'Askida', N'Beklemede', N'PartnerEksikEvrakTamamlandi', N'Partner eksik evraklari yukledi; basvuru tekrar incelemeye alindi.', NULL, SYSUTCDATETIME());";
+            await using var history = new SqlCommand(historySql, connection);
+            history.Parameters.AddWithValue("@partnerId", partnerId);
+            await history.ExecuteNonQueryAsync(cancellationToken);
+        }
     }
 
     private async Task<List<PartnerApplicationDocumentViewModel>> LoadPartnerApplicationDocumentsAsync(SqlConnection connection, long userId, long partnerId, CancellationToken cancellationToken)

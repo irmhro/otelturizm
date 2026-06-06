@@ -13,6 +13,8 @@
     var profileImageUrl = ViewData["UserProfileImageUrl"] as string ?? string.Empty;
     var returnUrl = Uri.EscapeDataString(Context.Request.Path + Context.Request.QueryString);
     var messageCount = ViewData["MessageCount"] is int msg ? msg : 0;
+    var loyaltyTierName = ViewData["UserLoyaltyTierName"] as string ?? "OtelPuan";
+    var loyaltyPoints = ViewData["UserLoyaltyPoints"] is int pts ? pts : 0;
 }
 <header class="global-topbar" role="banner">
     <div class="topbar-left">
@@ -21,7 +23,7 @@
         </button>
         <div class="header-search">
             <i class="fas fa-search"></i>
-            <input type="search" id="userGlobalSearch" placeholder="Otel adı, şehir veya rezervasyon numarası ara..." autocomplete="off" />
+            <input type="search" id="userGlobalSearch" data-user-search-base="/panel/user/rezervasyonlarim" placeholder="Otel adı, şehir veya rezervasyon numarası ara..." autocomplete="off" title="Enter: rezervasyon ara · Ctrl+K: odaklan" />
             <span class="search-shortcut">Ctrl+K</span>
         </div>
     </div>
@@ -29,7 +31,7 @@
     <div class="topbar-right">
         <a href="/panel/user/puanlarim" class="member-status-chip ap-hide-mobile" title="OtelPuan seviyeniz">
             <i class="fas fa-crown"></i>
-            <span>Üye Statüsü: <b>OtelPuan</b></span>
+            <span>Üye Statüsü: <b>@loyaltyTierName</b>@if (loyaltyPoints > 0) { <text> · @loyaltyPoints.ToString("N0") puan</text> }</span>
         </a>
         <a href="/locale/set?lang=tr&returnUrl=@returnUrl" class="lang-currency-btn ap-hide-mobile" title="Dil">
             <span>TR</span>

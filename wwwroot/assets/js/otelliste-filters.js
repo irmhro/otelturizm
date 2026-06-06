@@ -348,5 +348,17 @@
     bindScope('mobile');
     syncSelectOptions('desktop');
     syncSelectOptions('mobile');
+
+    (function hydrateFromQuery() {
+        const params = new URLSearchParams(window.location.search);
+        const q = params.get('q') || params.get('city') || '';
+        if (!q) return;
+        ['desktop', 'mobile'].forEach(scope => {
+            const root = getScopeRoot(scope);
+            const keyword = root?.querySelector('.otelliste-filter-keyword');
+            if (keyword && !keyword.value) keyword.value = q;
+        });
+    })();
+
     applyFilters();
 })();

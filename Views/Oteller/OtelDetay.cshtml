@@ -650,6 +650,13 @@
             <i class="fas fa-hotel" aria-hidden="true"></i>
             @SharedLocalizer["Detail.QuickFacts.Hotel"].Value
         </span>
+        @if (Model.HasFreeCancellation)
+        {
+            <span class="od-chip od-chip--benefit">
+                <i class="fas fa-check-circle" aria-hidden="true"></i>
+                Ücretsiz iptal
+            </span>
+        }
     </div>
 </section>
 
@@ -881,6 +888,11 @@
                 </details>
             }
         </article>
+
+        @if (Model.Conditions is not null)
+        {
+            <partial name="_OtelDetayPolicies" model="Model.Conditions" />
+        }
 
         <article class="content-card od-section od-section--rooms" id="roomsCard">
             <div class="section-head tabler-section-head">
@@ -1448,6 +1460,8 @@
                 }
             </div>
         </article>
+
+        <partial name="_OtelDetaySimilarHotels" model="Model.SimilarHotels" />
 
     </div>
 

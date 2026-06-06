@@ -296,6 +296,7 @@ public class PartnerReservationFilterViewModel
     public string? DateTo { get; set; }
     public string Status { get; set; } = "all";
     public string PaymentMethod { get; set; } = "all";
+    public string? Query { get; set; }
     public int Page { get; set; } = 1;
     public int PageSize { get; set; } = 10;
 }
@@ -1158,6 +1159,7 @@ public class PartnerCommissionMarkPaidRequest
 {
     public long HotelId { get; set; }
     public long CommissionRecordId { get; set; }
+    public string? ReturnUrl { get; set; }
 }
 
 public class PartnerFinanceTransactionViewModel
@@ -1235,6 +1237,7 @@ public class PartnerBankInfoForm
     public string Iban { get; set; } = string.Empty;
     public string AccountHolderName { get; set; } = string.Empty;
     public string Currency { get; set; } = "TRY";
+    public string? ReturnUrl { get; set; }
 }
 
 public class PartnerPreferencesPageViewModel
@@ -1287,6 +1290,8 @@ public class PartnerApplicationStatusViewModel
     public bool EmailVerified { get; set; }
     public bool CanPublish { get; set; }
     public string PublicationHint { get; set; } = string.Empty;
+    public List<string> MissingDocumentRequests { get; set; } = new();
+    public bool HasPendingMissingDocuments { get; set; }
 }
 
 public class PartnerApplicationProfileForm

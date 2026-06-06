@@ -1,0 +1,47 @@
+@model IReadOnlyList<otelturizmnew.Models.Oteller.HotelSimilarCardViewModel>
+@{
+    var items = Model?.Where(x => !string.IsNullOrWhiteSpace(x.Slug)).Take(6).ToList() ?? new();
+    var placeholder = "/assets/img/placeholder-hotel.jpg";
+}
+@if (items.Count > 0)
+{
+    <article class="content-card od-section od-section--similar" id="similarHotelsSection">
+        <div class="section-head tabler-section-head od-section__head">
+            <div class="tabler-section-headrow">
+                <div class="tabler-section-titles">
+                    <h2>Benzer oteller</h2>
+                    <p>Aynı bölgede önerilen diğer tesisler</p>
+                </div>
+                <div class="tabler-section-actions">
+                    <a class="tabler-section-action-btn" asp-controller="Oteller" asp-action="OtelListeleme">
+                        Tüm oteller
+                        <i class="fas fa-arrow-right" aria-hidden="true"></i>
+                    </a>
+                </div>
+            </div>
+        </div>
+        <div class="od-similar-grid">
+            @foreach (var hotel in items)
+            {
+                var imageUrl = string.IsNullOrWhiteSpace(hotel.ImageUrl) ? placeholder : hotel.ImageUrl;
+                var detailUrl = $"/oteller/{Uri.EscapeDataString(hotel.Slug)}";
+                <a class="od-similar-card" href="@detailUrl">
+                    <span class="od-similar-card__media">
+                        <img src="@imageUrl" alt="@hotel.Name" loading="lazy" decoding="async" />
+                    </span>
+                    <span class="od-similar-card__body">
+                        <strong>@hotel.Name</strong>
+                        @if (!string.IsNullOrWhiteSpace(hotel.RatingText))
+                        {
+                            <small>@hotel.RatingText</small>
+                        }
+                        @if (!string.IsNullOrWhiteSpace(hotel.PriceText))
+                        {
+                            <span class="od-similar-card__price">@hotel.PriceText</span>
+                        }
+                    </span>
+                </a>
+            }
+        </div>
+    </article>
+}

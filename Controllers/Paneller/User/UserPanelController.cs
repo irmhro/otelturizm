@@ -97,6 +97,32 @@ public class UserPanelController : Controller
         return View("~/Views/Paneller/User/Reservations.cshtml", model);
     }
 
+    [HttpGet("rezervasyonlarim/disa-aktar")]
+    public async Task<IActionResult> ExportReservations(
+        string? status = null,
+        DateOnly? startDate = null,
+        DateOnly? endDate = null,
+        string? searchTerm = null,
+        string? sort = null,
+        CancellationToken cancellationToken = default)
+    {
+        if (!CanAccessUserPanel())
+        {
+            return RedirectToAction("UserLogin", "Auth");
+        }
+
+        var csv = await _userPanelService.ExportReservationsCsvAsync(
+            GetCurrentUserId(),
+            status,
+            startDate,
+            endDate,
+            searchTerm,
+            sort,
+            cancellationToken);
+        var fileName = $"rezervasyonlarim-{DateTime.UtcNow:yyyyMMdd-HHmm}.csv";
+        return File(System.Text.Encoding.UTF8.GetBytes(csv), "text/csv; charset=utf-8", fileName);
+    }
+
     [HttpPost("tema/kaydet")]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> SaveTheme(otelturizmnew.Models.Paneller.Partner.PanelThemeViewModel theme, CancellationToken cancellationToken = default)
@@ -321,6 +347,19 @@ public class UserPanelController : Controller
         if (CanAccessUserPanel())
         {
             var result = await _userPanelService.SaveTravelPlanAsync(GetCurrentUserId(), form, cancellationToken);
+            TempData[result.Success ? "UserLoyaltySuccess" : "UserLoyaltyError"] = result.Message;
+        }
+
+        return RedirectToAction(nameof(Loyalty));
+    }
+
+    [HttpPost("puanlarim/odul-kullan")]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> RedeemReward(UserLoyaltyRedeemForm form, CancellationToken cancellationToken = default)
+    {
+        if (CanAccessUserPanel())
+        {
+            var result = await _userPanelService.RedeemRewardAsync(GetCurrentUserId(), form, cancellationToken);
             TempData[result.Success ? "UserLoyaltySuccess" : "UserLoyaltyError"] = result.Message;
         }
 
@@ -765,6 +804,20 @@ public class UserPanelController : Controller
                 : "Ödeme yöntemi eklenemedi.";
         }
 
+        return RedirectToAction(nameof(PaymentMethods));
+    }
+
+    [HttpPost("odeme-yontemleri/fatura-kaydet")]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> SaveBilling(UserBillingForm form, CancellationToken cancellationToken)
+    {
+        if (!CanAccessUserPanel())
+        {
+            return RedirectToAction("UserLogin", "Auth");
+        }
+
+        var result = await _userPanelService.SaveBillingInfoAsync(GetCurrentUserId(), form, cancellationToken);
+        TempData[result.Success ? "UserPaymentSuccess" : "UserPaymentError"] = result.Message;
         return RedirectToAction(nameof(PaymentMethods));
     }
 

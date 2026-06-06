@@ -1,6 +1,7 @@
 using System.Globalization;
 using System.Linq;
 using System.Security.Cryptography;
+using System.Text;
 using Microsoft.Data.SqlClient;
 using SqlConnection = Microsoft.Data.SqlClient.SqlConnection;
 using SqlCommand = Microsoft.Data.SqlClient.SqlCommand;
@@ -59,6 +60,37 @@ public class UserPanelService : IUserPanelService
         }
 
         return (SafeInt(reader, 0), SafeInt(reader, 1), SafeInt(reader, 2));
+    }
+
+    public async Task<(string TierName, int AvailablePoints)> GetLoyaltyTierChipAsync(long userId, CancellationToken cancellationToken = default)
+    {
+        if (userId <= 0)
+        {
+            return ("OtelPuan", 0);
+        }
+
+        await using var connection = await OpenConnectionAsync(cancellationToken);
+        try
+        {
+            await EnsureLoyaltyAccountAsync(connection, userId, cancellationToken);
+            await using var command = new SqlCommand(@"
+                SELECT TOP (1) COALESCE(s.[AD], N'Bronz'), COALESCE(h.[KULLANILABILIR_PUAN], 0)
+                FROM [dbo].[KULLANICI_SADAKAT_HESAPLARI] h
+                LEFT JOIN [dbo].[SADAKAT_SEVIYELERI] s ON s.id = h.[MEVCUT_SEVIYE_ID]
+                WHERE h.[KULLANICI_ID] = @userId;", connection);
+            command.Parameters.AddWithValue("@userId", userId);
+            await using var reader = await command.ExecuteReaderAsync(cancellationToken);
+            if (await reader.ReadAsync(cancellationToken))
+            {
+                return (reader.GetString(0), SafeInt(reader, 1));
+            }
+        }
+        catch (SqlException)
+        {
+            // Sadakat tabloları eksikse statik chip göster.
+        }
+
+        return ("OtelPuan", 0);
     }
 
     public async Task<UserDashboardPageViewModel> GetDashboardAsync(
@@ -145,11 +177,90 @@ public class UserPanelService : IUserPanelService
         model.PastCount = allReservations.Count(x => !x.IsUpcoming && !x.IsCancelled);
         model.CancelledCount = allReservations.Count(x => x.IsCancelled);
 
-        var normalizedStatus = NormalizeReservationStatusFilter(statusFilter);
-        var normalizedSort = NormalizeReservationSort(sort);
-        var search = (searchTerm ?? string.Empty).Trim();
+        var filteredList = FilterReservations(
+            allReservations,
+            statusFilter,
+            startDate,
+            endDate,
+            searchTerm,
+            sort,
+            out var normalizedStatus,
+            out var normalizedSort,
+            out var search);
+
         var safePageSize = pageSize is 5 or 10 or 15 or 20 ? pageSize : 5;
+        model.StatusFilter = normalizedStatus;
+        model.StartDateText = startDate?.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
+        model.EndDateText = endDate?.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
+        model.PageSize = safePageSize;
+        model.SearchTerm = search;
+        model.SortFilter = normalizedSort;
+        model.FilteredCount = filteredList.Count;
         var safePage = page <= 0 ? 1 : page;
+        model.Page = Math.Min(safePage, Math.Max(1, model.TotalPages));
+        model.Reservations = filteredList
+            .Skip((model.Page - 1) * model.PageSize)
+            .Take(model.PageSize)
+            .ToList();
+        return model;
+    }
+
+    public async Task<string> ExportReservationsCsvAsync(
+        long userId,
+        string? statusFilter = null,
+        DateOnly? startDate = null,
+        DateOnly? endDate = null,
+        string? searchTerm = null,
+        string? sort = null,
+        CancellationToken cancellationToken = default)
+    {
+        await using var connection = await OpenConnectionAsync(cancellationToken);
+        var allReservations = await LoadReservationsAsync(connection, userId, 5000, cancellationToken);
+        var filteredList = FilterReservations(
+            allReservations,
+            statusFilter,
+            startDate,
+            endDate,
+            searchTerm,
+            sort,
+            out _,
+            out _,
+            out _);
+
+        var csv = new StringBuilder();
+        csv.AppendLine("Rezervasyon No,Otel,Sehir,Ilce,Oda,Giris,Cikis,Durum,Odeme,Tutar");
+        foreach (var item in filteredList)
+        {
+            csv.Append(EscapeCsv(item.ReservationNo)).Append(',')
+                .Append(EscapeCsv(item.HotelName)).Append(',')
+                .Append(EscapeCsv(item.City)).Append(',')
+                .Append(EscapeCsv(item.District)).Append(',')
+                .Append(EscapeCsv(item.RoomName)).Append(',')
+                .Append(EscapeCsv(item.CheckInDate.ToString("dd.MM.yyyy", CultureInfo.GetCultureInfo("tr-TR")))).Append(',')
+                .Append(EscapeCsv(item.CheckOutDate.ToString("dd.MM.yyyy", CultureInfo.GetCultureInfo("tr-TR")))).Append(',')
+                .Append(EscapeCsv(item.StatusText)).Append(',')
+                .Append(EscapeCsv(item.PaymentStatus)).Append(',')
+                .Append(EscapeCsv(item.TotalText)).AppendLine();
+        }
+
+        return csv.ToString();
+    }
+
+    private static List<UserReservationCardViewModel> FilterReservations(
+        IReadOnlyList<UserReservationCardViewModel> allReservations,
+        string? statusFilter,
+        DateOnly? startDate,
+        DateOnly? endDate,
+        string? searchTerm,
+        string? sort,
+        out string normalizedStatus,
+        out string normalizedSort,
+        out string search)
+    {
+        normalizedStatus = NormalizeReservationStatusFilter(statusFilter);
+        normalizedSort = NormalizeReservationSort(sort);
+        search = (searchTerm ?? string.Empty).Trim();
+
         if (startDate.HasValue && endDate.HasValue && endDate.Value < startDate.Value)
         {
             (startDate, endDate) = (endDate, startDate);
@@ -174,12 +285,13 @@ public class UserPanelService : IUserPanelService
         }
         if (!string.IsNullOrWhiteSpace(search))
         {
+            var searchValue = search;
             filtered = filtered.Where(x =>
-                x.ReservationNo.Contains(search, StringComparison.OrdinalIgnoreCase)
-                || x.HotelName.Contains(search, StringComparison.OrdinalIgnoreCase)
-                || x.RoomName.Contains(search, StringComparison.OrdinalIgnoreCase)
-                || x.City.Contains(search, StringComparison.OrdinalIgnoreCase)
-                || x.District.Contains(search, StringComparison.OrdinalIgnoreCase));
+                x.ReservationNo.Contains(searchValue, StringComparison.OrdinalIgnoreCase)
+                || x.HotelName.Contains(searchValue, StringComparison.OrdinalIgnoreCase)
+                || x.RoomName.Contains(searchValue, StringComparison.OrdinalIgnoreCase)
+                || x.City.Contains(searchValue, StringComparison.OrdinalIgnoreCase)
+                || x.District.Contains(searchValue, StringComparison.OrdinalIgnoreCase));
         }
 
         filtered = normalizedSort switch
@@ -190,20 +302,7 @@ public class UserPanelService : IUserPanelService
             _ => filtered.OrderByDescending(x => x.CheckInDate).ThenByDescending(x => x.ReservationId)
         };
 
-        var filteredList = filtered.ToList();
-        model.StatusFilter = normalizedStatus;
-        model.StartDateText = startDate?.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
-        model.EndDateText = endDate?.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
-        model.PageSize = safePageSize;
-        model.SearchTerm = search;
-        model.SortFilter = normalizedSort;
-        model.FilteredCount = filteredList.Count;
-        model.Page = Math.Min(safePage, Math.Max(1, model.TotalPages));
-        model.Reservations = filteredList
-            .Skip((model.Page - 1) * model.PageSize)
-            .Take(model.PageSize)
-            .ToList();
-        return model;
+        return filtered.ToList();
     }
 
     public async Task<(bool Success, string Message)> CancelReservationAsync(long userId, long reservationId, string cancellationReason, CancellationToken cancellationToken = default)
@@ -2077,13 +2176,9 @@ INNER JOIN agg ON agg.[OTEL_ID] = o.id;";
 
         await using var billingCommand = new SqlCommand(@"
             SELECT TOP (1) [AD_SOYAD],
-                   LTRIM(RTRIM(CONCAT(
-                       COALESCE(NULLIF([ADRES], ''), ''),
-                       CASE WHEN COALESCE(NULLIF(ilce, ''), '') <> '' AND COALESCE(NULLIF([ADRES], ''), '') <> '' THEN ', ' ELSE '' END,
-                       COALESCE(NULLIF(ilce, ''), ''),
-                       CASE WHEN COALESCE(NULLIF([SEHIR], ''), '') <> '' AND (COALESCE(NULLIF([ADRES], ''), '') <> '' OR COALESCE(NULLIF(ilce, ''), '') <> '') THEN ', ' ELSE '' END,
-                       COALESCE(NULLIF([SEHIR], ''), '')
-                   ))) AS full_address,
+                   COALESCE(NULLIF([ADRES], ''), ''),
+                   COALESCE(NULLIF(ilce, ''), ''),
+                   COALESCE(NULLIF([SEHIR], ''), ''),
                    [EPOSTA]
             FROM [dbo].[KULLANICILAR]
             WHERE id = @userId;", connection);
@@ -2091,15 +2186,56 @@ INNER JOIN agg ON agg.[OTEL_ID] = o.id;";
         await using var billingReader = await billingCommand.ExecuteReaderAsync(cancellationToken);
         if (await billingReader.ReadAsync(cancellationToken))
         {
+            var invoiceName = billingReader.GetString(0);
+            var addressLine = billingReader.GetString(1);
+            var district = billingReader.GetString(2);
+            var city = billingReader.GetString(3);
+            var email = billingReader.GetString(4);
+            var fullAddress = string.Join(", ", new[] { addressLine, district, city }.Where(static x => !string.IsNullOrWhiteSpace(x)));
             model.Billing = new UserBillingSummaryViewModel
             {
-                InvoiceName = billingReader.GetString(0),
-                Address = billingReader.IsDBNull(1) ? "Adres bilgisi eklenmedi" : billingReader.GetString(1),
-                Email = billingReader.GetString(2)
+                InvoiceName = invoiceName,
+                Address = string.IsNullOrWhiteSpace(fullAddress) ? "Adres bilgisi eklenmedi" : fullAddress,
+                Email = email
+            };
+            model.BillingForm = new UserBillingForm
+            {
+                InvoiceName = invoiceName,
+                AddressLine = addressLine,
+                District = district,
+                City = city,
+                Email = email
             };
         }
 
         return model;
+    }
+
+    public async Task<(bool Success, string Message)> SaveBillingInfoAsync(long userId, UserBillingForm form, CancellationToken cancellationToken = default)
+    {
+        if (string.IsNullOrWhiteSpace(form.InvoiceName))
+        {
+            return (false, "Fatura unvani zorunludur.");
+        }
+
+        await using var connection = await OpenConnectionAsync(cancellationToken);
+        await using var command = new SqlCommand(@"
+            UPDATE [dbo].[KULLANICILAR]
+            SET [AD_SOYAD] = @invoiceName,
+                [ADRES] = @addressLine,
+                ilce = @district,
+                [SEHIR] = @city
+            WHERE id = @userId;", connection);
+        command.Parameters.AddWithValue("@invoiceName", form.InvoiceName.Trim());
+        command.Parameters.AddWithValue("@addressLine", string.IsNullOrWhiteSpace(form.AddressLine) ? DBNull.Value : (object)form.AddressLine.Trim());
+        command.Parameters.AddWithValue("@district", string.IsNullOrWhiteSpace(form.District) ? DBNull.Value : (object)form.District.Trim());
+        command.Parameters.AddWithValue("@city", string.IsNullOrWhiteSpace(form.City) ? DBNull.Value : (object)form.City.Trim());
+        command.Parameters.AddWithValue("@userId", userId);
+
+        var affected = await command.ExecuteNonQueryAsync(cancellationToken);
+        return affected > 0
+            ? (true, "Fatura bilgileri guncellendi.")
+            : (false, "Fatura bilgileri kaydedilemedi.");
     }
 
     public async Task<bool> SavePaymentMethodAsync(long userId, UserPaymentMethodForm form, CancellationToken cancellationToken = default)
@@ -2320,6 +2456,75 @@ INNER JOIN agg ON agg.[OTEL_ID] = o.id;";
         await command.ExecuteNonQueryAsync(cancellationToken);
 
         return (true, "Seyahat planiniz kaydedildi. Artik otelleri ortak plana ekleyebilirsiniz.");
+    }
+
+    public async Task<(bool Success, string Message)> RedeemRewardAsync(long userId, UserLoyaltyRedeemForm form, CancellationToken cancellationToken = default)
+    {
+        if (form.RewardId <= 0)
+        {
+            return (false, "Gecerli bir odul seciniz.");
+        }
+
+        await using var connection = await OpenConnectionAsync(cancellationToken);
+        await EnsureLoyaltyAccountAsync(connection, userId, cancellationToken);
+
+        string rewardTitle;
+        int requiredPoints;
+        await using (var rewardCommand = new SqlCommand(@"
+            SELECT TOP (1) [AD], [GEREKLI_PUAN]
+            FROM [dbo].[SADAKAT_ODULLERI]
+            WHERE id = @rewardId AND [AKTIF_MI] = 1;", connection))
+        {
+            rewardCommand.Parameters.AddWithValue("@rewardId", form.RewardId);
+            await using var reader = await rewardCommand.ExecuteReaderAsync(cancellationToken);
+            if (!await reader.ReadAsync(cancellationToken))
+            {
+                return (false, "Odul bulunamadi veya su an kullanilamiyor.");
+            }
+
+            rewardTitle = reader.GetString(0);
+            requiredPoints = SafeInt(reader, 1);
+        }
+
+        long accountId;
+        int availablePoints;
+        await using (var accountCommand = new SqlCommand(@"
+            SELECT TOP (1) id, [KULLANILABILIR_PUAN]
+            FROM [dbo].[KULLANICI_SADAKAT_HESAPLARI]
+            WHERE [KULLANICI_ID] = @userId;", connection))
+        {
+            accountCommand.Parameters.AddWithValue("@userId", userId);
+            await using var reader = await accountCommand.ExecuteReaderAsync(cancellationToken);
+            if (!await reader.ReadAsync(cancellationToken))
+            {
+                return (false, "Sadakat hesabi bulunamadi.");
+            }
+
+            accountId = reader.GetInt64(0);
+            availablePoints = SafeInt(reader, 1);
+        }
+
+        if (availablePoints < requiredPoints)
+        {
+            return (false, "Bu odul icin yeterli puaniniz bulunmuyor.");
+        }
+
+        var newBalance = availablePoints - requiredPoints;
+        await using var insertCommand = new SqlCommand(@"
+            INSERT INTO [dbo].[KULLANICI_PUAN_HAREKETLERI]
+            ([KULLANICI_ID], [SADAKAT_HESAP_ID], [HAREKET_TIPI], [BASLIK], [ACIKLAMA], [PUAN_DEGISIM], [PUAN_BAKIYE_SONRASI], [DURUM], [ISLEM_TARIHI], [OLUSTURULMA_TARIHI])
+            VALUES
+            (@userId, @accountId, N'OdulKullanim', @title, @description, @delta, @newBalance, N'Tamamlandi', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);", connection);
+        insertCommand.Parameters.AddWithValue("@userId", userId);
+        insertCommand.Parameters.AddWithValue("@accountId", accountId);
+        insertCommand.Parameters.AddWithValue("@title", rewardTitle);
+        insertCommand.Parameters.AddWithValue("@description", $"Odul katalogu · #{form.RewardId}");
+        insertCommand.Parameters.AddWithValue("@delta", -requiredPoints);
+        insertCommand.Parameters.AddWithValue("@newBalance", newBalance);
+        await insertCommand.ExecuteNonQueryAsync(cancellationToken);
+
+        await EnsureLoyaltyAccountAsync(connection, userId, cancellationToken);
+        return (true, $"{rewardTitle} odulu basariyla kullanildi. {requiredPoints:N0} puan dusuldu.");
     }
 
     private async Task<SqlConnection> OpenConnectionAsync(CancellationToken cancellationToken)
@@ -3493,5 +3698,16 @@ INNER JOIN agg ON agg.[OTEL_ID] = o.id;";
         decimal TotalAmount,
         string RoomName,
         string HotelName);
+
+    private static string EscapeCsv(string? value)
+    {
+        if (string.IsNullOrEmpty(value))
+        {
+            return string.Empty;
+        }
+
+        var normalized = value.Replace("\"", "\"\"", StringComparison.Ordinal);
+        return $"\"{normalized}\"";
+    }
 }
 

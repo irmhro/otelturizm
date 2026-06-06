@@ -1,38 +1,72 @@
-# Firma paneli — tam kapsam planı
+# Firma (B2B kurumsal) paneli — tam gelişim planı
 
-## Kapsam
+Partner paneliyle aynı orchestrator yapısı; mevcut `firmapanel-v6-shell` tasarımı korunur.
 
-- **Rotalar:** `FirmaPanelController` (`/panel/firma/*`)
-- **Görünümler:** `Views/Paneller/Firma/*.cshtml`
-- **Stil:** `wwwroot/assets/css/paneller/firma/*` + mesajlar için `paneller/firma/messages` (kullanıcı mesaj stillerini import eder)
-- **Servis:** `FirmaService` + `IAuthService` (güvenlik/2FA)
+## Orchestrator özeti
 
-## Sayfa envanteri (controller ↔ view)
+| Grup | Kapsam | Öncelik |
+|------|--------|---------|
+| **F0** | Altyapı: route/CSS sözleşmesi, shell JS, geri bildirim, `otelId` yok (tek firma) | P0 |
+| **F1** | Kokpit: KPI, hızlı aksiyonlar, son rezervasyonlar | P1 |
+| **F2** | Organizasyon: çalışan CRUD, limitler, faturalar | P0 |
+| **F3** | Seyahat: firma fiyatları, yeni rezervasyon, rezervasyon listesi, mesajlar | P0 |
+| **F4** | Raporlar: harcama, otel bazlı, CSV export | P1 |
+| **F5** | Hesap: hesap bilgileri, güvenlik/2FA, sözleşmeler | P1 |
+| **F6** | Fiyat karşılaştırma & filtre polish | P2 |
+| **F7** | Bildirim, destek, tema | P2 |
+| **F8** | Passkey / WhatsApp 2FA (partner ile hizalı) | P3 |
 
-| Rota / Action | View | CSS |
-|---------------|------|-----|
-| `Index` / `dashboard` | Dashboard | `paneller/firma/dashboard` |
-| `Security` | Security | `paneller/firma/security` |
-| `Deals` | Deals | `paneller/firma/deals` |
-| `CompareDeals` | DealsCompare | `paneller/firma/deals` |
-| `Reservations` | Reservations | `paneller/firma/reservations` |
-| `CreateReservation` | CreateReservation | `paneller/firma/create-reservation` |
-| `Messages` | Messages | `paneller/firma/messages` → user mesaj temeli import |
-| `Employees` | Employees | `paneller/firma/employees` |
-| `Limits` | Limits | `paneller/firma/limits` |
-| `Invoices` | Invoices | `paneller/firma/invoices` |
-| `Spending` | Spending | `paneller/firma/spending` |
-| `Hotels` | Hotels | `paneller/firma/hotels` |
+## Menü ↔ route
 
-## Kapatılan eksikler (bu sprint)
+- **Kokpit:** `/panel/firma/dashboard`
+- **Organizasyon:** `calisanlar`, `limitler-onaylar`, `faturalar`
+- **Seyahat:** `firma-fiyatlari`, `yeni-rezervasyon`, `rezervasyonlar`, `mesajlar`
+- **Raporlar:** `harcama-raporlari`, `otel-bazli-rapor`
+- **Hesap:** `hesap-bilgileri`, `guvenlik` (+ sözleşmeler anchor)
 
-1. **Kenar çubuğu:** `CompareDeals` iken “Firma Fiyatları” aktif görünsün (karşılaştırma akışı).
-2. **Mobil alt menü:** Yalnızca 6 kısayol yerine tüm kritik sayfalara yatay kaydırmalı erişim (sidebar ile uyumlu).
-3. **Mesajlar CSS:** `panel-user-messages` yolu yerine `paneller/firma/messages` — sayfa adı standardına uygun import dosyaları.
-4. **Shell mobil CSS:** Alt bar çok öğeli düzende taşmayı önlemek için scroll düzeni.
+## F0 — Altyapı
 
-## Test checklist
+- [x] Global arama (Ctrl+K, Enter → rezervasyonlar `?q=`)
+- [x] Para birimi switcher görüntüleme tercihi (localStorage)
+- [x] `ReturnUrl` rezervasyon onay redirect
+- [ ] Dead route / controller temizliği taraması
 
-- [ ] Desktop: tüm sidebar linkleri açılır.
-- [ ] Mobil (<900px): alt menüden Dashboard, Fiyat, Yeni rezervasyon, Rezervasyonlar, Mesajlar, Çalışanlar, Limit/Onay, Fatura, Harcama, Otel raporu, Güvenlik erişilebilir.
-- [ ] Fiyat karşılaştır sayfasında sidebar’da “Firma Fiyatları” vurgulu.
+## F2 — Organizasyon (P0 tamamlanan)
+
+- [x] Çalışan düzenleme / pasifleştirme (`POST calisan-guncelle`)
+- [x] Çalışan listesi arama + sayfalama (mevcut)
+- [x] Fatura indirme (`GET faturalar/indir`)
+- [x] Limitler sayfası şema eksikliğinde graceful mesaj (mevcut)
+
+## F3 — Seyahat (P0 tamamlanan)
+
+- [x] Rezervasyon filtreleri (durum, firma onayı, arama)
+- [x] CSV dışa aktarma
+- [x] Liste içi onay/red (bekleyen kayıtlar)
+- [ ] Mesaj: yeni konuşma başlatma (P2)
+
+## F4 — Raporlar
+
+- [x] Harcama raporu metin temizliği
+- [ ] Otel/harcama CSV export (P2)
+
+## F5 — Hesap
+
+- [x] Hesap bilgileri sayfası + sidebar
+- [x] Güvenlik / 2FA e-posta (mevcut)
+- [ ] Bildirim tercihleri, destek ticket (P2)
+
+## Tasarım sözleşmesi
+
+- Layout: `_FirmaPanelLayout.cshtml`, `_FirmaSidebar`, `_FirmaTopNav`
+- Shell CSS: `firmapanel_masaustu.css`, `paneller/firma/shell.css`
+- Sayfa CSS: `wwwroot/assets/css/paneller/firma/{sayfa}.css` (+ `.mobile.css`)
+- Tablo: `firma-table firma-table--cards`, filtre: `firma-form-grid panel-form-ux`
+
+## Canlı doğrulama checklist
+
+- [ ] `/panel/firma/rezervasyonlar?q=` filtre
+- [ ] `/panel/firma/rezervasyonlar/disa-aktar`
+- [ ] `/panel/firma/faturalar/indir?invoiceId=`
+- [ ] `/panel/firma/calisan-guncelle`
+- [ ] `/panel/firma/hesap-bilgileri`

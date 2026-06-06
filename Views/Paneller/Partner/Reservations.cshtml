@@ -4,6 +4,7 @@
     ViewData["PartnerShell"] = Model.Shell;
     var hasPrevPage = Model.CurrentPage > 1;
     var hasNextPage = Model.CurrentPage < Model.TotalPages;
+    var searchQuery = string.IsNullOrWhiteSpace(Model.Filters.Query) ? string.Empty : $"&q={Uri.EscapeDataString(Model.Filters.Query)}";
 }
 
 <div class="page-header d-print-none">
@@ -82,6 +83,10 @@
                                 <option value="transfer" selected="@(Model.Filters.PaymentMethod == "transfer")">Havale / EFT</option>
                                 <option value="mixed" selected="@(Model.Filters.PaymentMethod == "mixed")">Karma ödeme</option>
                             </select>
+                        </div>
+                        <div class="col-12 col-md-6 col-xl-3">
+                            <label class="form-label">Arama</label>
+                            <input class="form-control" type="search" name="q" value="@Model.Filters.Query" placeholder="Rezervasyon no, misafir, oda..." />
                         </div>
                         <div class="col-12 col-md-6 col-xl-2">
                             <label class="form-label">Sayfa başı</label>
@@ -267,11 +272,11 @@
                 </div>
                 <div class="ms-auto btn-list">
                     <a class="btn btn-outline-primary btn-sm @(hasPrevPage ? string.Empty : "disabled")"
-                       href="@(hasPrevPage ? $"/panel/partner/rezervasyonlar?otelId={Model.Shell.SelectedHotelId}&dateFrom={Model.Filters.DateFrom}&dateTo={Model.Filters.DateTo}&status={Model.Filters.Status}&paymentMethod={Model.Filters.PaymentMethod}&pageSize={Model.PageSize}&conversationId={Model.SelectedConversationId}&page={Model.CurrentPage - 1}" : "#")">
+                       href="@(hasPrevPage ? $"/panel/partner/rezervasyonlar?otelId={Model.Shell.SelectedHotelId}&dateFrom={Model.Filters.DateFrom}&dateTo={Model.Filters.DateTo}&status={Model.Filters.Status}&paymentMethod={Model.Filters.PaymentMethod}&pageSize={Model.PageSize}&conversationId={Model.SelectedConversationId}&page={Model.CurrentPage - 1}{searchQuery}" : "#")">
                         <i class="fas fa-chevron-left me-1"></i>Önceki
                     </a>
                     <a class="btn btn-outline-primary btn-sm @(hasNextPage ? string.Empty : "disabled")"
-                       href="@(hasNextPage ? $"/panel/partner/rezervasyonlar?otelId={Model.Shell.SelectedHotelId}&dateFrom={Model.Filters.DateFrom}&dateTo={Model.Filters.DateTo}&status={Model.Filters.Status}&paymentMethod={Model.Filters.PaymentMethod}&pageSize={Model.PageSize}&conversationId={Model.SelectedConversationId}&page={Model.CurrentPage + 1}" : "#")">
+                       href="@(hasNextPage ? $"/panel/partner/rezervasyonlar?otelId={Model.Shell.SelectedHotelId}&dateFrom={Model.Filters.DateFrom}&dateTo={Model.Filters.DateTo}&status={Model.Filters.Status}&paymentMethod={Model.Filters.PaymentMethod}&pageSize={Model.PageSize}&conversationId={Model.SelectedConversationId}&page={Model.CurrentPage + 1}{searchQuery}" : "#")">
                         Sonraki<i class="fas fa-chevron-right ms-1"></i>
                     </a>
                 </div>

@@ -209,6 +209,11 @@ public class HotelDetailPageViewModel
 
     /// <summary>Giriş yapmış kullanıcı için bu otelde yorum yazılabilir geçmiş konaklamalar.</summary>
     public List<HotelEligibleReviewStayViewModel> EligibleReviewStays { get; set; } = new();
+
+    /// <summary>`OTEL_KOSULLARI` — iptal, sigara, evcil hayvan vb.</summary>
+    public HotelDetailConditionsViewModel? Conditions { get; set; }
+
+    public bool HasFreeCancellation => Conditions?.HasFreeCancellation == true;
 }
 
 public class HotelEligibleReviewStayViewModel

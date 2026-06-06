@@ -562,11 +562,15 @@ public class AuthController : Controller
 
     [HttpPost("/eposta-dogrula/tekrar-gonder")]
     [ValidateAntiForgeryToken]
-    public async Task<IActionResult> ResendVerifyEmail(string email, CancellationToken cancellationToken = default)
+    public async Task<IActionResult> ResendVerifyEmail(
+        [FromForm] string? email,
+        [FromForm(Name = "Email")] string? emailFromForm,
+        CancellationToken cancellationToken = default)
     {
-        var result = await _authService.ResendVerificationEmailAsync(email, HttpContext.Connection.RemoteIpAddress?.ToString(), Request.Headers.UserAgent.ToString(), cancellationToken);
+        var resolvedEmail = !string.IsNullOrWhiteSpace(emailFromForm) ? emailFromForm : email;
+        var result = await _authService.ResendVerificationEmailAsync(resolvedEmail, HttpContext.Connection.RemoteIpAddress?.ToString(), Request.Headers.UserAgent.ToString(), cancellationToken);
         TempData[result.Success ? "UserLoginSuccess" : "UserLoginError"] = result.Message;
-        return Redirect($"{VerifyEmailPath}?email={Uri.EscapeDataString(email ?? string.Empty)}");
+        return Redirect($"{VerifyEmailPath}?email={Uri.EscapeDataString((resolvedEmail ?? string.Empty).Trim())}");
     }
 
     [HttpGet(ForgotPasswordPath)]

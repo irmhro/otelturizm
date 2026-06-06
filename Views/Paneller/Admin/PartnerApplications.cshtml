@@ -25,8 +25,9 @@
             <div>
                 <p class="mini-caption">PARTNER ONBOARDING</p>
                 <h2>Partner Başvuru Listesi</h2>
-                <span>Evrak, e-posta doğrulama ve admin giriş onayı aynı akışta takip edilir.</span>
+                <span>Firma bilgileri, komisyon, evrak inceleme ve onay tek detay ekranında.</span>
             </div>
+            <a class="btn btn-outline-secondary btn-sm" href="/admin/partner-evraklari">Evrak kuyruğu</a>
         </div>
 
         @if (Model.Applications.Count == 0)
@@ -60,40 +61,16 @@
                             <span><small>Admin giriş onayı</small><strong>@(application.EmailLoginApproved ? "Verildi" : "Bekliyor")</strong></span>
                         </div>
 
-                        @if (application.EmailVerified && !application.EmailLoginApproved)
-                        {
-                            <form method="post" action="/admin/partner-basvurulari/eposta-giris-onayi" class="admin-inline-action">
-                                @Html.AntiForgeryToken()
-                                <input type="hidden" name="PartnerId" value="@application.PartnerId" />
-                                <input type="hidden" name="Approved" value="true" />
-                                <button type="submit" class="btn btn-success">
-                                    <i class="fas fa-circle-check me-2"></i>E-posta giriş onayı ver
-                                </button>
-                            </form>
-                        }
-
                         @if (!string.IsNullOrWhiteSpace(application.ReviewNote))
                         {
                             <div class="admin-partner-note">@application.ReviewNote</div>
                         }
 
-                        <form method="post" action="/admin/partner-basvurulari/durum" class="admin-partner-decision-form">
-                            @Html.AntiForgeryToken()
-                            <input type="hidden" name="PartnerId" value="@application.PartnerId" />
-                            <label>
-                                <span>Karar</span>
-                                <select name="TargetStatus">
-                                    <option value="Onaylandi" selected="@(application.StatusText == "Onaylandi")">Onayla</option>
-                                    <option value="Askida" selected="@(application.StatusText == "Askida")">Askıya al</option>
-                                    <option value="Reddedildi" selected="@(application.StatusText == "Reddedildi")">Reddet</option>
-                                </select>
-                            </label>
-                            <label>
-                                <span>Not</span>
-                                <textarea name="Note" rows="2" placeholder="Partnera gösterilecek not">@application.ReviewNote</textarea>
-                            </label>
-                            <button type="submit" class="btn btn-primary">Kararı Kaydet</button>
-                        </form>
+                        <div class="admin-inline-action">
+                            <a class="btn btn-primary" href="/admin/partner-basvurulari/@application.PartnerId">
+                                <i class="fas fa-file-signature me-2"></i>Detay · Komisyon · Karar
+                            </a>
+                        </div>
                     </article>
                 }
             </div>

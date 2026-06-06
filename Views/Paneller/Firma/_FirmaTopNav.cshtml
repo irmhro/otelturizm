@@ -25,13 +25,13 @@
         </div>
         <div class="header-search">
             <i class="fas fa-search"></i>
-            <input type="search" id="firmaGlobalSearch" placeholder="Rezervasyon, çalışan veya otel ara..." autocomplete="off" />
+            <input type="search" id="firmaGlobalSearch" data-firma-search-base="/panel/firma/rezervasyonlar" placeholder="Rezervasyon, çalışan veya otel ara..." autocomplete="off" title="Enter: rezervasyon ara · Ctrl+K: odaklan" />
         </div>
     </div>
 
     <div class="topbar-right">
-        <div class="currency-switcher d-none d-md-flex" role="group" aria-label="Para birimi">
-            <button type="button" class="currency-btn active" data-currency="TRY">TL</button>
+        <div class="currency-switcher d-none d-md-flex" role="group" aria-label="Para birimi (görüntüleme)">
+            <button type="button" class="currency-btn active" data-currency="TRY" title="Görüntüleme tercihi">TL</button>
             <button type="button" class="currency-btn" data-currency="EUR">EUR</button>
             <button type="button" class="currency-btn" data-currency="USD">USD</button>
         </div>
@@ -95,6 +95,7 @@
                 </div>
                 <ul class="dropdown-menu-list">
                     <li><a href="/panel/firma/dashboard"><i class="fas fa-chart-line"></i> Kurumsal Kokpit</a></li>
+                    <li><a href="/panel/firma/hesap-bilgileri"><i class="fas fa-user-circle"></i> Hesap Bilgileri</a></li>
                     <li><a href="/panel/firma/calisanlar"><i class="fas fa-users"></i> Çalışanlar</a></li>
                     <li><a href="/panel/firma/limitler-onaylar"><i class="fas fa-sliders"></i> Limitler & Onaylar</a></li>
                     <li><div class="dropdown-divider"></div></li>

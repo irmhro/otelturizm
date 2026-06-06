@@ -5,7 +5,23 @@
         const districtSelect = document.getElementById(options.districtId);
         const neighborhoodSelect = options.neighborhoodId ? document.getElementById(options.neighborhoodId) : null;
         const postalCodeInput = options.postalCodeId ? document.getElementById(options.postalCodeId) : null;
+        const hiddenIds = options.hiddenIds || {};
+        const hiddenCountry = hiddenIds.country ? document.getElementById(hiddenIds.country) : null;
+        const hiddenProvince = hiddenIds.province ? document.getElementById(hiddenIds.province) : null;
+        const hiddenDistrict = hiddenIds.district ? document.getElementById(hiddenIds.district) : null;
+        const hiddenNeighborhood = hiddenIds.neighborhood ? document.getElementById(hiddenIds.neighborhood) : null;
         if (!countrySelect || !provinceSelect || !districtSelect) return Promise.resolve();
+
+        const syncHiddenIds = function () {
+            const countryOpt = countrySelect.options[countrySelect.selectedIndex];
+            const provinceOpt = provinceSelect.options[provinceSelect.selectedIndex];
+            const districtOpt = districtSelect.options[districtSelect.selectedIndex];
+            const neighborhoodOpt = neighborhoodSelect ? neighborhoodSelect.options[neighborhoodSelect.selectedIndex] : null;
+            if (hiddenCountry) hiddenCountry.value = countryOpt?.dataset.id || '';
+            if (hiddenProvince) hiddenProvince.value = provinceOpt?.dataset.id || '';
+            if (hiddenDistrict) hiddenDistrict.value = districtOpt?.dataset.id || '';
+            if (hiddenNeighborhood) hiddenNeighborhood.value = neighborhoodOpt?.dataset.id || '';
+        };
 
         const fillOptions = function (select, items, placeholder) {
             select.innerHTML = '';
@@ -50,6 +66,7 @@
             provinceSelect.disabled = false;
             districtSelect.disabled = true;
             if (neighborhoodSelect) neighborhoodSelect.disabled = true;
+            syncHiddenIds();
         };
 
         const loadDistricts = async function () {
@@ -74,6 +91,7 @@
             }
             districtSelect.disabled = false;
             if (neighborhoodSelect) neighborhoodSelect.disabled = !neighborhoodSelect.dataset.restoreValue;
+            syncHiddenIds();
         };
 
         const loadNeighborhoods = async function () {
@@ -94,11 +112,12 @@
                 neighborhoodSelect.dataset.restoreValue = '';
             }
             neighborhoodSelect.disabled = false;
+            syncHiddenIds();
         };
 
-        countrySelect.addEventListener('change', loadProvinces);
-        provinceSelect.addEventListener('change', loadDistricts);
-        districtSelect.addEventListener('change', loadNeighborhoods);
+        countrySelect.addEventListener('change', function () { loadProvinces().then(syncHiddenIds); });
+        provinceSelect.addEventListener('change', function () { loadDistricts().then(syncHiddenIds); });
+        districtSelect.addEventListener('change', function () { loadNeighborhoods().then(syncHiddenIds); });
         if (neighborhoodSelect) {
             neighborhoodSelect.addEventListener('change', function () {
                 const selected = neighborhoodSelect.options[neighborhoodSelect.selectedIndex];
@@ -119,7 +138,7 @@
                         if (match) countrySelect.value = match.value;
                     }
                 }
-                return loadProvinces();
+                return loadProvinces().then(syncHiddenIds);
             });
     };
 })();

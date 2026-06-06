@@ -671,3 +671,126 @@
         transition: none;
     }
 }
+
+/* —— Otel kuralları —— */
+.oteldetay-page .od-policy-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    gap: 14px;
+}
+
+.oteldetay-page .od-policy-item {
+    display: grid;
+    grid-template-columns: 40px minmax(0, 1fr);
+    gap: 12px;
+    padding: 14px 16px;
+    border: 1px solid var(--od-border);
+    border-radius: var(--od-radius);
+    background: #fff;
+}
+
+.oteldetay-page .od-policy-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 12px;
+    display: grid;
+    place-items: center;
+    background: rgba(227, 10, 23, 0.08);
+    color: var(--od-crimson);
+}
+
+.oteldetay-page .od-policy-item strong {
+    display: block;
+    font-size: var(--od-type-card-title);
+    margin-bottom: 4px;
+}
+
+.oteldetay-page .od-policy-item p {
+    margin: 0;
+    color: var(--od-muted);
+    font-size: var(--od-type-card-meta);
+    line-height: 1.45;
+}
+
+.oteldetay-page .od-policy-detail {
+    display: block;
+    margin-top: 6px;
+    color: var(--od-muted);
+    font-size: 12px;
+    line-height: 1.4;
+}
+
+.oteldetay-page .od-chip--benefit {
+    background: rgba(15, 118, 110, 0.1);
+    color: #0f766e;
+    border-color: rgba(15, 118, 110, 0.2);
+}
+
+/* —— Benzer oteller —— */
+.oteldetay-page .od-similar-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 16px;
+}
+
+.oteldetay-page .od-similar-card {
+    display: flex;
+    flex-direction: column;
+    border: 1px solid var(--od-border);
+    border-radius: var(--od-radius);
+    overflow: hidden;
+    background: #fff;
+    text-decoration: none;
+    color: inherit;
+    transition: box-shadow 0.18s ease, transform 0.18s ease;
+}
+
+.oteldetay-page .od-similar-card:hover {
+    box-shadow: var(--od-shadow);
+    transform: translateY(-2px);
+}
+
+.oteldetay-page .od-similar-card__media {
+    display: block;
+    aspect-ratio: 4 / 3;
+    overflow: hidden;
+    background: #f3f2ef;
+}
+
+.oteldetay-page .od-similar-card__media img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.oteldetay-page .od-similar-card__body {
+    padding: 12px 14px 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.oteldetay-page .od-similar-card__body strong {
+    font-size: var(--od-type-card-title);
+    line-height: 1.3;
+}
+
+.oteldetay-page .od-similar-card__body small {
+    color: var(--od-muted);
+    font-size: var(--od-type-card-meta);
+}
+
+.oteldetay-page .od-similar-card__price {
+    margin-top: 4px;
+    font-weight: 800;
+    font-size: var(--od-type-btn);
+    color: var(--od-crimson);
+}
+
+@media (max-width: 900px) {
+    .oteldetay-page .od-similar-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}

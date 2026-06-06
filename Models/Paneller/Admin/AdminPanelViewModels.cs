@@ -196,6 +196,53 @@ public class AdminPartnerApplicationDecisionRequest
     public long PartnerId { get; set; }
     public string TargetStatus { get; set; } = "Onaylandi";
     public string? Note { get; set; }
+    public decimal? CommissionRate { get; set; }
+    public List<string>? MissingDocumentTypes { get; set; }
+}
+
+public sealed class AdminPartnerApplicationDetailPageViewModel
+{
+    public AdminShellViewModel Shell { get; set; } = new();
+    public AdminPartnerApplicationDetailViewModel Application { get; set; } = new();
+}
+
+public sealed class AdminPartnerApplicationDetailViewModel
+{
+    public long PartnerId { get; set; }
+    public long UserId { get; set; }
+    public long? HotelId { get; set; }
+    public string CompanyName { get; set; } = string.Empty;
+    public string CompanyType { get; set; } = string.Empty;
+    public string HotelName { get; set; } = string.Empty;
+    public string ContactName { get; set; } = string.Empty;
+    public string ContactTitle { get; set; } = string.Empty;
+    public string Email { get; set; } = string.Empty;
+    public string Phone { get; set; } = string.Empty;
+    public string TaxOffice { get; set; } = string.Empty;
+    public string TaxNumber { get; set; } = string.Empty;
+    public string ContactTcNo { get; set; } = string.Empty;
+    public string Address { get; set; } = string.Empty;
+    public string City { get; set; } = string.Empty;
+    public string District { get; set; } = string.Empty;
+    public string BankName { get; set; } = string.Empty;
+    public string? BankBranch { get; set; }
+    public string Iban { get; set; } = string.Empty;
+    public string? Website { get; set; }
+    public string? Description { get; set; }
+    public string StatusText { get; set; } = string.Empty;
+    public string StatusToneClass { get; set; } = "warning";
+    public string RegistrationDateText { get; set; } = string.Empty;
+    public string? ApprovalDateText { get; set; }
+    public bool EmailVerified { get; set; }
+    public bool EmailLoginApproved { get; set; }
+    public string? ReviewNote { get; set; }
+    public decimal CurrentCommissionRate { get; set; }
+    public string? HotelApprovalStatus { get; set; }
+    public string? HotelPublishStatus { get; set; }
+    public List<string> AvailableDocumentTypes { get; set; } = new();
+    public List<string> ActiveMissingDocumentTypes { get; set; } = new();
+    public List<AdminPartnerDocumentItemViewModel> Documents { get; set; } = new();
+    public List<AdminPartnerDocumentChecklistItemViewModel> Checklist { get; set; } = new();
 }
 
 public class AdminCompanyApplicationRowViewModel

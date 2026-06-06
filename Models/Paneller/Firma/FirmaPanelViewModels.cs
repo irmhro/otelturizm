@@ -70,16 +70,21 @@ public class FirmaPanelEmployeeRowViewModel
     public string Department { get; set; } = string.Empty;
     public string Title { get; set; } = string.Empty;
     public string Email { get; set; } = string.Empty;
+    public string? Phone { get; set; }
     public string LimitText { get; set; } = string.Empty;
     public string ApprovalText { get; set; } = string.Empty;
     public string Initials { get; set; } = string.Empty;
     public string ReservationCountText { get; set; } = "0";
     public string SpendText { get; set; } = "₺0";
     public string RoleText { get; set; } = string.Empty;
+    public string RoleCode { get; set; } = "firma_staff";
     public bool IsManager { get; set; }
+    public bool IsActive { get; set; } = true;
     public bool IsPhoneVerified { get; set; }
     public string PhoneVerificationText { get; set; } = "Telefon doğrulaması bekleniyor";
     public string PhoneVerificationToneClass { get; set; } = "is-warning";
+    public decimal? NightlyLimit { get; set; }
+    public bool ApprovalRequired { get; set; }
 }
 
 public class FirmaPanelLimitRowViewModel
@@ -97,12 +102,14 @@ public class FirmaPanelLimitRowViewModel
 
 public class FirmaPanelInvoiceRowViewModel
 {
+    public long InvoiceId { get; set; }
     public string InvoiceNo { get; set; } = string.Empty;
     public string InvoiceDateText { get; set; } = string.Empty;
     public string InvoiceType { get; set; } = string.Empty;
     public string RecipientName { get; set; } = string.Empty;
     public string TotalText { get; set; } = string.Empty;
     public string StatusText { get; set; } = string.Empty;
+    public bool CanDownload { get; set; }
 }
 
 public class FirmaMonthlySpendRowViewModel
@@ -195,6 +202,14 @@ public class FirmaReservationsPageViewModel
 {
     public FirmaPanelShellViewModel Shell { get; set; } = new();
     public List<FirmaPanelReservationRowViewModel> Reservations { get; set; } = new();
+    public FirmaReservationFilterViewModel Filters { get; set; } = new();
+}
+
+public class FirmaReservationFilterViewModel
+{
+    public string? Query { get; set; }
+    public string Status { get; set; } = "all";
+    public string ApprovalStatus { get; set; } = "all";
 }
 
 public class FirmaEmployeesPageViewModel
@@ -263,6 +278,27 @@ public class FirmaEmployeeCreateModel
     public string Role { get; set; } = "firma_staff";
 }
 
+public class FirmaEmployeeUpdateModel
+{
+    public long UserId { get; set; }
+    public string FullName { get; set; } = string.Empty;
+    public string? Phone { get; set; }
+    public string Department { get; set; } = string.Empty;
+    public string Title { get; set; } = string.Empty;
+    public decimal? NightlyLimit { get; set; }
+    public bool ApprovalRequired { get; set; }
+    public string Role { get; set; } = "firma_staff";
+    public bool IsActive { get; set; } = true;
+    public string? ReturnUrl { get; set; }
+}
+
+public class FirmaEmployeeStatusModel
+{
+    public long UserId { get; set; }
+    public bool IsActive { get; set; }
+    public string? ReturnUrl { get; set; }
+}
+
 public class FirmaLimitUpsertModel
 {
     public long? UserId { get; set; }
@@ -277,6 +313,25 @@ public class FirmaReservationDecisionModel
 {
     public long ReservationId { get; set; }
     public string Decision { get; set; } = string.Empty;
+    public string? ReturnUrl { get; set; }
+}
+
+public class FirmaAccountPageViewModel
+{
+    public FirmaPanelShellViewModel Shell { get; set; } = new();
+    public FirmaAccountUpdateModel UpdateForm { get; set; } = new();
+    public string CompanyStatusText { get; set; } = string.Empty;
+    public string CompanyTaxNo { get; set; } = string.Empty;
+}
+
+public class FirmaAccountUpdateModel
+{
+    public string FullName { get; set; } = string.Empty;
+    public string Email { get; set; } = string.Empty;
+    public string? Phone { get; set; }
+    public string Department { get; set; } = string.Empty;
+    public string Title { get; set; } = string.Empty;
+    public string RoleText { get; set; } = string.Empty;
 }
 
 public class FirmaDealsFilterModel

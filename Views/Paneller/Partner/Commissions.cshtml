@@ -9,6 +9,7 @@
     var periodEnd = Model.FilterDateTo ?? periodStart.AddMonths(1).AddDays(-1);
     var selectedHotelId = Model.Shell.SelectedHotelId ?? 0;
     var exportQs = $"?otelId={selectedHotelId}&donem={System.Net.WebUtility.UrlEncode(Model.Month)}&dateFrom={periodStart:yyyy-MM-dd}&dateTo={periodEnd:yyyy-MM-dd}&paymentStatus={System.Net.WebUtility.UrlEncode(Model.PaymentStatus ?? "")}";
+    var commissionReturnUrl = $"/panel/partner/finans/komisyonlar{exportQs}";
 }
 
 <section class="partner-commission-page">
@@ -173,6 +174,7 @@
                                             @Html.AntiForgeryToken()
                                             <input type="hidden" name="HotelId" value="@selectedHotelId" />
                                             <input type="hidden" name="CommissionRecordId" value="@item.CommissionRecordId" />
+                                            <input type="hidden" name="ReturnUrl" value="@commissionReturnUrl" />
                                             <button type="submit" class="btn btn-sm btn-outline-success">Ödendi işaretle</button>
                                         </form>
                                     }

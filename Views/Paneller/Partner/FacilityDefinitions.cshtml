@@ -1,6 +1,12 @@
+@model otelturizmnew.Models.Paneller.Partner.PartnerShellViewModel
 @{
     Layout = "~/Views/Paneller/Partner/_PartnerPanelLayout.cshtml";
+    ViewData["PartnerShell"] = Model;
+    ViewData["PageCssPath"] = "paneller/partner/hotel-info";
+    ViewData["Title"] = "Genel Tanımlar";
     var tables = ViewData["ModuleTables"] as string ?? string.Empty;
+    var hotelQuery = Model.SelectedHotelId.HasValue ? $"?otelId={Model.SelectedHotelId.Value}" : string.Empty;
+    string Link(string path) => path + hotelQuery;
 }
 
 <div class="page-header d-print-none">
@@ -8,7 +14,7 @@
         <div class="col">
             <div class="page-pretitle">Tesis yönetimi</div>
             <h2 class="page-title">Genel Tanımlar</h2>
-            <div class="text-muted mt-1">Bu alandan tesis veri girişlerinin tamamlayıcı ekranlarına hızlıca erişin.</div>
+            <div class="text-muted mt-1">Tesis veri girişlerinin tamamlayıcı ekranlarına hızlıca erişin.</div>
         </div>
     </div>
 </div>
@@ -22,7 +28,7 @@
             <div class="card-body">
                 <div class="row g-3">
                     <div class="col-md-6">
-                        <a class="card card-link card-link-pop" href="/panel/partner/otel-bilgileri">
+                        <a class="card card-link card-link-pop" href="@Link("/panel/partner/otel-bilgileri")">
                             <div class="card-body">
                                 <div class="d-flex align-items-center gap-2">
                                     <i class="fas fa-pen-to-square text-primary"></i>
@@ -33,7 +39,7 @@
                         </a>
                     </div>
                     <div class="col-md-6">
-                        <a class="card card-link card-link-pop" href="/panel/partner/tesis/ozellikler">
+                        <a class="card card-link card-link-pop" href="@Link("/panel/partner/tesis/ozellikler")">
                             <div class="card-body">
                                 <div class="d-flex align-items-center gap-2">
                                     <i class="fas fa-sparkles text-success"></i>
@@ -44,7 +50,7 @@
                         </a>
                     </div>
                     <div class="col-md-6">
-                        <a class="card card-link card-link-pop" href="/panel/partner/tesis/konum">
+                        <a class="card card-link card-link-pop" href="@Link("/panel/partner/tesis/konum")">
                             <div class="card-body">
                                 <div class="d-flex align-items-center gap-2">
                                     <i class="fas fa-location-dot text-warning"></i>
@@ -55,7 +61,7 @@
                         </a>
                     </div>
                     <div class="col-md-6">
-                        <a class="card card-link card-link-pop" href="/panel/partner/tesis/kosullar">
+                        <a class="card card-link card-link-pop" href="@Link("/panel/partner/tesis/kosullar")">
                             <div class="card-body">
                                 <div class="d-flex align-items-center gap-2">
                                     <i class="fas fa-file-contract text-info"></i>
@@ -66,7 +72,18 @@
                         </a>
                     </div>
                     <div class="col-md-6">
-                        <a class="card card-link card-link-pop" href="/panel/partner/oda-yonetimi">
+                        <a class="card card-link card-link-pop" href="@Link("/panel/partner/tesis/yemek")">
+                            <div class="card-body">
+                                <div class="d-flex align-items-center gap-2">
+                                    <i class="fas fa-utensils text-orange"></i>
+                                    <strong>Yemek Hizmetleri</strong>
+                                </div>
+                                <div class="text-muted small mt-1">Kahvaltı, öğle, akşam ve oda servisi planları.</div>
+                            </div>
+                        </a>
+                    </div>
+                    <div class="col-md-6">
+                        <a class="card card-link card-link-pop" href="@Link("/panel/partner/oda-yonetimi")">
                             <div class="card-body">
                                 <div class="d-flex align-items-center gap-2">
                                     <i class="fas fa-bed text-primary"></i>
@@ -77,18 +94,18 @@
                         </a>
                     </div>
                     <div class="col-md-6">
-                        <a class="card card-link card-link-pop" href="/panel/partner/oda/ozellikler">
+                        <a class="card card-link card-link-pop" href="@Link("/panel/partner/oda/ozellikler")">
                             <div class="card-body">
                                 <div class="d-flex align-items-center gap-2">
                                     <i class="fas fa-list-check text-secondary"></i>
                                     <strong>Oda Özellikleri</strong>
                                 </div>
-                                <div class="text-muted small mt-1">Oda özellik listesi (aktif/pasif).</div>
+                                <div class="text-muted small mt-1">Oda bazlı özellik seçimi.</div>
                             </div>
                         </a>
                     </div>
                     <div class="col-md-6">
-                        <a class="card card-link card-link-pop" href="/panel/partner/fotograflar">
+                        <a class="card card-link card-link-pop" href="@Link("/panel/partner/fotograflar")">
                             <div class="card-body">
                                 <div class="d-flex align-items-center gap-2">
                                     <i class="fas fa-images text-indigo"></i>
@@ -99,7 +116,7 @@
                         </a>
                     </div>
                     <div class="col-md-6">
-                        <a class="card card-link card-link-pop" href="/panel/partner/basvuru-ve-evraklar">
+                        <a class="card card-link card-link-pop" href="@Link("/panel/partner/basvuru-ve-evraklar")">
                             <div class="card-body">
                                 <div class="d-flex align-items-center gap-2">
                                     <i class="fas fa-file-arrow-up text-danger"></i>
@@ -125,4 +142,3 @@
         </div>
     </div>
 </div>
-

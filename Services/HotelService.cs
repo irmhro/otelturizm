@@ -328,6 +328,11 @@ public class HotelService : IHotelService
 
         await reader.CloseAsync();
 
+        if (hotels.Count > 0)
+        {
+            await PopulateHomeHotelGalleriesAsync(connection, hotels, cancellationToken);
+        }
+
         var destinationSql = $"""
             WITH ranked_destinations AS (
                 SELECT
@@ -962,17 +967,23 @@ public class HotelService : IHotelService
         return costs[target.Length];
     }
 
-    public async Task<HotelDetailPageViewModel?> GetHotelDetailPageAsync(string slug, CancellationToken cancellationToken = default)
+    public async Task<HotelDetailPageViewModel?> GetHotelDetailPageAsync(string slug, HotelDetailLoadOptions? options = null, CancellationToken cancellationToken = default)
     {
         if (string.IsNullOrWhiteSpace(slug))
         {
             return null;
         }
 
+        if (options is { HasFilters: true })
+        {
+            var fresh = await GetHotelDetailPageForSqlServerAsync(slug, options, cancellationToken);
+            return fresh is null ? null : CloneHotelDetail(fresh);
+        }
+
         var cacheKey = $"hotel-detail:v1:{slug.Trim().ToLowerInvariant()}";
         var cached = await _cache.GetOrCreateAsync(
             cacheKey,
-            async ct => await GetHotelDetailPageForSqlServerAsync(slug, ct),
+            async ct => await GetHotelDetailPageForSqlServerAsync(slug, null, ct),
             absoluteExpirationRelativeToNow: TimeSpan.FromMinutes(2),
             slidingExpiration: TimeSpan.FromSeconds(30),
             cancellationToken: cancellationToken);
@@ -1071,6 +1082,20 @@ public class HotelService : IHotelService
                 Slug = x.Slug,
                 ImageUrl = x.ImageUrl
             }).ToList(),
+            Conditions = src.Conditions is null
+                ? null
+                : new HotelDetailConditionsViewModel
+                {
+                    CancellationSummary = src.Conditions.CancellationSummary,
+                    CancellationDetail = src.Conditions.CancellationDetail,
+                    FreeCancellationHours = src.Conditions.FreeCancellationHours,
+                    SmokingPolicy = src.Conditions.SmokingPolicy,
+                    PetPolicy = src.Conditions.PetPolicy,
+                    ChildPolicy = src.Conditions.ChildPolicy,
+                    PrepaymentRequired = src.Conditions.PrepaymentRequired,
+                    PrepaymentPercent = src.Conditions.PrepaymentPercent,
+                    CardPaymentAccepted = src.Conditions.CardPaymentAccepted
+                },
             Weather = src.Weather,
             ActiveViewerBand = src.ActiveViewerBand,
             LivePresenceCount = src.LivePresenceCount,
@@ -1224,7 +1249,8 @@ public class HotelService : IHotelService
                 COALESCE(kc.kampanya_adlari, '') AS kampanya_adlari,
                 COALESCE(kc.kampanya_sluglari, '') AS kampanya_sluglari,
                 COALESCE(kc.kampanya_badgetext, '') AS kampanya_badgetext,
-                COALESCE(av.has_open_today, 0) AS has_open_today
+                COALESCE(av.has_open_today, 0) AS has_open_today,
+                COALESCE(ok.has_free_cancel, 0) AS has_free_cancel
             FROM oteller o
             LEFT JOIN (
                 SELECT
@@ -1374,6 +1400,13 @@ public class HotelService : IHotelService
                   AND (COALESCE(ofm2.toplam_oda_sayisi, ot2.toplam_oda_sayisi) - COALESCE(ofm2.satilan_oda_sayisi, 0) - COALESCE(ofm2.bloke_oda_sayisi, 0)) > 0
                   AND COALESCE(ofm2.gecelik_fiyat, 0) > 0
             ) av
+            LEFT JOIN (
+                SELECT
+                    k.otel_id,
+                    MAX(CASE WHEN COALESCE(k.ucretsiz_iptal_suresi, 0) >= 1 THEN 1 ELSE 0 END) AS has_free_cancel
+                FROM otel_kosullari k
+                GROUP BY k.otel_id
+            ) ok ON ok.otel_id = o.id
             {subscriptionApplySql}
             WHERE {PublishStatusSql}
               AND {ApprovalStatusSql}
@@ -1583,7 +1616,8 @@ public class HotelService : IHotelService
                     ? "Sehir konaklamasi, esnek rezervasyon ve mobil uyumlu deneyim icin yayindaki tesis."
                     : summary,
                 HasAvailabilityToday = hasOpenToday,
-                ListingLeadRoomName = listingLeadRoomName
+                ListingLeadRoomName = listingLeadRoomName,
+                HasFreeCancellation = ReadFlag(reader, "has_free_cancel")
             });
         }
 
@@ -1827,7 +1861,7 @@ public class HotelService : IHotelService
         return result;
     }
 
-    private async Task<HotelDetailPageViewModel?> GetHotelDetailPageForSqlServerAsync(string slug, CancellationToken cancellationToken)
+    private async Task<HotelDetailPageViewModel?> GetHotelDetailPageForSqlServerAsync(string slug, HotelDetailLoadOptions? options, CancellationToken cancellationToken)
     {
         var connectionString = GetConnectionString();
         if (string.IsNullOrWhiteSpace(connectionString))
@@ -1910,6 +1944,9 @@ public class HotelService : IHotelService
                 MainImageUrl = NormalizeHotelImageUrl(reader.GetInt64(reader.GetOrdinal("id")), reader.GetString(reader.GetOrdinal("gorsel_url")))
             };
         }
+
+        ApplyDetailLoadOptions(model, options);
+        await LoadHotelConditionsAsync(connection, model, cancellationToken);
 
         var today = DateOnly.FromDateTime(DateTime.Today);
         var detailPrice = await _hotelPricingReadService.GetHotelEffectivePriceAsync(model.Id, today, today, cancellationToken);
@@ -2258,6 +2295,10 @@ public class HotelService : IHotelService
                 if (roomPolicyMap.TryGetValue(room.RoomTypeId, out var policyText))
                 {
                     room.CancellationText = policyText;
+                }
+                else if (!string.IsNullOrWhiteSpace(model.Conditions?.CancellationSummary))
+                {
+                    room.CancellationText = model.Conditions.CancellationSummary;
                 }
             }
         }
@@ -2820,6 +2861,169 @@ public class HotelService : IHotelService
         catch
         {
             return new List<string>();
+        }
+    }
+
+    private static void ApplyDetailLoadOptions(HotelDetailPageViewModel model, HotelDetailLoadOptions? options)
+    {
+        if (options is null)
+        {
+            return;
+        }
+
+        if (options.CheckIn is { } checkIn)
+        {
+            model.ReservationForm.CheckInDate = checkIn;
+            if (options.CheckOut is null || options.CheckOut <= checkIn)
+            {
+                model.ReservationForm.CheckOutDate = checkIn.AddDays(1);
+            }
+        }
+
+        if (options.CheckOut is { } checkOut && checkOut > model.ReservationForm.CheckInDate)
+        {
+            model.ReservationForm.CheckOutDate = checkOut;
+        }
+
+        if (options.RoomTypeId is > 0)
+        {
+            model.ReservationForm.RoomTypeId = options.RoomTypeId.Value;
+        }
+    }
+
+    private static async Task LoadHotelConditionsAsync(SqlConnection connection, HotelDetailPageViewModel model, CancellationToken cancellationToken)
+    {
+        if (!await HotelTableExistsAsync(connection, "otel_kosullari", cancellationToken))
+        {
+            return;
+        }
+
+        const string sql = """
+            SELECT TOP (1)
+                COALESCE(iptal_politikasi_ozet, '') AS iptal_ozet,
+                COALESCE(detayli_iptal_kosullari, '') AS iptal_detay,
+                ucretsiz_iptal_suresi,
+                COALESCE(sigara_politikasi, '') AS sigara,
+                COALESCE(evcil_hayvan_politikasi, '') AS evcil,
+                COALESCE(cocuk_kabul_yas_araligi, '') AS cocuk,
+                COALESCE(on_odeme_gerekli_mi, 0) AS on_odeme,
+                COALESCE(on_odeme_orani, 0) AS on_odeme_orani,
+                COALESCE(kredi_karti_ile_odeme_kabul, 1) AS kart_kabul
+            FROM otel_kosullari
+            WHERE otel_id = @hotelId;
+            """;
+
+        await using var command = new SqlCommand(sql, connection);
+        command.Parameters.AddWithValue("@hotelId", model.Id);
+        await using var reader = await command.ExecuteReaderAsync(cancellationToken);
+        if (!await reader.ReadAsync(cancellationToken))
+        {
+            return;
+        }
+
+        byte? freeHours = null;
+        if (!reader.IsDBNull(reader.GetOrdinal("ucretsiz_iptal_suresi")))
+        {
+            var raw = Convert.ToInt32(reader.GetValue(reader.GetOrdinal("ucretsiz_iptal_suresi")), CultureInfo.InvariantCulture);
+            if (raw is > 0 and <= 255)
+            {
+                freeHours = (byte)raw;
+            }
+        }
+
+        model.Conditions = new HotelDetailConditionsViewModel
+        {
+            CancellationSummary = NormalizeTurkishText(reader.GetString(reader.GetOrdinal("iptal_ozet"))),
+            CancellationDetail = NormalizeTurkishText(reader.GetString(reader.GetOrdinal("iptal_detay"))),
+            FreeCancellationHours = freeHours,
+            SmokingPolicy = NormalizeTurkishText(reader.GetString(reader.GetOrdinal("sigara"))),
+            PetPolicy = NormalizeTurkishText(reader.GetString(reader.GetOrdinal("evcil"))),
+            ChildPolicy = NormalizeTurkishText(reader.GetString(reader.GetOrdinal("cocuk"))),
+            PrepaymentRequired = ReadFlag(reader, "on_odeme"),
+            PrepaymentPercent = reader.IsDBNull(reader.GetOrdinal("on_odeme_orani"))
+                ? 0m
+                : reader.GetDecimal(reader.GetOrdinal("on_odeme_orani")),
+            CardPaymentAccepted = ReadFlag(reader, "kart_kabul")
+        };
+    }
+
+    private async Task PopulateHomeHotelGalleriesAsync(
+        SqlConnection connection,
+        List<HomeHotelCardViewModel> hotels,
+        CancellationToken cancellationToken)
+    {
+        if (hotels.Count == 0)
+        {
+            return;
+        }
+
+        var hotelIds = hotels.Select(h => h.Id).Distinct().ToList();
+        var galleries = new Dictionary<long, List<string>>();
+
+        const int batchSize = 50;
+        for (var offset = 0; offset < hotelIds.Count; offset += batchSize)
+        {
+            var batch = hotelIds.Skip(offset).Take(batchSize).ToList();
+            var paramNames = batch.Select((_, i) => $"@hid{i}").ToList();
+            var sql = $"""
+                SELECT g.otel_id, g.gorsel_url
+                FROM (
+                    SELECT
+                        g0.otel_id,
+                        g0.gorsel_url,
+                        ROW_NUMBER() OVER (
+                            PARTITION BY g0.otel_id
+                            ORDER BY g0.kapak_fotografi_mi DESC, g0.one_cikan DESC, g0.siralama ASC, g0.id ASC
+                        ) AS rn
+                    FROM otel_gorselleri g0
+                    WHERE g0.otel_id IN ({string.Join(", ", paramNames)})
+                      AND g0.onay_durumu IN (N'Onaylandı', N'Onaylandi', N'OnaylandÄ±', N'Onaylanmış', N'Onaylanmis', N'Onayli')
+                      AND g0.gorsel_url NOT LIKE '/uploads/logo/%'
+                ) g
+                WHERE g.rn <= 4
+                ORDER BY g.otel_id, g.rn;
+                """;
+
+            await using var command = new SqlCommand(sql, connection);
+            for (var i = 0; i < batch.Count; i++)
+            {
+                command.Parameters.AddWithValue($"@hid{i}", batch[i]);
+            }
+
+            await using var reader = await command.ExecuteReaderAsync(cancellationToken);
+            while (await reader.ReadAsync(cancellationToken))
+            {
+                var id = reader.GetInt64(0);
+                var url = reader.IsDBNull(1) ? string.Empty : reader.GetString(1);
+                if (string.IsNullOrWhiteSpace(url))
+                {
+                    continue;
+                }
+
+                if (!galleries.TryGetValue(id, out var list))
+                {
+                    list = new List<string>();
+                    galleries[id] = list;
+                }
+
+                var normalized = NormalizeHotelImageUrl(id, url);
+                if (!string.IsNullOrWhiteSpace(normalized))
+                {
+                    list.Add(normalized);
+                }
+            }
+        }
+
+        foreach (var hotel in hotels)
+        {
+            if (galleries.TryGetValue(hotel.Id, out var urls) && urls.Count > 0)
+            {
+                hotel.GalleryImageUrls = urls;
+            }
+            else if (!string.IsNullOrWhiteSpace(hotel.ImageUrl))
+            {
+                hotel.GalleryImageUrls = new List<string> { hotel.ImageUrl };
+            }
         }
     }
 

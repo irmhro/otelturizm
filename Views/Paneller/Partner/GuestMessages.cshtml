@@ -62,7 +62,7 @@
                     }
                 </div>
                 <div class="card-actions">
-                    <a class="btn btn-outline-primary btn-sm" href="/panel/partner/rezervasyonlar">
+                    <a class="btn btn-outline-primary btn-sm" href="/panel/partner/rezervasyonlar?otelId=@Model.SelectedHotelId">
                         <i class="fas fa-arrow-left me-1"></i>Rezervasyonlara dön
                     </a>
                 </div>
@@ -99,7 +99,7 @@
                 }
                 else
                 {
-                    <form method="post" action="/panel/partner/rezervasyonlar/mesaj-gonder" class="d-flex gap-2">
+                    <form method="post" action="/panel/partner/rezervasyonlar/misafire-mesaj" class="d-flex gap-2">
                         @Html.AntiForgeryToken()
                         <input type="hidden" name="HotelId" value="@Model.SelectedHotelId" />
                         <input type="hidden" name="ReservationId" value="@Model.MessageForm.ReservationId" />

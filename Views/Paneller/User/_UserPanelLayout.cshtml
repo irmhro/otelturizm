@@ -35,6 +35,13 @@
             if (needsReservation) { ViewData["ReservationCount"] = badges.TotalReservations; }
             if (needsMessage) { ViewData["MessageCount"] = badges.MessageThreads; }
         }
+
+        if (ViewData["UserLoyaltyTierName"] is not string)
+        {
+            var loyaltyChip = await UserPanelService.GetLoyaltyTierChipAsync(userId, Context.RequestAborted);
+            ViewData["UserLoyaltyTierName"] = loyaltyChip.TierName;
+            ViewData["UserLoyaltyPoints"] = loyaltyChip.AvailablePoints;
+        }
     }
 
     var theme = userId > 0 ? await PanelThemeService.LoadAsync("user", userId, Context.RequestAborted) : new otelturizmnew.Models.Paneller.Partner.PanelThemeViewModel();

@@ -12,7 +12,7 @@
     <GenerateTargetFrameworkAttribute>false</GenerateTargetFrameworkAttribute>
     <GenerateMvcApplicationPartsAssemblyAttributes>false</GenerateMvcApplicationPartsAssemblyAttributes>
     <ErrorOnDuplicatePublishOutputFiles>false</ErrorOnDuplicatePublishOutputFiles>
-    <DefaultItemExcludes>$(DefaultItemExcludes);bin\**;bin/**;obj\**;obj/**;artifacts\**;artifacts/**;.codex_obj\**;.codex_obj/**;publish\**;publish/**;tmp\**;tmp/**;Database\Backups\**;Database/Backups/**;App_Data\imports\**;App_Data/imports/**;App_Data\logs\**;App_Data/logs/**</DefaultItemExcludes>
+    <DefaultItemExcludes>$(DefaultItemExcludes);bin\**;bin/**;obj\**;obj/**;artifacts\**;artifacts/**;.codex_obj\**;.codex_obj/**;publish\**;publish/**;tmp\**;tmp/**;23.05.2026\**;23.05.2026/**;wwwroot\paneltematabler\**;wwwroot/paneltematabler/**;Database\Backups\**;Database/Backups/**;App_Data\imports\**;App_Data/imports/**;App_Data\logs\**;App_Data/logs/**</DefaultItemExcludes>
     <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
     <NoWarn>$(NoWarn);NU1902</NoWarn>
   </PropertyGroup>

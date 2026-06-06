@@ -17,7 +17,7 @@
 
     <form method="post" action="/panel/partner/tesis/yemek/kaydet" class="card partner-meals-card">
         @Html.AntiForgeryToken()
-        <input type="hidden" name="HotelId" value="@Model.Shell.SelectedHotelId" />
+        <input type="hidden" name="HotelId" value="@(Model.Shell.SelectedHotelId ?? 0)" />
         <div class="card-header">
             <h3 class="card-title mb-0">Yemek planı ve fiyatlar</h3>
         </div>
@@ -34,7 +34,8 @@
                                 <small>Rezervasyon fiyatına dahil edilebilir veya ek ücret olarak sunulabilir.</small>
                             </div>
                             <label class="form-check form-switch">
-                                <input class="form-check-input" type="checkbox" name="Meals[@i].IsActive" value="true" @(meal.IsActive ? "checked" : "") />
+                                <input type="hidden" name="Meals[@i].IsActive" value="false" />
+                                <input class="form-check-input" type="checkbox" name="Meals[@i].IsActive" value="true" @(meal.IsActive ? "checked" : null) />
                                 <span class="form-check-label">Aktif</span>
                             </label>
                         </div>
@@ -50,7 +51,8 @@
                             <div class="col-12 col-md-4">
                                 <label class="form-label">Oda fiyatına dahil</label>
                                 <label class="form-check partner-meal-check">
-                                    <input class="form-check-input" type="checkbox" name="Meals[@i].IncludedInRoomPrice" value="true" @(meal.IncludedInRoomPrice ? "checked" : "") />
+                                    <input type="hidden" name="Meals[@i].IncludedInRoomPrice" value="false" />
+                                    <input class="form-check-input" type="checkbox" name="Meals[@i].IncludedInRoomPrice" value="true" @(meal.IncludedInRoomPrice ? "checked" : null) />
                                     <span class="form-check-label">Dahil göster</span>
                                 </label>
                             </div>

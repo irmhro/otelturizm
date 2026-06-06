@@ -3074,6 +3074,217 @@ public class AdminService : IAdminService
         return model;
     }
 
+    public async Task<AdminPartnerApplicationDetailPageViewModel?> GetPartnerApplicationDetailAsync(long partnerId, string fullName, string email, string userRole, long adminUserId, CancellationToken cancellationToken = default)
+    {
+        if (partnerId <= 0)
+        {
+            return null;
+        }
+
+        await using var connection = new SqlConnection(_connectionString);
+        await connection.OpenAsync(cancellationToken);
+
+        const string sql = @"
+            SELECT TOP (1)
+                p.id, p.[KULLANICI_ID], o.id,
+                p.[FIRMA_UNVANI], p.[FIRMA_TURU], COALESCE(o.[OTEL_ADI], p.[FIRMA_UNVANI]),
+                p.[YETKILI_AD_SOYAD], COALESCE(p.[YETKILI_GOREV], N''),
+                p.[YETKILI_EPOSTA], p.[YETKILI_TELEFON],
+                p.[VERGI_DAIRESI], p.[VERGI_NUMARASI], p.[YETKILI_TC_NO],
+                p.[FATURA_ADRESI], p.[FATURA_IL], p.[FATURA_ILCE],
+                p.[BANKA_ADI], COALESCE(p.[BANKA_SUBESI], N''), p.[IBAN],
+                COALESCE(p.[WEB_SITESI], N''), COALESCE(p.[ACIKLAMA], N''),
+                p.[ONAY_DURUMU], p.[OLUSTURULMA_TARIHI], p.[ONAY_TARIHI],
+                u.[EPOSTA_DOGRULAMA_TARIHI],
+                CASE WHEN COL_LENGTH('partner_detaylari', 'eposta_giris_onayi_verildi_mi') IS NULL THEN 0 ELSE COALESCE(p.[EPOSTA_GIRIS_ONAYI_VERILDI_MI], 0) END,
+                COALESCE(p.[RED_NEDENI], N''),
+                COALESCE(o.[VARSAYILAN_KOMISYON_ORANI], 15),
+                COALESCE(o.[ONAY_DURUMU], N'Beklemede'),
+                COALESCE(o.[YAYIN_DURUMU], N'Taslak')
+            FROM [dbo].[PARTNER_DETAYLARI] p
+            INNER JOIN [dbo].[KULLANICILAR] u ON u.id = p.[KULLANICI_ID]
+            LEFT JOIN [dbo].[OTELLER] o ON o.[PARTNER_ID] = p.id
+            WHERE p.id = @partnerId
+            ORDER BY o.id DESC;";
+
+        AdminPartnerApplicationDetailViewModel? detail = null;
+        await using (var command = new SqlCommand(sql, connection))
+        {
+            command.Parameters.AddWithValue("@partnerId", partnerId);
+            await using var reader = await command.ExecuteReaderAsync(cancellationToken);
+            if (!await reader.ReadAsync(cancellationToken))
+            {
+                return null;
+            }
+
+            var status = reader.GetString(22);
+            detail = new AdminPartnerApplicationDetailViewModel
+            {
+                PartnerId = reader.GetInt64(0),
+                UserId = reader.GetInt64(1),
+                HotelId = reader.IsDBNull(2) ? null : reader.GetInt64(2),
+                CompanyName = reader.GetString(3),
+                CompanyType = reader.GetString(4),
+                HotelName = reader.GetString(5),
+                ContactName = reader.GetString(6),
+                ContactTitle = reader.GetString(7),
+                Email = reader.GetString(8),
+                Phone = reader.GetString(9),
+                TaxOffice = reader.GetString(10),
+                TaxNumber = reader.GetString(11),
+                ContactTcNo = reader.GetString(12),
+                Address = reader.GetString(13),
+                City = reader.GetString(14),
+                District = reader.GetString(15),
+                BankName = reader.GetString(16),
+                BankBranch = EmptyToNull(reader.GetString(17)),
+                Iban = reader.GetString(18),
+                Website = EmptyToNull(reader.GetString(19)),
+                Description = EmptyToNull(reader.GetString(20)),
+                StatusText = status,
+                StatusToneClass = status switch
+                {
+                    "Onaylandi" => "success",
+                    "Reddedildi" => "danger",
+                    "Askida" => "warning",
+                    _ => "info"
+                },
+                RegistrationDateText = reader.GetDateTime(23).ToString("dd.MM.yyyy HH:mm", CultureInfo.GetCultureInfo("tr-TR")),
+                ApprovalDateText = reader.IsDBNull(24) ? null : reader.GetDateTime(24).ToString("dd.MM.yyyy HH:mm", CultureInfo.GetCultureInfo("tr-TR")),
+                EmailVerified = !reader.IsDBNull(25),
+                EmailLoginApproved = SafeInt(reader, 26) == 1,
+                ReviewNote = EmptyToNull(reader.GetString(27)),
+                CurrentCommissionRate = reader.GetDecimal(28),
+                HotelApprovalStatus = reader.GetString(29),
+                HotelPublishStatus = reader.GetString(30)
+            };
+        }
+
+        detail.AvailableDocumentTypes = PartnerRequiredDocumentTypes.ToList();
+        detail.ActiveMissingDocumentTypes = await LoadActiveMissingDocumentTypesAsync(connection, partnerId, cancellationToken);
+
+        if (await TableExistsAsync(connection, "partner_basvuru_evraklari", cancellationToken))
+        {
+            const string docsSql = @"
+                SELECT ped.id, ped.[GUVENLI_DOSYA_ID], ped.[EVRAK_TIPI], COALESCE(ped.[BELGE_BASLIGI], ped.[EVRAK_TIPI]),
+                       COALESCE(gfv.[ORIJINAL_DOSYA_ADI], N'Belge'), ped.[DURUM], ped.[OLUSTURULMA_TARIHI], COALESCE(ped.[RED_NEDENI], N'')
+                FROM [dbo].[PARTNER_BASVURU_EVRAKLARI] ped
+                INNER JOIN [dbo].[GUVENLI_DOSYA_VARLIKLARI] gfv ON gfv.id = ped.[GUVENLI_DOSYA_ID]
+                WHERE ped.[PARTNER_ID] = @partnerId
+                ORDER BY ped.[OLUSTURULMA_TARIHI] DESC;";
+
+            await using var docsCommand = new SqlCommand(docsSql, connection);
+            docsCommand.Parameters.AddWithValue("@partnerId", partnerId);
+            await using var docsReader = await docsCommand.ExecuteReaderAsync(cancellationToken);
+            while (await docsReader.ReadAsync(cancellationToken))
+            {
+                var fileId = docsReader.GetInt64(1);
+                var docStatus = docsReader.GetString(5);
+                detail.Documents.Add(new AdminPartnerDocumentItemViewModel
+                {
+                    DocumentId = docsReader.GetInt64(0),
+                    DocumentType = docsReader.GetString(2),
+                    Title = docsReader.GetString(3),
+                    FileName = docsReader.GetString(4),
+                    StatusText = docStatus,
+                    StatusToneClass = MapPartnerDocumentTone(docStatus),
+                    UploadedAtText = docsReader.GetDateTime(6).ToString("dd.MM.yyyy HH:mm", CultureInfo.GetCultureInfo("tr-TR")),
+                    ReviewNote = EmptyToNull(docsReader.GetString(7)),
+                    AccessUrl = await _secureFileService.CreateAccessUrlAsync(fileId, adminUserId, "admin", cancellationToken)
+                });
+            }
+        }
+
+        detail.Checklist = BuildPartnerDocumentChecklist(detail.Documents);
+
+        return new AdminPartnerApplicationDetailPageViewModel
+        {
+            Shell = await GetShellAsync(connection, "Partner Basvuru Detayi", detail.CompanyName, fullName, email, userRole, cancellationToken),
+            Application = detail
+        };
+    }
+
+    private static async Task<List<string>> LoadActiveMissingDocumentTypesAsync(SqlConnection connection, long partnerId, CancellationToken cancellationToken)
+    {
+        var items = new List<string>();
+        if (!await TableExistsAsync(connection, "partner_eksik_evrak_talepleri", cancellationToken))
+        {
+            return items;
+        }
+
+        const string sql = @"
+            SELECT [EVRAK_TIPI]
+            FROM [dbo].[PARTNER_EKSIK_EVRAK_TALEPLERI]
+            WHERE [PARTNER_ID] = @partnerId AND [AKTIF_MI] = 1
+            ORDER BY [EVRAK_TIPI];";
+
+        await using var command = new SqlCommand(sql, connection);
+        command.Parameters.AddWithValue("@partnerId", partnerId);
+        await using var reader = await command.ExecuteReaderAsync(cancellationToken);
+        while (await reader.ReadAsync(cancellationToken))
+        {
+            items.Add(reader.GetString(0));
+        }
+
+        return items;
+    }
+
+    private static async Task SaveMissingDocumentRequestsAsync(SqlConnection connection, SqlTransaction transaction, long partnerId, long adminUserId, IEnumerable<string> documentTypes, string? note, CancellationToken cancellationToken)
+    {
+        if (!await TableExistsAsync(connection, "partner_eksik_evrak_talepleri", cancellationToken, transaction))
+        {
+            return;
+        }
+
+        const string deactivateSql = @"
+            UPDATE [dbo].[PARTNER_EKSIK_EVRAK_TALEPLERI]
+            SET [AKTIF_MI] = 0
+            WHERE [PARTNER_ID] = @partnerId AND [AKTIF_MI] = 1;";
+
+        await using (var deactivate = new SqlCommand(deactivateSql, connection, transaction))
+        {
+            deactivate.Parameters.AddWithValue("@partnerId", partnerId);
+            await deactivate.ExecuteNonQueryAsync(cancellationToken);
+        }
+
+        const string insertSql = @"
+            INSERT INTO [dbo].[PARTNER_EKSIK_EVRAK_TALEPLERI]
+            ([PARTNER_ID], [EVRAK_TIPI], [AKTIF_MI], [ADMIN_NOTU], [OLUSTURAN_ADMIN_ID], [OLUSTURULMA_TARIHI])
+            VALUES (@partnerId, @docType, 1, @note, @adminId, SYSUTCDATETIME());";
+
+        foreach (var docType in documentTypes.Distinct(StringComparer.OrdinalIgnoreCase))
+        {
+            if (string.IsNullOrWhiteSpace(docType))
+            {
+                continue;
+            }
+
+            await using var insert = new SqlCommand(insertSql, connection, transaction);
+            insert.Parameters.AddWithValue("@partnerId", partnerId);
+            insert.Parameters.AddWithValue("@docType", docType.Trim());
+            insert.Parameters.AddWithValue("@note", (object?)EmptyToNull(note) ?? DBNull.Value);
+            insert.Parameters.AddWithValue("@adminId", adminUserId);
+            await insert.ExecuteNonQueryAsync(cancellationToken);
+        }
+    }
+
+    private static async Task ClearMissingDocumentRequestsAsync(SqlConnection connection, SqlTransaction transaction, long partnerId, CancellationToken cancellationToken)
+    {
+        if (!await TableExistsAsync(connection, "partner_eksik_evrak_talepleri", cancellationToken, transaction))
+        {
+            return;
+        }
+
+        const string sql = @"
+            UPDATE [dbo].[PARTNER_EKSIK_EVRAK_TALEPLERI]
+            SET [AKTIF_MI] = 0, [TAMAMLANDI_TARIHI] = COALESCE([TAMAMLANDI_TARIHI], SYSUTCDATETIME())
+            WHERE [PARTNER_ID] = @partnerId AND [AKTIF_MI] = 1;";
+
+        await using var command = new SqlCommand(sql, connection, transaction);
+        command.Parameters.AddWithValue("@partnerId", partnerId);
+        await command.ExecuteNonQueryAsync(cancellationToken);
+    }
+
     public async Task<AdminPartnerDocumentsPageViewModel> GetPartnerDocumentsReviewQueueAsync(string fullName, string email, string userRole, string? statusFilter, long adminUserId, CancellationToken cancellationToken = default)
     {
         await using var connection = new SqlConnection(_connectionString);
@@ -3631,12 +3842,34 @@ public class AdminService : IAdminService
             "Onaylandi" => "Onaylandi",
             "Reddedildi" => "Reddedildi",
             "Askida" => "Askida",
+            "Beklemede" => "Beklemede",
             _ => string.Empty
         };
 
         if (string.IsNullOrWhiteSpace(targetStatus))
         {
             return (false, "Gecersiz partner basvuru durumu secildi.");
+        }
+
+        if (string.Equals(targetStatus, "Onaylandi", StringComparison.OrdinalIgnoreCase))
+        {
+            if (!request.CommissionRate.HasValue || request.CommissionRate.Value <= 0 || request.CommissionRate.Value > 100)
+            {
+                return (false, "Onay icin gecerli bir komisyon orani (0-100) girmelisiniz.");
+            }
+        }
+
+        if (string.Equals(targetStatus, "Askida", StringComparison.OrdinalIgnoreCase))
+        {
+            var missing = request.MissingDocumentTypes?
+                .Where(x => !string.IsNullOrWhiteSpace(x))
+                .Select(x => x.Trim())
+                .Distinct(StringComparer.OrdinalIgnoreCase)
+                .ToList() ?? [];
+            if (missing.Count == 0)
+            {
+                return (false, "Askiya almak icin en az bir eksik evrak tipi secmelisiniz.");
+            }
         }
 
         await using var connection = new SqlConnection(_connectionString);
@@ -3687,14 +3920,19 @@ public class AdminService : IAdminService
             const string hotelUpdateSql = @"
                 UPDATE [dbo].[OTELLER]
                 SET [ONAY_DURUMU] = CASE
-                        WHEN @targetStatus = 'Onaylandi' THEN 'Onaylandı'
-                        WHEN @targetStatus = 'Reddedildi' THEN 'Reddedildi'
-                        ELSE 'Beklemede'
+                        WHEN @targetStatus = 'Onaylandi' THEN N'Onaylandı'
+                        WHEN @targetStatus = 'Reddedildi' THEN N'Reddedildi'
+                        ELSE N'Beklemede'
                     END,
                     [YAYIN_DURUMU] = CASE
-                        WHEN @targetStatus = 'Askida' THEN 'Askıda'
-                        WHEN @targetStatus = 'Reddedildi' THEN 'Taslak'
+                        WHEN @targetStatus = 'Onaylandi' THEN N'Yayında'
+                        WHEN @targetStatus = 'Askida' THEN N'Askıda'
+                        WHEN @targetStatus = 'Reddedildi' THEN N'Taslak'
                         ELSE [YAYIN_DURUMU]
+                    END,
+                    [VARSAYILAN_KOMISYON_ORANI] = CASE
+                        WHEN @targetStatus = 'Onaylandi' THEN @commissionRate
+                        ELSE [VARSAYILAN_KOMISYON_ORANI]
                     END,
                     [ONAY_TARIHI] = CASE WHEN @targetStatus = 'Onaylandi' THEN SYSUTCDATETIME() ELSE [ONAY_TARIHI] END
                 WHERE [PARTNER_ID] = @partnerId;";
@@ -3703,7 +3941,24 @@ public class AdminService : IAdminService
             {
                 hotelUpdateCommand.Parameters.AddWithValue("@targetStatus", targetStatus);
                 hotelUpdateCommand.Parameters.AddWithValue("@partnerId", request.PartnerId);
+                hotelUpdateCommand.Parameters.AddWithValue("@commissionRate", request.CommissionRate ?? 15m);
                 await hotelUpdateCommand.ExecuteNonQueryAsync(cancellationToken);
+            }
+
+            if (string.Equals(targetStatus, "Askida", StringComparison.OrdinalIgnoreCase))
+            {
+                await SaveMissingDocumentRequestsAsync(
+                    connection,
+                    (SqlTransaction)transaction,
+                    request.PartnerId,
+                    adminUserId,
+                    request.MissingDocumentTypes!,
+                    request.Note,
+                    cancellationToken);
+            }
+            else
+            {
+                await ClearMissingDocumentRequestsAsync(connection, (SqlTransaction)transaction, request.PartnerId, cancellationToken);
             }
 
             if (await TableExistsAsync(connection, "PARTNER_BASVURU_HAREKETLERI", cancellationToken, (SqlTransaction?)transaction))
@@ -3739,9 +3994,10 @@ public class AdminService : IAdminService
             await transaction.CommitAsync(cancellationToken);
             return (true, targetStatus switch
             {
-                "Onaylandi" => "Partner basvurusu onaylandi. Partner artik yayin oncesi son icerik adimlarini tamamlayabilir.",
+                "Onaylandi" => "Partner basvurusu onaylandi ve otel yayina alindi.",
                 "Reddedildi" => "Partner basvurusu reddedildi.",
-                "Askida" => "Partner basvurusu askiya alindi.",
+                "Askida" => "Partner basvurusu askiya alindi. Eksik evrak talepleri partner paneline iletildi.",
+                "Beklemede" => "Partner basvurusu tekrar inceleme kuyruguna alindi.",
                 _ => "Partner basvurusu guncellendi."
             });
         }

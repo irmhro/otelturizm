@@ -23,7 +23,19 @@
     background: var(--ap-bg-main);
     color: var(--ap-text-main);
     font-size: var(--ap-body-size);
+    font-family: 'Inter', 'Plus Jakarta Sans', sans-serif;
+    -webkit-font-smoothing: antialiased;
     overflow-x: hidden;
+    /* Eski sayfa CSS dosyaları için v6 token köprüsü */
+    --user-line: var(--ap-border-main);
+    --user-surface: var(--ap-surface-card);
+    --user-surface-2: #FAFAFA;
+    --user-soft: #F8FAFC;
+    --user-shadow: 0 1px 3px rgba(0, 0, 0, 0.02);
+    --user-text: var(--ap-text-main);
+    --user-text-muted: var(--ap-text-light);
+    --user-accent: var(--ap-primary-red);
+    --kp-border-main: var(--ap-border-main);
 }
 
 .kullanici-panel-shell .admin-shell-container {
@@ -59,8 +71,8 @@
 .kullanici-panel-shell .logo-turizm {
     font-family: 'Plus Jakarta Sans', Inter, sans-serif;
     font-weight: 800;
-    font-size: 16px;
-    letter-spacing: 0.15em;
+    font-size: 14px;
+    letter-spacing: 0.12em;
     color: var(--ap-primary-red);
     text-transform: uppercase;
 }
@@ -93,7 +105,7 @@
 .kullanici-panel-shell .sidebar-scroll {
     flex: 1;
     overflow-y: auto;
-    padding: 12px 10px 12px;
+    padding: 12px 10px 40px;
 }
 
 .kullanici-panel-shell .sidebar-scroll::-webkit-scrollbar {
@@ -583,7 +595,8 @@
     padding-bottom: calc(24px + env(safe-area-inset-bottom));
 }
 
-.kullanici-panel-shell .ap-page-header {
+.kullanici-panel-shell .ap-page-header,
+.kullanici-panel-shell .page-header {
     display: flex;
     justify-content: space-between;
     align-items: flex-end;
@@ -591,7 +604,8 @@
     flex-wrap: wrap;
 }
 
-.kullanici-panel-shell .ap-page-header h1 {
+.kullanici-panel-shell .ap-page-header h1,
+.kullanici-panel-shell .page-header h1 {
     font-size: 24px;
     font-weight: 800;
     color: var(--ap-primary-dark);
@@ -608,7 +622,8 @@
     margin-bottom: 4px;
 }
 
-.kullanici-panel-shell .ap-page-header p {
+.kullanici-panel-shell .ap-page-header p,
+.kullanici-panel-shell .page-header p {
     font-size: 13.5px;
     color: var(--ap-text-light);
     margin: 6px 0 0;
@@ -902,7 +917,7 @@
     max-width: none;
 }
 
-.kullanici-panel-shell .content-body .page-header {
+.kullanici-panel-shell .content-body .container-fluid .page-header {
     display: none;
 }
 
@@ -1285,3 +1300,225 @@
 }
 .kullanici-panel-shell .member-status-chip i { color: var(--ap-warning); font-size: 12px; }
 .kullanici-panel-shell .member-status-chip b { color: var(--ap-primary-red); }
+
+/* Şablondan: tablo hücre bilgi blokları */
+.kullanici-panel-shell .item-info,
+.kullanici-panel-shell .guest-info {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+}
+
+.kullanici-panel-shell .item-name,
+.kullanici-panel-shell .guest-name {
+    font-weight: 700;
+    color: var(--ap-primary-dark);
+    font-size: 13.5px;
+}
+
+.kullanici-panel-shell .item-meta,
+.kullanici-panel-shell .guest-meta {
+    font-size: 11.5px;
+    color: #64748B;
+}
+
+/* AI / boş durum / favori kutuları */
+.kullanici-panel-shell .ai-alert-box {
+    background: linear-gradient(135deg, #EFF6FF 0%, #DBEAFE 100%);
+    border: 1px solid #BFDBFE;
+    border-radius: 8px;
+    padding: 14px;
+}
+
+.kullanici-panel-shell .ai-alert-header {
+    display: flex;
+    justify-content: space-between;
+    font-size: 12.5px;
+    font-weight: 800;
+    color: #1E40AF;
+    margin-bottom: 6px;
+}
+
+.kullanici-panel-shell .ai-alert-text {
+    font-size: 12.5px;
+    color: #1E3A8A;
+    line-height: 1.5;
+    font-weight: 500;
+    margin: 0;
+}
+
+.kullanici-panel-shell .ap-empty-state {
+    text-align: center;
+    padding: 28px 16px;
+    color: var(--ap-text-light);
+}
+
+.kullanici-panel-shell .ap-empty-state i {
+    font-size: 28px;
+    color: #CBD5E1;
+    margin-bottom: 10px;
+    display: block;
+}
+
+.kullanici-panel-shell .ap-empty-state strong {
+    display: block;
+    color: var(--ap-primary-dark);
+    margin-bottom: 6px;
+}
+
+.kullanici-panel-shell .ap-action-stack {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.kullanici-panel-shell .ap-action-tile {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 14px;
+    border-radius: 8px;
+    border: 1px solid var(--ap-border-main);
+    background: #fff;
+    text-decoration: none;
+    color: inherit;
+    transition: background 0.15s, border-color 0.15s;
+}
+
+.kullanici-panel-shell .ap-action-tile:hover {
+    background: #FFF5F5;
+    border-color: #FECACA;
+}
+
+.kullanici-panel-shell .ap-action-tile > span:first-child {
+    width: 36px;
+    height: 36px;
+    border-radius: 8px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: #F1F5F9;
+    color: var(--ap-info);
+    flex-shrink: 0;
+}
+
+.kullanici-panel-shell .ap-action-tile strong {
+    display: block;
+    font-size: 13.5px;
+    color: var(--ap-primary-dark);
+    line-height: 1.25;
+}
+
+.kullanici-panel-shell .ap-action-tile small {
+    display: block;
+    font-size: 12px;
+    color: var(--ap-text-light);
+    margin-top: 2px;
+}
+
+.kullanici-panel-shell .ap-action-tile > i:last-child {
+    margin-left: auto;
+    color: #94A3B8;
+    font-size: 12px;
+}
+
+/* Header bildirim — v6 topbar ile hizalı */
+.kullanici-panel-shell .header-bildiri-btn {
+    width: 34px;
+    height: 34px;
+    border-radius: 6px;
+    border: 1px solid transparent;
+    background: none;
+    color: #475569;
+}
+
+.kullanici-panel-shell .header-bildiri-btn:hover {
+    background: #F1F5F9;
+    border-color: var(--ap-border-main);
+}
+
+.kullanici-panel-shell .header-bildiri-dropdown {
+    border-radius: 10px;
+    border: 1px solid var(--ap-border-main);
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.08);
+}
+
+/* Bootstrap kalıntı sınıfları (Tabler kaldırıldı) */
+.kullanici-panel-shell .d-flex { display: flex; }
+.kullanici-panel-shell .flex-wrap { flex-wrap: wrap; }
+.kullanici-panel-shell .gap-2 { gap: 8px; }
+.kullanici-panel-shell .text-end { text-align: right; }
+.kullanici-panel-shell .text-muted { color: var(--ap-text-light); }
+.kullanici-panel-shell .fw-bold { font-weight: 700; }
+.kullanici-panel-shell .m-0 { margin: 0; }
+.kullanici-panel-shell .w-100 { width: 100%; }
+.kullanici-panel-shell .btn.btn-primary,
+.kullanici-panel-shell .btn-primary {
+    background: var(--ap-primary-red);
+    color: #fff;
+    border: none;
+    padding: 0 16px;
+    height: 36px;
+    font-size: 13px;
+    font-weight: 600;
+    border-radius: 8px;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    text-decoration: none;
+}
+
+.kullanici-panel-shell .btn.btn-primary:hover,
+.kullanici-panel-shell .btn-primary:hover {
+    background: #B91C1C;
+    color: #fff;
+}
+
+.kullanici-panel-shell .btn.btn-outline,
+.kullanici-panel-shell .btn-outline-secondary {
+    height: 36px;
+    padding: 0 16px;
+    font-size: 13px;
+    font-weight: 600;
+    border-radius: 8px;
+    border: 1px solid #CBD5E1;
+    background: white;
+    color: #334155;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+}
+
+/* Profil / iç sayfa — eski gradient kartları v6 panele çek */
+.kullanici-panel-shell .profile-hero,
+.kullanici-panel-shell .profile-preset-card,
+.kullanici-panel-shell .profile-panel,
+.kullanici-panel-shell .user-panel-card,
+.kullanici-panel-shell .panel-card-legacy {
+    border: 1px solid var(--ap-border-main) !important;
+    border-radius: var(--ap-radius-panel) !important;
+    background: var(--ap-surface-card) !important;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02) !important;
+}
+
+.kullanici-panel-shell .profile-hero {
+    padding: 18px;
+}
+
+.kullanici-panel-shell .profile-identity h1 {
+    font-size: 22px;
+    font-weight: 800;
+    color: var(--ap-primary-dark);
+    letter-spacing: -0.02em;
+}
+
+.kullanici-panel-shell .page-pretitle,
+.kullanici-panel-shell .profile-identity .page-pretitle {
+    font-size: 10px;
+    font-weight: 800;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--ap-primary-red);
+    margin-bottom: 4px;
+}

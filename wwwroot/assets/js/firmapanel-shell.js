@@ -86,6 +86,20 @@
                 searchInput.focus();
             }
         });
+
+        searchInput.addEventListener('keydown', function (e) {
+            if (e.key !== 'Enter') {
+                return;
+            }
+
+            var query = (searchInput.value || '').trim();
+            if (!query) {
+                return;
+            }
+
+            var base = searchInput.getAttribute('data-firma-search-base') || '/panel/firma/rezervasyonlar';
+            window.location.href = base + '?q=' + encodeURIComponent(query);
+        });
     }
 
     document.querySelectorAll('.firmapanel-v6-shell .currency-switcher [data-currency]').forEach(function (btn) {
@@ -95,6 +109,18 @@
             group.querySelectorAll('[data-currency]').forEach(function (item) {
                 item.classList.toggle('active', item === btn);
             });
+            try {
+                localStorage.setItem('firmaPanelDisplayCurrency', btn.getAttribute('data-currency') || 'TRY');
+            } catch (err) { /* ignore */ }
         });
     });
+
+    try {
+        var savedCurrency = localStorage.getItem('firmaPanelDisplayCurrency');
+        if (savedCurrency) {
+            document.querySelectorAll('.firmapanel-v6-shell .currency-switcher [data-currency="' + savedCurrency + '"]').forEach(function (btn) {
+                btn.click();
+            });
+        }
+    } catch (err) { /* ignore */ }
 })();

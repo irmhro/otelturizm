@@ -29,7 +29,7 @@
             <div class="auth-alert">@Html.ValidationSummary(false)</div>
         }
 
-        <form class="auth-form auth-form--verify" method="post" action="/eposta-dogrula">
+        <form class="auth-form auth-form--verify" method="post" action="/eposta-dogrula" id="verifyEmailForm">
             @Html.AntiForgeryToken()
             <input type="hidden" asp-for="Token" />
 
@@ -37,28 +37,33 @@
                 <label asp-for="Email">E-posta Adresiniz</label>
                 <div class="input-wrap">
                     <i class="far fa-envelope" aria-hidden="true"></i>
-                    <input asp-for="Email" class="form-control" placeholder="ornek@email.com" autocomplete="email" inputmode="email" />
+                    <input asp-for="Email" class="form-control" placeholder="ornek@email.com" autocomplete="email" inputmode="email" required />
                 </div>
+                <span asp-validation-for="Email" class="text-danger" style="font-size:12px;font-weight:600;"></span>
             </div>
 
             <div class="form-group form-group--otp">
                 <label asp-for="Code">Doğrulama Kodu</label>
                 <input asp-for="Code" class="form-control form-control--otp" placeholder="000000" maxlength="8" inputmode="numeric" autocomplete="one-time-code" aria-label="6 haneli doğrulama kodu" />
+                <span asp-validation-for="Code" class="text-danger" style="font-size:12px;font-weight:600;"></span>
                 <p class="auth-inline-hint">E-postanızdaki 6 haneli kodu boşluksuz girin.</p>
             </div>
 
             <div class="auth-form-actions">
                 <button type="submit" class="auth-submit-btn">E-postayı Doğrula <i class="fas fa-arrow-right" aria-hidden="true"></i></button>
             </div>
-        </form>
 
-        <div class="auth-verify-footer">
-            <form method="post" action="/eposta-dogrula/tekrar-gonder" class="auth-resend-verify-form">
-                @Html.AntiForgeryToken()
-                <input type="hidden" name="email" value="@Model.Email" />
-                <button type="submit" class="auth-resend-verify-btn"><i class="fas fa-paper-plane" aria-hidden="true"></i> Kodu tekrar gönder</button>
-            </form>
-            <a href="/kullanici-giris" class="text-link auth-verify-back-link">Giriş ekranına dön</a>
-        </div>
+            <div class="auth-verify-footer">
+                <button type="submit"
+                        class="auth-resend-verify-btn"
+                        formaction="/eposta-dogrula/tekrar-gonder"
+                        formnovalidate
+                        name="resend"
+                        value="1">
+                    <i class="fas fa-paper-plane" aria-hidden="true"></i> Kodu tekrar gönder
+                </button>
+                <a href="/kullanici-giris" class="text-link auth-verify-back-link">Giriş ekranına dön</a>
+            </div>
+        </form>
     </div>
 </div>

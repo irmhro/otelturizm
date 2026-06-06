@@ -1,0 +1,185 @@
+@model otelturizmnew.Models.Paneller.Admin.AdminPartnerApplicationDetailPageViewModel
+@{
+    Layout = "~/Views/Paneller/Admin/_AdminPanelLayout.cshtml";
+    ViewData["AdminShell"] = Model.Shell;
+    var app = Model.Application;
+}
+
+<section class="admin-partner-applications-page">
+    <div class="admin-section-head mb-3">
+        <div>
+            <p class="mini-caption">PARTNER BAŞVURU #@app.PartnerId</p>
+            <h2>@app.CompanyName</h2>
+            <span>@app.HotelName · @app.RegistrationDateText</span>
+        </div>
+        <div class="admin-action-pills">
+            <a class="btn btn-outline-primary btn-sm" href="/admin/partner-basvurulari">← Listeye dön</a>
+            <a class="btn btn-outline-secondary btn-sm" href="/admin/partner-evraklari?partnerId=@app.PartnerId">Evrak kuyruğu</a>
+        </div>
+    </div>
+
+    <div class="admin-kpi-grid admin-kpi-grid--compact">
+        <article class="admin-kpi-card @app.StatusToneClass">
+            <div><p>Durum</p><h2>@app.StatusText</h2></div>
+        </article>
+        <article class="admin-kpi-card info">
+            <div><p>Komisyon</p><h2>%@app.CurrentCommissionRate.ToString("0.##")</h2></div>
+        </article>
+        <article class="admin-kpi-card @(app.EmailVerified ? "success" : "warning")">
+            <div><p>E-posta doğrulama</p><h2>@(app.EmailVerified ? "Tamam" : "Bekliyor")</h2></div>
+        </article>
+        <article class="admin-kpi-card @(app.EmailLoginApproved ? "success" : "warning")">
+            <div><p>Admin giriş onayı</p><h2>@(app.EmailLoginApproved ? "Verildi" : "Bekliyor")</h2></div>
+        </article>
+    </div>
+
+    <div class="admin-partner-detail-grid">
+        <article class="admin-section-card">
+            <div class="admin-section-head"><h3>Firma ve yetkili bilgileri</h3></div>
+            <div class="admin-partner-meta admin-partner-meta--detail">
+                <span><small>Firma türü</small><strong>@app.CompanyType</strong></span>
+                <span><small>Yetkili</small><strong>@app.ContactName (@app.ContactTitle)</strong></span>
+                <span><small>E-posta</small><strong>@app.Email</strong></span>
+                <span><small>Telefon</small><strong>@app.Phone</strong></span>
+                <span><small>Vergi dairesi / no</small><strong>@app.TaxOffice · @app.TaxNumber</strong></span>
+                <span><small>TC</small><strong>@app.ContactTcNo</strong></span>
+                <span><small>Adres</small><strong>@app.Address, @app.District / @app.City</strong></span>
+                <span><small>Banka / IBAN</small><strong>@app.BankName @app.BankBranch · @app.Iban</strong></span>
+                @if (!string.IsNullOrWhiteSpace(app.Website))
+                {
+                    <span><small>Web</small><strong>@app.Website</strong></span>
+                }
+                @if (!string.IsNullOrWhiteSpace(app.Description))
+                {
+                    <span class="full-span"><small>Açıklama</small><strong>@app.Description</strong></span>
+                }
+            </div>
+            @if (!string.IsNullOrWhiteSpace(app.ReviewNote))
+            {
+                <div class="admin-partner-note">@app.ReviewNote</div>
+            }
+            @if (app.HotelId is > 0)
+            {
+                <p class="mini-caption mt-3">Otel onay: @app.HotelApprovalStatus · Yayın: @app.HotelPublishStatus</p>
+            }
+        </article>
+
+        <article class="admin-section-card">
+            <div class="admin-section-head"><h3>Yüklenen belgeler</h3></div>
+            <div class="admin-partner-checklist panel-form-ux-checklist mb-3">
+                @foreach (var item in app.Checklist)
+                {
+                    <span class="partner-doc-chip @item.ToneClass">@item.DocumentType · @item.StatusText</span>
+                }
+            </div>
+            @if (app.Documents.Count == 0)
+            {
+                <div class="admin-empty-panel">Henüz belge yüklenmemiş.</div>
+            }
+            else
+            {
+                <div class="admin-table-wrap">
+                    <table class="admin-table admin-table--cards partner-doc-table">
+                        <thead>
+                            <tr><th>Belge</th><th>Durum</th><th>Tarih</th><th></th></tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var doc in app.Documents)
+                            {
+                                <tr>
+                                    <td><strong>@doc.Title</strong><br /><small>@doc.DocumentType · @doc.FileName</small></td>
+                                    <td><span class="table-status @doc.StatusToneClass">@doc.StatusText</span></td>
+                                    <td>@doc.UploadedAtText</td>
+                                    <td>
+                                        @if (!string.IsNullOrWhiteSpace(doc.AccessUrl))
+                                        {
+                                            <a class="btn btn-outline-primary btn-sm" href="@doc.AccessUrl" target="_blank" rel="noopener">Görüntüle</a>
+                                        }
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
+        </article>
+    </div>
+
+    <article class="admin-section-card">
+        <div class="admin-section-head">
+            <div>
+                <h3>Admin kararı</h3>
+                <span>Onayda komisyon girilir ve otel yayına alınır. Askıda eksik evrak seçimi partner paneline düşer.</span>
+            </div>
+        </div>
+
+        @if (app.EmailVerified && !app.EmailLoginApproved)
+        {
+            <form method="post" action="/admin/partner-basvurulari/eposta-giris-onayi" class="admin-inline-action mb-3">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="PartnerId" value="@app.PartnerId" />
+                <input type="hidden" name="Approved" value="true" />
+                <button type="submit" class="btn btn-success btn-sm">E-posta giriş onayı ver</button>
+            </form>
+        }
+
+        <form method="post" action="/admin/partner-basvurulari/durum" class="admin-partner-decision-form admin-partner-decision-form--detail" id="partnerDecisionForm">
+            @Html.AntiForgeryToken()
+            <input type="hidden" name="PartnerId" value="@app.PartnerId" />
+
+            <label>
+                <span>Karar</span>
+                <select name="TargetStatus" id="partnerTargetStatus">
+                    <option value="Onaylandi">Onayla ve yayına al</option>
+                    <option value="Beklemede">İncelemeye al (beklemede)</option>
+                    <option value="Askida">Askıya al — eksik evrak iste</option>
+                    <option value="Reddedildi">Reddet</option>
+                </select>
+            </label>
+
+            <label id="commissionField">
+                <span>Komisyon oranı (%)</span>
+                <input type="number" name="CommissionRate" min="1" max="100" step="0.01" value="@app.CurrentCommissionRate.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture)" />
+            </label>
+
+            <div class="full-span" id="missingDocsField" hidden>
+                <span class="field-label">Eksik evrak tipleri</span>
+                <div class="admin-partner-checklist panel-form-ux-checklist">
+                    @foreach (var docType in app.AvailableDocumentTypes)
+                    {
+                        var checkedAttr = app.ActiveMissingDocumentTypes.Contains(docType) ? "checked" : null;
+                        <label class="partner-doc-chip info">
+                            <input type="checkbox" name="MissingDocumentTypes" value="@docType" @checkedAttr />
+                            @docType
+                        </label>
+                    }
+                </div>
+            </div>
+
+            <label class="full-span">
+                <span>Partnera gösterilecek not</span>
+                <textarea name="Note" rows="3" placeholder="Eksik evrak veya red gerekçesi">@app.ReviewNote</textarea>
+            </label>
+
+            <button type="submit" class="btn btn-primary">Kararı kaydet</button>
+        </form>
+    </article>
+</section>
+
+@section Scripts {
+    <script nonce="@(Context.Items["CspNonce"] as string)">
+    (() => {
+        const status = document.getElementById('partnerTargetStatus');
+        const commission = document.getElementById('commissionField');
+        const missing = document.getElementById('missingDocsField');
+        if (!status || !commission || !missing) return;
+        const sync = () => {
+            const value = status.value;
+            commission.hidden = value !== 'Onaylandi';
+            missing.hidden = value !== 'Askida';
+        };
+        status.addEventListener('change', sync);
+        sync();
+    })();
+    </script>
+}

@@ -2,5 +2,5 @@
 @{ Layout = "~/Views/Paneller/Firma/_FirmaPanelLayout.cshtml"; ViewData["FirmaShell"] = Model.Shell; }
 <section class="firma-two-column">
     <article class="firma-section-card"><h2>Aylık Harcama Grafiği</h2><div class="firma-chart-bars">@foreach (var item in Model.MonthlySpend) { <div class="chart-col"><span style="height:@(item.HeightPercent)%"></span><strong>@item.Label</strong><small>@item.ReservationCount rezervasyon</small></div> }</div></article>
-    <article class="firma-section-card"><h2>Toplam Harcama</h2><p class="firma-total-spend">@Model.TotalSpendText</p><p>Bu alan `REZERVASYONLAR.FIRMA_ID` ve aylık toplamlar üzerinden hesaplanır.</p></article>
+    <article class="firma-section-card"><h2>Toplam Harcama</h2><p class="firma-total-spend">@Model.TotalSpendText</p><p>Son 6 aylık kurumsal rezervasyon harcamalarının özeti.</p></article>
 </section>

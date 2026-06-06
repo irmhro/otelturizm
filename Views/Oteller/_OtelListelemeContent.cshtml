@@ -275,6 +275,10 @@
                                         {
                                             <span><i class="fas @amenity.IconClass" aria-hidden="true"></i> @amenity.Name</span>
                                         }
+                                        @if (hotel.HasFreeCancellation)
+                                        {
+                                            <span><i class="fas fa-check-circle" aria-hidden="true"></i> Ücretsiz iptal</span>
+                                        }
                                     </div>
                                 }
                                 <div class="otelliste-card-foot">

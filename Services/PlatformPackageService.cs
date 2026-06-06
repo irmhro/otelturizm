@@ -42,7 +42,7 @@ public sealed class PlatformPackageService : IPlatformPackageService
         }
 
         await using var connection = await OpenAsync(cancellationToken);
-        if (!await TableExistsAsync(connection, "platform_paketler", cancellationToken))
+        if (!await TableExistsAsync(connection, "PLATFORM_PAKETLER", cancellationToken))
         {
             model.TablesReady = false;
             return model;
@@ -63,7 +63,7 @@ public sealed class PlatformPackageService : IPlatformPackageService
         if (hotelIdValue <= 0) return null;
 
         await using var connection = await OpenAsync(cancellationToken);
-        if (!await TableExistsAsync(connection, "platform_paketler", cancellationToken)) return null;
+        if (!await TableExistsAsync(connection, "PLATFORM_PAKETLER", cancellationToken)) return null;
 
         var compliance = new PartnerPlatformPackagesPageViewModel { SelectedHotelId = hotelIdValue };
         await LoadHotelComplianceAsync(connection, hotelIdValue, compliance, cancellationToken);
@@ -99,7 +99,7 @@ public sealed class PlatformPackageService : IPlatformPackageService
         }
 
         await using var connection = await OpenAsync(cancellationToken);
-        if (!await TableExistsAsync(connection, "partner_paket_basvurulari", cancellationToken))
+        if (!await TableExistsAsync(connection, "PARTNER_PAKET_BASVURULARI", cancellationToken))
         {
             return (false, "Paket satış tabloları bulunamadı. Migration uygulanmalı.");
         }
@@ -155,7 +155,7 @@ public sealed class PlatformPackageService : IPlatformPackageService
         var model = new AdminPlatformPackagesPageViewModel { Shell = listing.Shell };
 
         await using var connection = await OpenAsync(cancellationToken);
-        if (!await TableExistsAsync(connection, "platform_paketler", cancellationToken))
+        if (!await TableExistsAsync(connection, "PLATFORM_PAKETLER", cancellationToken))
         {
             model.TablesReady = false;
             model.Shell.PanelTitle = "Platform Paket Satışı";
@@ -177,7 +177,7 @@ public sealed class PlatformPackageService : IPlatformPackageService
     public async Task<string> ExportAdminApplicationsCsvAsync(CancellationToken cancellationToken = default)
     {
         await using var connection = await OpenAsync(cancellationToken);
-        if (!await TableExistsAsync(connection, "partner_paket_basvurulari", cancellationToken))
+        if (!await TableExistsAsync(connection, "PARTNER_PAKET_BASVURULARI", cancellationToken))
         {
             return string.Join(';', new[] { Csv("mesaj"), Csv("Basvuru tablosu yok.") }) + Environment.NewLine;
         }
@@ -264,7 +264,7 @@ public sealed class PlatformPackageService : IPlatformPackageService
         }
 
         await using var connection = await OpenAsync(cancellationToken);
-        if (!await TableExistsAsync(connection, "partner_paket_basvurulari", cancellationToken))
+        if (!await TableExistsAsync(connection, "PARTNER_PAKET_BASVURULARI", cancellationToken))
         {
             return (false, "Başvuru tablosu yok.");
         }
@@ -313,7 +313,7 @@ public sealed class PlatformPackageService : IPlatformPackageService
 
     private async Task LoadHotelComplianceAsync(SqlConnection connection, long hotelId, PartnerPlatformPackagesPageViewModel model, CancellationToken cancellationToken)
     {
-        if (!await TableExistsAsync(connection, "otel_uyum_durumlari", cancellationToken))
+        if (!await TableExistsAsync(connection, "OTEL_UYUM_DURUMLARI", cancellationToken))
         {
             return;
         }
@@ -335,7 +335,7 @@ public sealed class PlatformPackageService : IPlatformPackageService
 
     private async Task UpsertHotelComplianceDeclarationAsync(SqlConnection connection, long hotelId, bool log5661Installed, CancellationToken cancellationToken)
     {
-        if (!await TableExistsAsync(connection, "otel_uyum_durumlari", cancellationToken))
+        if (!await TableExistsAsync(connection, "OTEL_UYUM_DURUMLARI", cancellationToken))
         {
             return;
         }
@@ -504,7 +504,7 @@ public sealed class PlatformPackageService : IPlatformPackageService
                 b.[OLUSTURULMA_UTC] DESC;";
 
         var list = new List<AdminPlatformPackageApplicationRowViewModel>();
-        if (!await TableExistsAsync(connection, "oteller", cancellationToken))
+        if (!await TableExistsAsync(connection, "OTELLER", cancellationToken))
         {
             return list;
         }
@@ -570,7 +570,7 @@ public sealed class PlatformPackageService : IPlatformPackageService
 
     private static async Task<bool> TableExistsAsync(SqlConnection connection, string tableName, CancellationToken cancellationToken)
     {
-        const string sql = "SELECT 1 FROM sys.tables WHERE name = @name AND schema_id = SCHEMA_ID('dbo');";
+        const string sql = "SELECT CASE WHEN OBJECT_ID(QUOTENAME(N'dbo') + N'.' + QUOTENAME(@name), N'U') IS NOT NULL THEN 1 ELSE NULL END;";
         await using var cmd = new SqlCommand(sql, connection);
         cmd.Parameters.AddWithValue("@name", tableName);
         var result = await cmd.ExecuteScalarAsync(cancellationToken);

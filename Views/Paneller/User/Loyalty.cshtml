@@ -374,10 +374,22 @@
                     <h4>@reward.Title</h4>
                     <p>@reward.Description</p>
                     <div class="reward-points">@reward.RequiredPoints.ToString("N0") <small>puan</small></div>
-                    <button class="btn btn-primary" type="button" @(reward.IsAvailable ? null : "disabled")>
-                        <i class="@(reward.IsAvailable ? "fas fa-exchange-alt" : "fas fa-lock")"></i>
-                        @(reward.IsAvailable ? "Kullanima Hazir" : "Yetersiz Puan")
-                    </button>
+                    @if (reward.IsAvailable)
+                    {
+                        <form method="post" asp-action="RedeemReward" asp-controller="UserPanel" class="m-0">
+                            @Html.AntiForgeryToken()
+                            <input type="hidden" name="RewardId" value="@reward.RewardId" />
+                            <button class="btn btn-primary" type="submit">
+                                <i class="fas fa-exchange-alt"></i> Kullan
+                            </button>
+                        </form>
+                    }
+                    else
+                    {
+                        <button class="btn btn-primary" type="button" disabled>
+                            <i class="fas fa-lock"></i> Yetersiz Puan
+                        </button>
+                    }
                 </div>
             }
         </div>

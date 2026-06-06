@@ -13,7 +13,7 @@
         || IsCurrent("Employees", "Limits", "Invoices");
     var reportOpen = IsPath("/panel/firma/harcama-raporlari", "/panel/firma/otel-bazli-rapor")
         || IsCurrent("Spending", "Hotels");
-    var accountOpen = IsPath("/panel/firma/guvenlik") || IsCurrent("Security");
+    var accountOpen = IsPath("/panel/firma/guvenlik", "/panel/firma/hesap-bilgileri") || IsCurrent("Security", "AccountInfo");
     var companyName = string.IsNullOrWhiteSpace(Model.CompanyName) ? "Kurumsal hesap" : Model.CompanyName;
 }
 <aside class="admin-sidebar" id="appSidebar" aria-label="Firma menüsü">
@@ -110,6 +110,7 @@
                 <i class="fas fa-chevron-down chevron-icon"></i>
             </button>
             <div class="sub-links-container">
+                <a class="@ActivePath("/panel/firma/hesap-bilgileri")" href="/panel/firma/hesap-bilgileri">Hesap Bilgileri</a>
                 <a class="@ActivePath("/panel/firma/guvenlik")" href="/panel/firma/guvenlik">Güvenlik</a>
                 <a href="/panel/firma/guvenlik#firma-sozlesmeler-panel">Sözleşmeler</a>
             </div>

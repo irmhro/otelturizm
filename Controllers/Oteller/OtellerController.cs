@@ -7,6 +7,7 @@ using Microsoft.Extensions.Configuration;
 using System.Linq;
 using System.Security.Claims;
 using otelturizmnew.Constants;
+using otelturizmnew.Models.Oteller;
 using otelturizmnew.Models.Payments;
 using otelturizmnew.Models.Paneller.User;
 using otelturizmnew.Models.Reservations;
@@ -122,10 +123,34 @@ public class OtellerController : Controller
     }
 
     [HttpGet("{slug}")]
-    public async Task<IActionResult> OtelDetay(string slug, CancellationToken cancellationToken)
+    public async Task<IActionResult> OtelDetay(
+        string slug,
+        [FromQuery] string? checkIn,
+        [FromQuery] string? checkOut,
+        [FromQuery] long? room,
+        CancellationToken cancellationToken)
     {
         var detailCulture = ApplyRouteListingCulture();
-        var model = await _hotelService.GetHotelDetailPageAsync(slug, cancellationToken);
+        HotelDetailLoadOptions? loadOptions = null;
+        if (DateOnly.TryParse(checkIn, out var parsedCheckIn))
+        {
+            loadOptions ??= new HotelDetailLoadOptions();
+            loadOptions = loadOptions with { CheckIn = parsedCheckIn };
+        }
+
+        if (DateOnly.TryParse(checkOut, out var parsedCheckOut))
+        {
+            loadOptions ??= new HotelDetailLoadOptions();
+            loadOptions = loadOptions with { CheckOut = parsedCheckOut };
+        }
+
+        if (room is > 0)
+        {
+            loadOptions ??= new HotelDetailLoadOptions();
+            loadOptions = loadOptions with { RoomTypeId = room };
+        }
+
+        var model = await _hotelService.GetHotelDetailPageAsync(slug, loadOptions, cancellationToken);
         if (model is null)
         {
             return NotFound();
@@ -190,6 +215,9 @@ public class OtellerController : Controller
 
         var activeDraft = await _publicReservationService.GetActiveDraftAsync(GetCurrentUserIdOrNull(), GetCurrentReservationSessionKey(), cancellationToken);
         model.ActiveDraft = activeDraft;
+        var queryCheckIn = model.ReservationForm.CheckInDate;
+        var queryCheckOut = model.ReservationForm.CheckOutDate;
+        var queryRoomTypeId = model.ReservationForm.RoomTypeId;
         model.ReservationForm = new PublicHotelReservationForm
         {
             HotelId = model.Id,
@@ -204,6 +232,15 @@ public class OtellerController : Controller
             model.ReservationForm.AdultCount = activeDraft.AdultCount;
             model.ReservationForm.ChildCount = activeDraft.ChildCount;
             model.ReservationForm.RoomCount = activeDraft.RoomCount;
+        }
+        else if (loadOptions is { HasFilters: true })
+        {
+            model.ReservationForm.CheckInDate = queryCheckIn;
+            model.ReservationForm.CheckOutDate = queryCheckOut;
+            if (queryRoomTypeId > 0)
+            {
+                model.ReservationForm.RoomTypeId = queryRoomTypeId;
+            }
         }
 
         model.IsLoggedInUser = CanAccessUserFeatures();
@@ -367,7 +404,7 @@ public class OtellerController : Controller
             return Unauthorized(new { success = false, message = "Görüşme başlatmak için kullanıcı hesabınızla giriş yapmalısınız." });
         }
 
-        var hotel = await _hotelService.GetHotelDetailPageAsync(slug, cancellationToken);
+        var hotel = await _hotelService.GetHotelDetailPageAsync(slug, cancellationToken: cancellationToken);
         if (hotel is null)
         {
             return NotFound(new { success = false, message = "Otel bulunamadı." });
@@ -405,7 +442,7 @@ public class OtellerController : Controller
             return BadRequest(CheckoutErrorCatalog.JsonError(CheckoutErrorCatalog.NightRange, "Konaklama süresi 1-60 gece aralığında olmalıdır."));
         }
 
-        var hotel = await _hotelService.GetHotelDetailPageAsync(slug, cancellationToken);
+        var hotel = await _hotelService.GetHotelDetailPageAsync(slug, cancellationToken: cancellationToken);
         if (hotel is null || roomTypeId <= 0)
         {
             return BadRequest(CheckoutErrorCatalog.JsonError(CheckoutErrorCatalog.HotelNotFound, "Fiyat özeti hesaplanamadı."));

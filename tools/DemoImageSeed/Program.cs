@@ -10,8 +10,10 @@ const string DefaultConn =
 var repoRoot = args.FirstOrDefault(a => a.StartsWith("--root=", StringComparison.OrdinalIgnoreCase))?.Split('=')[1]
     ?? Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "..", "..", ".."));
 var webRoot = Path.Combine(repoRoot, "wwwroot");
-var connectionString = args.FirstOrDefault(a => a.StartsWith("--conn=", StringComparison.OrdinalIgnoreCase))?.Split('=')[1]
-    ?? DefaultConn;
+var connArg = args.FirstOrDefault(a => a.StartsWith("--conn=", StringComparison.OrdinalIgnoreCase));
+var connectionString = connArg is { Length: > 7 }
+    ? connArg[7..]
+    : DefaultConn;
 var skipDb = args.Any(a => string.Equals(a, "--skip-db", StringComparison.OrdinalIgnoreCase));
 var codesArg = args.FirstOrDefault(a => a.StartsWith("--codes=", StringComparison.OrdinalIgnoreCase))?.Split('=')[1];
 var codeFilter = string.IsNullOrWhiteSpace(codesArg)
@@ -144,7 +146,7 @@ static async Task<List<HotelSeedRow>> LoadHotelsAsync(string connectionString, s
     var hotelSql = @"
         SELECT o.[ID], o.[OTEL_KODU]
         FROM [dbo].[OTELLER] o
-        WHERE (o.[OTEL_KODU] LIKE N'ORK-IST-%' OR o.[OTEL_KODU] LIKE N'ORK-SEED-%')";
+        WHERE (o.[OTEL_KODU] LIKE N'ORK-IST-%' OR o.[OTEL_KODU] LIKE N'ORK-SEED-%' OR o.[OTEL_KODU] LIKE N'DEMO-%')";
 
     if (codeFilter is { Length: > 0 })
     {

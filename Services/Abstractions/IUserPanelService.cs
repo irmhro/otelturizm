@@ -10,6 +10,7 @@ public interface IUserPanelService
     /// Kenar çubuğu rozetleri için (sayfa ViewData vermediyse layout doldurur).
     /// </summary>
     Task<(int TotalReservations, int FavoriteCount, int MessageThreads)> GetNavBadgeCountsAsync(long userId, CancellationToken cancellationToken = default);
+    Task<(string TierName, int AvailablePoints)> GetLoyaltyTierChipAsync(long userId, CancellationToken cancellationToken = default);
 
     Task<UserDashboardPageViewModel> GetDashboardAsync(
         long userId,
@@ -30,6 +31,14 @@ public interface IUserPanelService
         string? searchTerm = null,
         string? sort = null,
         CancellationToken cancellationToken = default);
+    Task<string> ExportReservationsCsvAsync(
+        long userId,
+        string? statusFilter = null,
+        DateOnly? startDate = null,
+        DateOnly? endDate = null,
+        string? searchTerm = null,
+        string? sort = null,
+        CancellationToken cancellationToken = default);
     Task<(bool Success, string Message)> CancelReservationAsync(long userId, long reservationId, string cancellationReason, CancellationToken cancellationToken = default);
     Task<(bool Success, string Message)> SaveReservationNoteAsync(long userId, UserReservationNoteForm form, CancellationToken cancellationToken = default);
     Task<UserReservationReviewPageViewModel?> GetReservationReviewPageAsync(long userId, long reservationId, CancellationToken cancellationToken = default);
@@ -43,6 +52,7 @@ public interface IUserPanelService
     Task<UserLoyaltyPageViewModel> GetLoyaltyAsync(long userId, CancellationToken cancellationToken = default);
     Task<(bool Success, string Message)> SaveBudgetPlanAsync(long userId, UserLoyaltyBudgetPlanForm form, CancellationToken cancellationToken = default);
     Task<(bool Success, string Message)> SaveTravelPlanAsync(long userId, UserLoyaltyTravelPlanForm form, CancellationToken cancellationToken = default);
+    Task<(bool Success, string Message)> RedeemRewardAsync(long userId, UserLoyaltyRedeemForm form, CancellationToken cancellationToken = default);
     Task<(bool Success, string Message)> SendMessageAsync(long userId, MessageSendRequest form, IReadOnlyList<IFormFile>? attachments, HttpContext httpContext, CancellationToken cancellationToken = default);
     Task<(bool Success, string Message)> DeleteMessageAsync(long userId, MessageDeleteRequest form, CancellationToken cancellationToken = default);
     Task<UserProfilePageViewModel> GetProfileAsync(long userId, CancellationToken cancellationToken = default);
@@ -62,4 +72,5 @@ public interface IUserPanelService
     Task<UserPaymentMethodsPageViewModel> GetPaymentMethodsAsync(long userId, CancellationToken cancellationToken = default);
     Task<bool> SavePaymentMethodAsync(long userId, UserPaymentMethodForm form, CancellationToken cancellationToken = default);
     Task<bool> DeletePaymentMethodAsync(long userId, long paymentMethodId, CancellationToken cancellationToken = default);
+    Task<(bool Success, string Message)> SaveBillingInfoAsync(long userId, UserBillingForm form, CancellationToken cancellationToken = default);
 }

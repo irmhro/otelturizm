@@ -23,6 +23,7 @@
             <p class="text-muted mb-0">Aktif, geçmiş ve reddedilen konaklama kayıtlarını tek ekranda takip et.</p>
         </div>
         <div class="reservation-hero-actions">
+            <a class="btn btn-outline-primary btn-pill" href="@BuildExportUrl(Model)"><i class="fas fa-download me-2"></i>Dışa aktar</a>
             <a class="btn btn-primary btn-pill" href="/oteller"><i class="fas fa-magnifying-glass me-2"></i>Otel Ara</a>
             <a class="btn btn-outline-primary btn-pill" href="/panel/user/mesajlarim"><i class="fas fa-envelope me-2"></i>Mesajlarım</a>
         </div>
@@ -537,4 +538,20 @@
     });
 })();
 </script>
+}
+
+@functions {
+    private static string BuildExportUrl(otelturizmnew.Models.Paneller.User.UserReservationsPageViewModel model)
+    {
+        var qs = System.Web.HttpUtility.ParseQueryString(string.Empty);
+        if (!string.IsNullOrWhiteSpace(model.StatusFilter) && model.StatusFilter != "all") qs["status"] = model.StatusFilter;
+        if (!string.IsNullOrWhiteSpace(model.StartDateText)) qs["startDate"] = model.StartDateText;
+        if (!string.IsNullOrWhiteSpace(model.EndDateText)) qs["endDate"] = model.EndDateText;
+        if (!string.IsNullOrWhiteSpace(model.SearchTerm)) qs["searchTerm"] = model.SearchTerm;
+        if (!string.IsNullOrWhiteSpace(model.SortFilter)) qs["sort"] = model.SortFilter;
+        var query = qs.ToString();
+        return string.IsNullOrWhiteSpace(query)
+            ? "/panel/user/rezervasyonlarim/disa-aktar"
+            : $"/panel/user/rezervasyonlarim/disa-aktar?{query}";
+    }
 }

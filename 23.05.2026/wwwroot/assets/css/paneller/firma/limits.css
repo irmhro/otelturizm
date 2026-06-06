@@ -1,5 +1,0 @@
-.firma-form-compact { margin-top:18px; }
-.firma-approval-row { display:flex; justify-content:space-between; align-items:center; gap:16px; }
-.firma-approval-actions { display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
-.firma-approval-actions form { margin:0; }
-@media (max-width: 900px) { .firma-approval-row { flex-direction:column; align-items:flex-start; } }

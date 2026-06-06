@@ -63,17 +63,29 @@
                 <th>Telefon</th>
                 <th style="text-align:right;">Rez.</th>
                 <th style="text-align:right;">Harcama</th>
+                <th></th>
             </tr>
             </thead>
             <tbody>
             @foreach (var item in Model.Employees)
             {
-                <tr>
+                <tr class="@(item.IsActive ? string.Empty : "is-muted")" data-employee-row
+                    data-user-id="@item.UserId"
+                    data-full-name="@item.FullName"
+                    data-phone="@(item.Phone ?? string.Empty)"
+                    data-department="@item.Department"
+                    data-title="@item.Title"
+                    data-role="@item.RoleCode"
+                    data-nightly-limit="@(item.NightlyLimit?.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture) ?? string.Empty)"
+                    data-approval-required="@(item.ApprovalRequired ? "true" : "false")"
+                    data-is-active="@(item.IsActive ? "true" : "false")">
                     <td data-label="Çalışan">
                         <div class="firma-employee-cell">
                             <span class="firma-employee-avatar" style="width:34px; height:34px; font-size:12px;">@item.Initials</span>
                             <div>
-                                <strong>@item.FullName</strong><br />
+                                <strong>@item.FullName</strong>
+                                @if (!item.IsActive) { <span class="firma-pill secondary">Pasif</span> }
+                                <br />
                                 <small>@item.Email</small>
                             </div>
                         </div>
@@ -86,6 +98,9 @@
                     <td data-label="Telefon"><span class="firma-pill @item.PhoneVerificationToneClass">@item.PhoneVerificationText</span></td>
                     <td data-label="Rez." style="text-align:right;"><b>@item.ReservationCountText</b></td>
                     <td data-label="Harcama" style="text-align:right;"><b>@item.SpendText</b></td>
+                    <td data-label="İşlem" style="text-align:right;">
+                        <button type="button" class="firma-btn-light" data-employee-edit style="padding:6px 10px; font-size:12px;"><i class="fas fa-pen"></i> Düzenle</button>
+                    </td>
                 </tr>
             }
             </tbody>
@@ -148,7 +163,43 @@
                 <button type="submit" class="firma-btn-primary">Çalışanı Oluştur</button>
             </div>
         </form>
-        <p class="firma-inline-note">İlk giriş şifresi sistem tarafından `1585` olarak atanır. Kullanıcı daha sonra şifresini değiştirebilir.</p>
+        <p class="firma-inline-note">Yeni çalışana geçici bir başlangıç şifresi atanır. Kullanıcı ilk girişten sonra şifresini değiştirmelidir.</p>
+    </div>
+</div>
+
+<div class="firma-modal-overlay" id="employee-edit-modal">
+    <div class="firma-modal-card">
+        <div class="firma-row-between">
+            <div>
+                <p class="firma-kicker">FİRMA PERSONELİ</p>
+                <h2>Çalışan Düzenle</h2>
+            </div>
+            <button type="button" class="firma-icon-btn" data-modal-close="employee-edit-modal"><i class="fas fa-times"></i></button>
+        </div>
+        <form method="post" action="/panel/firma/calisan-guncelle" class="firma-form-grid panel-form-ux" id="employeeEditForm">
+            @Html.AntiForgeryToken()
+            <input type="hidden" name="UserId" id="editUserId" value="0" />
+            <input type="hidden" name="ReturnUrl" value="@($"{Context.Request.Path}{Context.Request.QueryString}")" />
+            <label><span>Ad Soyad</span><input type="text" name="FullName" id="editFullName" required /></label>
+            <label><span>Telefon</span><input type="text" name="Phone" id="editPhone" /></label>
+            <label><span>Departman</span><input type="text" name="Department" id="editDepartment" /></label>
+            <label><span>Görev Ünvanı</span><input type="text" name="Title" id="editTitle" /></label>
+            <label>
+                <span>Rol</span>
+                <select name="Role" id="editRole">
+                    <option value="firma_staff">Firma Personeli</option>
+                    <option value="firma_manager">Departman Yöneticisi</option>
+                    <option value="firma_admin">Firma Yöneticisi</option>
+                </select>
+            </label>
+            <label><span>Gecelik Limit</span><input type="number" step="0.01" min="0" name="NightlyLimit" id="editNightlyLimit" /></label>
+            <label class="firma-checkbox"><input type="hidden" name="ApprovalRequired" value="false" /><input type="checkbox" name="ApprovalRequired" id="editApprovalRequired" value="true" /><span>Rezervasyonları onaya düşsün</span></label>
+            <label class="firma-checkbox"><input type="hidden" name="IsActive" value="false" /><input type="checkbox" name="IsActive" id="editIsActive" value="true" checked /><span>Hesap aktif</span></label>
+            <div class="firma-form-actions">
+                <button type="button" class="firma-btn-light" data-modal-close="employee-edit-modal">Vazgeç</button>
+                <button type="submit" class="firma-btn-primary">Kaydet</button>
+            </div>
+        </form>
     </div>
 </div>
 
@@ -202,6 +253,24 @@ if (searchInput) {
 }
 if (depSelect) depSelect.addEventListener('change', autoApply);
 if (sizeSelect) sizeSelect.addEventListener('change', autoApply);
+
+document.querySelectorAll('[data-employee-edit]').forEach(function (button) {
+    button.addEventListener('click', function () {
+        var row = button.closest('[data-employee-row]');
+        if (!row) return;
+        document.getElementById('editUserId').value = row.getAttribute('data-user-id') || '0';
+        document.getElementById('editFullName').value = row.getAttribute('data-full-name') || '';
+        document.getElementById('editPhone').value = row.getAttribute('data-phone') || '';
+        document.getElementById('editDepartment').value = row.getAttribute('data-department') || '';
+        document.getElementById('editTitle').value = row.getAttribute('data-title') || '';
+        document.getElementById('editRole').value = row.getAttribute('data-role') || 'firma_staff';
+        document.getElementById('editNightlyLimit').value = row.getAttribute('data-nightly-limit') || '';
+        document.getElementById('editApprovalRequired').checked = row.getAttribute('data-approval-required') === 'true';
+        document.getElementById('editIsActive').checked = row.getAttribute('data-is-active') !== 'false';
+        var modal = document.getElementById('employee-edit-modal');
+        if (modal) modal.classList.add('is-visible');
+    });
+});
 </script>
 
 @functions

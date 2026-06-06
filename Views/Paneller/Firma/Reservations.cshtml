@@ -4,15 +4,56 @@
     ViewData["FirmaShell"] = Model.Shell;
     ViewData["PageCssPath"] = "paneller/firma/reservations";
     ViewData["PageCssMobile"] = "paneller/firma/reservations.mobile";
+    var exportQuery = new List<string>();
+    if (!string.IsNullOrWhiteSpace(Model.Filters.Query)) exportQuery.Add($"q={Uri.EscapeDataString(Model.Filters.Query)}");
+    if (!string.IsNullOrWhiteSpace(Model.Filters.Status) && Model.Filters.Status != "all") exportQuery.Add($"status={Uri.EscapeDataString(Model.Filters.Status)}");
+    if (!string.IsNullOrWhiteSpace(Model.Filters.ApprovalStatus) && Model.Filters.ApprovalStatus != "all") exportQuery.Add($"approvalStatus={Uri.EscapeDataString(Model.Filters.ApprovalStatus)}");
+    var exportUrl = exportQuery.Count == 0 ? "/panel/firma/rezervasyonlar/disa-aktar" : $"/panel/firma/rezervasyonlar/disa-aktar?{string.Join("&", exportQuery)}";
+    var returnUrl = "/panel/firma/rezervasyonlar";
+    if (exportQuery.Count > 0) returnUrl += "?" + string.Join("&", exportQuery);
 }
 <section class="firma-section-card ot-card">
     <div class="firma-row-between" style="margin-bottom:14px;">
         <h2>Firma Rezervasyonları</h2>
-        <a class="firma-btn-primary ot-btn ot-btn--primary panel-form-ux-edit" href="/panel/firma/yeni-rezervasyon"><i class="fas fa-plus-circle"></i> Yeni Rezervasyon</a>
+        <div style="display:flex; gap:8px; flex-wrap:wrap;">
+            <a class="firma-btn-light" href="@exportUrl"><i class="fas fa-download"></i> Dışa aktar</a>
+            <a class="firma-btn-primary ot-btn ot-btn--primary panel-form-ux-edit" href="/panel/firma/yeni-rezervasyon"><i class="fas fa-plus-circle"></i> Yeni Rezervasyon</a>
+        </div>
     </div>
+
+    <form method="get" action="/panel/firma/rezervasyonlar" class="firma-form-grid panel-form-ux" style="margin-bottom:14px;">
+        <label>
+            <span>Arama</span>
+            <input type="search" name="q" value="@(Model.Filters.Query ?? string.Empty)" placeholder="Rezervasyon no, çalışan, otel..." autocomplete="off" />
+        </label>
+        <label>
+            <span>Rezervasyon durumu</span>
+            <select name="status">
+                <option value="all" selected="@(Model.Filters.Status == "all")">Tümü</option>
+                <option value="pending" selected="@(Model.Filters.Status == "pending")">Bekleyen</option>
+                <option value="approved" selected="@(Model.Filters.Status == "approved")">Onaylı</option>
+                <option value="completed" selected="@(Model.Filters.Status == "completed")">Tamamlanan</option>
+                <option value="cancelled" selected="@(Model.Filters.Status == "cancelled")">İptal / Red</option>
+            </select>
+        </label>
+        <label>
+            <span>Firma onayı</span>
+            <select name="approvalStatus">
+                <option value="all" selected="@(Model.Filters.ApprovalStatus == "all")">Tümü</option>
+                <option value="pending" selected="@(Model.Filters.ApprovalStatus == "pending")">Onay bekliyor</option>
+                <option value="approved" selected="@(Model.Filters.ApprovalStatus == "approved")">Onaylandı</option>
+                <option value="rejected" selected="@(Model.Filters.ApprovalStatus == "rejected")">Reddedildi</option>
+            </select>
+        </label>
+        <div class="firma-form-actions" style="grid-column: 1 / -1; justify-content: flex-end;">
+            <a class="firma-btn-light" href="/panel/firma/rezervasyonlar">Sıfırla</a>
+            <button type="submit" class="firma-btn-primary">Uygula</button>
+        </div>
+    </form>
+
     <div class="firma-table-wrap">
         <table class="firma-table firma-table--cards">
-            <thead><tr><th>No</th><th>Çalışan</th><th>Otel</th><th>Konaklama</th><th>Rezervasyon Durumu</th><th>Firma Onayı</th><th>Tutar</th></tr></thead>
+            <thead><tr><th>No</th><th>Çalışan</th><th>Otel</th><th>Konaklama</th><th>Rezervasyon Durumu</th><th>Firma Onayı</th><th>Tutar</th><th></th></tr></thead>
             <tbody>
             @foreach (var item in Model.Reservations)
             {
@@ -24,6 +65,27 @@
                     <td data-label="Durum"><span class="ot-badge">@item.StatusText</span></td>
                     <td data-label="Firma Onayı"><span class="ot-badge ot-badge--info">@item.ApprovalText</span></td>
                     <td data-label="Tutar">@item.TotalText</td>
+                    <td data-label="İşlem">
+                        @if (item.CanApprove)
+                        {
+                            <div class="firma-approval-actions" style="justify-content:flex-end;">
+                                <form method="post" action="/panel/firma/rezervasyon-onay" class="m-0">
+                                    @Html.AntiForgeryToken()
+                                    <input type="hidden" name="ReservationId" value="@item.ReservationId" />
+                                    <input type="hidden" name="Decision" value="approve" />
+                                    <input type="hidden" name="ReturnUrl" value="@returnUrl" />
+                                    <button type="submit" class="firma-btn-success" style="padding:6px 10px; font-size:12px;">Onayla</button>
+                                </form>
+                                <form method="post" action="/panel/firma/rezervasyon-onay" class="m-0">
+                                    @Html.AntiForgeryToken()
+                                    <input type="hidden" name="ReservationId" value="@item.ReservationId" />
+                                    <input type="hidden" name="Decision" value="reject" />
+                                    <input type="hidden" name="ReturnUrl" value="@returnUrl" />
+                                    <button type="submit" class="firma-btn-danger" style="padding:6px 10px; font-size:12px;">Reddet</button>
+                                </form>
+                            </div>
+                        }
+                    </td>
                 </tr>
             }
             </tbody>

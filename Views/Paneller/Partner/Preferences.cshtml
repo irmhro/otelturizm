@@ -10,7 +10,7 @@
         <h2>Başvuru, evrak ve yayın durumu</h2>
         <p>
             Partner hesabiniz e-posta onayindan sonra panele girebilir. Admin onayi tamamlanana kadar tesisiniz
-            duzenlenebilir, oda ve gorsel eklenebilir; ancak yayina alinmaz.
+            duzenlenebilir; eksik evrak talebi varsa asagidan yuklemeniz istenir.
         </p>
     </div>
     <div class="partner-application-status @Model.Status.StatusToneClass">
@@ -18,6 +18,25 @@
         <span>@Model.Status.PublicationHint</span>
     </div>
 </section>
+
+@if (Model.Status.HasPendingMissingDocuments)
+{
+    <section class="partner-section-card partner-missing-docs-alert">
+        <div class="section-heading">
+            <div>
+                <span class="partner-eyebrow">EKSİK EVRAK TALEBİ</span>
+                <h3>Admin tarafindan istenen belgeler</h3>
+            </div>
+        </div>
+        <ul class="partner-missing-docs-list">
+            @foreach (var missing in Model.Status.MissingDocumentRequests)
+            {
+                <li><i class="fas fa-file-circle-exclamation"></i> @missing</li>
+            }
+        </ul>
+        <p class="partner-muted">Belgeyi yukledikten sonra basvurunuz otomatik olarak tekrar inceleme kuyruguna alinir.</p>
+    </section>
+}
 
 <section class="partner-section-card partner-application-grid">
     <article class="partner-application-summary">

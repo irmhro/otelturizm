@@ -118,6 +118,20 @@
                 searchInput.focus();
             }
         });
+
+        searchInput.addEventListener('keydown', function (e) {
+            if (e.key !== 'Enter') {
+                return;
+            }
+
+            var query = (searchInput.value || '').trim();
+            if (!query) {
+                return;
+            }
+
+            var base = searchInput.getAttribute('data-user-search-base') || '/panel/user/rezervasyonlarim';
+            window.location.href = base + '?searchTerm=' + encodeURIComponent(query);
+        });
     }
 
     document.addEventListener('keydown', function (e) {

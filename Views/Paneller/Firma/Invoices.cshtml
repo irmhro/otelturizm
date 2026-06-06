@@ -9,7 +9,7 @@
     <h2>Faturalar</h2>
     <div class="firma-table-wrap">
         <table class="firma-table firma-table--cards">
-            <thead><tr><th>Fatura No</th><th>Tarih</th><th>Tür</th><th>Alıcı</th><th>Tutar</th><th>Durum</th></tr></thead>
+            <thead><tr><th>Fatura No</th><th>Tarih</th><th>Tür</th><th>Alıcı</th><th>Tutar</th><th>Durum</th><th></th></tr></thead>
             <tbody>
             @foreach (var item in Model.Invoices)
             {
@@ -20,6 +20,12 @@
                     <td data-label="Alıcı">@item.RecipientName</td>
                     <td data-label="Tutar">@item.TotalText</td>
                     <td data-label="Durum">@item.StatusText</td>
+                    <td data-label="İndir">
+                        @if (item.CanDownload)
+                        {
+                            <a class="firma-btn-light" href="/panel/firma/faturalar/indir?invoiceId=@item.InvoiceId"><i class="fas fa-download"></i> İndir</a>
+                        }
+                    </td>
                 </tr>
             }
             </tbody>

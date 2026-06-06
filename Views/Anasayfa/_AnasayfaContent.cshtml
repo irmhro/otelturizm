@@ -10,7 +10,8 @@
     };
     var fallbackNames = new[] { "Bodrum Premium Resort", "Kapadokya Cave Suite", "İstanbul Boğaz Oteli", "Antalya Eko Resort" };
     var fallbackLocations = new[] { "Bodrum, Muğla", "Ürgüp, Nevşehir", "Beşiktaş, İstanbul", "Kemer, Antalya" };
-    var homeToday = DateTime.Today;
+    var turkeyTz = TimeZoneInfo.FindSystemTimeZoneById("Turkey Standard Time");
+    var homeToday = TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, turkeyTz).Date;
     var homeCheckInDefault = homeToday.ToString("yyyy-MM-dd");
     var homeCheckOutDefault = homeToday.AddDays(7).ToString("yyyy-MM-dd");
     var homeCheckOutMinDefault = homeToday.AddDays(1).ToString("yyyy-MM-dd");

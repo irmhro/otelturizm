@@ -85,14 +85,23 @@ public class FirmaPanelController : Controller
     }
 
     [HttpGet("rezervasyonlar")]
-    public async Task<IActionResult> Reservations(CancellationToken cancellationToken)
+    public async Task<IActionResult> Reservations([FromQuery] string? q, [FromQuery] string? status, [FromQuery] string? approvalStatus, CancellationToken cancellationToken)
     {
         if (!IsFirmaUser()) return Redirect("/firma-giris");
-        var model = await _firmaService.GetReservationsAsync(GetUserId(), cancellationToken);
+        var model = await _firmaService.GetReservationsAsync(GetUserId(), q, status, approvalStatus, cancellationToken);
         ApplyFeedback(model.Shell);
         ViewData["Title"] = "Firma Rezervasyonları";
         ViewData["PageCssPath"] = "paneller/firma/reservations";
         return View("~/Views/Paneller/Firma/Reservations.cshtml", model);
+    }
+
+    [HttpGet("rezervasyonlar/disa-aktar")]
+    public async Task<IActionResult> ExportReservations([FromQuery] string? q, [FromQuery] string? status, [FromQuery] string? approvalStatus, CancellationToken cancellationToken)
+    {
+        if (!IsFirmaUser()) return Redirect("/firma-giris");
+        var csv = await _firmaService.ExportReservationsCsvAsync(GetUserId(), q, status, approvalStatus, cancellationToken);
+        var fileName = $"firma-rezervasyonlar-{DateTime.UtcNow:yyyyMMdd-HHmm}.csv";
+        return File(System.Text.Encoding.UTF8.GetBytes(csv), "text/csv; charset=utf-8", fileName);
     }
 
     [HttpGet("yeni-rezervasyon")]
@@ -192,6 +201,41 @@ public class FirmaPanelController : Controller
         return View("~/Views/Paneller/Firma/Invoices.cshtml", model);
     }
 
+    [HttpGet("faturalar/indir")]
+    public async Task<IActionResult> DownloadInvoice([FromQuery] long invoiceId, CancellationToken cancellationToken)
+    {
+        if (!IsFirmaUser()) return Redirect("/firma-giris");
+        var result = await _firmaService.DownloadInvoiceAsync(GetUserId(), invoiceId, cancellationToken);
+        if (result is null)
+        {
+            TempData["FirmaError"] = "Fatura bulunamadı veya indirilemedi.";
+            return Redirect("/panel/firma/faturalar");
+        }
+
+        return File(result.Value.Content, result.Value.ContentType, result.Value.FileName);
+    }
+
+    [HttpGet("hesap-bilgileri")]
+    public async Task<IActionResult> AccountInfo(CancellationToken cancellationToken)
+    {
+        if (!IsFirmaUser()) return Redirect("/firma-giris");
+        var model = await _firmaService.GetAccountInfoAsync(GetUserId(), cancellationToken);
+        ApplyFeedback(model.Shell);
+        ViewData["Title"] = "Hesap Bilgileri";
+        ViewData["PageCssPath"] = "paneller/firma/security";
+        return View("~/Views/Paneller/Firma/AccountInfo.cshtml", model);
+    }
+
+    [HttpPost("hesap-bilgileri/kaydet")]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> SaveAccountInfo(FirmaAccountUpdateModel model, CancellationToken cancellationToken)
+    {
+        if (!IsFirmaUser()) return Redirect("/firma-giris");
+        var result = await _firmaService.SaveAccountInfoAsync(GetUserId(), model, cancellationToken);
+        SetFeedback(result.Success, result.Message);
+        return Redirect("/panel/firma/hesap-bilgileri");
+    }
+
     [HttpGet("harcama-raporlari")]
     public async Task<IActionResult> Spending(CancellationToken cancellationToken)
     {
@@ -222,6 +266,16 @@ public class FirmaPanelController : Controller
         var result = await _firmaService.CreateEmployeeAsync(GetUserId(), model, cancellationToken);
         SetFeedback(result.Success, result.Message);
         return Redirect("/panel/firma/calisanlar");
+    }
+
+    [HttpPost("calisan-guncelle")]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> UpdateEmployee(FirmaEmployeeUpdateModel model, CancellationToken cancellationToken)
+    {
+        if (!IsFirmaUser()) return Redirect("/firma-giris");
+        var result = await _firmaService.UpdateEmployeeAsync(GetUserId(), model, cancellationToken);
+        SetFeedback(result.Success, result.Message);
+        return Redirect(string.IsNullOrWhiteSpace(model.ReturnUrl) ? "/panel/firma/calisanlar" : model.ReturnUrl);
     }
 
     [HttpPost("mesajlar/gonder")]
@@ -263,7 +317,7 @@ public class FirmaPanelController : Controller
         if (!IsFirmaUser()) return Redirect("/firma-giris");
         var result = await _firmaService.UpdateReservationApprovalAsync(GetUserId(), model, cancellationToken);
         SetFeedback(result.Success, result.Message);
-        return Redirect("/panel/firma/limitler-onaylar");
+        return Redirect(string.IsNullOrWhiteSpace(model.ReturnUrl) ? "/panel/firma/limitler-onaylar" : model.ReturnUrl);
     }
 
     [HttpPost("tema/kaydet")]

@@ -1,0 +1,38 @@
+@model otelturizmnew.Models.Paneller.Firma.FirmaAccountPageViewModel
+@{
+    Layout = "~/Views/Paneller/Firma/_FirmaPanelLayout.cshtml";
+    ViewData["FirmaShell"] = Model.Shell;
+    ViewData["PageCssPath"] = "paneller/firma/security";
+    ViewData["PageCssMobile"] = "paneller/firma/security.mobile";
+}
+<section class="firma-two-column">
+    <article class="firma-section-card">
+        <h2>Hesap Bilgileri</h2>
+        <p class="firma-inline-note">Profil bilgilerinizi güncelleyin. E-posta adresi güvenlik nedeniyle bu ekrandan değiştirilemez.</p>
+        <form method="post" action="/panel/firma/hesap-bilgileri/kaydet" class="firma-form-grid panel-form-ux">
+            @Html.AntiForgeryToken()
+            <label><span>Ad Soyad</span><input type="text" name="FullName" value="@Model.UpdateForm.FullName" required /></label>
+            <label><span>E-posta</span><input type="email" value="@Model.UpdateForm.Email" readonly disabled /></label>
+            <label><span>Telefon</span><input type="text" name="Phone" value="@Model.UpdateForm.Phone" /></label>
+            <label><span>Departman</span><input type="text" name="Department" value="@Model.UpdateForm.Department" /></label>
+            <label><span>Görev Ünvanı</span><input type="text" name="Title" value="@Model.UpdateForm.Title" /></label>
+            <label><span>Rol</span><input type="text" value="@Model.UpdateForm.RoleText" readonly disabled /></label>
+            <div class="firma-form-actions">
+                <button type="submit" class="firma-btn-primary">Kaydet</button>
+            </div>
+        </form>
+    </article>
+    <article class="firma-section-card">
+        <h2>Şirket Özeti</h2>
+        <div class="firma-list">
+            <div class="firma-list-row"><div><strong>@Model.Shell.CompanyName</strong><span>Kurumsal hesap</span></div></div>
+            <div class="firma-list-row"><div><strong>Onay durumu</strong><span>@Model.CompanyStatusText</span></div></div>
+            @if (!string.IsNullOrWhiteSpace(Model.CompanyTaxNo))
+            {
+                <div class="firma-list-row"><div><strong>Vergi no</strong><span>@Model.CompanyTaxNo</span></div></div>
+            }
+            <div class="firma-list-row"><div><strong>Çalışan sayısı</strong><span>@Model.Shell.EmployeeCount</span></div></div>
+        </div>
+        <p class="firma-inline-note" style="margin-top:12px;">Güvenlik ayarları için <a href="/panel/firma/guvenlik">Güvenlik</a> sayfasını kullanın.</p>
+    </article>
+</section>

@@ -1,3 +1,0 @@
-@model otelturizmnew.Models.Paneller.Firma.FirmaHotelReportsPageViewModel
-@{ Layout = "~/Views/Paneller/Firma/_FirmaPanelLayout.cshtml"; ViewData["FirmaShell"] = Model.Shell; }
-<section class="firma-section-card"><h2>Otel Bazlı Firma Raporu</h2><div class="firma-table-wrap"><table class="firma-table"><thead><tr><th>Otel</th><th>Şehir</th><th>Rezervasyon</th><th>Toplam Tutar</th><th>Tasarruf</th></tr></thead><tbody>@foreach (var item in Model.HotelReports) { <tr><td>@item.HotelName</td><td>@item.CityText</td><td>@item.ReservationCount</td><td>@item.GrossAmountText</td><td>@item.SavingsText</td></tr> }</tbody></table></div></section>
