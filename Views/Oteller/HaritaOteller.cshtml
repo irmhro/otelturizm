@@ -5,8 +5,11 @@
 
 @{
     ViewData["Title"] = string.IsNullOrWhiteSpace(Model.SearchLabel) ? "Haritada Oteller" : $"{Model.SearchLabel} haritası";
+    ViewData["BodyClass"] = "hotel-map-page-shell anasayfa-page";
     ViewData["PageCss"] = "haritaoteller";
     ViewData["PageCssMobile"] = "haritaoteller.mobile";
+    ViewData["IncludeAnasayfaStyles"] = true;
+    ViewData["IncludeBootstrap"] = true;
     var mapLang = InternationalSeoPaths.ResolveCultureFromPath(Context.Request.Path.Value ?? "/");
     var listingBackPath = InternationalSeoPaths.BuildPublicPath(mapLang, InternationalSeoPaths.PageKindListing, null, null);
     var mapHotelDetailPathPattern = InternationalSeoPaths.BuildPublicPath(mapLang, InternationalSeoPaths.PageKindDetail, null, "{slug}");
@@ -37,6 +40,7 @@
     var neighborhoodOptions = mapHotels.Select(x => x.Neighborhood).Where(x => !string.IsNullOrWhiteSpace(x)).Distinct(StringComparer.OrdinalIgnoreCase).OrderBy(x => x).ToList();
 }
 
+@section HeadStyles {
 <link rel="stylesheet"
       href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
       crossorigin="anonymous" />
@@ -46,6 +50,7 @@
 <link rel="stylesheet"
       href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.Default.css"
       crossorigin="anonymous" />
+}
 
 <section class="hotel-map-page">
     <div class="hotel-map-page__shell">

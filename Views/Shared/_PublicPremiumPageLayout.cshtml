@@ -9,6 +9,25 @@
     var pageCss = ViewData["PageCss"] as string;
     var pageCssMobile = ViewData["PageCssMobile"] as string ?? pageCss;
     var pageCssBase = ViewData["PageCssBase"] as string;
+    var includeBootstrap = ViewData["IncludeBootstrap"] as bool? ?? false;
+    var includeSlaytGorsel = ViewData["IncludeSlaytGorsel"] as bool? ?? false;
+    var includeFeWorldTokens = ViewData["IncludeFeWorldTokens"] as bool? ?? false;
+    var publicBaseUrl = (Context.RequestServices.GetService(typeof(IConfiguration)) as IConfiguration)?["App:PublicBaseUrl"]?.TrimEnd('/')
+                        ?? "https://otelturizm.com";
+    var metaDescription = (ViewData["MetaDescription"] as string)?.Trim();
+    if (string.IsNullOrWhiteSpace(metaDescription))
+    {
+        metaDescription = "Otelturizm ile otelleri karşılaştırın, kampanyaları keşfedin ve güvenle rezervasyon oluşturun.";
+    }
+    var ogImage = (ViewData["OgImage"] as string)?.Trim();
+    var canonical = (ViewData["Canonical"] as string)?.Trim();
+    if (string.IsNullOrWhiteSpace(canonical))
+    {
+        canonical = publicBaseUrl + (Context.Request.Path.HasValue ? Context.Request.Path.Value : "/");
+    }
+    var jsonLd = ViewData["JsonLd"] as string;
+    var ogLocale = (ViewData["OgLocale"] as string)?.Trim();
+    var ogLocaleAlternate = (ViewData["OgLocaleAlternate"] as string)?.Trim();
     string ResolveMobileStylesheet(string? cssName)
     {
         if (string.IsNullOrWhiteSpace(cssName))
@@ -52,7 +71,44 @@
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes, viewport-fit=cover" />
+    <meta name="google-site-verification" content="XOjXVbWYoGSwJOaCHdDNb2l8Zs_JO7nr2BnsfeAp9Uw" />
     <title>@pageTitle - OTELTURİZM</title>
+    <meta name="description" content="@metaDescription" />
+    @{
+        var robots = (ViewData["Robots"] as string)?.Trim();
+    }
+    @if (!string.IsNullOrWhiteSpace(robots))
+    {
+        <meta name="robots" content="@robots" />
+    }
+    <link rel="canonical" href="@canonical" />
+    <meta property="og:site_name" content="Otelturizm" />
+    <meta property="og:title" content="@pageTitle" />
+    <meta property="og:description" content="@metaDescription" />
+    <meta property="og:url" content="@canonical" />
+    <meta property="og:type" content="website" />
+    @if (!string.IsNullOrWhiteSpace(ogImage))
+    {
+        <meta property="og:image" content="@ogImage" />
+    }
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="@pageTitle" />
+    <meta name="twitter:description" content="@metaDescription" />
+    @if (!string.IsNullOrWhiteSpace(ogLocale))
+    {
+        <meta property="og:locale" content="@ogLocale" />
+    }
+    @if (!string.IsNullOrWhiteSpace(ogLocaleAlternate))
+    {
+        foreach (var alt in ogLocaleAlternate.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
+        {
+            <meta property="og:locale:alternate" content="@alt" />
+        }
+    }
+    @if (!string.IsNullOrWhiteSpace(jsonLd))
+    {
+        <script type="application/ld+json">@Html.Raw(jsonLd)</script>
+    }
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
@@ -71,6 +127,18 @@
     <link rel="stylesheet" href="~/assets/css/otelturizm-design-system.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/assets/css/public-premium-pages.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/assets/css/public-premium-pages.mobile.css" asp-append-version="true" media="(max-width: 900px)" />
+    @if (includeBootstrap)
+    {
+        <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    }
+    @if (includeFeWorldTokens)
+    {
+        <link rel="stylesheet" href="~/assets/css/fe-world-tokens.css" asp-append-version="true" />
+    }
+    @if (includeSlaytGorsel)
+    {
+        <link rel="stylesheet" href="~/assets/css/slaytgorsel.css" asp-append-version="true" />
+    }
     @if (ViewData["IncludeAnasayfaStyles"] as bool? == true)
     {
         <link rel="stylesheet" href="~/assets/css/anasayfa_masaustu.css" asp-append-version="true" />
@@ -107,7 +175,22 @@
 
     <partial name="~/Views/Anasayfa/_AnasayfaPremiumFooter.cshtml" />
     <partial name="~/Views/Shared/_RoutePickerModal.cshtml" />
+    @if (includeSlaytGorsel)
+    {
+        <partial name="~/Views/Shared/_SlaytGorsel.cshtml" />
+    }
 
+    @if (includeBootstrap)
+    {
+        <script src="~/lib/jquery/dist/jquery.min.js"></script>
+        <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+    }
+    @if (includeSlaytGorsel)
+    {
+        <script src="~/assets/js/slaytgorsel.js" asp-append-version="true"></script>
+    }
+    <script src="~/assets/js/rum-webvitals.js" asp-append-version="true"></script>
+    <script src="~/assets/js/client-error-reporter.js" asp-append-version="true"></script>
     <script src="~/assets/js/home-drawer-prefs.js" asp-append-version="true" defer></script>
     <script src="~/assets/js/home-header-prefs.js" asp-append-version="true" defer></script>
     <script src="~/assets/js/route-picker-modal.js" asp-append-version="true" defer></script>

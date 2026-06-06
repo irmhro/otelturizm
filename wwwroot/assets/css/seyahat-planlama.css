@@ -1,5 +1,9 @@
 .plan-page {
     max-width: var(--page-max-width);
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    letter-spacing: -0.01em;
+    -webkit-font-smoothing: antialiased;
+    color: var(--luxury-dark, #1A1919);
     margin: 0 auto;
     padding: 28px var(--space-8) calc(48px + var(--safe-area-bottom));
     display: flex;

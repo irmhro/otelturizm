@@ -1,5 +1,9 @@
 .hotel-map-page {
     --transition-base: 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    letter-spacing: -0.01em;
+    -webkit-font-smoothing: antialiased;
+    color: var(--luxury-dark, #1A1919);
     background:
         radial-gradient(circle at 12% 8%, rgba(13, 148, 136, 0.13), transparent 28%),
         radial-gradient(circle at 88% 10%, rgba(37, 99, 235, 0.14), transparent 26%),

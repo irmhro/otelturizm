@@ -9,6 +9,9 @@
     ViewData["BodyClass"] = "oteldetay-page-shell anasayfa-page";
     ViewData["PageCss"] = "oteldetay_masaustu";
     ViewData["PageCssMobile"] = "oteldetay_mobil";
+    ViewData["IncludeAnasayfaStyles"] = true;
+    ViewData["IncludeBootstrap"] = true;
+    ViewData["IncludeSlaytGorsel"] = true;
     ViewData["IncludeFeWorldTokens"] = true;
     ViewData["SuppressGlobalDraftBanner"] = true;
     var baseUrl = (Context.RequestServices.GetService(typeof(IConfiguration)) as IConfiguration)?["App:PublicBaseUrl"]?.TrimEnd('/')
@@ -218,6 +221,7 @@
     }
 }
 
+@section HeadStyles {
 @if (!string.IsNullOrWhiteSpace(mainImage))
 {
     <link rel="preload" as="image" href="@mainImage" fetchpriority="high" />
@@ -227,6 +231,7 @@
       crossorigin="anonymous" />
 <link rel="stylesheet" href="~/assets/css/otel-detay-reservation.css" asp-append-version="true" />
 <link rel="stylesheet" href="~/assets/css/otel-detay-world.css" asp-append-version="true" />
+}
 
 <div class="oteldetay-page otel-detail-template-v41 otel-detail-tabler od-detail"
      data-i18n-room-selected="@i18nRoomSelected"
