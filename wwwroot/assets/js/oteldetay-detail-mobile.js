@@ -154,7 +154,17 @@
             sheetTracking = false;
         }, { passive: true });
 
+        function syncSheetBodyClass() {
+            var open = bookingSidebar.classList.contains('is-open');
+            document.body.classList.toggle('booking-sheet-open', open);
+            var shell = document.querySelector('.oteldetay-page-shell');
+            if (shell) {
+                shell.classList.toggle('booking-sheet-open', open);
+            }
+        }
+
         var sheetObserver = new MutationObserver(function () {
+            syncSheetBodyClass();
             if (bookingSidebar.classList.contains('is-open')) {
                 activateFocusTrap();
             } else {
@@ -162,6 +172,7 @@
             }
         });
         sheetObserver.observe(bookingSidebar, { attributes: true, attributeFilter: ['class'] });
+        syncSheetBodyClass();
     }
 
     document.addEventListener('keydown', function (event) {
