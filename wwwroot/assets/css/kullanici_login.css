@@ -21,7 +21,7 @@
 }
 
 .login-main {
-    padding: 28px 16px 48px;
+    padding: 28px 0 48px;
     min-height: calc(100dvh - var(--home-header-sticky-h, 99px) - 120px);
     display: block;
     max-width: 100%;
@@ -31,15 +31,17 @@
 
 .login-main:has(.auth-card--verify) {
     min-height: 0;
-    padding: 24px 16px 40px;
+    padding: 24px 0 40px;
 }
 
 .login-container {
-    width: 100%;
-    max-width: 1240px;
+    width: min(var(--page-max-width, 1240px), calc(100% - var(--page-content-inset, 48px)));
+    max-width: none;
     margin: 0 auto;
     min-width: 0;
     box-sizing: border-box;
+    padding-left: var(--page-content-gutter, 24px);
+    padding-right: var(--page-content-gutter, 24px);
 }
 
 .auth-card {

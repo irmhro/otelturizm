@@ -1,8 +1,36 @@
+@using System.Security.Claims
+@using otelturizmnew.Constants
 @using otelturizmnew.Services
 @{
     var headerPath = Context.Request.Path.Value ?? "/";
     var isHomeActive = headerPath == "/" || string.Equals(headerPath, "/anasayfa", StringComparison.OrdinalIgnoreCase);
     var isKurumsalPage = headerPath.StartsWith("/kurumsal", StringComparison.OrdinalIgnoreCase);
+
+    var homeAccountType = User.FindFirstValue(AuthClaimTypes.AccountType) ?? string.Empty;
+    var rawUserId = User.FindFirstValue(AuthClaimTypes.UserId) ?? User.FindFirstValue(ClaimTypes.NameIdentifier);
+    long currentUserId = 0;
+    var hasResolvedUserId = long.TryParse(rawUserId, out currentUserId) && currentUserId > 0;
+    var homeAuthenticated = User.Identity?.IsAuthenticated == true && hasResolvedUserId;
+    var homeFullName = User.FindFirstValue(AuthClaimTypes.FullName) ?? User.Identity?.Name ?? SharedLocalizer["Nav.Account"].Value;
+    var homePanelUrl = homeAccountType.ToLowerInvariant() switch
+    {
+        "partner" => "/panel/partner",
+        "firma" => "/panel/firma",
+        "admin" => "/admin/dashboard",
+        "developer" => "/panel/developer",
+        "sales" => "/panel/satis",
+        _ => "/panel/user"
+    };
+    var homePanelLabel = homeAccountType.ToLowerInvariant() switch
+    {
+        "partner" => SharedLocalizer["Nav.Panel.Partner"].Value,
+        "firma" => SharedLocalizer["Nav.Panel.Firma"].Value,
+        "admin" => SharedLocalizer["Nav.Panel.Admin"].Value,
+        "developer" => SharedLocalizer["Nav.Panel.Developer"].Value,
+        "sales" => SharedLocalizer["Nav.Panel.Sales"].Value,
+        _ => SharedLocalizer["Nav.Account"].Value
+    };
+    var nonce = Context.Items["CspNonce"] as string;
 
     var pathHasLocalePrefix = InternationalSeoPaths.HasLocalePathPrefix(headerPath);
     var currentLang = "tr";
@@ -117,7 +145,14 @@
                 {
                     <a class="btn-firma" href="/firma">Firma</a>
                 }
-                <a class="btn-login" href="/kullanici-giris">Giriş Yap</a>
+                @if (homeAuthenticated)
+                {
+                    <partial name="~/Views/Shared/_PublicHeaderUserActions.cshtml" />
+                }
+                else
+                {
+                    <a class="btn-login" href="/kullanici-giris">@SharedLocalizer["Nav.Login"].Value</a>
+                }
                 <div class="nav-pref-dropdown" data-nav-pref-dropdown>
                     <button type="button" class="nav-pref-icon-btn" data-nav-pref-trigger aria-haspopup="listbox" aria-expanded="false" aria-label="Dil seçimi">
                         <i class="fas fa-language" aria-hidden="true"></i>
@@ -162,10 +197,38 @@
         <button class="home-drawer-close" id="homeDrawerClose" type="button" aria-label="Menüyü kapat">Kapat</button>
     </div>
     <div class="home-drawer-auth-bar">
-        <div class="home-mobile-actions">
-            <a href="/kullanici-giris" class="btn-primary-mobile">Giriş Yap</a>
-            <a href="/kullanici-giris?sekme=kayit" class="btn-outline-mobile">Kayıt Ol</a>
-        </div>
+        @if (homeAuthenticated)
+        {
+            <div class="home-drawer-user-card">
+                <span class="home-drawer-user-dot" aria-hidden="true"></span>
+                <div class="home-drawer-user-copy">
+                    <strong>@homeFullName</strong>
+                    <small>@homePanelLabel</small>
+                </div>
+            </div>
+            <div class="home-mobile-actions">
+                <a href="@homePanelUrl" class="btn-primary-mobile"><i class="fas fa-grid-2" aria-hidden="true"></i> @homePanelLabel</a>
+                @if (string.Equals(homeAccountType, "user", StringComparison.OrdinalIgnoreCase))
+                {
+                    <a href="/panel/user/favorilerim" class="btn-outline-mobile"><i class="fas fa-heart" aria-hidden="true"></i> Favorilerim</a>
+                }
+                else
+                {
+                    <a href="@homePanelUrl" class="btn-outline-mobile"><i class="fas fa-user" aria-hidden="true"></i> @SharedLocalizer["Nav.Account"].Value</a>
+                }
+            </div>
+            <form method="post" action="/cikis-yap" class="home-drawer-logout-form">
+                @Html.AntiForgeryToken()
+                <button type="submit" class="btn-logout-mobile"><i class="fas fa-right-from-bracket" aria-hidden="true"></i> Güvenli Çıkış</button>
+            </form>
+        }
+        else
+        {
+            <div class="home-mobile-actions">
+                <a href="/kullanici-giris" class="btn-primary-mobile">@SharedLocalizer["Nav.Login"].Value</a>
+                <a href="/kullanici-giris?sekme=kayit" class="btn-outline-mobile">@SharedLocalizer["Nav.Register"].Value</a>
+            </div>
+        }
         <a href="/kampanyalar" class="btn-kampanya-mobile"><i class="fas fa-tags" aria-hidden="true"></i> Kampanyalar</a>
     </div>
     <div class="home-drawer-content">

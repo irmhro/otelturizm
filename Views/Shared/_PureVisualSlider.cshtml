@@ -1,0 +1,35 @@
+@model IList<string>
+@{
+    var images = Model ?? Array.Empty<string>();
+    var sliderId = ViewData["SliderId"] as string ?? "hotelVisualSwiper";
+    var sliderTitle = ViewData["SliderTitle"] as string ?? "Galeri";
+    if (images.Count == 0)
+    {
+        return;
+    }
+}
+
+<section class="pure-visual-slider od-hotel-visual-gallery" id="@($"{sliderId}Root")" aria-label="@sliderTitle fotoğraf galerisi">
+    <div class="swiper myVisualSwiper" id="@sliderId" data-pure-visual-slider data-slider-title="@sliderTitle">
+        <div class="swiper-wrapper">
+            @for (var i = 0; i < images.Count; i++)
+            {
+                var src = images[i];
+                var isFirst = i == 0;
+                <div class="swiper-slide">
+                    <img src="@src"
+                         alt="@sliderTitle görsel @(i + 1)"
+                         @(isFirst ? "loading=\"eager\" fetchpriority=\"high\"" : "loading=\"lazy\"")
+                         decoding="async" />
+                </div>
+            }
+        </div>
+
+        @if (images.Count > 1)
+        {
+            <div class="swiper-pagination"></div>
+            <div class="swiper-button-next" aria-label="Sonraki görsel"></div>
+            <div class="swiper-button-prev" aria-label="Önceki görsel"></div>
+        }
+    </div>
+</section>

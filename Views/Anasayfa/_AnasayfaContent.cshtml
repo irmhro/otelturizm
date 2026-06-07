@@ -206,7 +206,7 @@
                 </div>
             </div>
             <div class="mystery-action-row">
-                <span class="mystery-countdown" id="dawnSurpriseCountdown" data-dawn-countdown>⏱ Kalan Süre: 15:00</span>
+                <span class="mystery-countdown" id="dawnSurpriseCountdown" data-dawn-countdown>🎁 İndirim 24 saat geçerli</span>
                 <button type="button" class="btn-open-box" id="dawnSurpriseOpenBtn" data-dawn-open>Kutuyu Aç ve Uygula</button>
             </div>
         </section>
@@ -219,15 +219,23 @@
                 <p class="dawn-surprise-error" id="dawnSurpriseError" hidden role="alert"></p>
                 <div class="dawn-surprise-stage">
                     <div class="dawn-surprise-box" id="dawnSurpriseBox" aria-hidden="true">
-                        <div class="dawn-surprise-lid"></div>
+                        <div class="dawn-surprise-glow" aria-hidden="true"></div>
+                        <div class="dawn-surprise-lid">
+                            <span class="dawn-surprise-ribbon dawn-surprise-ribbon--h" aria-hidden="true"></span>
+                            <span class="dawn-surprise-ribbon dawn-surprise-ribbon--v" aria-hidden="true"></span>
+                        </div>
                         <div class="dawn-surprise-base">
                             <span class="dawn-surprise-gift">🎁</span>
+                        </div>
+                        <div class="dawn-surprise-confetti" aria-hidden="true">
+                            <span></span><span></span><span></span><span></span><span></span><span></span>
+                            <span></span><span></span><span></span><span></span><span></span><span></span>
                         </div>
                         <div class="dawn-surprise-sparkles" aria-hidden="true"></div>
                     </div>
                     <div class="dawn-surprise-result" id="dawnSurpriseResult" hidden>
                         <div class="dawn-surprise-percent-badge"><span id="dawnSurprisePercentValue">0</span>%</div>
-                        <p class="dawn-surprise-result-text">Ek indirim rezervasyon toplamından düşülecek.</p>
+                        <p class="dawn-surprise-result-text">Ek indirim rezervasyon toplamından düşülecek. İndiriminiz 24 saat boyunca tarayıcınızda saklanır.</p>
                         <a class="dawn-surprise-go-hotels" href="/oteller">Otelleri Keşfet</a>
                     </div>
                 </div>

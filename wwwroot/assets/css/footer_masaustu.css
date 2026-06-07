@@ -10,30 +10,30 @@
     max-width: none;
     z-index: auto;
     margin-bottom: 12px;
-    padding: 7px 12px;
-    border-radius: 10px;
-    background: var(--bg-warm, #FCFBF9);
-    border: 1px solid rgba(235, 233, 228, 0.72);
-    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.14);
+    padding: 2px 0;
+    border-radius: 0;
+    background: transparent;
+    border: none;
+    box-shadow: none;
     text-decoration: none;
     width: fit-content;
     transition: opacity 0.2s ease;
 }
 
 .footer-logo-link:hover {
-    opacity: 0.9;
+    opacity: 0.88;
 }
 
 .footer-logo-link:hover .logo-turizm {
-    filter: brightness(1.05);
+    filter: brightness(1.08);
 }
 
 .footer-logo-link .logo-otel {
-    color: var(--logo-otel-color, #1A1919);
+    color: rgba(255, 255, 255, 0.96);
 }
 
 .footer-logo-link .logo-turizm {
-    color: var(--logo-turizm-color, #d9480f);
+    color: var(--logo-turizm-color, #ff9e00);
     font-weight: 800;
 }
 
@@ -47,9 +47,9 @@
 }
 
 .footer .container {
-    max-width: 1240px;
+    max-width: var(--page-max-width, 1240px);
     margin: 0 auto;
-    padding: 0 24px;
+    padding: 0 var(--page-content-gutter, 24px);
     box-sizing: border-box;
 }
 

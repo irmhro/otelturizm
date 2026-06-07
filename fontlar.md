@@ -13,7 +13,8 @@ Tüm yeni sayfa ve panel geliştirmelerinde bu dosyadaki boyutlar referans alın
 | Kullanıcı panel shell | `wwwroot/assets/css/panel-user-shell.css` | `wwwroot/assets/css/panel-user-shell.mobile.css` |
 | Ortak panel form UX | `wwwroot/assets/css/paneller/panel-form-ux.css` | — |
 | Panel kanon | `Dokumanlar/Tasarim/panel-tasarim-sistemi.md` | aynı |
-| Kamu / otel listeleme | `wwwroot/assets/css/otel-listeleme.css` | `wwwroot/assets/css/otel-listeleme.mobile.css` |
+| Kamu / otel listeleme | `wwwroot/assets/css/otelliste_masaustu.css` | `wwwroot/assets/css/otelliste_mobil.css` |
+| Kamu shell grid | `wwwroot/assets/css/public-premium-pages.css` | `public-premium-pages.mobile.css` |
 
 **Kural:** Mobil override yalnızca `*.mobile.css` dosyalarına yazılır.
 
@@ -324,6 +325,58 @@ Kaynak: `otel-listeleme.css`, `otel-listeleme.mobile.css`, `otel-detay.css`
 2. Anasayfa → `anasayfa_masaustu.css` / `anasayfa_mobil.css` token’ları.
 3. Panel → `panel-tasarim-sistemi.md` + ilgili `panel-*-shell*.css`.
 4. Yeni rol ekleniyorsa tabloya satır eklenir; dağınık piksel yazılmaz.
+5. Sayfa genişliği değişecekse **§16** güncellenir.
+
+---
+
+## 16) Sayfa genişliği — header / footer / içerik grid (zorunlu)
+
+Tüm **kamu premium** sayfalar (anasayfa, otel listeleme/detay, kurumsal, firma landing, kampanyalar, sözleşme, kullanıcı/partner/firma giriş) aynı yatay grid kullanır.
+
+### Token’lar
+
+| Token | Değer | Açıklama |
+|-------|-------|----------|
+| `--page-max-width` | **1240px** | Maksimum içerik genişliği |
+| `--page-content-gutter` | **24px** | Sol/sağ padding |
+| `--page-content-inset` | **48px** | Viewport kenarından içerik (`gutter × 2`) |
+
+Kaynak: `anasayfa-header.css` (`:root`), `public-premium-pages.css`, `otelturizm-design-system.css`
+
+### Layout kuralı
+
+```css
+width: min(var(--page-max-width, 1240px), calc(100% - var(--page-content-inset, 48px)));
+padding-left: var(--page-content-gutter, 24px);
+padding-right: var(--page-content-gutter, 24px);
+box-sizing: border-box;
+margin-left: auto;
+margin-right: auto;
+```
+
+### Nerede uygulanır
+
+| Bölüm | Selector | CSS dosyası |
+|-------|----------|-------------|
+| Header utility + nav | `.utility-bar .container`, `header.navbar .container` | `anasayfa-header.css` |
+| Footer | `.footer .container` | `footer_masaustu.css` |
+| Anasayfa içerik | `.container` | `anasayfa_masaustu.css` |
+| Kamu premium içerik | `.kurumsal-page .container`, `.firma-page .container`, … | `public-premium-pages.css` |
+| Otel listeleme | `.otelliste-page-hero-inner`, `.otelliste-container` | `otelliste_masaustu.css` |
+| Giriş (kullanıcı/partner/firma) | `.login-container` | `kullanici_login.css` + `public-premium-pages.css` |
+| Legacy `_Layout` | `.container` | `site-layout.css` |
+
+### Neden kayma oluyordu?
+
+- Anasayfa `* { box-sizing: border-box }` yüklüyordu; diğer sayfalar yüklemiyordu → header/footer padding’i **1240px üstüne ekleniyordu** (1288px).
+- Bazı token dosyalarında `--page-max-width: 1280px` kalmıştı.
+
+### Zorunlu kurallar
+
+1. Yeni kamu sayfasında **1280px veya farklı max-width kullanma**; `--page-max-width` token’ını kullan.
+2. Header/footer partial’ları değiştirilmez; genişlik sadece yukarıdaki container kurallarıyla hizalanır.
+3. Panel sayfaları (partner/firma/admin shell) ayrı layout sistemidir; bu tablo **kamu premium + auth** içindir.
+4. Değişiklik önce `fontlar.md` §16, sonra ilgili CSS.
 
 ---
 

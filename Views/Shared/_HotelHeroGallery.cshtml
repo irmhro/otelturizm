@@ -1,0 +1,50 @@
+@model IList<string>
+@{
+    var images = Model ?? Array.Empty<string>();
+    var title = ViewData["SliderTitle"] as string ?? "Galeri";
+    if (images.Count == 0)
+    {
+        return;
+    }
+
+    var slotCount = Math.Min(4, images.Count);
+    var gridCountClass = $"od-hotel-hero-grid--count-{slotCount}";
+}
+
+<section class="od-hotel-hero-gallery od-hotel-visual-gallery" aria-label="@title fotoğraf galerisi">
+    <div class="od-hotel-hero-container">
+        <div class="od-hotel-hero-grid @gridCountClass">
+            @for (var slotIndex = 0; slotIndex < slotCount; slotIndex++)
+            {
+                var src = images[slotIndex];
+                var isFirst = slotIndex == 0;
+                var isLastSlot = slotIndex == slotCount - 1;
+                var itemClass = $"od-hotel-hero-item od-hotel-hero-item--{slotIndex + 1}";
+
+                <div class="@itemClass">
+                    <button type="button"
+                            class="od-hotel-hero-hit"
+                            data-gallery-index="@slotIndex"
+                            aria-label="@title görsel @(slotIndex + 1)">
+                        <img src="@src"
+                             alt="@title görsel @(slotIndex + 1)"
+                             @(isFirst ? "loading=\"eager\" fetchpriority=\"high\"" : "loading=\"lazy\"")
+                             decoding="async" />
+                    </button>
+
+                    @if (isLastSlot)
+                    {
+                        <button type="button"
+                                class="od-hotel-hero-view-all"
+                                data-gallery-index="0"
+                                data-gallery-open-fullscreen
+                                aria-label="Tüm fotoğrafları aç">
+                            <i class="far fa-images" aria-hidden="true"></i>
+                            <span>Tüm Fotoğraflar@(images.Count > 1 ? $" ({images.Count})" : string.Empty)</span>
+                        </button>
+                    }
+                </div>
+            }
+        </div>
+    </div>
+</section>

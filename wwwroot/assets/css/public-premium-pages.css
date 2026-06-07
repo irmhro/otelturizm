@@ -6,6 +6,38 @@
     --header-height-mobile: 64px;
     --home-header-sticky-h: 88px;
     --page-max-width: 1240px;
+    --page-content-gutter: 24px;
+    --page-content-inset: 48px;
+}
+
+/* Paylaşılan header/footer kullanan tüm kamu sayfaları — anasayfa grid */
+.kurumsal-page,
+.firma-page,
+.kampanyalar-page,
+.sozlesme-page,
+.otelliste-page-shell,
+.login-page {
+    --page-max-width: 1240px;
+    --page-content-gutter: 24px;
+    --page-content-inset: 48px;
+}
+
+.kurumsal-page .container,
+.firma-page .container,
+.kampanyalar-page .container,
+.sozlesme-page .container,
+.kurumsal-page .corp-page__inner,
+.firma-page .fir-body.container,
+.kampanyalar-page .kmp-body.container,
+.sozlesme-page .sozlesme-body.container,
+.login-page .login-container {
+    box-sizing: border-box;
+    width: min(var(--page-max-width, 1240px), calc(100% - var(--page-content-inset, 48px)));
+    max-width: none;
+    margin-left: auto;
+    margin-right: auto;
+    padding-left: var(--page-content-gutter, 24px);
+    padding-right: var(--page-content-gutter, 24px);
 }
 
 .otelliste-page-shell,
@@ -37,9 +69,11 @@
 }
 
 .kurumsal-page .kur-main .container {
-    max-width: var(--page-max-width);
+    max-width: none;
+    width: min(var(--page-max-width, 1240px), calc(100% - var(--page-content-inset, 48px)));
     margin: 0 auto;
-    padding: 0 24px;
+    padding: 0 var(--page-content-gutter, 24px);
+    box-sizing: border-box;
 }
 
 /* Kurumsal alt sayfalar (hakkımızda, blog, …) */
@@ -53,9 +87,13 @@
 }
 
 .kurumsal-page .corp-page__inner {
-    max-width: var(--page-max-width);
-    padding-left: 24px;
-    padding-right: 24px;
+    max-width: none;
+    width: min(var(--page-max-width, 1240px), calc(100% - var(--page-content-inset, 48px)));
+    margin-left: auto;
+    margin-right: auto;
+    padding-left: var(--page-content-gutter, 24px);
+    padding-right: var(--page-content-gutter, 24px);
+    box-sizing: border-box;
 }
 
 .kurumsal-page .corp-hero__glass {
@@ -78,9 +116,11 @@
 }
 
 .firma-page .fir-main .container {
-    max-width: var(--page-max-width);
+    max-width: none;
+    width: min(var(--page-max-width, 1240px), calc(100% - var(--page-content-inset, 48px)));
     margin: 0 auto;
-    padding: 0 24px;
+    padding: 0 var(--page-content-gutter, 24px);
+    box-sizing: border-box;
 }
 
 @media (min-width: 901px) {

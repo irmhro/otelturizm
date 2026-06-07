@@ -175,18 +175,12 @@
         z-index: 1090;
     }
 
-    .oteldetay-page .gallery-grid.od-gallery--desktop {
+    .oteldetay-page .od-hotel-visual-gallery {
         order: -1;
-        display: none !important;
     }
 
-    .oteldetay-page .gallery-filmstrip-wrap {
-        order: -1;
-        display: none !important;
-    }
-
-    .oteldetay-page .od-gallery--mobile {
-        order: 0;
+    .oteldetay-page .gallery-mobile-strip {
+        order: -2;
     }
 
     .oteldetay-page .detail-breadcrumb.detail-breadcrumb-with-weather {
@@ -220,12 +214,11 @@
     }
 
     .oteldetay-page .detail-breadcrumb,
-    .oteldetay-page .gallery-grid,
-    .oteldetay-page .gallery-filmstrip-wrap,
+    .oteldetay-page .od-hotel-visual-gallery,
+    .oteldetay-page .gallery-mobile-strip,
     .oteldetay-page .detail-header,
     .oteldetay-page .od-quick-facts,
-    .oteldetay-page .detail-grid,
-    .oteldetay-page .od-gallery--mobile {
+    .oteldetay-page .detail-grid {
         width: 100%;
         max-width: 100%;
         margin-left: auto;
@@ -306,23 +299,21 @@
         background: rgba(227, 10, 23, 0.06);
     }
 
-    .oteldetay-page .gallery-swipe-hint {
-        display: flex !important;
-        position: absolute;
-        left: 50%;
-        bottom: 118px;
-        transform: translateX(-50%);
-        z-index: 4;
-        align-items: center;
-        gap: 6px;
-        padding: 5px 12px;
-        border-radius: 999px;
-        background: rgba(15, 23, 42, 0.62);
-        color: #fff;
-        font-size: 10px;
-        font-weight: 700;
-        pointer-events: none;
-        white-space: nowrap;
+    .oteldetay-page .od-hotel-visual-gallery {
+        display: none !important;
+    }
+
+    .oteldetay-page .gallery-mobile-strip {
+        order: -1;
+        display: block;
+        position: relative;
+        width: 100%;
+        max-width: 100%;
+        margin: 0 0 10px;
+        padding: 0;
+        background: #fff;
+        border-bottom: 1px solid var(--od-border, #EBE9E4);
+        overflow: hidden;
     }
 
     .oteldetay-page .gallery-mobile-stage {
@@ -330,185 +321,17 @@
         width: 100%;
     }
 
-    .oteldetay-page .gallery-mobile-overlay {
-        position: absolute;
-        inset: 0;
-        z-index: 5;
-        display: flex;
-        flex-direction: column;
-        justify-content: flex-end;
-        padding: 12px;
-        background: linear-gradient(180deg, rgba(15, 23, 42, 0) 42%, rgba(15, 23, 42, 0.62) 100%);
-        pointer-events: none;
-    }
-
-    .oteldetay-page .gallery-mobile-overlay-bottom {
-        display: flex;
-        flex-direction: column;
-        gap: 8px;
-        min-width: 0;
-        padding-right: 132px;
-    }
-
-    .oteldetay-page .gallery-mobile-hero-meta {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        gap: 10px;
-        min-width: 0;
-    }
-
-    .oteldetay-page .gallery-mobile-location {
-        display: inline-flex;
-        align-items: center;
-        gap: 6px;
-        margin: 0;
-        min-width: 0;
-        flex: 1 1 auto;
-        font-size: 12px;
-        font-weight: 700;
-        line-height: 1.25;
-        color: rgba(255, 255, 255, 0.94);
-        text-shadow: 0 1px 6px rgba(0, 0, 0, 0.28);
-    }
-
-    .oteldetay-page .gallery-mobile-location i {
-        flex-shrink: 0;
-        font-size: 11px;
-        color: #fecaca;
-    }
-
-    .oteldetay-page .gallery-mobile-location span {
-        overflow: hidden;
-        text-overflow: ellipsis;
-        white-space: nowrap;
-    }
-
-    .oteldetay-page .gallery-mobile-rating {
-        pointer-events: auto;
-        flex: 0 0 auto;
-        align-self: center;
-        margin: 0;
-        padding: 5px 10px;
-        gap: 8px;
-        border-radius: 999px;
-        border: 1px solid rgba(255, 255, 255, 0.28);
-        background: rgba(255, 255, 255, 0.94);
-        box-shadow: 0 8px 18px rgba(15, 23, 42, 0.18);
-    }
-
-    .oteldetay-page .gallery-mobile-rating .rating-number {
-        color: var(--od-crimson, #E30A17);
-    }
-
-    .oteldetay-page .gallery-mobile-rating .rating-text strong,
-    .oteldetay-page .gallery-mobile-rating .rating-text span {
-        color: var(--od-dark, #1A1919);
-    }
-
-    .oteldetay-page .gallery-mobile-hotel-name {
-        margin: 0;
-        font-size: 18px;
-        font-weight: 900;
-        line-height: 1.2;
-        letter-spacing: -0.02em;
-        color: #fff;
-        text-shadow: 0 2px 10px rgba(0, 0, 0, 0.35);
-        display: -webkit-box;
-        -webkit-line-clamp: 2;
-        -webkit-box-orient: vertical;
-        overflow: hidden;
-    }
-
-    .oteldetay-page .gallery-mobile-all-photos {
-        pointer-events: auto;
-        position: absolute;
-        right: 12px;
-        bottom: 12px;
-        z-index: 6;
-        flex-shrink: 0;
-        min-height: 36px;
-        padding: 0 12px;
-        border-radius: 999px;
-        border: 1px solid rgba(255, 255, 255, 0.35);
-        background: rgba(255, 255, 255, 0.94);
-        font-size: 11px;
-        font-weight: 800;
-        color: var(--od-dark, #1A1919);
-        white-space: nowrap;
-        display: inline-flex;
-        align-items: center;
-        gap: 6px;
-        box-shadow: 0 8px 20px rgba(15, 23, 42, 0.22);
-    }
-
-    .oteldetay-page .gallery-mobile-all-photos i {
-        font-size: 12px;
-        color: var(--od-crimson, #E30A17);
-    }
-
-    .oteldetay-page .hotel-title-heading--header {
-        position: absolute;
-        width: 1px;
-        height: 1px;
-        padding: 0;
-        margin: -1px;
-        overflow: hidden;
-        clip: rect(0, 0, 0, 0);
-        white-space: nowrap;
-        border: 0;
-    }
-
-    .oteldetay-page .gallery-mobile-track {
-        touch-action: pan-x;
-        cursor: grab;
-        scroll-snap-stop: always;
-    }
-
-    .oteldetay-page .gallery-mobile-track.is-dragging {
-        cursor: grabbing;
-        scroll-snap-type: none;
-    }
-
-    .oteldetay-page .gallery-mobile-track.is-dragging .gallery-mobile-slide img {
-        pointer-events: none;
-        user-select: none;
-    }
-
-    .oteldetay-page .od-gallery--mobile {
-        display: block;
-        position: relative;
-        order: 0;
-        width: 100%;
-        max-width: 100%;
-        margin: 0 0 10px;
-        padding: 0;
-        background: #fff;
-        border-radius: 0;
-        border: 0;
-        border-bottom: 1px solid var(--od-border, #EBE9E4);
-        box-shadow: none;
-        overflow: hidden;
-    }
-
-    .oteldetay-page .gallery-star-badge,
-    .oteldetay-page .gallery-star-badge.gallery-star-badge-mobile {
-        display: none !important;
-    }
-
     .oteldetay-page .gallery-mobile-track {
         display: flex;
         overflow-x: auto;
-        overflow-y: hidden;
         scroll-snap-type: x mandatory;
         scrollbar-width: none;
         -webkit-overflow-scrolling: touch;
         width: 100%;
-        height: auto;
-        aspect-ratio: 4 / 3;
+        aspect-ratio: 16 / 9;
         max-height: min(56vw, 300px);
-        border-radius: 0;
         background: #eceae6;
+        touch-action: pan-x;
     }
 
     .oteldetay-page .gallery-mobile-track::-webkit-scrollbar {
@@ -518,32 +341,28 @@
     .oteldetay-page .gallery-mobile-slide {
         flex: 0 0 100%;
         min-width: 100%;
-        width: 100%;
         scroll-snap-align: start;
         border: 0;
         padding: 0;
         height: 100%;
         overflow: hidden;
-        position: relative;
         display: block;
         background: #eceae6;
     }
 
     .oteldetay-page .gallery-mobile-slide img {
-        border-radius: 0;
         width: 100%;
         height: 100%;
         object-fit: cover;
-        object-position: center;
         display: block;
     }
 
     .oteldetay-page .gallery-mobile-chrome {
         position: absolute;
-        top: 12px;
-        left: 12px;
-        right: 12px;
-        z-index: 4;
+        top: 10px;
+        left: 10px;
+        right: 10px;
+        z-index: 6;
         display: flex;
         align-items: center;
         justify-content: space-between;
@@ -577,6 +396,196 @@
         font-weight: 800;
     }
 
+    .oteldetay-page .gallery-mobile-overlay {
+        position: absolute;
+        inset: 0;
+        z-index: 5;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        padding: 58px 12px 12px;
+        background: linear-gradient(180deg, rgba(15, 23, 42, 0.82) 0%, rgba(15, 23, 42, 0.42) 42%, rgba(15, 23, 42, 0) 62%);
+        pointer-events: none;
+    }
+
+    .oteldetay-page .gallery-mobile-overlay-top {
+        width: 100%;
+        min-width: 0;
+    }
+
+    .oteldetay-page .gallery-mobile-title-row {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 10px;
+        width: 100%;
+    }
+
+    .oteldetay-page .gallery-mobile-title-block {
+        flex: 1 1 auto;
+        min-width: 0;
+    }
+
+    .oteldetay-page .gallery-mobile-hotel-name {
+        margin: 0 0 6px;
+        font-size: 17px;
+        font-weight: 900;
+        line-height: 1.2;
+        letter-spacing: -0.02em;
+        color: #fff;
+        text-shadow: 0 2px 10px rgba(0, 0, 0, 0.35);
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+    }
+
+    .oteldetay-page .gallery-mobile-overlay-meta {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+        margin: 0 0 6px;
+    }
+
+    .oteldetay-page .gallery-mobile-overlay-meta .gallery-mobile-type-chip {
+        min-height: 24px;
+        padding: 0 8px;
+        border-color: rgba(255, 255, 255, 0.32);
+        background: rgba(255, 255, 255, 0.16);
+        color: #fff;
+        font-size: 10px;
+        font-weight: 800;
+        backdrop-filter: blur(6px);
+        text-shadow: 0 1px 4px rgba(0, 0, 0, 0.22);
+    }
+
+    .oteldetay-page .gallery-mobile-overlay-meta .gallery-mobile-type-chip--stars {
+        border-color: rgba(255, 193, 7, 0.45);
+        background: rgba(255, 193, 7, 0.18);
+    }
+
+    .oteldetay-page .gallery-mobile-overlay-meta .gallery-mobile-type-chip--stars i {
+        color: #fcd34d;
+        font-size: 8px;
+    }
+
+    .oteldetay-page .gallery-mobile-location {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        margin: 0;
+        min-width: 0;
+        font-size: 11px;
+        font-weight: 700;
+        line-height: 1.25;
+        color: rgba(255, 255, 255, 0.94);
+        text-shadow: 0 1px 6px rgba(0, 0, 0, 0.28);
+    }
+
+    .oteldetay-page .gallery-mobile-location i {
+        flex-shrink: 0;
+        font-size: 10px;
+        color: #fecaca;
+    }
+
+    .oteldetay-page .gallery-mobile-location span {
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    .oteldetay-page .gallery-mobile-rating {
+        pointer-events: auto;
+        flex: 1 1 auto;
+        align-self: flex-start;
+        margin: 8px 0 0;
+        padding: 6px 10px;
+        gap: 6px;
+        border-radius: 999px;
+        border: 1px solid rgba(255, 255, 255, 0.28);
+        background: rgba(255, 255, 255, 0.94);
+        box-shadow: 0 8px 18px rgba(15, 23, 42, 0.18);
+        display: inline-flex;
+        flex-direction: row;
+        flex-wrap: nowrap;
+        align-items: center;
+        max-width: 100%;
+        min-width: 0;
+    }
+
+    .oteldetay-page .gallery-mobile-rating .rating-big,
+    .oteldetay-page .gallery-mobile-rating .rating-text {
+        display: inline-flex;
+        flex-direction: row;
+        flex-wrap: nowrap;
+        align-items: center;
+        gap: 4px;
+        min-width: 0;
+    }
+
+    .oteldetay-page .gallery-mobile-rating .rating-text {
+        min-width: 0;
+        overflow: hidden;
+    }
+
+    .oteldetay-page .gallery-mobile-rating .rating-text strong,
+    .oteldetay-page .gallery-mobile-rating .rating-text span {
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .oteldetay-page .gallery-mobile-rating .rating-number {
+        color: var(--od-crimson, #E30A17);
+    }
+
+    .oteldetay-page .gallery-mobile-rating .rating-text strong,
+    .oteldetay-page .gallery-mobile-rating .rating-text span {
+        color: var(--od-dark, #1A1919);
+    }
+
+    .oteldetay-page .gallery-mobile-all-photos {
+        pointer-events: auto;
+        align-self: flex-end;
+        min-height: 36px;
+        padding: 0 12px;
+        border-radius: 999px;
+        border: 1px solid rgba(255, 255, 255, 0.35);
+        background: rgba(255, 255, 255, 0.94);
+        font-size: 11px;
+        font-weight: 800;
+        color: var(--od-dark, #1A1919);
+        white-space: nowrap;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        box-shadow: 0 8px 20px rgba(15, 23, 42, 0.22);
+    }
+
+    .oteldetay-page .gallery-mobile-all-photos i {
+        font-size: 12px;
+        color: var(--od-crimson, #E30A17);
+    }
+
+    .oteldetay-page .gallery-swipe-hint {
+        display: flex !important;
+        position: absolute;
+        left: 50%;
+        bottom: 10px;
+        transform: translateX(-50%);
+        z-index: 4;
+        align-items: center;
+        gap: 6px;
+        padding: 5px 12px;
+        border-radius: 999px;
+        background: rgba(15, 23, 42, 0.62);
+        color: #fff;
+        font-size: 10px;
+        font-weight: 700;
+        pointer-events: none;
+        white-space: nowrap;
+    }
+
     .oteldetay-page .gallery-mobile-nav {
         position: absolute;
         inset: 0;
@@ -585,13 +594,13 @@
         display: flex;
         align-items: center;
         justify-content: space-between;
-        padding: 0 10px;
+        padding: 0 8px;
     }
 
     .oteldetay-page .gallery-mobile-nav-btn {
         pointer-events: auto;
-        width: 44px;
-        height: 44px;
+        width: 40px;
+        height: 40px;
         border: 0;
         border-radius: 50%;
         background: rgba(26, 25, 25, 0.55);
@@ -602,17 +611,10 @@
         justify-content: center;
     }
 
-    .oteldetay-page .gallery-mobile-back {
-        width: 44px;
-        height: 44px;
-    }
-
     .oteldetay-page .gallery-mobile-footer {
-        margin-top: 0;
         padding: 10px 12px 12px;
         display: flex;
         flex-direction: column;
-        align-items: stretch;
         gap: 8px;
         background: #fff;
     }
@@ -620,9 +622,7 @@
     .oteldetay-page .gallery-mobile-footer-meta {
         display: flex;
         flex-wrap: wrap;
-        align-items: center;
         gap: 8px;
-        width: 100%;
     }
 
     .oteldetay-page .gallery-mobile-type-chip {
@@ -637,12 +637,6 @@
         font-size: 11px;
         font-weight: 700;
         color: var(--od-dark, #1A1919);
-        white-space: nowrap;
-    }
-
-    .oteldetay-page .gallery-mobile-type-chip i {
-        font-size: 10px;
-        color: var(--od-muted, #6E6E77);
     }
 
     .oteldetay-page .gallery-mobile-type-chip--stars {
@@ -659,9 +653,7 @@
         display: flex;
         gap: 8px;
         overflow-x: auto;
-        width: 100%;
         scrollbar-width: none;
-        padding-bottom: 2px;
     }
 
     .oteldetay-page .gallery-mobile-thumb {
@@ -685,7 +677,24 @@
         object-fit: cover;
     }
 
+    .oteldetay-page .gallery-mobile-dots {
+        display: none;
+    }
+
     .oteldetay-page .hotel-title-heading--header {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        padding: 0;
+        margin: -1px;
+        overflow: hidden;
+        clip: rect(0, 0, 0, 0);
+        white-space: nowrap;
+        border: 0;
+    }
+
+    .oteldetay-page .detail-header.hotel-title-section .detail-location,
+    .oteldetay-page .detail-header.hotel-title-section #ratingSummaryJump {
         display: none;
     }
 
@@ -827,11 +836,7 @@
         z-index: 1020;
     }
 
-    /* Masaüstü galeri gizle, mobil slider göster */
-    .oteldetay-page .gallery-grid.od-gallery--desktop,
-    .oteldetay-page .gallery-filmstrip-wrap {
-        display: none;
-    }
+    /* Otel galerisi: pure-visual-slider (mobil + masaüstü ortak) */
 
     /* Bilgi kartı */
     .oteldetay-page .detail-header.hotel-title-section {
@@ -1141,24 +1146,26 @@
     }
 
     .oteldetay-page .od-section--about .od-about-checkinout {
-        display: grid;
-        grid-template-columns: 1fr 1fr;
-        gap: 8px;
+        display: flex;
+        flex-direction: row;
+        flex-wrap: wrap;
+        gap: 14px 20px;
         width: 100%;
-        margin: 0 0 14px;
+        margin: 0 0 12px;
         padding: 0;
         list-style: none;
     }
 
     .oteldetay-page .od-section--about .od-quick-facts__item {
-        display: flex;
+        display: inline-flex;
         align-items: center;
-        gap: 10px;
-        padding: 10px 12px;
-        border-radius: 12px;
-        border: 1px solid var(--od-border, #EBE9E4);
-        background: var(--od-bg, #FCFBF9);
-        min-height: 56px;
+        gap: 8px;
+        padding: 0;
+        border-radius: 0;
+        border: 0;
+        background: transparent;
+        min-height: 0;
+        flex: 0 0 auto;
     }
 
     .oteldetay-page .od-section--about .od-quick-facts__icon {
@@ -1217,7 +1224,7 @@
         align-items: center;
     }
 
-    /* Tesis özellikleri — 8 ikon tek satır + Tümünü gör popup */
+    /* Tesis özellikleri — ikon şeridi + Tümünü gör aynı satır */
     .oteldetay-page .od-section--amenities .amenities-list-clean,
     .oteldetay-page .od-section--amenities .amenities-expand,
     .oteldetay-page .od-section--amenities .od-amenities__scroll,
@@ -1231,12 +1238,23 @@
         gap: 0;
     }
 
-    .oteldetay-page .od-amenities__icon-row {
-        display: grid;
-        grid-template-columns: repeat(8, minmax(0, 1fr));
-        gap: 6px;
+    .oteldetay-page .od-amenities__mobile-toolbar {
+        display: flex;
+        align-items: center;
+        gap: 8px;
         width: 100%;
         margin: 2px 0 10px;
+        padding: 0;
+        min-width: 0;
+    }
+
+    .oteldetay-page .od-amenities__icon-row {
+        display: grid;
+        grid-template-columns: repeat(7, minmax(0, 1fr));
+        gap: 6px;
+        flex: 1 1 auto;
+        min-width: 0;
+        margin: 0;
         padding: 0;
     }
 
@@ -1280,27 +1298,75 @@
         display: inline-flex;
         align-items: center;
         justify-content: center;
-        gap: 6px;
-        width: 100%;
+        gap: 4px;
+        flex: 0 0 auto;
+        width: auto;
+        min-width: 84px;
+        max-width: 38%;
         min-height: 44px;
         margin: 0;
-        padding: 0 16px;
+        padding: 0 10px;
         border: 1px solid var(--od-border, #EBE9E4);
-        border-radius: 999px;
+        border-radius: 12px;
         background: #fff;
         color: var(--od-dark, #1A1919);
-        font-size: 13px;
+        font-size: 11px;
         font-weight: 800;
         cursor: pointer;
         touch-action: manipulation;
+        white-space: nowrap;
+    }
+
+    .oteldetay-page > #amenitiesModal.detail-modal.is-open,
+    .oteldetay-page > #amenitiesModal.detail-modal:not([hidden]) {
+        display: flex !important;
+        flex-direction: column !important;
+        z-index: 2120 !important;
+        justify-content: flex-end !important;
+        padding: 0 !important;
+    }
+
+    .oteldetay-page > #amenitiesModal .detail-modal-head {
+        border-radius: 18px 18px 0 0;
+    }
+
+    .oteldetay-page > #amenitiesModal .amenities-modal-grid {
+        flex: 1 1 auto;
+        overflow: auto;
+        max-height: min(68vh, 520px);
+        padding-bottom: calc(12px + env(safe-area-inset-bottom, 0px));
+    }
+
+    .oteldetay-page > #amenitiesModal .amenity-item-lux {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 10px 12px;
+        border-radius: 12px;
+        border: 1px solid var(--od-border, #EBE9E4);
+        background: #fff;
+        font-size: 13px;
+        font-weight: 600;
+    }
+
+    .oteldetay-page > #amenitiesModal .amenity-item-lux i {
+        width: 32px;
+        height: 32px;
+        border-radius: 10px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        background: rgba(0, 59, 149, 0.08);
+        color: #0f5bd7;
+        flex-shrink: 0;
     }
 
     .oteldetay-page .od-amenities__see-all-mobile i {
-        font-size: 11px;
+        font-size: 10px;
         color: var(--od-muted, #6E6E77);
     }
 
-    /* Kurallar — mobil 2 sütun kart grid */
+    /* Kurallar — mobil yatay tek satır kart grid */
     .oteldetay-page .od-section--policies.content-card {
         border: 0 !important;
         border-radius: 0 !important;
@@ -1325,10 +1391,10 @@
 
     .oteldetay-page .od-section--policies .od-policy-item {
         display: flex !important;
-        flex-direction: column !important;
-        align-items: flex-start !important;
-        gap: 8px !important;
-        padding: 10px !important;
+        flex-direction: row !important;
+        align-items: center !important;
+        gap: 10px !important;
+        padding: 10px 12px !important;
         border: 1px solid var(--od-border, #EBE9E4) !important;
         border-radius: 12px !important;
         background: #fff !important;
@@ -1359,7 +1425,13 @@
 
     .oteldetay-page .od-section--policies .od-policy-item > div {
         min-width: 0;
-        width: 100%;
+        width: auto;
+        flex: 1 1 auto;
+        display: flex;
+        flex-direction: row;
+        flex-wrap: nowrap;
+        align-items: center;
+        gap: 6px;
     }
 
     .oteldetay-page .od-section--policies .od-policy-item strong {
@@ -1367,31 +1439,27 @@
         font-weight: 800;
         text-transform: none;
         letter-spacing: 0;
-        display: block;
-        margin-bottom: 4px;
+        display: inline;
+        margin-bottom: 0;
         line-height: 1.25;
+        flex-shrink: 0;
     }
 
     .oteldetay-page .od-section--policies .od-policy-item p {
         font-size: 11px;
-        line-height: 1.45;
+        line-height: 1.35;
         margin: 0;
         color: var(--od-dark, #1A1919);
-        display: -webkit-box;
-        -webkit-box-orient: vertical;
-        -webkit-line-clamp: 4;
+        display: inline;
         overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        min-width: 0;
+        flex: 1 1 auto;
     }
 
     .oteldetay-page .od-section--policies .od-policy-item small {
-        font-size: 11px;
-        line-height: 1.4;
-        margin: 0;
-        color: var(--od-muted, #6E6E77);
-        display: -webkit-box;
-        -webkit-box-orient: vertical;
-        -webkit-line-clamp: 2;
-        overflow: hidden;
+        display: none;
     }
 
     .oteldetay-page .od-section--policies .od-policy-detail {
@@ -1422,7 +1490,7 @@
     .oteldetay-page .od-section--about .hotel-about-text.is-clamped:not(.is-expanded) {
         display: -webkit-box;
         -webkit-box-orient: vertical;
-        -webkit-line-clamp: 3;
+        -webkit-line-clamp: 4;
         overflow: hidden;
     }
 
@@ -1480,46 +1548,49 @@
     }
 
     .oteldetay-page #roomsCard .room-card-actions-row {
-        display: flex !important;
-        flex-wrap: wrap !important;
-        align-items: center !important;
-        justify-content: space-between !important;
-        gap: 8px 10px !important;
+        display: grid !important;
+        grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+        align-items: stretch !important;
+        gap: 8px !important;
         margin-top: 10px !important;
         width: 100% !important;
     }
 
     .oteldetay-page #roomsCard .room-card-actions-row:not(:has(.room-feature-more-btn)) {
-        justify-content: flex-end !important;
+        grid-template-columns: 1fr !important;
+        justify-content: stretch !important;
     }
 
     .oteldetay-page #roomsCard .room-card-actions-row .room-feature-more-inline {
-        display: contents !important;
+        display: block !important;
         margin: 0 !important;
+        min-width: 0;
     }
 
-    .oteldetay-page #roomsCard .room-card-actions-row .room-feature-more-btn {
+    .oteldetay-page #roomsCard .room-card-actions-row .room-feature-more-btn,
+    .oteldetay-page #roomsCard .room-card-actions-row .room-detail-btn.od-room-action-btn {
         display: inline-flex !important;
         align-items: center !important;
         justify-content: center !important;
         gap: 6px !important;
-        flex: 1 1 auto !important;
+        width: 100% !important;
         min-width: 0 !important;
-        width: auto !important;
         min-height: 40px !important;
-        padding: 0 14px !important;
+        padding: 0 12px !important;
         border-radius: 12px !important;
         border: 1px solid var(--od-border, #EBE9E4) !important;
         background: #fff !important;
         color: var(--od-dark, #1A1919) !important;
         font-size: 13px !important;
         font-weight: 700 !important;
+        margin-left: 0 !important;
+        box-shadow: none !important;
     }
 
     .oteldetay-page #roomsCard .room-card-actions-row .room-detail-btn--link {
-        flex: 0 0 auto !important;
+        flex: 1 1 auto !important;
         white-space: nowrap !important;
-        margin-left: auto !important;
+        margin-left: 0 !important;
     }
 
     .oteldetay-page #roomsCard .room-card-actions-row .room-feature-panel {
@@ -2473,34 +2544,7 @@
     }
 
     .oteldetay-page.otel-detail-template-v41.otel-detail-tabler .detail-hero-head {
-        display: none !important;
-    }
-
-    .oteldetay-page.otel-detail-template-v41.otel-detail-tabler .gallery-mobile-rating {
-        box-shadow: none !important;
-        padding: 5px 10px !important;
-        min-height: 0 !important;
-        height: auto !important;
-        gap: 8px !important;
-    }
-
-    .oteldetay-page.otel-detail-template-v41.otel-detail-tabler .gallery-mobile-rating .rating-number {
-        font-size: 15px !important;
-        line-height: 1 !important;
-    }
-
-    .oteldetay-page.otel-detail-template-v41.otel-detail-tabler .gallery-mobile-rating .rating-max {
-        font-size: 10px !important;
-    }
-
-    .oteldetay-page.otel-detail-template-v41.otel-detail-tabler .gallery-mobile-rating .rating-text strong {
-        font-size: 11px !important;
-        line-height: 1.15 !important;
-    }
-
-    .oteldetay-page.otel-detail-template-v41.otel-detail-tabler .gallery-mobile-rating .rating-text span {
-        font-size: 10px !important;
-        line-height: 1.15 !important;
+        display: grid !important;
     }
 
     .oteldetay-page.otel-detail-template-v41.otel-detail-tabler .detail-title-subnav {
@@ -2542,12 +2586,16 @@
 
     .oteldetay-page #roomsCard .room-detail-btn,
     .oteldetay-page #roomsCard .room-detail-btn--link {
-        border: 0 !important;
+        border: 1px solid var(--od-border, #EBE9E4) !important;
         box-shadow: none !important;
-        background: transparent !important;
-        color: var(--od-crimson, #E30A17) !important;
-        padding: 0 !important;
-        min-height: 36px;
+        background: #fff !important;
+        color: var(--od-dark, #1A1919) !important;
+        padding: 0 12px !important;
+        min-height: 40px;
+    }
+
+    .oteldetay-page #roomsCard .room-detail-btn.od-room-action-btn {
+        color: var(--od-dark, #1A1919) !important;
     }
 
     .oteldetay-page #roomsCard .room-card-aux .cancellation-badge {
@@ -2680,37 +2728,60 @@
     .oteldetay-page.otel-detail-template-v41 #reviewsSection .review-summary-score-col {
         display: flex !important;
         flex-direction: row !important;
+        flex-wrap: nowrap !important;
         align-items: center !important;
-        gap: 14px !important;
+        gap: 8px !important;
         text-align: left !important;
-        justify-items: start !important;
+        justify-content: flex-start !important;
+        overflow-x: auto;
+        scrollbar-width: none;
+    }
+
+    .oteldetay-page.otel-detail-template-v41 #reviewsSection .review-summary-score-col::-webkit-scrollbar {
+        display: none;
     }
 
     .oteldetay-page.otel-detail-template-v41 #reviewsSection .review-score-circle {
-        width: 72px !important;
-        height: 72px !important;
+        width: auto !important;
+        height: auto !important;
+        min-height: 0 !important;
         flex-shrink: 0;
-        border-width: 2px !important;
-        border-color: rgba(227, 10, 23, 0.2) !important;
-        background: #fff !important;
+        border: 0 !important;
+        border-radius: 0 !important;
+        background: transparent !important;
         box-shadow: none !important;
+        display: inline-flex !important;
+        flex-direction: row !important;
+        align-items: baseline !important;
+        gap: 2px !important;
+        padding: 0 !important;
     }
 
     .oteldetay-page.otel-detail-template-v41 #reviewsSection .review-score-circle strong {
-        font-size: 1.35rem !important;
+        font-size: 15px !important;
         color: var(--od-crimson, #E30A17) !important;
     }
 
+    .oteldetay-page.otel-detail-template-v41 #reviewsSection .review-score-circle span {
+        font-size: 12px !important;
+        font-weight: 700 !important;
+        color: var(--od-muted, #6E6E77) !important;
+    }
+
     .oteldetay-page.otel-detail-template-v41 #reviewsSection .review-signature-title {
-        font-size: 14px !important;
+        font-size: 13px !important;
         font-weight: 800 !important;
         color: var(--od-dark, #1A1919) !important;
         margin: 0 !important;
+        white-space: nowrap;
+        flex-shrink: 0;
     }
 
     .oteldetay-page.otel-detail-template-v41 #reviewsSection .review-verified-count {
         font-size: 11px !important;
         color: var(--od-muted, #6E6E77) !important;
+        white-space: nowrap;
+        flex-shrink: 0;
     }
 
     .oteldetay-page.otel-detail-template-v41 #reviewsSection .review-bars {
@@ -2772,6 +2843,34 @@
         font-size: 11px !important;
         font-weight: 700 !important;
         box-shadow: none !important;
+        cursor: pointer !important;
+        touch-action: manipulation !important;
+        -webkit-tap-highlight-color: transparent;
+        display: inline-flex !important;
+        align-items: center !important;
+        gap: 6px !important;
+    }
+
+    .oteldetay-page.otel-detail-template-v41 #reviewsSection .review-topic-chip:active {
+        border-color: rgba(227, 10, 23, 0.35) !important;
+        background: rgba(227, 10, 23, 0.06) !important;
+    }
+
+    .oteldetay-page > .review-insight-modal.is-open {
+        z-index: 2200 !important;
+    }
+
+    .oteldetay-page > .review-insight-modal.is-open .review-insight-dialog {
+        position: fixed !important;
+        left: 0 !important;
+        right: 0 !important;
+        bottom: 0 !important;
+        top: auto !important;
+        width: 100% !important;
+        max-width: none !important;
+        margin: 0 !important;
+        border-radius: 18px 18px 0 0 !important;
+        max-height: min(88vh, 720px) !important;
     }
 
     .oteldetay-page.otel-detail-template-v41 #reviewsSection .review-toolbar {
@@ -2940,12 +3039,22 @@
         font-style: normal !important;
         color: var(--od-dark, #1A1919) !important;
         margin: 0 !important;
-        max-height: none !important;
-        overflow: visible !important;
-        display: block !important;
-        -webkit-line-clamp: unset !important;
         word-break: break-word !important;
         overflow-wrap: anywhere !important;
+    }
+
+    .oteldetay-page.otel-detail-template-v41 #reviewsSection .review-text.is-clamped:not(.is-expanded) {
+        display: -webkit-box !important;
+        -webkit-box-orient: vertical !important;
+        -webkit-line-clamp: 3 !important;
+        overflow: hidden !important;
+        max-height: none !important;
+    }
+
+    .oteldetay-page.otel-detail-template-v41 #reviewsSection .review-text.is-expanded {
+        display: block !important;
+        -webkit-line-clamp: unset !important;
+        overflow: visible !important;
     }
 
     .oteldetay-page.otel-detail-template-v41 #reviewsSection .review-body {

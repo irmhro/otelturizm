@@ -361,31 +361,31 @@
                                         }
                                     </div>
                                 }
-                                <div class="otelliste-card-foot">
-                                    <div class="otelliste-card-price">
-                                        @if (price > 0m)
-                                        {
-                                            if (originalPrice > price)
-                                            {
-                                                <span class="otelliste-card-price-old">@($"{originalPrice:N0} ₺")</span>
-                                            }
-                                            @($"{price:N0} ₺")
-                                            <small>/ gece · vergi dahil</small>
-                                        }
-                                        else
-                                        {
-                                            <small>Fiyat sor</small>
-                                        }
-                                    </div>
+                            </div>
+                            <div class="otelliste-card-foot">
+                                <div class="otelliste-card-price">
                                     @if (price > 0m)
                                     {
-                                        <a class="otelliste-card-cta" href="@detailUrl">İncele</a>
+                                        if (originalPrice > price)
+                                        {
+                                            <span class="otelliste-card-price-old">@($"{originalPrice:N0} ₺")</span>
+                                        }
+                                        @($"{price:N0} ₺")
+                                        <small>/ gece · vergi dahil</small>
                                     }
                                     else
                                     {
-                                        <a class="otelliste-card-cta otelliste-card-cta--secondary" href="@detailUrl">Fiyat sor</a>
+                                        <small>Fiyat sor</small>
                                     }
                                 </div>
+                                @if (price > 0m)
+                                {
+                                    <a class="otelliste-card-cta" href="@detailUrl">İncele</a>
+                                }
+                                else
+                                {
+                                    <a class="otelliste-card-cta otelliste-card-cta--secondary" href="@detailUrl">Fiyat sor</a>
+                                }
                             </div>
                         </article>
                     }

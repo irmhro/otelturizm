@@ -1,5 +1,5 @@
 .privacy-shell{
-  max-width: var(--page-max-width, 1280px);
+  max-width: var(--page-max-width, 1240px);
   font-family: 'Plus Jakarta Sans', sans-serif;
   letter-spacing: -0.01em;
   -webkit-font-smoothing: antialiased;

@@ -606,7 +606,8 @@
     overflow: hidden;
     border: 1px solid var(--otl-border);
     display: grid;
-    grid-template-columns: minmax(200px, 248px) minmax(0, 1fr);
+    grid-template-columns: minmax(200px, 248px) minmax(0, 1fr) 184px;
+    grid-template-rows: 1fr;
     align-items: stretch;
     position: relative;
     min-width: 0;
@@ -727,23 +728,16 @@
 
 .otelliste-page .otelliste-card-body {
     grid-column: 2;
+    grid-row: 1;
     min-width: 0;
     padding: 16px 18px;
-    display: grid;
-    grid-template-columns: minmax(0, 1fr) 184px;
-    grid-template-areas:
-        "meta price"
-        "title price"
-        "location price"
-        "lead price"
-        "loyalty price"
-        "amenities price";
-    gap: 5px 22px;
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
     align-content: start;
 }
 
 .otelliste-page .otelliste-card-meta-row {
-    grid-area: meta;
     display: flex;
     flex-wrap: wrap;
     align-items: center;
@@ -788,7 +782,6 @@
 }
 
 .otelliste-page .otelliste-card-title {
-    grid-area: title;
     font-size: 17px;
     font-weight: 800;
     margin: 0;
@@ -807,7 +800,6 @@
 }
 
 .otelliste-page .otelliste-card-location {
-    grid-area: location;
     font-size: var(--otl-type-card-location);
     font-weight: 600;
     color: var(--otl-muted);
@@ -829,7 +821,6 @@
 }
 
 .otelliste-page .otelliste-card-lead-room {
-    grid-area: lead;
     margin: 0;
     font-size: var(--otl-type-card-meta);
     font-weight: 700;
@@ -849,7 +840,6 @@
 }
 
 .otelliste-page .otelliste-card-loyalty {
-    grid-area: loyalty;
     margin: 0;
     font-size: var(--otl-type-card-meta);
     font-weight: 800;
@@ -866,7 +856,6 @@
 }
 
 .otelliste-page .otelliste-card-amenities {
-    grid-area: amenities;
     display: flex;
     flex-wrap: nowrap;
     align-items: center;
@@ -938,18 +927,20 @@
 }
 
 .otelliste-page .otelliste-card-foot {
-    grid-area: price;
+    grid-column: 3;
+    grid-row: 1;
     margin-top: 0;
     display: flex;
     flex-direction: column;
     align-items: flex-end;
     justify-content: center;
     gap: 12px;
-    padding: 0 0 0 20px;
+    padding: 16px 18px 16px 20px;
     border-top: none;
     border-left: 1px solid var(--otl-border);
     align-self: stretch;
     text-align: right;
+    min-width: 0;
 }
 
 .otelliste-page .otelliste-card-price {
@@ -1126,13 +1117,15 @@
 
 @media (max-width: 1100px) {
     .otelliste-page .otelliste-hotel-card {
-        grid-template-columns: minmax(168px, 200px) minmax(0, 1fr);
+        grid-template-columns: minmax(168px, 200px) minmax(0, 1fr) 168px;
     }
 
     .otelliste-page .otelliste-card-body {
-        grid-template-columns: minmax(0, 1fr) 156px;
-        gap: 4px 16px;
         padding: 14px 16px;
+    }
+
+    .otelliste-page .otelliste-card-foot {
+        padding: 14px 14px 14px 16px;
     }
 
     .otelliste-page .otelliste-card-title {

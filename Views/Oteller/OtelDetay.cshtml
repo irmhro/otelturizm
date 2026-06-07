@@ -11,7 +11,7 @@
     ViewData["PageCssMobile"] = "oteldetay_mobil";
     ViewData["IncludeAnasayfaStyles"] = true;
     ViewData["IncludeBootstrap"] = true;
-    ViewData["IncludeSlaytGorsel"] = true;
+    ViewData["IncludePureVisualSlider"] = true;
     ViewData["IncludeFeWorldTokens"] = true;
     ViewData["SuppressGlobalDraftBanner"] = true;
     var baseUrl = (Context.RequestServices.GetService(typeof(IConfiguration)) as IConfiguration)?["App:PublicBaseUrl"]?.TrimEnd('/')
@@ -378,229 +378,131 @@
     </div>
 </section>
 
-<section class="gallery-grid od-gallery od-gallery--desktop" id="hotelGalleryRoot" data-slayt-lightbox="hotel-gallery" aria-label="Otel fotoğraf galerisi">
-    <div class="gallery-main-image" style="--hotel-main-ambient: url('@mainImage');">
-        @if (Model.StarCount.HasValue && Model.StarCount.Value > 0)
-        {
-            <div class="gallery-star-badge" aria-label="@($"{Model.StarCount.Value} yıldızlı otel")">
-                @for (var i = 0; i < Model.StarCount.Value; i++)
-                {
-                    <i class="fas fa-star" aria-hidden="true"></i>
-                }
-            </div>
-        }
-        <button type="button"
-                id="saveHotelBtnGallery"
-                class="favorite-btn gallery-favorite-btn @(Model.IsFavorite ? "active" : string.Empty)"
-                data-hotel-id="@Model.Id"
-                data-source-page="OtelDetay"
-                aria-label="Favoriye ekle"
-                aria-pressed="@(Model.IsFavorite ? "true" : "false")">
-            <i class="@(Model.IsFavorite ? "fas" : "far") fa-heart" aria-hidden="true"></i>
-            <span class="sr-only" data-favorite-label>@(Model.IsFavorite ? "Favoride" : "Favoriye Ekle")</span>
-        </button>
-        <button type="button" class="gallery-main-trigger" data-gallery-index="0" data-slayt-trigger="hotel-gallery" aria-label="Galeriyi aç">
-            <img src="@mainImage" alt="@Model.Name" id="mainGalleryImage" fetchpriority="high" decoding="async" />
-        </button>
+@if (gallery.Count > 0)
+{
+    ViewData["SliderTitle"] = Model.Name;
+    <partial name="~/Views/Shared/_HotelHeroGallery.cshtml" model="gallery" />
 
+    <section class="gallery-mobile-strip od-gallery od-gallery--mobile" id="galleryMobileStrip" data-gallery-title="@Model.Name" aria-label="Mobil galeri slider">
+        <div class="gallery-mobile-chrome" aria-hidden="false">
+            <a asp-controller="Oteller" asp-action="OtelListeleme" class="gallery-mobile-back" aria-label="@SharedLocalizer["Detail.BackToHotels"].Value">
+                <i class="fas fa-arrow-left" aria-hidden="true"></i>
+            </a>
+            <div class="gallery-mobile-counter" id="galleryMobileCounter" aria-live="polite">
+                <span class="gallery-mobile-counter__current">1</span>
+                <span class="gallery-mobile-counter__sep">/</span>
+                <span class="gallery-mobile-counter__total">@gallery.Count</span>
+            </div>
+        </div>
         @if (gallery.Count > 1)
         {
-            <div class="gallery-nav" aria-label="Galeri ok gezinme">
-                <button type="button" class="gallery-nav-btn gallery-nav-prev" data-gallery-nav="prev" aria-label="Önceki görsel">
+            <div class="gallery-mobile-nav" aria-label="Mobil galeri gezinme">
+                <button type="button" class="gallery-mobile-nav-btn gallery-mobile-nav-btn--prev" data-gallery-mobile-nav="prev" aria-label="Önceki görsel">
                     <i class="fas fa-chevron-left" aria-hidden="true"></i>
                 </button>
-                <button type="button" class="gallery-nav-btn gallery-nav-next" data-gallery-nav="next" aria-label="Sonraki görsel">
+                <button type="button" class="gallery-mobile-nav-btn gallery-mobile-nav-btn--next" data-gallery-mobile-nav="next" aria-label="Sonraki görsel">
                     <i class="fas fa-chevron-right" aria-hidden="true"></i>
                 </button>
             </div>
+            <p class="gallery-swipe-hint" aria-hidden="true"><i class="fas fa-hand-pointer"></i> @SharedLocalizer["Detail.Gallery.SwipeHint"].Value</p>
         }
-
-        @if (gallery.Count > 0)
-        {
-            <div class="gallery-count-badge" id="galleryCountBadge" aria-label="Galeri görsel sayacı">
-                <span class="gallery-count-badge__current">1</span>
-                <span class="gallery-count-badge__sep">/</span>
-                <span class="gallery-count-badge__total">@gallery.Count</span>
-            </div>
-
-            <button type="button" class="gallery-all-photos-btn" data-gallery-index="0" data-slayt-trigger="hotel-gallery" aria-label="Tüm fotoğrafları aç">
-                <i class="far fa-images" aria-hidden="true"></i>
-                Tüm Fotoğraflar (@gallery.Count)
-            </button>
-        }
-
-        @if (Model.ActiveViewerBand > 0)
-        {
-            <div class="gallery-proof-badge" role="status" aria-live="polite">
-                <i class="fas fa-eye" aria-hidden="true"></i>
-                <span>Son dakikalarda bu otele yaklaşık <strong>@Model.ActiveViewerBand</strong> ilgi gösterdi.</span>
-            </div>
-        }
-
-        <div class="gallery-proof-badge gallery-proof-badge--presence"
-             id="livePresenceLine"
-             role="status"
-             aria-live="polite"
-             hidden>
-            <i class="fas fa-users" aria-hidden="true"></i>
-            <span>Şu anda bu otelin sayfasında yaklaşık <strong id="livePresenceCount">@Model.LivePresenceCount</strong> aktif oturum var.</span>
-        </div>
-    </div>
-    <div class="gallery-side-grid">
-        @for (var imageIndex = 1; imageIndex < gallery.Count && imageIndex <= 4; imageIndex++)
-        {
-            var image = gallery[imageIndex];
-            <button type="button" class="gallery-thumb" data-image="@image" data-gallery-index="@imageIndex">
-                <img src="@image" alt="@Model.Name galeri @imageIndex" loading="lazy" decoding="async" />
-            </button>
-        }
-    </div>
- </section>
- @if (gallery.Count > 0)
- {
-    <section class="gallery-filmstrip-wrap" aria-label="Otel galerisi">
-        <div class="gallery-filmstrip">
-            @for (var imageIndex = 0; imageIndex < gallery.Count; imageIndex++)
-            {
-                <button type="button"
-                        class="gallery-filmstrip-thumb @(imageIndex == 0 ? "active" : string.Empty)"
-                        data-gallery-index="@imageIndex"
-                        aria-label="Otel görsel @(imageIndex + 1)">
-                    <img src="@gallery[imageIndex]" alt="@Model.Name görsel @(imageIndex + 1)" loading="lazy" decoding="async" />
-                </button>
-            }
-        </div>
-    </section>
- }
-    @if (gallery.Count > 0)
-    {
-        <section class="gallery-mobile-strip od-gallery od-gallery--mobile" id="galleryMobileStrip" data-slayt-lightbox="hotel-gallery" data-gallery-title="@Model.Name" aria-label="Mobil galeri slider">
-            <div class="gallery-mobile-chrome" aria-hidden="false">
-                <a asp-controller="Oteller" asp-action="OtelListeleme" class="gallery-mobile-back" aria-label="@SharedLocalizer["Detail.BackToHotels"].Value">
-                    <i class="fas fa-arrow-left" aria-hidden="true"></i>
-                </a>
-                @if (gallery.Count > 0)
+        <div class="gallery-mobile-stage">
+            <div class="gallery-mobile-track" id="galleryMobileTrack">
+                @for (var imageIndex = 0; imageIndex < gallery.Count; imageIndex++)
                 {
-                    <div class="gallery-mobile-counter" id="galleryMobileCounter" aria-live="polite">
-                        <span class="gallery-mobile-counter__current">1</span>
-                        <span class="gallery-mobile-counter__sep">/</span>
-                        <span class="gallery-mobile-counter__total">@gallery.Count</span>
-                    </div>
+                    <button type="button" class="gallery-mobile-slide" data-image="@gallery[imageIndex]" data-gallery-index="@imageIndex" aria-label="Görsel @(imageIndex + 1)">
+                        <img src="@gallery[imageIndex]" alt="@Model.Name mobil galeri @(imageIndex + 1)" @(imageIndex == 0 ? "fetchpriority=\"high\" loading=\"eager\"" : "loading=\"lazy\"") decoding="async" />
+                    </button>
                 }
             </div>
-            @if (gallery.Count > 1)
-            {
-                <div class="gallery-mobile-nav" aria-label="Mobil galeri gezinme">
-                    <button type="button" class="gallery-mobile-nav-btn gallery-mobile-nav-btn--prev" data-gallery-mobile-nav="prev" aria-label="Önceki görsel">
-                        <i class="fas fa-chevron-left" aria-hidden="true"></i>
-                    </button>
-                    <button type="button" class="gallery-mobile-nav-btn gallery-mobile-nav-btn--next" data-gallery-mobile-nav="next" aria-label="Sonraki görsel">
-                        <i class="fas fa-chevron-right" aria-hidden="true"></i>
-                    </button>
-                </div>
-            }
-            @if (gallery.Count > 1)
-            {
-            <p class="gallery-swipe-hint" aria-hidden="true"><i class="fas fa-hand-pointer"></i> @SharedLocalizer["Detail.Gallery.SwipeHint"].Value</p>
-            }
-            <div class="gallery-mobile-stage">
-                <div class="gallery-mobile-track" id="galleryMobileTrack">
-                    @for (var imageIndex = 0; imageIndex < gallery.Count; imageIndex++)
-                    {
-                        <button type="button" class="gallery-mobile-slide" data-image="@gallery[imageIndex]" data-gallery-index="@imageIndex" aria-label="Görsel @(imageIndex + 1)">
-                            <img src="@gallery[imageIndex]" alt="@Model.Name mobil galeri @(imageIndex + 1)" />
-                        </button>
-                    }
-                </div>
-                <div class="gallery-mobile-overlay">
-                    <div class="gallery-mobile-overlay-bottom">
-                        <h1 class="gallery-mobile-hotel-name">@Model.Name</h1>
-                        <div class="gallery-mobile-hero-meta">
+            <div class="gallery-mobile-overlay">
+                <div class="gallery-mobile-overlay-top">
+                    <div class="gallery-mobile-title-row">
+                        <div class="gallery-mobile-title-block">
+                            <h1 class="gallery-mobile-hotel-name">@Model.Name</h1>
+                            <div class="gallery-mobile-footer-meta gallery-mobile-overlay-meta">
+                                @if (Model.StarCount.HasValue && Model.StarCount.Value > 0)
+                                {
+                                    <span class="gallery-mobile-type-chip gallery-mobile-type-chip--stars" aria-label="@($"{Model.StarCount.Value} yıldızlı otel")">
+                                        @for (var starIndex = 0; starIndex < Model.StarCount.Value; starIndex++)
+                                        {
+                                            <i class="fas fa-star" aria-hidden="true"></i>
+                                        }
+                                        <span>@SharedLocalizer["Detail.QuickFacts.StarHotel", Model.StarCount.Value].Value</span>
+                                    </span>
+                                }
+                                <span class="gallery-mobile-type-chip">
+                                    <i class="fas fa-hotel" aria-hidden="true"></i>
+                                    <span>@SharedLocalizer["Detail.QuickFacts.Hotel"].Value</span>
+                                </span>
+                            </div>
                             <p class="gallery-mobile-location" role="text">
                                 <i class="fas fa-location-dot" aria-hidden="true"></i>
                                 <span>@headerLocationText</span>
                             </p>
-                            <div class="rating-summary detail-rating-chip gallery-mobile-rating"
-                                 data-rating-jump
-                                 role="button"
-                                 tabindex="0"
-                                 aria-label="@SharedLocalizer["Detail.Reviews.GoTo"].Value">
-                                <div class="rating-big">
-                                    <span class="rating-number">@(Model.Rating > 0 ? Model.Rating.ToString("0.0") : "0.0")</span>
-                                    <span class="rating-max">/10</span>
-                                </div>
-                                <div class="rating-text">
-                                    @if (Model.ReviewCount <= 0)
-                                    {
-                                        <strong>@SharedLocalizer["Detail.Rating.Pending"].Value</strong>
-                                        <span>@SharedLocalizer["Detail.Rating.NoReviews"].Value</span>
-                                    }
-                                    else
-                                    {
-                                        <strong>@Model.RatingText</strong>
-                                        <span>@SharedLocalizer["Detail.Rating.ReviewCount", Model.ReviewCount].Value</span>
-                                    }
-                                </div>
+                        </div>
+                        <div class="rating-summary detail-rating-chip gallery-mobile-rating"
+                             data-rating-jump
+                             role="button"
+                             tabindex="0"
+                             aria-label="@SharedLocalizer["Detail.Reviews.GoTo"].Value">
+                            <div class="rating-big">
+                                <span class="rating-number">@(Model.Rating > 0 ? Model.Rating.ToString("0.0") : "0.0")</span>
+                                <span class="rating-max">/10</span>
+                            </div>
+                            <div class="rating-text">
+                                @if (Model.ReviewCount <= 0)
+                                {
+                                    <strong>@SharedLocalizer["Detail.Rating.Pending"].Value</strong>
+                                    <span>@SharedLocalizer["Detail.Rating.NoReviews"].Value</span>
+                                }
+                                else
+                                {
+                                    <strong>@Model.RatingText</strong>
+                                    <span>@SharedLocalizer["Detail.Rating.ReviewCount", Model.ReviewCount].Value</span>
+                                }
                             </div>
                         </div>
                     </div>
-                    <button type="button"
-                            class="gallery-mobile-all-photos"
-                            data-gallery-index="0"
-                            data-slayt-trigger="hotel-gallery"
-                            aria-label="Tüm fotoğrafları aç">
-                        <i class="far fa-images" aria-hidden="true"></i>
-                        <span>Tüm Fotoğraflar (@gallery.Count)</span>
-                    </button>
                 </div>
+                <button type="button"
+                        class="gallery-mobile-all-photos"
+                        data-gallery-index="0"
+                        data-gallery-open-fullscreen
+                        aria-label="Tüm fotoğrafları aç">
+                    <i class="far fa-images" aria-hidden="true"></i>
+                    <span>Tüm Fotoğraflar (@gallery.Count)</span>
+                </button>
             </div>
+        </div>
+        @if (gallery.Count > 1)
+        {
             <div class="gallery-mobile-footer">
-                <div class="gallery-mobile-footer-meta">
-                    @if (Model.StarCount.HasValue && Model.StarCount.Value > 0)
+                <div class="gallery-mobile-thumbs" id="galleryMobileThumbs" aria-label="Mobil galeri küçük görseller">
+                    @for (var imageIndex = 0; imageIndex < gallery.Count; imageIndex++)
                     {
-                        <span class="gallery-mobile-type-chip gallery-mobile-type-chip--stars" aria-label="@($"{Model.StarCount.Value} yıldızlı otel")">
-                            @for (var starIndex = 0; starIndex < Model.StarCount.Value; starIndex++)
-                            {
-                                <i class="fas fa-star" aria-hidden="true"></i>
-                            }
-                            <span>@SharedLocalizer["Detail.QuickFacts.StarHotel", Model.StarCount.Value].Value</span>
-                        </span>
+                        <button type="button"
+                                class="gallery-mobile-thumb @(imageIndex == 0 ? "active" : string.Empty)"
+                                data-gallery-mobile-thumb-index="@imageIndex"
+                                aria-label="Görsel @(imageIndex + 1)">
+                            <img src="@gallery[imageIndex]" alt="@Model.Name küçük görsel @(imageIndex + 1)" loading="lazy" decoding="async" />
+                        </button>
                     }
-                    <span class="gallery-mobile-type-chip">
-                        <i class="fas fa-hotel" aria-hidden="true"></i>
-                        <span>@SharedLocalizer["Detail.QuickFacts.Hotel"].Value</span>
-                    </span>
                 </div>
-                @if (gallery.Count > 1)
-                {
-                    <div class="gallery-mobile-thumbs" id="galleryMobileThumbs" aria-label="Mobil galeri küçük görseller">
-                        @for (var imageIndex = 0; imageIndex < gallery.Count; imageIndex++)
-                        {
-                            <button type="button"
-                                    class="gallery-mobile-thumb @(imageIndex == 0 ? "active" : string.Empty)"
-                                    data-gallery-mobile-thumb-index="@imageIndex"
-                                    aria-label="Görsel @(imageIndex + 1)">
-                                <img src="@gallery[imageIndex]" alt="@Model.Name küçük görsel @(imageIndex + 1)" loading="lazy" decoding="async" />
-                            </button>
-                        }
-                    </div>
-
-                    <div class="gallery-mobile-dots" id="galleryMobileDots" role="tablist" aria-label="Galeri gezinme">
-                        @for (var imageIndex = 0; imageIndex < gallery.Count; imageIndex++)
-                        {
-                            <button type="button"
-                                    class="gallery-mobile-dot @(imageIndex == 0 ? "active" : string.Empty)"
-                                    data-gallery-dot-index="@imageIndex"
-                                    aria-label="Görsel @(imageIndex + 1)"
-                                    aria-selected="@(imageIndex == 0 ? "true" : "false")"></button>
-                        }
-                    </div>
-                }
+                <div class="gallery-mobile-dots" id="galleryMobileDots" role="tablist" aria-label="Galeri gezinme">
+                    @for (var imageIndex = 0; imageIndex < gallery.Count; imageIndex++)
+                    {
+                        <button type="button"
+                                class="gallery-mobile-dot @(imageIndex == 0 ? "active" : string.Empty)"
+                                data-gallery-dot-index="@imageIndex"
+                                aria-label="Görsel @(imageIndex + 1)"
+                                aria-selected="@(imageIndex == 0 ? "true" : "false")"></button>
+                    }
+                </div>
             </div>
-        </section>
-    }
-
-@* Eski lightbox/slider DOM'u kaldırıldı: ortak SlaytGorsel (layout + slaytgorsel.js) kullanılıyor. *@
+        }
+    </section>
+}
 
 <section class="detail-header hotel-title-section">
     <div class="detail-hero-head">
@@ -820,7 +722,7 @@
     var reviewSort = (Context.Request.Query["reviewSort"].ToString() ?? "new").Trim().ToLowerInvariant();
     var reviewPageRaw = Context.Request.Query["reviewPage"].ToString();
     var reviewPage = int.TryParse(reviewPageRaw, out var parsedReviewPage) ? Math.Max(1, parsedReviewPage) : 1;
-    const int reviewPageSize = 10;
+    const int reviewPageSize = 7;
 
     var sortedReviews = (Model.Reviews ?? new List<otelturizmnew.Models.Oteller.HotelReviewViewModel>()).ToList();
     sortedReviews = reviewSort switch
@@ -852,7 +754,7 @@
         new { Key = "konum", Label = "Konum", Icon = "fa-location-dot", Emoji = "📍", BaseScore = locScore > 0 ? locScore : signatureScore, Keywords = new[] { "konum", "merkez", "lokasyon", "yakın", "yakin", "mesafe", "sahil" } },
         new { Key = "temizlik", Label = "Temizlik", Icon = "fa-soap", Emoji = "🫧", BaseScore = cleaningScore > 0 ? cleaningScore : signatureScore, Keywords = new[] { "temiz", "temizlik", "hijyen", "nevresim", "banyo", "duş", "dus", "ferah" } },
         new { Key = "personel", Label = "Personel", Icon = "fa-user-group", Emoji = "🤝", BaseScore = staffScore > 0 ? staffScore : signatureScore, Keywords = new[] { "personel", "çalışan", "calisan", "güler", "guler", "yardımcı", "yardimci", "karşılama", "karsilama", "iletişim", "iletisim" } },
-        new { Key = "fiyat", Label = "Fiyat/Performans", Icon = "fa-tags", Emoji = "🏷️", BaseScore = valScore > 0 ? valScore : signatureScore, Keywords = new[] { "fiyat", "performans", "uygun", "pahalı", "pahali", "değer", "deger", "fiyatına", "fiyatina" } },
+        new { Key = "fiyat", Label = "Fiyat", Icon = "fa-tags", Emoji = "🏷️", BaseScore = valScore > 0 ? valScore : signatureScore, Keywords = new[] { "fiyat", "performans", "uygun", "pahalı", "pahali", "değer", "deger", "fiyatına", "fiyatina" } },
         new { Key = "sessizlik", Label = "Sessizlik", Icon = "fa-moon", Emoji = "🌙", BaseScore = quietScore > 0 ? quietScore : signatureScore, Keywords = new[] { "sessiz", "gürültü", "gurultu", "gece", "uyku", "rahat", "huzurlu", "izolasyon" } },
         new { Key = "ulasim", Label = "Ulaşım", Icon = "fa-route", Emoji = "🧭", BaseScore = transportScore > 0 ? transportScore : signatureScore, Keywords = new[] { "ulasim", "ulaşım", "metro", "metrobüs", "metrobus", "otobüs", "otobus", "iskele", "havaalanı", "havalimanı", "tramvay" } }
     };
@@ -935,8 +837,8 @@
                     <p class="hotel-about-text" id="hotelAboutText">
                         @(!string.IsNullOrWhiteSpace(Model.LocationDescription) ? Model.LocationDescription : longDescription)
                     </p>
-                    <button type="button" class="hotel-about-toggle" id="hotelAboutToggle" hidden data-label-more="Devamını gör" data-label-less="Kapat">
-                        Devamını gör
+                    <button type="button" class="hotel-about-toggle" id="hotelAboutToggle" hidden data-label-more="Devamını oku" data-label-less="Kapat">
+                        Devamını oku
                     </button>
                 </div>
             </details>
@@ -962,23 +864,25 @@
             </div>
             @if (amenityIconStrip.Count > 0)
             {
-                <div class="od-amenities__icon-row" role="list" aria-label="@SharedLocalizer["Detail.Amenities.Title"].Value">
-                    @foreach (var item in amenityIconStrip)
-                    {
-                        <button type="button"
-                                class="od-amenity-icon-tile"
-                                role="listitem"
-                                data-open-amenities
-                                aria-label="@item.Name"
-                                title="@item.Name">
-                            <span class="od-amenity-icon-tile__glyph" aria-hidden="true"><i class="fas @item.IconClass"></i></span>
-                        </button>
-                    }
+                <div class="od-amenities__mobile-toolbar">
+                    <div class="od-amenities__icon-row" role="list" aria-label="@SharedLocalizer["Detail.Amenities.Title"].Value">
+                        @foreach (var item in amenityIconStrip)
+                        {
+                            <button type="button"
+                                    class="od-amenity-icon-tile"
+                                    role="listitem"
+                                    data-open-amenities
+                                    aria-label="@item.Name"
+                                    title="@item.Name">
+                                <span class="od-amenity-icon-tile__glyph" aria-hidden="true"><i class="fas @item.IconClass"></i></span>
+                            </button>
+                        }
+                    </div>
+                    <button type="button" class="od-amenities__see-all-mobile" data-open-amenities aria-haspopup="dialog">
+                        @SharedLocalizer["Detail.Amenities.SeeAll"].Value
+                        <i class="fas fa-chevron-right" aria-hidden="true"></i>
+                    </button>
                 </div>
-                <button type="button" class="od-amenities__see-all-mobile" data-open-amenities aria-haspopup="dialog">
-                    @SharedLocalizer["Detail.Amenities.SeeAll"].Value
-                    <i class="fas fa-chevron-right" aria-hidden="true"></i>
-                </button>
             }
             <div class="od-amenities__scroll" role="list" aria-label="@SharedLocalizer["Detail.Amenities.Title"].Value">
                 @foreach (var item in Model.Amenities.Where(x => !string.IsNullOrWhiteSpace(x.Name)).Take(12))
@@ -1244,7 +1148,7 @@
                                             : 0;
                                     }
                                     <button type="button"
-                                            class="room-detail-btn room-detail-btn--link"
+                                            class="amenities-btn amenities-btn--compact room-feature-more-btn room-detail-btn od-room-action-btn"
                                             data-room-detail-open
                                             data-room-name="@room.Name"
                                             data-room-id="@room.RoomTypeId"
@@ -1354,7 +1258,7 @@
                 }
             </div>
 
-            @* Oda galeri modalı kaldırıldı: ortak SlaytGorsel kullanılıyor *@
+            @* Oda galerisi: PureVisualSlider tam ekran modal *@
 
         </article>
 
@@ -1406,7 +1310,7 @@
                     <div><span>Konum</span><div class="bar"><span style="width:@(locationBarWidth)%"></span></div><strong>@(locScore > 0 ? locScore.ToString("0.0") : "-")</strong></div>
                     <div><span>Temizlik</span><div class="bar"><span style="width:@(cleaningBarWidth)%"></span></div><strong>@(cleaningScore > 0 ? cleaningScore.ToString("0.0") : "-")</strong></div>
                     <div><span>Personel</span><div class="bar"><span style="width:@(staffBarWidth)%"></span></div><strong>@(staffScore > 0 ? staffScore.ToString("0.0") : "-")</strong></div>
-                    <div><span>Fiyat/Performans</span><div class="bar"><span style="width:@(valueBarWidth)%"></span></div><strong>@(valScore > 0 ? valScore.ToString("0.0") : "-")</strong></div>
+                    <div><span>Fiyat</span><div class="bar"><span style="width:@(valueBarWidth)%"></span></div><strong>@(valScore > 0 ? valScore.ToString("0.0") : "-")</strong></div>
                     <div><span>Sessizlik</span><div class="bar"><span style="width:@(quietBarWidth)%"></span></div><strong>@(quietScore > 0 ? quietScore.ToString("0.0") : "-")</strong></div>
                     <div><span>Ulaşım</span><div class="bar"><span style="width:@(transportBarWidth)%"></span></div><strong>@(transportScore > 0 ? transportScore.ToString("0.0") : "-")</strong></div>
                 </div>
@@ -1482,7 +1386,7 @@
                                     <span class="review-chip">@review.Score.ToString("0.0")</span>
                                 </div>
                                 <div class="review-body" data-review-card>
-                                    <p class="review-text" data-review-text>@FixMojibake(review.Text)</p>
+                                    <p class="review-text is-clamped" data-review-text>@FixMojibake(review.Text)</p>
                                     <button type="button" class="review-more" data-review-more hidden>Devamını oku</button>
                                     <span data-review-fulltext hidden>@FixMojibake(review.Text)</span>
                                 </div>
@@ -2292,9 +2196,6 @@
 
         (function () {
             const galleryImages = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(gallery));
-            const mainImage = document.getElementById('mainGalleryImage');
-            const mainImageWrap = document.querySelector('.gallery-main-image');
-            // SlaytGorsel ortak bileşen (layout'ta yüklü)
             const favoriteButtons = Array.from(document.querySelectorAll('.favorite-btn'));
             const bookingForm = document.getElementById('bookingForm');
             const paymentMethodSelect = document.getElementById('paymentMethodSelect');
@@ -2462,7 +2363,7 @@
                     behavior: 'smooth'
                 });
             }
-            // SlaytGorsel kendi içinde scroll kilidi yönetir.
+            // PureVisualSlider (Swiper) layout'ta yüklü.
 
             function isMobileBookingMode() {
                 return window.matchMedia && window.matchMedia('(max-width: 900px)').matches;
@@ -2540,11 +2441,6 @@
                 window.setTimeout(function () {
                     bookingModalBackdrop.hidden = true;
                 }, 220);
-            }
-
-            // İlk yüklemede de seçili görselin blur arkaplanını set et
-            if (mainImageWrap instanceof HTMLElement && mainImage instanceof HTMLImageElement && mainImage.src) {
-                mainImageWrap.style.setProperty('--hotel-main-ambient', 'url(\"' + mainImage.src + '\")');
             }
 
             function syncGuestInputs() {
@@ -2681,126 +2577,23 @@
                 return false;
             }
 
-            function syncMainImage(index) {
-                if (!Array.isArray(galleryImages) || !galleryImages.length) {
+            function openVisualGallery(images, title, startIndex) {
+                if (!window.PureVisualSlider || !Array.isArray(images) || images.length === 0) {
                     return;
                 }
-
-                const safeIndex = Math.min(Math.max(index, 0), galleryImages.length - 1);
-                activeGalleryIndex = safeIndex;
-                if (mainImage) {
-                    mainImage.src = galleryImages[safeIndex];
-                }
-                if (mainImageWrap instanceof HTMLElement) {
-                    mainImageWrap.style.setProperty('--hotel-main-ambient', 'url(\"' + (galleryImages[safeIndex] || '') + '\")');
-                }
-                const counter = document.getElementById('galleryCountBadge');
-                if (counter) {
-                    const currentEl = counter.querySelector('.gallery-count-badge__current');
-                    if (currentEl) currentEl.textContent = String(safeIndex + 1);
-                }
-                const mobileCounter = document.getElementById('galleryMobileCounter');
-                if (mobileCounter) {
-                    const mobileCurrent = mobileCounter.querySelector('.gallery-mobile-counter__current');
-                    if (mobileCurrent) mobileCurrent.textContent = String(safeIndex + 1);
-                }
-                document.querySelectorAll('.gallery-thumb, .gallery-filmstrip-thumb').forEach(function (thumb) {
-                    const thumbIndex = parseInt(thumb.getAttribute('data-gallery-index') || '0', 10);
-                    thumb.classList.toggle('active', thumbIndex === safeIndex);
-                });
-                document.querySelectorAll('.gallery-mobile-thumb').forEach(function (thumb) {
-                    const thumbIndex = parseInt(thumb.getAttribute('data-gallery-mobile-thumb-index') || '0', 10);
-                    thumb.classList.toggle('active', thumbIndex === safeIndex);
-                });
-                document.querySelectorAll('[data-gallery-dot-index]').forEach(function (dot) {
-                    const dotIndex = parseInt(dot.getAttribute('data-gallery-dot-index') || '0', 10);
-                    const isActive = dotIndex === safeIndex;
-                    dot.classList.toggle('active', isActive);
-                    dot.setAttribute('aria-selected', isActive ? 'true' : 'false');
-                });
-            }
-
-            window.__otelDetayGallerySync = syncMainImage;
-
-            function scrollMobileGalleryIfNeeded(index) {
-                if (window.__otelDetayMobileGallery && typeof window.__otelDetayMobileGallery.scrollTo === 'function') {
-                    window.__otelDetayMobileGallery.scrollTo(index, 'smooth');
-                }
-            }
-
-            function openSlayt(images, title, startIndex) {
-                if (!window.SlaytGorsel || !Array.isArray(images) || images.length === 0) {
-                    return;
-                }
-                window.SlaytGorsel.open({
+                window.PureVisualSlider.open({
                     images: images,
                     title: title || '',
                     startIndex: startIndex || 0
                 });
             }
 
-            document.querySelectorAll('.gallery-thumb').forEach(function (button) {
-                button.addEventListener('click', function () {
-                    const index = parseInt(button.getAttribute('data-gallery-index') || '0', 10);
-                    syncMainImage(index);
-                    openSlayt(galleryImages, '@Model.Name', index);
-                });
-            });
-
-            document.querySelectorAll('.gallery-filmstrip-thumb').forEach(function (button) {
-                button.addEventListener('click', function () {
-                    const index = parseInt(button.getAttribute('data-gallery-index') || '0', 10);
-                    syncMainImage(index);
-                    openSlayt(galleryImages, '@Model.Name', index);
-                });
-            });
-
-            document.querySelectorAll('.gallery-main-trigger, .gallery-all-photos-btn').forEach(function (button) {
-                button.addEventListener('click', function () {
-                    const index = parseInt(button.getAttribute('data-gallery-index') || '0', 10);
-                    syncMainImage(index);
-                    openSlayt(galleryImages, '@Model.Name', index);
-                });
-            });
-
-            document.querySelectorAll('[data-gallery-nav]').forEach(function (button) {
-                button.addEventListener('click', function (event) {
-                    event.stopPropagation();
-                    if (!Array.isArray(galleryImages) || galleryImages.length < 2) {
-                        return;
-                    }
-
-                    const direction = button.getAttribute('data-gallery-nav');
-                    const delta = direction === 'prev' ? -1 : 1;
-                    const nextIndex = (activeGalleryIndex + delta + galleryImages.length) % galleryImages.length;
-                    syncMainImage(nextIndex);
-                    scrollMobileGalleryIfNeeded(nextIndex);
-                });
-            });
-
-            document.addEventListener('keydown', function (event) {
-                const galleryRoot = document.getElementById('hotelGalleryRoot');
-                if (!galleryRoot || !Array.isArray(galleryImages) || galleryImages.length < 2) {
-                    return;
+            document.addEventListener('pure-visual-slider:change', function (event) {
+                if (event.detail && event.detail.id === 'hotelVisualSwiper') {
+                    activeGalleryIndex = typeof event.detail.index === 'number' ? event.detail.index : 0;
                 }
-
-                if (event.key !== 'ArrowLeft' && event.key !== 'ArrowRight') {
-                    return;
-                }
-
-                const target = event.target;
-                if (target && (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.tagName === 'SELECT' || target.isContentEditable)) {
-                    return;
-                }
-
-                event.preventDefault();
-                const delta = event.key === 'ArrowLeft' ? -1 : 1;
-                const nextIndex = (activeGalleryIndex + delta + galleryImages.length) % galleryImages.length;
-                syncMainImage(nextIndex);
-                scrollMobileGalleryIfNeeded(nextIndex);
             });
 
-            // Oda kartı görselleri: ortak slayt gösterim
             document.querySelectorAll('.room-gallery-trigger').forEach(function (button) {
                 button.addEventListener('click', function () {
                     const roomId = button.getAttribute('data-room-id') || '';
@@ -2808,11 +2601,9 @@
                     const startIdx = parseInt(button.getAttribute('data-room-gallery-start') || '0', 10) || 0;
                     const map = window.__otelDetayConfig?.roomGalleries || {};
                     const imgs = map[roomId] || map[String(roomId)] || [];
-                    openSlayt(imgs, roomName, startIdx);
+                    openVisualGallery(imgs, roomName, startIdx);
                 });
             });
-
-            // Not: Mobil galeri kaydirma oteldetay-gallery-mobile.js içinde yönetilir.
 
             function getDetailPageI18n() {
                 const root = document.querySelector('.otel-detail-template-v41');
@@ -3097,7 +2888,7 @@
                 const textEl = document.getElementById('hotelAboutText');
                 const toggleEl = document.getElementById('hotelAboutToggle');
                 const tablerBtn = document.querySelector('[data-about-toggle]');
-                const aboutMoreLabel = toggleEl?.getAttribute('data-label-more') || 'Devamını gör';
+                const aboutMoreLabel = toggleEl?.getAttribute('data-label-more') || 'Devamını oku';
                 const aboutLessLabel = toggleEl?.getAttribute('data-label-less') || 'Kapat';
                 if (!(textEl instanceof HTMLElement) || !(toggleEl instanceof HTMLButtonElement)) {
                     return;
@@ -4337,7 +4128,7 @@
                 let feedPayload = [];
                 let activeInsightTopic = 'all';
                 let activeInsightPage = 1;
-                const insightPageSize = 10;
+                const insightPageSize = 7;
                 try {
                     topicPayload = JSON.parse(topicPayloadEl?.textContent || '[]');
                 } catch (_) {
@@ -4467,18 +4258,25 @@
                     const title = metaRoot?.querySelector('.review-meta h4')?.textContent?.trim() || 'Misafir yorumu';
                     const score = metaRoot?.querySelector('.review-chip')?.textContent?.trim() || '';
 
-                    requestAnimationFrame(function () {
-                        const isTruncated = p.scrollHeight > p.clientHeight + 2;
-                        moreBtn.hidden = !isTruncated;
-                    });
+                    function syncReviewClamp() {
+                        p.classList.remove('is-expanded');
+                        requestAnimationFrame(function () {
+                            const isTruncated = p.scrollHeight > p.clientHeight + 2;
+                            moreBtn.hidden = !isTruncated;
+                            if (!isTruncated) {
+                                p.classList.remove('is-clamped');
+                            } else {
+                                p.classList.add('is-clamped');
+                            }
+                        });
+                    }
+
+                    syncReviewClamp();
 
                     moreBtn.addEventListener('click', function () {
-                        openReviewModal({
-                            title: title,
-                            date: date,
-                            score: score,
-                            text: full.textContent || p.textContent || ''
-                        });
+                        const expanded = p.classList.toggle('is-expanded');
+                        p.classList.toggle('is-clamped', !expanded);
+                        moreBtn.textContent = expanded ? 'Daha az göster' : 'Devamını oku';
                     });
                 });
 
@@ -4936,7 +4734,7 @@
 
             roomDetailModalGalleryOpen?.addEventListener('click', function () {
                 if (activeRoomDetailGalleryItems.length > 0) {
-                    openSlayt(activeRoomDetailGalleryItems, activeRoomDetailName, 0);
+                    openVisualGallery(activeRoomDetailGalleryItems, activeRoomDetailName, 0);
                 }
             });
 
@@ -5203,7 +5001,7 @@
                             '<span class="review-chip">' + escapeHtml(item?.score || '') + '</span>' +
                         '</div>' +
                         '<div class="review-body" data-review-card>' +
-                            '<p class="review-text" data-review-text>' + escapeHtml(item?.text || '') + '</p>' +
+                            '<p class="review-text is-clamped" data-review-text>' + escapeHtml(item?.text || '') + '</p>' +
                             '<button type="button" class="review-more" data-review-more hidden>Devamını oku</button>' +
                             '<span data-review-fulltext hidden>' + escapeHtml(item?.text || '') + '</span>' +
                         '</div>' +
@@ -5224,35 +5022,9 @@
             });
         })();
     </script>
-    <script src="~/assets/js/otel-detay-reservation.js" asp-append-version="true"></script>
-    <script nonce="@nonce">
-        (function () {
-            var hid = @Model.Id;
-            var elCount = document.getElementById('livePresenceCount');
-            var line = document.getElementById('livePresenceLine');
-            var tabId = sessionStorage.getItem('otelPresenceTab');
-            if (!tabId) {
-                tabId = (window.crypto && window.crypto.randomUUID) ? window.crypto.randomUUID() : ('t' + Math.random().toString(36).slice(2));
-                sessionStorage.setItem('otelPresenceTab', tabId);
-            }
-            function beat() {
-                fetch('/api/hotel-presence/beat', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ hotelId: hid, tabId: tabId })
-                }).then(function (r) { return r.ok ? r.json() : null; }).then(function (j) {
-                    if (!j || !j.ok) return;
-                    var active = Number(j.active || 0);
-                    if (elCount) elCount.textContent = String(active);
-                    if (line) line.hidden = !(active > 0);
-                }).catch(function () { });
-            }
-            beat();
-            setInterval(beat, 45000);
-        })();
-    </script>
-    <script src="~/assets/js/booking-date-guard.js" asp-append-version="true" defer></script>
     <script src="~/assets/js/oteldetay-gallery-mobile.js" asp-append-version="true" defer></script>
+    <script src="~/assets/js/otel-detay-reservation.js" asp-append-version="true"></script>
+    <script src="~/assets/js/booking-date-guard.js" asp-append-version="true" defer></script>
     <script src="~/assets/js/oteldetay-detail-mobile.js" asp-append-version="true" defer></script>
     <script src="~/assets/js/otel-detay.js" asp-append-version="true"></script>
     <partial name="~/Views/Shared/_FavoriteToggleScriptPartial.cshtml" />

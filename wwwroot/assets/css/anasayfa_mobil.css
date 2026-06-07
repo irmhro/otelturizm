@@ -578,42 +578,42 @@
     }
 
     .hero-title.hero-title-pro {
-        font-size: clamp(24px, 7.4vw, 32px);
-        line-height: 1.12;
-        gap: 2px;
+        font-size: clamp(28px, 7.8vw, 40px);
+        line-height: 1.1;
+        gap: 4px;
         letter-spacing: -0.03em;
     }
 
     .hero-title.hero-title-pro--headline {
         width: 100%;
         max-width: 100%;
-        font-size: clamp(17px, 4.8vw, 28px);
-        line-height: 1.15;
-        gap: 4px;
+        font-size: clamp(26px, 7.2vw, 40px);
+        line-height: 1.12;
+        gap: clamp(4px, 1.2vw, 8px);
     }
 
     .hero-title-pro--headline .hero-title-row--spread {
-        justify-content: center;
-        flex-wrap: nowrap;
-        gap: 0.3em;
+        justify-content: space-between;
+        flex-wrap: wrap;
+        gap: clamp(0.24em, 2.4vw, 0.72em);
         width: 100%;
         max-width: 100%;
     }
 
     .hero-title-pro--headline .hero-title-row--spread .hero-title-word {
-        flex: 0 0 auto;
+        flex: 0 1 auto;
         white-space: nowrap;
     }
 
     .hero-title-row {
         display: flex;
-        flex-wrap: nowrap;
+        flex-wrap: wrap;
         align-items: baseline;
-        justify-content: center;
-        gap: 0.28em;
+        justify-content: space-between;
+        gap: clamp(0.22em, 2.2vw, 0.65em);
         width: 100%;
         max-width: 100%;
-        white-space: nowrap;
+        white-space: normal;
     }
 
     .hero-title-row .hero-title-word {
@@ -934,23 +934,23 @@
     }
 
     .hero-title.hero-title-pro {
-        font-size: clamp(22px, 6.8vw, 28px);
-        letter-spacing: -0.026em;
+        font-size: clamp(24px, 7vw, 34px);
+        letter-spacing: -0.028em;
     }
 
     .hero-title.hero-title-pro--headline {
         width: 100%;
         max-width: 100%;
-        font-size: clamp(15px, 4.4vw, 22px);
-        line-height: 1.14;
-        gap: 3px;
-        letter-spacing: -0.024em;
+        font-size: clamp(22px, 6.6vw, 32px);
+        line-height: 1.12;
+        gap: 4px;
+        letter-spacing: -0.026em;
     }
 
     .hero-title-pro--headline .hero-title-row--spread {
-        justify-content: center;
-        flex-wrap: nowrap;
-        gap: 0.26em;
+        justify-content: space-between;
+        flex-wrap: wrap;
+        gap: clamp(0.2em, 2vw, 0.55em);
     }
 
     .hero-title-pro--headline .hero-title-row--spread .hero-title-word {

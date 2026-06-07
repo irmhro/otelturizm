@@ -78,13 +78,13 @@
         });
     }
 
-    function openSlaytAt(index) {
-        if (!window.SlaytGorsel || !images.length) {
+    function openGalleryFullscreen(index) {
+        if (!window.PureVisualSlider || !images.length) {
             return;
         }
         var safeIndex = clampIndex(index);
         updateChrome(safeIndex);
-        window.SlaytGorsel.open({
+        window.PureVisualSlider.open({
             images: images,
             title: title,
             startIndex: safeIndex
@@ -189,7 +189,7 @@
                 return;
             }
             var index = parseInt(slide.getAttribute('data-gallery-index') || '0', 10);
-            openSlaytAt(index);
+            openGalleryFullscreen(index);
         });
     });
 
@@ -224,21 +224,22 @@
         });
     });
 
-    document.querySelectorAll('.gallery-mobile-all-photos, [data-slayt-trigger="hotel-gallery"]').forEach(function (button) {
+    document.querySelectorAll('.gallery-mobile-all-photos, [data-gallery-open-fullscreen]').forEach(function (button) {
         if (!strip.contains(button) && button.closest('#galleryMobileStrip') === null) {
             return;
         }
         button.addEventListener('click', function (event) {
             event.preventDefault();
             var index = parseInt(button.getAttribute('data-gallery-index') || String(activeIndex), 10);
-            openSlaytAt(index);
+            openGalleryFullscreen(index);
         });
     });
 
     window.__otelDetayMobileGallery = {
         syncIndex: updateChrome,
         scrollTo: scrollToIndex,
-        openSlayt: openSlaytAt
+        openSlayt: openGalleryFullscreen,
+        openFullscreen: openGalleryFullscreen
     };
 
     updateChrome(0);

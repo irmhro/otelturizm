@@ -1,0 +1,191 @@
+/* Saf lüks görsel slayt — Swiper 11 (mobil + masaüstü ortak) */
+
+.pure-visual-slider {
+    width: 100%;
+    max-width: 1400px;
+    height: 75vh;
+    min-height: 400px;
+    position: relative;
+    margin: 0 auto;
+}
+
+.pure-visual-slider .swiper {
+    width: 100%;
+    height: 100%;
+}
+
+@media (min-width: 768px) {
+    .pure-visual-slider .swiper {
+        border-radius: 16px;
+        width: 90%;
+        margin: 0 auto;
+        box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
+    }
+}
+
+.pure-visual-slider .swiper-slide {
+    overflow: hidden;
+    background-color: #111;
+}
+
+.pure-visual-slider .swiper-slide img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transform: translateZ(0) scale(1.03);
+    will-change: transform;
+    transition: transform 8s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+.pure-visual-slider .swiper-slide-active img {
+    transform: translateZ(0) scale(1);
+}
+
+.pure-visual-slider .swiper-button-next,
+.pure-visual-slider .swiper-button-prev {
+    color: #ffffff !important;
+    width: 44px !important;
+    height: 44px !important;
+    background: rgba(0, 0, 0, 0.3);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    border-radius: 50%;
+    transition: all 0.3s ease;
+    opacity: 0;
+}
+
+.pure-visual-slider:hover .swiper-button-next,
+.pure-visual-slider:hover .swiper-button-prev {
+    opacity: 1;
+}
+
+.pure-visual-slider .swiper-button-next:hover,
+.pure-visual-slider .swiper-button-prev:hover {
+    background: rgba(255, 255, 255, 0.1);
+    transform: scale(1.1);
+}
+
+.pure-visual-slider .swiper-button-next::after,
+.pure-visual-slider .swiper-button-prev::after {
+    font-size: 16px !important;
+    font-weight: bold;
+}
+
+.pure-visual-slider .swiper-pagination {
+    bottom: 20px !important;
+}
+
+.pure-visual-slider .swiper-pagination-bullet {
+    width: 8px !important;
+    height: 8px !important;
+    background-color: #ffffff !important;
+    opacity: 0.4 !important;
+    transition: all 0.4s ease;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
+}
+
+.pure-visual-slider .swiper-pagination-bullet-active {
+    width: 24px !important;
+    border-radius: 4px !important;
+    opacity: 1 !important;
+}
+
+@media (max-width: 768px) {
+    .pure-visual-slider {
+        height: 60vh;
+        min-height: 280px;
+    }
+
+    .pure-visual-slider .swiper {
+        width: 100%;
+        border-radius: 0;
+        box-shadow: none;
+    }
+
+    .pure-visual-slider .swiper-button-next,
+    .pure-visual-slider .swiper-button-prev {
+        display: none;
+    }
+}
+
+/* Otel detay sayfa bağlamı */
+.od-hotel-visual-gallery.pure-visual-slider {
+    max-width: min(var(--page-max-width, 1240px), calc(100% - var(--page-content-inset, 48px)));
+}
+
+@media (max-width: 900px) {
+    .od-hotel-visual-gallery.pure-visual-slider {
+        max-width: 100%;
+        width: 100%;
+        margin-left: 0;
+        margin-right: 0;
+    }
+}
+
+/* Tam ekran modal (oda galerisi) */
+.pure-visual-slider-modal {
+    position: fixed;
+    inset: 0;
+    z-index: 7000;
+    display: grid;
+    place-items: center;
+    padding: max(12px, env(safe-area-inset-top)) 12px max(12px, env(safe-area-inset-bottom));
+}
+
+.pure-visual-slider-modal[hidden] {
+    display: none !important;
+}
+
+.pure-visual-slider-modal__backdrop {
+    position: absolute;
+    inset: 0;
+    background: rgba(5, 5, 5, 0.88);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+}
+
+.pure-visual-slider-modal__close {
+    position: absolute;
+    top: max(14px, env(safe-area-inset-top));
+    right: 14px;
+    z-index: 3;
+    width: 44px;
+    height: 44px;
+    border: 1px solid rgba(255, 255, 255, 0.25);
+    border-radius: 50%;
+    background: rgba(0, 0, 0, 0.35);
+    color: #fff;
+    cursor: pointer;
+    display: grid;
+    place-items: center;
+}
+
+.pure-visual-slider--modal {
+    position: relative;
+    z-index: 2;
+    width: min(1400px, 100%);
+    height: min(82vh, 760px);
+    max-height: calc(100vh - 48px);
+}
+
+.pure-visual-slider--modal .swiper {
+    width: 100%;
+    height: 100%;
+    border-radius: 16px;
+    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
+}
+
+body.pure-visual-slider-open {
+    overflow: hidden;
+}
+
+@media (max-width: 768px) {
+    .pure-visual-slider--modal {
+        height: 60vh;
+        min-height: 280px;
+    }
+
+    .pure-visual-slider--modal .swiper {
+        border-radius: 0;
+    }
+}

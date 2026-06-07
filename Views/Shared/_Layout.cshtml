@@ -139,7 +139,8 @@
     <link rel="stylesheet" href="~/assets/css/footer_mobil.css" asp-append-version="true" media="(max-width: 900px)" />
     <link rel="stylesheet" href="~/assets/css/route-picker-modal.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/assets/css/route-picker-modal.mobile.css" asp-append-version="true" media="(max-width: 900px)" />
-    <link rel="stylesheet" href="~/assets/css/slaytgorsel.css" asp-append-version="true" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.css" crossorigin="anonymous" />
+    <link rel="stylesheet" href="~/assets/css/pure-visual-slider.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/assets/css/yanbar.css" asp-append-version="true" />
     @if (developmentGateEnabled)
     {
@@ -225,7 +226,7 @@
 <partial name="~/Views/Anasayfa/_AnasayfaPremiumFooter.cshtml" />
 <partial name="~/Views/Shared/_RoutePickerModal.cshtml" />
 <partial name="~/Views/Shared/yanbar.cshtml" />
-<partial name="~/Views/Shared/_SlaytGorsel.cshtml" />
+<partial name="~/Views/Shared/_PureVisualSliderModal.cshtml" />
 
 <script src="~/lib/jquery/dist/jquery.min.js"></script>
 <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
@@ -269,7 +270,8 @@
 <script src="~/assets/js/route-picker-modal.js" asp-append-version="true"></script>
 <script src="~/assets/js/home-drawer-prefs.js" asp-append-version="true" defer></script>
 <script src="~/assets/js/home-header-prefs.js" asp-append-version="true" defer></script>
-<script src="~/assets/js/slaytgorsel.js" asp-append-version="true"></script>
+<script src="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.js" crossorigin="anonymous"></script>
+<script src="~/assets/js/pure-visual-slider.js" asp-append-version="true"></script>
 @await RenderSectionAsync("Scripts", required: false)
 </body>
 </html>

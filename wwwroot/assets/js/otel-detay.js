@@ -16,9 +16,8 @@
         const galleryImages = Array.isArray(cfg.galleryImages) ? cfg.galleryImages : [];
         const mainImage = document.getElementById('mainGalleryImage');
         const mainImageWrap = document.querySelector('.gallery-main-image');
-        // Otel galeri slaytı artık ortak SlaytGorsel ile açılıyor.
-        // Eski "galleryLightbox" DOM'u kaldırıldı (OtelDetay.cshtml).
-        const hasSlayt = !!(window.SlaytGorsel && typeof window.SlaytGorsel.open === 'function');
+        // Otel galeri: PureVisualSlider (Swiper) inline + modal.
+        const hasVisualSlider = !!(window.PureVisualSlider && typeof window.PureVisualSlider.open === 'function');
         const hotelTitle = String(cfg.hotelName || cfg.hotelTitle || document.title || 'Otel');
         const lightbox = document.getElementById('galleryLightbox');
         const lightboxImage = document.getElementById('galleryLightboxImage');
@@ -388,10 +387,10 @@
 
         function openLightbox(index) {
             if (!lightbox || !lightboxImage || !Array.isArray(galleryImages) || !galleryImages.length) {
-                // SlaytGorsel varsa lightbox DOM'u olmasa bile slayt aç.
-                if (hasSlayt && Array.isArray(galleryImages) && galleryImages.length) {
+                // PureVisualSlider varsa lightbox DOM'u olmasa bile galeri aç.
+                if (hasVisualSlider && Array.isArray(galleryImages) && galleryImages.length) {
                     syncMainImage(index);
-                    window.SlaytGorsel.open({
+                    window.PureVisualSlider.open({
                         images: galleryImages,
                         title: hotelTitle,
                         startIndex: activeGalleryIndex
@@ -400,9 +399,9 @@
                 return;
             }
 
-            if (hasSlayt) {
+            if (hasVisualSlider) {
                 syncMainImage(index);
-                window.SlaytGorsel.open({
+                window.PureVisualSlider.open({
                     images: galleryImages,
                     title: hotelTitle,
                     startIndex: activeGalleryIndex
@@ -478,6 +477,25 @@
             window.scrollTo(0, lightboxScrollY || 0);
         }
 
+        // --- Desktop hero 4-grid gallery ---
+        document.querySelectorAll('.od-hotel-hero-hit[data-gallery-index]').forEach(function (hit) {
+            hit.addEventListener('click', function () {
+                const idx = parseInt(hit.getAttribute('data-gallery-index') || '0', 10);
+                if (Number.isFinite(idx)) {
+                    openLightbox(idx);
+                }
+            });
+        });
+
+        document.querySelectorAll('.od-hotel-hero-view-all[data-gallery-open-fullscreen]').forEach(function (button) {
+            button.addEventListener('click', function (event) {
+                event.preventDefault();
+                event.stopPropagation();
+                const idx = parseInt(button.getAttribute('data-gallery-index') || '0', 10);
+                openLightbox(Number.isFinite(idx) ? idx : 0);
+            });
+        });
+
         // --- Hotel gallery bindings (desktop thumbs + lightbox + mobile track) ---
         document.querySelectorAll('.gallery-thumb, .gallery-filmstrip-thumb').forEach(function (thumb) {
             thumb.addEventListener('click', function () {
@@ -485,7 +503,7 @@
                 if (Number.isFinite(idx)) {
                     syncMainImage(idx);
                     scrollMobileTrackTo(idx);
-                    if (hasSlayt) {
+                    if (hasVisualSlider) {
                         openLightbox(idx);
                     }
                 }
@@ -498,7 +516,7 @@
             openLightbox(Number.isFinite(idx) ? idx : 0);
         });
 
-        if (!hasSlayt) {
+        if (!hasVisualSlider) {
             lightboxClose?.addEventListener('click', closeLightbox);
             lightboxPrev?.addEventListener('click', function () {
                 if (!Array.isArray(galleryImages) || galleryImages.length === 0) return;
@@ -654,9 +672,9 @@
     })();
 
     (function () {
-        // Oda galerisi artık ortak SlaytGorsel ile açılıyor (inline v41).
+        // Oda galerisi: PureVisualSlider (inline v41).
         // Eski "roomGalleryModal" akışı çift katman oluşturduğu için devre dışı bırakıldı.
-        if (window.__otelDetayInlineV41 || window.SlaytGorsel) {
+        if (window.__otelDetayInlineV41 || window.PureVisualSlider) {
             return;
         }
         const modal = document.getElementById('roomGalleryModal');

@@ -14,7 +14,7 @@
     .otel-detail-template-v41.od-detail .detail-header,
     .otel-detail-template-v41.od-detail .od-quick-facts,
     .otel-detail-template-v41.od-detail .detail-grid {
-        width: min(var(--page-max-width, 1280px), calc(100% - 48px));
+        width: min(var(--page-max-width, 1240px), calc(100% - 48px));
         margin-inline: auto;
     }
 }
