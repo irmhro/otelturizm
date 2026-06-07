@@ -259,14 +259,17 @@
         z-index: 2200 !important;
         width: 100% !important;
         max-width: 100% !important;
-        max-height: min(92vh, 760px) !important;
+        height: min(94dvh, 100%) !important;
+        max-height: 94dvh !important;
         margin: 0 !important;
         padding: 0 !important;
-        border-radius: 20px 20px 0 0 !important;
+        border-radius: 18px 18px 0 0 !important;
         background: #fff !important;
         box-shadow: 0 -12px 40px rgba(26, 25, 25, 0.16) !important;
         overflow: hidden !important;
         flex-direction: column !important;
+        transform: none !important;
+        opacity: 1 !important;
     }
 
     .oteldetay-page > #roomDetailModal.room-detail-modal.is-open {
@@ -275,12 +278,26 @@
 
     .oteldetay-page > #roomDetailModal .room-detail-modal-head {
         display: flex !important;
-        align-items: flex-start !important;
+        align-items: center !important;
         justify-content: space-between !important;
         gap: 12px !important;
-        padding: 16px 16px 12px !important;
+        padding: 14px 16px 12px !important;
         border-bottom: 1px solid var(--od-border, #EBE9E4) !important;
+        flex: 0 0 auto !important;
         flex-shrink: 0 !important;
+    }
+
+    .oteldetay-page > #roomDetailModal .room-detail-modal-close-text {
+        flex: 0 0 auto !important;
+        min-height: 36px !important;
+        padding: 0 4px !important;
+        border: 0 !important;
+        background: transparent !important;
+        color: var(--od-crimson, #E30A17) !important;
+        font-size: 14px !important;
+        font-weight: 800 !important;
+        line-height: 1 !important;
+        white-space: nowrap !important;
     }
 
     .oteldetay-page > #roomDetailModal .detail-modal-kicker {
@@ -295,7 +312,7 @@
 
     .oteldetay-page > #roomDetailModal .room-detail-modal-head h3 {
         margin: 0 !important;
-        font-size: 1.125rem !important;
+        font-size: 1rem !important;
         line-height: 1.25 !important;
         font-weight: 800 !important;
     }
@@ -303,12 +320,25 @@
     .oteldetay-page > #roomDetailModal .room-detail-modal-body {
         display: flex !important;
         flex-direction: column !important;
-        gap: 14px !important;
-        padding: 14px 16px calc(16px + env(safe-area-inset-bottom, 0px)) !important;
+        gap: 12px !important;
+        padding: 12px 16px 8px !important;
         overflow-y: auto !important;
+        overflow-x: hidden !important;
         -webkit-overflow-scrolling: touch !important;
         flex: 1 1 auto !important;
         min-height: 0 !important;
+        overscroll-behavior: contain !important;
+    }
+
+    .oteldetay-page > #roomDetailModal .room-detail-modal-actions {
+        display: grid !important;
+        grid-template-columns: 1fr 1fr !important;
+        gap: 10px !important;
+        padding: 12px 16px calc(12px + env(safe-area-inset-bottom, 0px)) !important;
+        border-top: 1px solid var(--od-border, #EBE9E4) !important;
+        background: #fff !important;
+        flex: 0 0 auto !important;
+        flex-shrink: 0 !important;
     }
 
     .oteldetay-page > #roomDetailModal .room-detail-modal-summary {
@@ -364,12 +394,17 @@
 
     .oteldetay-page > #roomDetailModal .room-detail-modal-stats {
         display: grid !important;
-        grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+        grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
         gap: 8px !important;
     }
 
     .oteldetay-page > #roomDetailModal .room-detail-modal-stat {
-        padding: 10px 12px !important;
+        display: flex !important;
+        flex-direction: column !important;
+        justify-content: center !important;
+        gap: 4px !important;
+        min-height: 68px !important;
+        padding: 10px 10px !important;
         border-radius: 12px !important;
         border: 1px solid var(--od-border, #EBE9E4) !important;
         background: var(--od-bg, #FCFBF9) !important;
@@ -378,17 +413,68 @@
     .oteldetay-page > #roomDetailModal .room-detail-modal-stat span {
         display: block !important;
         font-size: 11px !important;
+        line-height: 1.2 !important;
         color: var(--od-muted, #6E6E77) !important;
-        margin-bottom: 4px !important;
+        margin: 0 !important;
     }
 
     .oteldetay-page > #roomDetailModal .room-detail-modal-stat strong {
+        display: block !important;
         font-size: 14px !important;
+        line-height: 1.25 !important;
         font-weight: 800 !important;
+        color: var(--od-dark, #1A1919) !important;
+        overflow: hidden !important;
+        text-overflow: ellipsis !important;
+        display: -webkit-box !important;
+        -webkit-line-clamp: 2 !important;
+        -webkit-box-orient: vertical !important;
     }
 
     .oteldetay-page > #roomDetailModal .room-detail-modal-stat-price {
         grid-column: 1 / -1 !important;
+        min-height: auto !important;
+        padding: 12px !important;
+    }
+
+    .oteldetay-page > #roomDetailModal .room-detail-modal-price-stack {
+        display: flex !important;
+        flex-wrap: wrap !important;
+        align-items: baseline !important;
+        gap: 6px 10px !important;
+    }
+
+    .oteldetay-page > #roomDetailModal .room-detail-modal-price-old {
+        font-size: 13px !important;
+        font-weight: 700 !important;
+        color: var(--od-muted, #6E6E77) !important;
+        text-decoration: line-through !important;
+    }
+
+    .oteldetay-page > #roomDetailModal .room-detail-modal-price-current {
+        font-size: 18px !important;
+        font-weight: 900 !important;
+        color: var(--od-crimson, #E30A17) !important;
+        line-height: 1 !important;
+    }
+
+    .oteldetay-page > #roomDetailModal .room-detail-modal-price-discount {
+        display: inline-flex !important;
+        align-items: center !important;
+        min-height: 24px !important;
+        padding: 0 8px !important;
+        border-radius: 999px !important;
+        background: rgba(227, 10, 23, 0.08) !important;
+        color: var(--od-crimson, #E30A17) !important;
+        font-size: 11px !important;
+        font-weight: 800 !important;
+        line-height: 1.2 !important;
+    }
+
+    .oteldetay-page > #roomDetailModal .room-detail-modal-price-note {
+        flex: 1 1 100% !important;
+        font-size: 11px !important;
+        color: var(--od-muted, #6E6E77) !important;
     }
 
     .oteldetay-page > #roomDetailModal .room-detail-modal-note {
@@ -420,26 +506,34 @@
     }
 
     .oteldetay-page > #roomDetailModal .room-detail-modal-grid {
-        display: flex !important;
-        flex-direction: column !important;
+        display: grid !important;
+        grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
         gap: 8px !important;
     }
 
     .oteldetay-page > #roomDetailModal .room-detail-modal-item {
         display: flex !important;
         align-items: center !important;
-        gap: 10px !important;
-        padding: 10px 12px !important;
+        gap: 8px !important;
+        min-height: 44px !important;
+        padding: 8px 10px !important;
         border-radius: 12px !important;
         border: 1px solid var(--od-border, #EBE9E4) !important;
         background: #fff !important;
         font-size: 13px !important;
         font-weight: 600 !important;
+        line-height: 1.25 !important;
+    }
+
+    .oteldetay-page > #roomDetailModal .room-detail-modal-item span {
+        overflow: hidden !important;
+        text-overflow: ellipsis !important;
+        white-space: nowrap !important;
     }
 
     .oteldetay-page > #roomDetailModal .room-detail-modal-item i {
-        width: 24px !important;
-        height: 24px !important;
+        width: 22px !important;
+        height: 22px !important;
         flex-shrink: 0 !important;
         border-radius: 999px !important;
         display: inline-flex !important;
@@ -447,14 +541,7 @@
         justify-content: center !important;
         background: rgba(22, 163, 74, 0.1) !important;
         color: #15803d !important;
-        font-size: 11px !important;
-    }
-
-    .oteldetay-page > #roomDetailModal .room-detail-modal-actions {
-        display: grid !important;
-        grid-template-columns: 1fr 1fr !important;
-        gap: 10px !important;
-        padding-top: 4px !important;
+        font-size: 10px !important;
     }
 
     .oteldetay-page > #roomDetailModal .room-detail-modal-primary,

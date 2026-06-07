@@ -1231,6 +1231,18 @@
                                             </div>
                                         </div>
                                     }
+                                    @{
+                                        var roomHasDiscount = room.DiscountPrice.HasValue
+                                                             && room.BasePrice.HasValue
+                                                             && room.DiscountPrice.Value > 0m
+                                                             && room.BasePrice.Value > 0m
+                                                             && room.DiscountPrice.Value < room.BasePrice.Value;
+                                        var roomBaseDisplay = roomHasDiscount ? Model.GuestInclusiveNightlyFromStoredNet(room.BasePrice!.Value) : 0m;
+                                        var roomNightlyDisplay = room.Price > 0m ? Model.GuestInclusiveNightlyFromStoredNet(room.Price) : 0m;
+                                        var roomDiscountPercent = roomHasDiscount
+                                            ? Math.Clamp((int)Math.Round(((roomBaseDisplay - roomNightlyDisplay) / roomBaseDisplay) * 100m, MidpointRounding.AwayFromZero), 1, 95)
+                                            : 0;
+                                    }
                                     <button type="button"
                                             class="room-detail-btn room-detail-btn--link"
                                             data-room-detail-open
@@ -1243,7 +1255,10 @@
                                             data-room-max-guests="@room.MaxGuestCount"
                                             data-room-max-adults="@room.MaxAdultCount"
                                             data-room-max-children="@room.MaxChildCount"
-                                            data-room-price="@(room.Price > 0m ? Model.GuestInclusiveNightlyFromStoredNet(room.Price).ToString("N0") : string.Empty)"
+                                            data-room-price="@(room.Price > 0m ? roomNightlyDisplay.ToString("N0") : string.Empty)"
+                                            data-room-price-base="@(roomHasDiscount ? roomBaseDisplay.ToString("N0") : string.Empty)"
+                                            data-room-discount-name="@(roomHasDiscount ? (room.DiscountName ?? string.Empty) : string.Empty)"
+                                            data-room-discount-percent="@(roomHasDiscount ? roomDiscountPercent.ToString() : string.Empty)"
                                             data-room-cancellation="@room.CancellationText"
                                             data-room-feature-count="@roomAllFeatures.Count"
                                             data-room-gallery-count="@roomGallery.Count">
@@ -1287,16 +1302,10 @@
                             <div class="room-price-value">
                                 <small class="room-price-kicker">@SharedLocalizer["Detail.Room.Nightly"].Value</small>
                                 @{
-                                    var hasRoomDiscount = room.DiscountPrice.HasValue
-                                                         && room.BasePrice.HasValue
-                                                         && room.DiscountPrice.Value > 0m
-                                                         && room.BasePrice.Value > 0m
-                                                         && room.DiscountPrice.Value < room.BasePrice.Value;
-                                    var baseDisplay = hasRoomDiscount ? Model.GuestInclusiveNightlyFromStoredNet(room.BasePrice!.Value) : 0m;
-                                    var discountDisplay = hasRoomDiscount ? Model.GuestInclusiveNightlyFromStoredNet(room.DiscountPrice!.Value) : 0m;
-                                    var discountPercent = hasRoomDiscount
-                                        ? Math.Clamp((int)Math.Round(((baseDisplay - discountDisplay) / baseDisplay) * 100m, MidpointRounding.AwayFromZero), 1, 95)
-                                        : 0;
+                                    var hasRoomDiscount = roomHasDiscount;
+                                    var baseDisplay = roomBaseDisplay;
+                                    var discountDisplay = roomNightlyDisplay;
+                                    var discountPercent = roomDiscountPercent;
                                 }
 
                                 @if (room.Price > 0m)
@@ -1853,9 +1862,7 @@
             <span class="detail-modal-kicker">Oda Detayı</span>
             <h3 id="roomDetailModalTitle">Oda özellikleri</h3>
         </div>
-        <button type="button" class="detail-modal-close" data-close-modal="roomDetailModal" aria-label="Kapat">
-            <i class="fas fa-times"></i>
-        </button>
+        <button type="button" class="room-detail-modal-close-text" data-close-modal="roomDetailModal" aria-label="Kapat">Kapat</button>
     </div>
     <div class="room-detail-modal-body">
         <div class="room-detail-modal-summary">
@@ -1888,8 +1895,10 @@
             </div>
             <div class="room-detail-modal-stat room-detail-modal-stat-price">
                 <span>Fiyat</span>
-                <strong id="roomDetailModalPrice">-</strong>
-                <small>Vergiler dahil</small>
+                <div class="room-detail-modal-price-stack" id="roomDetailModalPriceStack">
+                    <strong class="room-detail-modal-price-current" id="roomDetailModalPrice">-</strong>
+                    <small class="room-detail-modal-price-note">Vergiler dahil</small>
+                </div>
             </div>
         </div>
         <div class="room-detail-modal-note" id="roomDetailModalCancellation">Koşullar rezervasyon adımında yeniden doğrulanır.</div>
@@ -1900,10 +1909,10 @@
             </div>
             <div class="room-detail-modal-grid" id="roomDetailModalGrid"></div>
         </div>
-        <div class="room-detail-modal-actions">
-            <button type="button" class="room-detail-modal-secondary" data-close-modal="roomDetailModal">Kapat</button>
-            <button type="button" class="room-detail-modal-primary" id="roomDetailModalSelectBtn">Odayı Seç</button>
-        </div>
+    </div>
+    <div class="room-detail-modal-actions">
+        <button type="button" class="room-detail-modal-secondary" data-close-modal="roomDetailModal">Kapat</button>
+        <button type="button" class="room-detail-modal-primary" id="roomDetailModalSelectBtn">Odayı Seç</button>
     </div>
 </section>
 
@@ -2352,6 +2361,7 @@
             const roomDetailModalSquareMeter = document.getElementById('roomDetailModalSquareMeter');
             const roomDetailModalCapacity = document.getElementById('roomDetailModalCapacity');
             const roomDetailModalPrice = document.getElementById('roomDetailModalPrice');
+            const roomDetailModalPriceStack = document.getElementById('roomDetailModalPriceStack');
             const roomDetailModalSelectBtn = document.getElementById('roomDetailModalSelectBtn');
             const roomDetailModalGrid = document.getElementById('roomDetailModalGrid');
             let adults = parseInt(document.getElementById('adultCountInput')?.value || '2', 10);
@@ -4571,11 +4581,38 @@
                 if (roomDetailModalGalleryBadge) roomDetailModalGalleryBadge.textContent = galleryCount + ' görsel';
                 if (roomDetailModalFeatureBadge) roomDetailModalFeatureBadge.textContent = featureCount + ' özellik';
                 if (roomDetailModalBedType) roomDetailModalBedType.textContent = bedType;
-                if (roomDetailModalSquareMeter) roomDetailModalSquareMeter.textContent = squareMeter ? squareMeter + ' m2' : 'Belirtilmedi';
+                if (roomDetailModalSquareMeter) roomDetailModalSquareMeter.textContent = squareMeter ? squareMeter + ' m²' : 'Belirtilmedi';
                 if (roomDetailModalCapacity) roomDetailModalCapacity.textContent = capacityText;
-                if (roomDetailModalPrice) roomDetailModalPrice.textContent = priceText ? ('₺' + priceText) : 'Fiyat bilgisi yok';
+
+                const priceBase = button.getAttribute('data-room-price-base') || '';
+                const priceCurrent = button.getAttribute('data-room-price') || '';
+                const discountName = (button.getAttribute('data-room-discount-name') || '').trim();
+                const discountPercent = (button.getAttribute('data-room-discount-percent') || '').trim();
+                const hasDiscountPrice = !!priceBase && !!priceCurrent && priceBase !== priceCurrent;
+
+                if (roomDetailModalPriceStack) {
+                    if (hasDiscountPrice) {
+                        roomDetailModalPriceStack.innerHTML =
+                            '<span class="room-detail-modal-price-old">₺' + priceBase + '</span>'
+                            + '<strong class="room-detail-modal-price-current" id="roomDetailModalPrice">₺' + priceCurrent + '</strong>'
+                            + (discountName
+                                ? '<span class="room-detail-modal-price-discount">' + discountName + '</span>'
+                                : (discountPercent ? '<span class="room-detail-modal-price-discount">%' + discountPercent + ' indirim</span>' : ''))
+                            + '<small class="room-detail-modal-price-note">Vergiler dahil</small>';
+                    } else if (priceCurrent) {
+                        roomDetailModalPriceStack.innerHTML =
+                            '<strong class="room-detail-modal-price-current" id="roomDetailModalPrice">₺' + priceCurrent + '</strong>'
+                            + '<small class="room-detail-modal-price-note">Vergiler dahil</small>';
+                    } else {
+                        roomDetailModalPriceStack.innerHTML =
+                            '<strong class="room-detail-modal-price-current" id="roomDetailModalPrice">Fiyat bilgisi yok</strong>';
+                    }
+                } else if (roomDetailModalPrice) {
+                    roomDetailModalPrice.textContent = priceCurrent ? ('₺' + priceCurrent) : 'Fiyat bilgisi yok';
+                }
+
                 if (roomDetailModalSelectBtn) {
-                    roomDetailModalSelectBtn.disabled = !roomId || !priceText;
+                    roomDetailModalSelectBtn.disabled = !roomId || !priceCurrent;
                     roomDetailModalSelectBtn.dataset.roomId = roomId;
                 }
 
