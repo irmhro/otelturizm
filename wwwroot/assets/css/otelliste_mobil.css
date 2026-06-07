@@ -28,6 +28,22 @@
     .otelliste-page {
         padding: 0 0 calc(88px + env(safe-area-inset-bottom, 0px));
         overflow-x: hidden;
+        max-width: 100%;
+        box-sizing: border-box;
+    }
+
+    .otelliste-page *,
+    .otelliste-page *::before,
+    .otelliste-page *::after {
+        box-sizing: border-box;
+    }
+
+    .otelliste-page .otelliste-page-hero,
+    .otelliste-page .otelliste-mobile-bar,
+    .otelliste-page .otelliste-container,
+    .otelliste-page .otelliste-results,
+    .otelliste-page .otelliste-hotel-grid {
+        max-width: 100%;
     }
 
     .otelliste-page .otelliste-page-hero-inner {
@@ -294,9 +310,12 @@
 
     .otelliste-page .otelliste-hotel-card {
         display: grid;
-        grid-template-columns: 118px minmax(0, 1fr);
+        grid-template-columns: minmax(104px, 32%) minmax(0, 1fr);
         grid-template-rows: auto;
         align-items: stretch;
+        width: 100%;
+        max-width: 100%;
+        overflow: hidden;
         border-radius: var(--radius-premium, 16px);
         box-shadow: var(--otl-shadow-card, 0 6px 18px rgba(26, 25, 25, 0.04));
         min-width: 0;
