@@ -217,6 +217,14 @@
                             ? $"{hotel.District} · {hotel.City}"
                             : $"{hotel.Neighborhood} · {hotel.District} · {hotel.City}";
                         var imageUrl = string.IsNullOrWhiteSpace(hotel.ImageUrl) ? "/assets/img/placeholder-hotel.jpg" : hotel.ImageUrl;
+                        var galleryUrls = (hotel.GalleryImages?.Count > 0 ? hotel.GalleryImages : new List<string> { imageUrl })
+                            .Where(u => !string.IsNullOrWhiteSpace(u))
+                            .Distinct(StringComparer.OrdinalIgnoreCase)
+                            .Take(4)
+                            .ToList();
+                        var galleryJson = galleryUrls.Count > 0
+                            ? System.Text.Json.JsonSerializer.Serialize(galleryUrls)
+                            : "[]";
                         var detailUrl = HotelDetailUrl(hotel.Slug);
                         var badgeText = !string.IsNullOrWhiteSpace(hotel.CampaignBadgeText)
                             ? hotel.CampaignBadgeText
@@ -232,7 +240,8 @@
                                  data-stars="@(hotel.StarCount ?? 0)"
                                  data-amenities="@amenityText"
                                  data-campaign-slugs="@string.Join(" ", campaignSlugsSafe.Where(x => !string.IsNullOrWhiteSpace(x)).Select(NormalizeToken).Distinct())"
-                                 data-featured="@(hotel.IsFeatured ? "1" : "0")">
+                                 data-featured="@(hotel.IsFeatured ? "1" : "0")"
+                                 data-gallery="@galleryJson">
                             <div class="otelliste-card-media-wrap">
                             <a class="otelliste-card-media" href="@detailUrl" aria-label="@hotel.Name detay">
                                 <img src="@imageUrl"
@@ -264,6 +273,19 @@
                                 <p class="otelliste-card-location">
                                     <i class="fas fa-map-marker-alt" aria-hidden="true"></i> @locationText
                                 </p>
+                                @if (!string.IsNullOrWhiteSpace(hotel.ListingLeadRoomName))
+                                {
+                                    <p class="otelliste-card-lead-room">
+                                        <i class="fas fa-bed" aria-hidden="true"></i> @hotel.ListingLeadRoomName
+                                    </p>
+                                }
+                                @if (Model.ShowLoyaltyTouchpoints && Model.LoyaltyUserSignedIn && hotel.EstimatedLoyaltyPoints is > 0)
+                                {
+                                    <p class="otelliste-card-loyalty" data-loyalty-hook="listing-card">
+                                        <i class="fas fa-gift" aria-hidden="true"></i>
+                                        +@hotel.EstimatedLoyaltyPoints.Value puan kazanın
+                                    </p>
+                                }
                                 @if (hotel.AmenityItems?.Count > 0 || hotel.StarCount > 0)
                                 {
                                     <div class="otelliste-card-amenities">

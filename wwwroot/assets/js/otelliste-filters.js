@@ -231,6 +231,25 @@
 
     function syncSort(from, to) {
         if (from && to && from.value !== to.value) to.value = from.value;
+        persistSort(getSortValue());
+    }
+
+    function persistSort(mode) {
+        try {
+            const url = new URL(window.location.href);
+            if (mode && mode !== 'recommended') url.searchParams.set('sort', mode);
+            else url.searchParams.delete('sort');
+            window.history.replaceState({}, '', url);
+        } catch (_) { /* ignore */ }
+    }
+
+    function hydrateSortFromQuery() {
+        const mode = new URLSearchParams(window.location.search).get('sort');
+        if (!mode) return;
+        const allowed = ['recommended', 'price-asc', 'price-desc', 'rating-desc'];
+        if (!allowed.includes(mode)) return;
+        if (sortDesktop) sortDesktop.value = mode;
+        if (sortMobile) sortMobile.value = mode;
     }
 
     function resetFilters() {
@@ -315,9 +334,18 @@
             });
         });
         root.querySelectorAll('.otelliste-star-btn').forEach(btn => {
-            btn.addEventListener('click', () => {
+            btn.setAttribute('tabindex', '0');
+            btn.setAttribute('role', 'button');
+            const toggle = () => {
                 btn.classList.toggle('is-active');
                 if (scope === 'desktop') applyFilters();
+            };
+            btn.addEventListener('click', toggle);
+            btn.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    toggle();
+                }
             });
         });
         root.querySelectorAll('.otelliste-filter-reset').forEach(btn => {
@@ -357,6 +385,35 @@
             const root = getScopeRoot(scope);
             const keyword = root?.querySelector('.otelliste-filter-keyword');
             if (keyword && !keyword.value) keyword.value = q;
+        });
+    })();
+
+    hydrateSortFromQuery();
+
+    (function initCardGalleryHover() {
+        if (!window.matchMedia('(hover: hover) and (min-width: 901px)').matches) return;
+        grid.querySelectorAll('.otelliste-hotel-card').forEach(card => {
+            const raw = card.getAttribute('data-gallery');
+            if (!raw) return;
+            let images;
+            try { images = JSON.parse(raw); } catch (_) { return; }
+            if (!Array.isArray(images) || images.length < 2) return;
+            const img = card.querySelector('.otelliste-card-media img');
+            if (!img) return;
+            const original = img.getAttribute('src') || img.src;
+            let idx = 1;
+            let timer;
+            card.addEventListener('mouseenter', () => {
+                idx = 1;
+                timer = window.setInterval(() => {
+                    img.src = images[idx % images.length];
+                    idx += 1;
+                }, 900);
+            });
+            card.addEventListener('mouseleave', () => {
+                if (timer) window.clearInterval(timer);
+                img.src = original;
+            });
         });
     })();
 

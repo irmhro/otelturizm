@@ -114,7 +114,7 @@
     overflow: hidden;
     min-height: 420px;
     max-height: 520px;
-    margin-bottom: -36px;
+    margin-bottom: -20px;
     position: relative;
     z-index: 2;
     box-shadow: var(--od-shadow);
@@ -845,6 +845,25 @@
     .oteldetay-page .od-similar-grid {
         grid-template-columns: repeat(2, minmax(0, 1fr));
     }
+}
+
+/* Anasayfa token birleştirme — otel-detay-world.css override */
+.oteldetay-page-shell.anasayfa-page .otel-detail-template-v41.od-detail {
+    --od-brand: var(--flag-crimson, #E30A17);
+    --od-accent: var(--anatolian-sun, #FF9E00);
+    --page-max-width: 1240px;
+    --border-light: var(--border-subtle, #EBE9E4);
+    --card-bg: #fff;
+}
+
+.oteldetay-page-shell.anasayfa-page .otel-detail-template-v41.od-detail .tabler-section-action-btn.is-primary,
+.oteldetay-page-shell.anasayfa-page .otel-detail-template-v41.od-detail .mobile-booking-cta {
+    background: var(--flag-crimson, #E30A17);
+    border-color: var(--flag-crimson, #E30A17);
+}
+
+.oteldetay-page-shell.anasayfa-page .otel-detail-template-v41.od-detail .detail-header.hotel-title-section {
+    margin-top: 8px;
 }
 
 @media (max-width: 900px) {

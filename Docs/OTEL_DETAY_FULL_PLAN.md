@@ -477,5 +477,5 @@ Dosya sözleşmesi: `OtelDetay.cshtml`, `oteldetay_masaustu.css`, `oteldetay_mob
 - [x] **U-D4** Section headrow mobil stack + full-width aksiyon
 - [x] **U-D5** Sticky booking bar z-index 1020 + sheet grabber
 - [x] **U-D6** Benzer oteller 2-col @1100px
-- [ ] **U-D7** Legacy `otel-detay-world.css` token birleştirme
-- [ ] **U-D8** Desktop gallery overlap margin düzeltmesi
+- [x] **U-D7** Legacy `otel-detay-world.css` token birleştirme
+- [x] **U-D8** Desktop gallery overlap margin düzeltmesi

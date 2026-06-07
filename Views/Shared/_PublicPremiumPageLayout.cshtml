@@ -28,6 +28,7 @@
     var jsonLd = ViewData["JsonLd"] as string;
     var ogLocale = (ViewData["OgLocale"] as string)?.Trim();
     var ogLocaleAlternate = (ViewData["OgLocaleAlternate"] as string)?.Trim();
+    var hreflangFromView = ViewData["HreflangAlternates"] as IReadOnlyList<otelturizmnew.Services.InternationalSeoService.HreflangAlternate>;
     string ResolveMobileStylesheet(string? cssName)
     {
         if (string.IsNullOrWhiteSpace(cssName))
@@ -108,6 +109,13 @@
     @if (!string.IsNullOrWhiteSpace(jsonLd))
     {
         <script type="application/ld+json">@Html.Raw(jsonLd)</script>
+    }
+    @if (hreflangFromView is { Count: > 0 })
+    {
+        foreach (var alt in hreflangFromView)
+        {
+            <link rel="alternate" hreflang="@alt.Hreflang" href="@alt.Href" />
+        }
     }
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />

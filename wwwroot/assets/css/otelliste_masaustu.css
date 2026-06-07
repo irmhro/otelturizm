@@ -724,6 +724,36 @@
     color: var(--otl-muted);
 }
 
+.otelliste-page .otelliste-card-lead-room {
+    margin: 0;
+    font-size: var(--otl-type-card-meta);
+    font-weight: 700;
+    color: var(--otl-dark);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.otelliste-page .otelliste-card-lead-room i {
+    color: var(--otl-crimson);
+    font-size: 11px;
+}
+
+.otelliste-page .otelliste-card-loyalty {
+    margin: 0;
+    font-size: var(--otl-type-card-meta);
+    font-weight: 800;
+    color: #0f766e;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 10px;
+    border-radius: 999px;
+    background: rgba(15, 118, 110, 0.08);
+    border: 1px solid rgba(15, 118, 110, 0.16);
+    width: fit-content;
+}
+
 .otelliste-page .otelliste-card-amenities {
     display: flex;
     flex-wrap: wrap;

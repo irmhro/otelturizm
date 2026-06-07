@@ -58,8 +58,8 @@ Mevcut `otelliste-*` tasarımı korunarak DB-first liste, filtre, harita ve SEO 
 - [x] L1.12 Detay slug URL (`/oteller/{slug}`)
 - [x] L1.13 Placeholder görsel fallback
 - [x] L1.14 Vergiler dahil fiyat notu (KDV+konaklama)
-- [ ] L1.15 Kart hover galeri swipe (P2)
-- [ ] L1.16 Lead oda adı alt satır (VM alanı mevcut, UI P1)
+- [x] L1.15 Kart hover galeri swipe (masaüstü hover, data-gallery)
+- [x] L1.16 Lead oda adı alt satır (ListingLeadRoomName UI)
 
 ## L2 — Filtreler (P0)
 
@@ -91,12 +91,12 @@ Mevcut `otelliste-*` tasarımı korunarak DB-first liste, filtre, harita ve SEO 
 - [x] L3.09 Client-side boş filtre mesajı (`otellisteClientEmpty`)
 - [x] L3.10 Sonuç sayacı (`otellisteResultCount`)
 - [ ] L3.11 Infinite scroll alternatif (P2)
-- [ ] L3.12 URL'de sort persist (P1)
+- [x] L3.12 URL'de sort persist (P1)
 
 ## L4 — Harita (P1)
 
-- [ ] L4.01 `/oteller/harita` route
-- [ ] L4.02 Leaflet/cluster marker
+- [x] L4.01 `/oteller/harita` route
+- [x] L4.02 Leaflet/cluster marker
 - [ ] L4.03 Liste ↔ harita senkron scroll
 - [ ] L4.04 Konum oturumu cookie
 - [ ] L4.05 Mesafe sıralama
@@ -107,15 +107,15 @@ Mevcut `otelliste-*` tasarımı korunarak DB-first liste, filtre, harita ve SEO 
 - [x] L5.01 `InternationalSeoService.BuildListingMeta`
 - [x] L5.02 Çoklu dil route prefix (`/en/hotels`, …)
 - [x] L5.03 Canonical + meta description ViewData
-- [ ] L5.04 Schema.org ItemList JSON-LD
+- [x] L5.04 Schema.org ItemList JSON-LD
 - [ ] L5.05 Şehir landing slug sayfaları genişletme
-- [ ] L5.06 hreflang alternates
+- [x] L5.06 hreflang alternates (premium layout)
 
 ## L6 — Sadakat & büyüme (P1)
 
 - [x] L6.01 `ApplyListingLoyaltyTouchpoints`
 - [x] L6.02 Tahmini sadakat puanı VM alanı
-- [ ] L6.03 Giriş yapmış kullanıcıya puan chip UI
+- [x] L6.03 Giriş yapmış kullanıcıya puan chip UI
 - [ ] L6.04 Growth signals impression log
 
 ## L7 — Performans (P2)
@@ -131,7 +131,7 @@ Mevcut `otelliste-*` tasarımı korunarak DB-first liste, filtre, harita ve SEO 
 - [x] L8.01 Kart `aria-label` detay link
 - [x] L8.02 Favori `aria-pressed`
 - [x] L8.03 Drawer `aria-hidden` toggle
-- [ ] L8.04 Klavye ile yıldız filtresi
+- [x] L8.04 Klavye ile yıldız filtresi
 - [ ] L8.05 E2E: filtre + detay navigasyon
 - [ ] L8.06 Lighthouse LCP < 2.5s hedef
 
@@ -181,5 +181,5 @@ Mevcut `otelliste-*` tasarımı korunarak DB-first liste, filtre, harita ve SEO 
 - [x] U4 Mobil drawer duplicate sıfırla/uygula gizleme
 - [x] U5 Konsept pill `border-radius: 999px`
 - [x] U6 Arama input token font, search row radius
-- [ ] U7 Kart hover galeri swipe (L1.15)
-- [ ] U8 Lead oda adı alt satır (L1.16)
+- [x] U7 Kart hover galeri swipe (L1.15)
+- [x] U8 Lead oda adı alt satır (L1.16)

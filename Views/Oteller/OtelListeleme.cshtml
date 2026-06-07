@@ -16,16 +16,44 @@
     string? jsonLd = null;
     try
     {
-        var breadcrumbJsonLd = new Dictionary<string, object?>
-        {
-            ["@context"] = "https://schema.org",
-            ["@type"] = "BreadcrumbList",
-            ["itemListElement"] = new object[]
+        var hotels = Model.Hotels ?? new List<otelturizmnew.Models.Oteller.HotelListingCardViewModel>();
+        var itemListElements = hotels
+            .Select((h, i) => new Dictionary<string, object?>
             {
-                new Dictionary<string, object?> { ["@type"] = "ListItem", ["position"] = 1, ["name"] = "Oteller", ["item"] = $"{baseUrl}/oteller" }
+                ["@type"] = "ListItem",
+                ["position"] = i + 1,
+                ["url"] = $"{baseUrl}/oteller/{h.Slug}",
+                ["name"] = h.Name
+            })
+            .Cast<object>()
+            .ToArray();
+
+        var graphs = new List<object>
+        {
+            new Dictionary<string, object?>
+            {
+                ["@context"] = "https://schema.org",
+                ["@type"] = "BreadcrumbList",
+                ["itemListElement"] = new object[]
+                {
+                    new Dictionary<string, object?> { ["@type"] = "ListItem", ["position"] = 1, ["name"] = "Oteller", ["item"] = $"{baseUrl}/oteller" }
+                }
             }
         };
-        jsonLd = System.Text.Json.JsonSerializer.Serialize(breadcrumbJsonLd);
+
+        if (itemListElements.Length > 0)
+        {
+            graphs.Add(new Dictionary<string, object?>
+            {
+                ["@context"] = "https://schema.org",
+                ["@type"] = "ItemList",
+                ["name"] = ViewData["Title"],
+                ["numberOfItems"] = itemListElements.Length,
+                ["itemListElement"] = itemListElements
+            });
+        }
+
+        jsonLd = System.Text.Json.JsonSerializer.Serialize(graphs);
     }
     catch { }
 }
