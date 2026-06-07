@@ -41,7 +41,9 @@
             return cssName;
         }
 
-        if (cssName.EndsWith(".mobile", StringComparison.OrdinalIgnoreCase))
+        if (cssName.EndsWith("_mobil", StringComparison.OrdinalIgnoreCase)
+            || cssName.EndsWith("_mobile", StringComparison.OrdinalIgnoreCase)
+            || cssName.EndsWith(".mobile", StringComparison.OrdinalIgnoreCase))
         {
             return cssName;
         }

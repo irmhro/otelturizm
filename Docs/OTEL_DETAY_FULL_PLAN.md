@@ -479,3 +479,14 @@ Dosya sözleşmesi: `OtelDetay.cshtml`, `oteldetay_masaustu.css`, `oteldetay_mob
 - [x] **U-D6** Benzer oteller 2-col @1100px
 - [x] **U-D7** Legacy `otel-detay-world.css` token birleştirme
 - [x] **U-D8** Desktop gallery overlap margin düzeltmesi
+
+## Tarayıcı denetimi (2026-05-25) — mobil/masaüstü + rezervasyon
+
+| # | Bulgu | Düzeltme |
+|---|--------|----------|
+| B1 | `oteldetay_mobil.css` yüklenmiyordu | Layout `_mobil` suffix fix |
+| B2 | Mobilde masaüstü galeri + sheet aynı anda | Mobil CSS yükleme; desktop galeri `display:none` |
+| B3 | Alt sticky bar (`mobile-booking-bar`) mobilde gizli kalıyordu | `display:flex !important` |
+| B4 | Rezervasyon sheet kapalıyken layout boşluğu | `visibility:hidden` when not `.is-open` |
+| B5 | Rezervasyon akışı: tarih/oda/ödeme/plan formu mobil sheet içinde | Mevcut JS `openBookingSheet` — sheet açılışı doğrulandı |
+| B6 | Masaüstü: sidebar booking sticky + oda kartları 2-col | OK |

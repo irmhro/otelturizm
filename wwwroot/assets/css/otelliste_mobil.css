@@ -5,6 +5,11 @@
         padding: 0 0 16px;
     }
 
+    .otelliste-page .otelliste-empty[hidden],
+    .otelliste-page .otelliste-hotel-card[hidden] {
+        display: none !important;
+    }
+
     .otelliste-page-shell.anasayfa-page .otelliste-page {
         --home-type-section: 20px;
         --home-type-section-link: 12px;
@@ -97,7 +102,7 @@
 
     /* Sticky mobil araç çubuğu */
     .otelliste-page .otelliste-mobile-bar {
-        display: flex;
+        display: flex !important;
         position: sticky;
         top: calc(var(--home-header-sticky-h, 56px));
         z-index: 90;

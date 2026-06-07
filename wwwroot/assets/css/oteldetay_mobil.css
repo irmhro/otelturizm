@@ -1,6 +1,18 @@
 /* Otel detay — mobil (/oteller/{slug}) */
 
 @media (max-width: 900px) {
+    .oteldetay-page .mobile-booking-bar {
+        display: flex !important;
+    }
+
+    .oteldetay-page .booking-sidebar.od-detail__booking:not(.is-open) {
+        visibility: hidden;
+    }
+
+    .oteldetay-page .booking-sidebar.od-detail__booking.is-open {
+        visibility: visible;
+    }
+
     .oteldetay-page-shell.anasayfa-page .oteldetay-page {
         --home-type-section: 20px;
         --home-type-card-title: 14px;

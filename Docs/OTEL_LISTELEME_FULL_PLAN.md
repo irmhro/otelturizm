@@ -182,4 +182,14 @@ Mevcut `otelliste-*` tasarımı korunarak DB-first liste, filtre, harita ve SEO 
 - [x] U5 Konsept pill `border-radius: 999px`
 - [x] U6 Arama input token font, search row radius
 - [x] U7 Kart hover galeri swipe (L1.15)
+
+## Tarayıcı denetimi (2026-05-25) — mobil/masaüstü
+
+| # | Bulgu | Düzeltme |
+|---|--------|----------|
+| B1 | `otelliste_mobil.css` yüklenmiyordu (`otelliste_mobil.mobile.css` 404) | `_PublicPremiumPageLayout` `ResolveMobileStylesheet` `_mobil` suffix tanıdı |
+| B2 | Sayfa açılışında “Filtrelere uygun otel yok” + kart birlikte | Fiyat min/max varsayılan değerleri kaldırıldı; filtre yalnızca kullanıcı girince aktif |
+| B3 | Mobilde filtre barı görünmüyordu | `otelliste_mobil.css` yükleme + `display:flex !important` |
+| B4 | Masaüstü: sidebar filtre + grid OK | — |
+| B5 | Mobil: drawer filtre + sticky bar + tek sütun kart | CSS dosyası fix sonrası doğrulandı |
 - [x] U8 Lead oda adı alt satır (L1.16)

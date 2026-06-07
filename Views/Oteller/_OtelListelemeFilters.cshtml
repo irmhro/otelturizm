@@ -89,17 +89,19 @@
                 <input type="number"
                        id="@(prefix)minPrice"
                        class="otelliste-field otelliste-filter-min-price"
-                       placeholder="Min"
+                       placeholder="Min @((int)Math.Floor(priceMin))"
                        min="0"
                        step="1"
-                       value="@((int)Math.Floor(priceMin))" />
+                       data-default-min="@((int)Math.Floor(priceMin))"
+                       data-default-max="@((int)Math.Ceiling(priceMax))" />
                 <input type="number"
                        id="@(prefix)maxPrice"
                        class="otelliste-field otelliste-filter-max-price"
-                       placeholder="Max"
+                       placeholder="Max @((int)Math.Ceiling(priceMax))"
                        min="0"
                        step="1"
-                       value="@((int)Math.Ceiling(priceMax))" />
+                       data-default-min="@((int)Math.Floor(priceMin))"
+                       data-default-max="@((int)Math.Ceiling(priceMax))" />
             </div>
         </div>
     }

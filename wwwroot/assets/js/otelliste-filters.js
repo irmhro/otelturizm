@@ -55,13 +55,23 @@
             .map(el => normalize(el.value));
         const minPriceEl = root.querySelector('.otelliste-filter-min-price');
         const maxPriceEl = root.querySelector('.otelliste-filter-max-price');
+        const minRaw = minPriceEl?.value?.trim() ?? '';
+        const maxRaw = maxPriceEl?.value?.trim() ?? '';
+        const defaultMin = minPriceEl ? parseFloat(minPriceEl.getAttribute('data-default-min') || '0') || 0 : 0;
+        const defaultMax = maxPriceEl ? parseFloat(maxPriceEl.getAttribute('data-default-max') || '0') || Number.MAX_SAFE_INTEGER : Number.MAX_SAFE_INTEGER;
+        const minPrice = minRaw !== '' ? parseFloat(minRaw) || 0 : 0;
+        const maxPrice = maxRaw !== '' ? parseFloat(maxRaw) || Number.MAX_SAFE_INTEGER : Number.MAX_SAFE_INTEGER;
+        const priceFilterActive = minRaw !== '' || maxRaw !== '';
         return {
             keyword: normalize(root.querySelector('.otelliste-filter-keyword')?.value || ''),
             city: normalize(root.querySelector('.otelliste-filter-city')?.value || ''),
             district: normalize(root.querySelector('.otelliste-filter-district')?.value || ''),
             neighborhood: normalize(root.querySelector('.otelliste-filter-neighborhood')?.value || ''),
-            minPrice: minPriceEl ? parseFloat(minPriceEl.value) || 0 : 0,
-            maxPrice: maxPriceEl ? parseFloat(maxPriceEl.value) || Number.MAX_SAFE_INTEGER : Number.MAX_SAFE_INTEGER,
+            minPrice,
+            maxPrice,
+            defaultMin,
+            defaultMax,
+            priceFilterActive,
             stars,
             amenities,
             campaigns
@@ -81,8 +91,14 @@
         setVal('.otelliste-filter-neighborhood', state.neighborhoodRaw || '');
         const minPriceEl = root.querySelector('.otelliste-filter-min-price');
         const maxPriceEl = root.querySelector('.otelliste-filter-max-price');
-        if (minPriceEl && state.minPrice != null) minPriceEl.value = state.minPrice;
-        if (maxPriceEl && state.maxPrice != null) maxPriceEl.value = state.maxPrice;
+        if (minPriceEl) {
+            minPriceEl.value = state.priceFilterActive ? String(state.minPrice ?? '') : '';
+        }
+        if (maxPriceEl) {
+            maxPriceEl.value = state.priceFilterActive && state.maxPrice !== Number.MAX_SAFE_INTEGER
+                ? String(state.maxPrice)
+                : '';
+        }
         root.querySelectorAll('.otelliste-star-btn').forEach(btn => {
             const star = parseInt(btn.getAttribute('data-star') || '0', 10);
             btn.classList.toggle('is-active', state.stars.includes(star));
@@ -103,7 +119,7 @@
             : desktop;
         return active || desktop || mobile || {
             keyword: '', city: '', district: '', neighborhood: '',
-            minPrice: 0, maxPrice: Number.MAX_SAFE_INTEGER,
+            minPrice: 0, maxPrice: Number.MAX_SAFE_INTEGER, priceFilterActive: false,
             stars: [], amenities: [], campaigns: []
         };
     }
@@ -155,6 +171,7 @@
         if (state.stars.length) n++;
         if (state.amenities.length) n++;
         if (state.campaigns.length) n++;
+        if (state.priceFilterActive) n++;
         return n;
     }
 
@@ -168,7 +185,7 @@
         if (state.neighborhood && normalize(card.getAttribute('data-neighborhood')) !== state.neighborhood) return false;
 
         const price = parseFloat(card.getAttribute('data-price') || '0');
-        if (price > 0 && (price < state.minPrice || price > state.maxPrice)) return false;
+        if (state.priceFilterActive && price > 0 && (price < state.minPrice || price > state.maxPrice)) return false;
 
         const stars = parseInt(card.getAttribute('data-stars') || '0', 10);
         if (state.stars.length && !state.stars.includes(stars)) return false;
@@ -256,7 +273,7 @@
         ['desktop', 'mobile'].forEach(scope => {
             const root = getScopeRoot(scope);
             if (!root) return;
-            root.querySelectorAll('input[type="search"], input[type="text"]').forEach(el => { el.value = ''; });
+            root.querySelectorAll('input[type="search"], input[type="text"], input[type="number"]').forEach(el => { el.value = ''; });
             root.querySelectorAll('select').forEach(el => { el.selectedIndex = 0; });
             root.querySelectorAll('.otelliste-star-btn').forEach(btn => btn.classList.remove('is-active'));
             root.querySelectorAll('input[type="checkbox"]').forEach(ch => { ch.checked = false; });
@@ -273,7 +290,8 @@
                 districtRaw: getScopeRoot('desktop')?.querySelector('.otelliste-filter-district')?.value,
                 neighborhoodRaw: getScopeRoot('desktop')?.querySelector('.otelliste-filter-neighborhood')?.value,
                 minPrice: desktop.minPrice,
-                maxPrice: desktop.maxPrice === Number.MAX_SAFE_INTEGER ? '' : desktop.maxPrice,
+                maxPrice: desktop.maxPrice,
+                priceFilterActive: desktop.priceFilterActive,
                 stars: desktop.stars,
                 amenities: desktop.amenities,
                 campaigns: desktop.campaigns
@@ -304,7 +322,8 @@
             districtRaw: getScopeRoot('mobile')?.querySelector('.otelliste-filter-district')?.value,
             neighborhoodRaw: getScopeRoot('mobile')?.querySelector('.otelliste-filter-neighborhood')?.value,
             minPrice: mobile.minPrice,
-            maxPrice: mobile.maxPrice === Number.MAX_SAFE_INTEGER ? '' : mobile.maxPrice,
+            maxPrice: mobile.maxPrice,
+            priceFilterActive: mobile.priceFilterActive,
             stars: mobile.stars,
             amenities: mobile.amenities,
             campaigns: mobile.campaigns
