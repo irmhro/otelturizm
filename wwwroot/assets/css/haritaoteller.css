@@ -348,10 +348,51 @@
     background: linear-gradient(180deg, #f8fbff 0%, #ffffff 100%);
 }
 
-.hotel-map-page__filter-grid {
+.hotel-map-page__mobile-filter-btn {
+    display: none;
+}
+
+.hotel-map-page__filter-overlay,
+.hotel-map-page__filter-drawer {
+    display: none;
+}
+
+.hotel-map-page__filter-location-grid {
     display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 10px;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+}
+
+.hotel-map-page__field--neighborhood {
+    grid-column: 1 / -1;
+}
+
+.hotel-map-page__star-options {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+}
+
+.hotel-map-page__star-btn {
+    border: 1px solid rgba(148, 163, 184, 0.35);
+    background: #fff;
+    padding: 6px 10px;
+    border-radius: 10px;
+    font-size: 12px;
+    font-weight: 800;
+    cursor: pointer;
+}
+
+.hotel-map-page__star-btn.is-active {
+    background: #E30A17;
+    border-color: #E30A17;
+    color: #fff;
+}
+
+.hotel-map-page__price-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
 }
 
 .hotel-map-page__field {

@@ -279,6 +279,13 @@
             root.querySelectorAll('.otelliste-star-btn').forEach(btn => btn.classList.remove('is-active'));
             root.querySelectorAll('input[type="checkbox"]').forEach(ch => { ch.checked = false; });
         });
+        try {
+            const url = new URL(window.location.href);
+            url.searchParams.delete('minPrice');
+            url.searchParams.delete('maxPrice');
+            url.searchParams.delete('page');
+            window.history.replaceState({}, '', url);
+        } catch (_) { /* ignore */ }
         applyFilters();
     }
 
@@ -314,6 +321,24 @@
         document.body.style.overflow = '';
     }
 
+    function persistPriceQuery(state) {
+        try {
+            const url = new URL(window.location.href);
+            if (state.priceFilterActive && state.minPrice > 0) {
+                url.searchParams.set('minPrice', String(Math.floor(state.minPrice)));
+            } else {
+                url.searchParams.delete('minPrice');
+            }
+            if (state.priceFilterActive && state.maxPrice > 0 && state.maxPrice < Number.MAX_SAFE_INTEGER) {
+                url.searchParams.set('maxPrice', String(Math.floor(state.maxPrice)));
+            } else {
+                url.searchParams.delete('maxPrice');
+            }
+            url.searchParams.delete('page');
+            window.history.replaceState({}, '', url);
+        } catch (_) { /* ignore */ }
+    }
+
     function applyMobileToDesktop() {
         const mobile = readScope('mobile');
         if (!mobile) return;
@@ -330,6 +355,11 @@
             campaigns: mobile.campaigns
         });
         syncSelectOptions('desktop');
+        persistPriceQuery(mobile);
+        if (mobile.priceFilterActive) {
+            window.location.reload();
+            return;
+        }
         applyFilters();
         closeDrawer();
     }
@@ -436,11 +466,17 @@
     (function hydrateFromQuery() {
         const params = new URLSearchParams(window.location.search);
         const q = params.get('q') || params.get('city') || '';
-        if (!q) return;
+        const minPrice = params.get('minPrice') || '';
+        const maxPrice = params.get('maxPrice') || '';
         ['desktop', 'mobile'].forEach(scope => {
             const root = getScopeRoot(scope);
-            const keyword = root?.querySelector('.otelliste-filter-keyword');
-            if (keyword && !keyword.value) keyword.value = q;
+            if (!root) return;
+            const keyword = root.querySelector('.otelliste-filter-keyword');
+            if (keyword && q && !keyword.value) keyword.value = q;
+            const minEl = root.querySelector('.otelliste-filter-min-price');
+            const maxEl = root.querySelector('.otelliste-filter-max-price');
+            if (minEl && minPrice && !minEl.value) minEl.value = minPrice;
+            if (maxEl && maxPrice && !maxEl.value) maxEl.value = maxPrice;
         });
     })();
 
@@ -472,6 +508,17 @@
             });
         });
     })();
+
+    document.querySelectorAll('[data-amenity-more]').forEach((btn) => {
+        btn.addEventListener('click', (event) => {
+            event.preventDefault();
+            event.stopPropagation();
+            const wrap = btn.closest('.otelliste-card-amenities');
+            if (wrap) {
+                wrap.setAttribute('data-amenity-expanded', 'true');
+            }
+        });
+    });
 
     applyFilters();
 })();

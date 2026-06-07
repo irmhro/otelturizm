@@ -299,30 +299,46 @@
 }
 
 .oteldetay-page .od-quick-facts__list {
+    display: none;
+}
+
+.oteldetay-page .od-section--about .od-about-checkinout {
     display: flex;
-    gap: 16px;
+    flex-wrap: wrap;
+    gap: 12px 16px;
     list-style: none;
-    margin: 0;
+    margin: 0 0 16px;
     padding: 0;
 }
 
-.oteldetay-page .od-quick-facts__item {
+.oteldetay-page .od-section--about .od-quick-facts__item {
     display: flex;
     align-items: center;
     gap: 10px;
+    padding: 10px 14px;
+    border-radius: 12px;
+    border: 1px solid var(--od-border);
+    background: var(--od-bg);
+    min-width: min(100%, 220px);
 }
 
-.oteldetay-page .od-quick-facts__label {
-    font-size: 10px;
-    font-weight: 800;
-    text-transform: uppercase;
-    letter-spacing: 0.06em;
-    color: var(--od-muted);
+.oteldetay-page .od-section--about .od-quick-facts__icon {
+    width: 34px;
+    height: 34px;
+    border-radius: 10px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(227, 10, 23, 0.08);
+    color: var(--od-crimson);
+    flex-shrink: 0;
 }
 
-.oteldetay-page .od-quick-facts__value {
-    font-size: var(--od-type-card-title);
-    font-weight: 800;
+.oteldetay-page .od-section--about .hotel-about-text.is-clamped:not(.is-expanded) {
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 4;
+    overflow: hidden;
 }
 
 .oteldetay-page .od-chip {
@@ -435,6 +451,11 @@
     grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 10px;
     margin-top: 14px;
+}
+
+.oteldetay-page .od-amenities__icon-row,
+.oteldetay-page .od-amenities__see-all-mobile {
+    display: none;
 }
 
 /* —— Oda kartları (masaüstü yatay düzen) —— */

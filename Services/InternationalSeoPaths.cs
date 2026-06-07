@@ -29,6 +29,11 @@ public static class InternationalSeoPaths
         var prefix = string.IsNullOrEmpty(route.Prefix) ? string.Empty : "/" + route.Prefix.Trim('/');
         var root = prefix + "/" + segment;
 
+        if (string.Equals(pageKind, PageKindMap, StringComparison.OrdinalIgnoreCase))
+        {
+            return root + "/harita";
+        }
+
         if (string.Equals(pageKind, PageKindDetail, StringComparison.OrdinalIgnoreCase)
             && !string.IsNullOrWhiteSpace(hotelSlug))
         {

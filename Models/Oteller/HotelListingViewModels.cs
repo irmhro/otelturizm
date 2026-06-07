@@ -22,6 +22,8 @@ public class HotelListingPageViewModel
     public List<string> Cities { get; set; } = new();
     public decimal MinPrice { get; set; }
     public decimal MaxPrice { get; set; }
+    public decimal? ActiveMinPrice { get; set; }
+    public decimal? ActiveMaxPrice { get; set; }
     public List<string> Districts { get; set; } = new();
     public List<string> Neighborhoods { get; set; } = new();
     public List<int> StarOptions { get; set; } = new();

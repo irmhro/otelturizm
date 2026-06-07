@@ -745,6 +745,22 @@
         gap: 10px;
     }
 
+    .otelliste-page .otelliste-filter-drawer-body .otelliste-filter-location-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 8px;
+    }
+
+    .otelliste-page .otelliste-filter-drawer-body .otelliste-filter-location-grid .otelliste-filter-group--neighborhood {
+        grid-column: 1 / -1;
+    }
+
+    .otelliste-page .otelliste-filter-drawer-body .otelliste-filter-group--price .otelliste-price-row {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 8px;
+    }
+
     .otelliste-page .otelliste-filter-drawer-body .otelliste-filter-group {
         margin: 0;
         padding: 12px 14px;
@@ -904,8 +920,8 @@
     }
 
     /* Drawer gövdesindeki tekrarlayan sıfırla/uygula — footer kullanılır */
-    .otelliste-page .otelliste-filter-drawer-body > .otelliste-btn-reset,
-    .otelliste-page .otelliste-filter-drawer-body > .otelliste-btn-apply {
+    .otelliste-page .otelliste-filter-drawer-body .otelliste-filters[data-filter-scope="mobile"] > .otelliste-btn-reset,
+    .otelliste-page .otelliste-filter-drawer-body .otelliste-filters[data-filter-scope="mobile"] > .otelliste-btn-apply {
         display: none;
     }
 

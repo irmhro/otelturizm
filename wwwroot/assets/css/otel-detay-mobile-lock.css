@@ -211,6 +211,30 @@
 
     .oteldetay-page.otel-detail-template-v41.od-detail .od-gallery--mobile {
         padding: 0 !important;
+        position: relative;
+        overflow: hidden;
+    }
+
+    .oteldetay-page.otel-detail-template-v41.od-detail .gallery-mobile-track {
+        overflow-x: auto !important;
+        overflow-y: hidden !important;
+        scroll-snap-type: x mandatory;
+        -webkit-overflow-scrolling: touch;
+        touch-action: pan-x;
+    }
+
+    .oteldetay-page.otel-detail-template-v41.od-detail .gallery-mobile-slide {
+        flex: 0 0 100% !important;
+        min-width: 100% !important;
+        height: 100% !important;
+        overflow: hidden !important;
+    }
+
+    .oteldetay-page.otel-detail-template-v41.od-detail .gallery-mobile-slide img {
+        width: 100% !important;
+        height: 100% !important;
+        object-fit: cover !important;
+        object-position: center !important;
     }
 
     .oteldetay-page.otel-detail-template-v41.od-detail .detail-location-map,

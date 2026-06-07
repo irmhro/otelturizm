@@ -5,8 +5,32 @@
     var hotels = Model.Hotels ?? new List<otelturizmnew.Models.Oteller.HotelListingCardViewModel>();
     var listingPathLang = InternationalSeoPaths.ResolveCultureFromPath(Context.Request.Path.Value ?? "/");
     string HotelDetailUrl(string slug) => InternationalSeoPaths.BuildPublicPath(listingPathLang, InternationalSeoPaths.PageKindDetail, null, slug);
-    var mapListingUrl = InternationalSeoPaths.BuildPublicPath(listingPathLang, InternationalSeoPaths.PageKindMap, null, null)
-        + "?q=" + Uri.EscapeDataString(Model.SearchTerm ?? string.Empty);
+    var mapListingUrl = InternationalSeoPaths.BuildPublicPath(listingPathLang, InternationalSeoPaths.PageKindMap, null, null);
+    var mapQueryParts = new List<string>();
+    if (!string.IsNullOrWhiteSpace(Model.SearchTerm))
+    {
+        mapQueryParts.Add("q=" + Uri.EscapeDataString(Model.SearchTerm));
+    }
+    if (!string.IsNullOrWhiteSpace(Model.ActiveTag))
+    {
+        mapQueryParts.Add("etiket=" + Uri.EscapeDataString(Model.ActiveTag));
+    }
+    if (!string.IsNullOrWhiteSpace(Model.CampaignSlug))
+    {
+        mapQueryParts.Add("kampanya=" + Uri.EscapeDataString(Model.CampaignSlug));
+    }
+    if (Model.ActiveMinPrice is > 0m)
+    {
+        mapQueryParts.Add("minPrice=" + Uri.EscapeDataString(((int)Math.Floor(Model.ActiveMinPrice.Value)).ToString(CultureInfo.InvariantCulture)));
+    }
+    if (Model.ActiveMaxPrice is > 0m)
+    {
+        mapQueryParts.Add("maxPrice=" + Uri.EscapeDataString(((int)Math.Ceiling(Model.ActiveMaxPrice.Value)).ToString(CultureInfo.InvariantCulture)));
+    }
+    if (mapQueryParts.Count > 0)
+    {
+        mapListingUrl += "?" + string.Join("&", mapQueryParts);
+    }
     var allHotelsUrl = InternationalSeoPaths.BuildPublicPath(listingPathLang, InternationalSeoPaths.PageKindListing, null, null)
         ?? Url.Action("OtelListeleme", "Oteller") ?? "/oteller";
     var resultCountDisplay = Model.TotalCount > 0 ? Model.TotalCount : hotels.Count;
@@ -63,7 +87,6 @@
             <div class="otelliste-top-search-panel">
                 <form class="otelliste-top-search-form" method="get" action="@listingAction">
                     <div class="otelliste-top-search-row">
-                        <label class="visually-hidden" for="otellisteTopQuery">Otel ara</label>
                         <span class="otelliste-top-search-icon" aria-hidden="true"><i class="fas fa-magnifying-glass"></i></span>
                         <input type="search"
                                id="otellisteTopQuery"
@@ -71,6 +94,7 @@
                                class="otelliste-top-search-input"
                                value="@Model.SearchTerm"
                                placeholder="Şehir, bölge, otel adı veya konsept yazın..."
+                               aria-label="Otel ara"
                                autocomplete="off" />
                         @if (!string.IsNullOrWhiteSpace(Model.ActiveTag))
                         {

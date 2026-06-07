@@ -8,6 +8,8 @@
   const title = q('slaytGorselTitle');
   const count = q('slaytGorselCount');
   const thumbs = q('slaytGorselThumbs');
+  const dots = q('slaytGorselDots');
+  const swipeHint = q('slaytGorselSwipeHint');
   const figure = q('slaytGorselFigure');
 
   let images = [];
@@ -20,6 +22,58 @@
   let swipeActive = false;
   let swipeLocked = false;
   let swipePointerId = null;
+  let swipeDragDx = 0;
+  const preloaded = new Set();
+
+  function preloadAdjacentImages() {
+    if (!images.length) return;
+    const indices = [
+      activeIndex,
+      (activeIndex + 1) % images.length,
+      (activeIndex - 1 + images.length) % images.length
+    ];
+    indices.forEach(function (idx) {
+      const src = images[idx];
+      if (!src || preloaded.has(src)) return;
+      preloaded.add(src);
+      const probe = new Image();
+      probe.decoding = 'async';
+      probe.src = src;
+    });
+  }
+
+  function renderDots() {
+    if (!dots) return;
+    if (images.length < 2) {
+      dots.innerHTML = '';
+      dots.hidden = true;
+      return;
+    }
+    dots.hidden = false;
+    dots.innerHTML = images.map(function (_, idx) {
+      const active = idx === activeIndex ? ' is-active' : '';
+      return '<button type="button" class="slayt-gorsel__dot' + active + '" data-slayt-dot="' + idx + '" aria-label="Görsel ' + (idx + 1) + '" aria-selected="' + (idx === activeIndex ? 'true' : 'false') + '"></button>';
+    }).join('');
+
+    dots.querySelectorAll('[data-slayt-dot]').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        const idx = parseInt(btn.getAttribute('data-slayt-dot') || '0', 10);
+        goTo(idx);
+      });
+    });
+  }
+
+  function setSwipeDrag(dx) {
+    swipeDragDx = dx;
+    if (!(img instanceof HTMLElement)) return;
+    if (!dx) {
+      img.style.transform = '';
+      img.style.transition = '';
+      return;
+    }
+    img.style.transition = 'none';
+    img.style.transform = 'translateX(' + dx + 'px) scale(' + (1 - Math.min(Math.abs(dx) / 2200, 0.03)) + ')';
+  }
 
   function clamp(n, min, max) { return Math.min(Math.max(n, min), max); }
 
@@ -140,13 +194,19 @@
     img.alt = (title?.textContent || 'Görsel') + ' ' + (activeIndex + 1);
     if (count) count.textContent = (activeIndex + 1) + ' / ' + images.length;
     renderThumbs();
+    renderDots();
     setAmbient();
     computeTintFromImage(images[activeIndex]);
+    preloadAdjacentImages();
+    setSwipeDrag(0);
   }
 
   function goTo(index) {
     if (!images.length) return;
     activeIndex = (index + images.length) % images.length;
+    if (img instanceof HTMLElement) {
+      img.style.transition = 'transform 0.22s ease, opacity 0.22s ease';
+    }
     render();
   }
 
@@ -166,6 +226,14 @@
     root.setAttribute('aria-hidden', 'false');
     document.body.classList.add('slayt-gorsel-open');
 
+    if (swipeHint) {
+      swipeHint.hidden = false;
+      swipeHint.classList.remove('is-hidden');
+      window.setTimeout(function () {
+        swipeHint?.classList.add('is-hidden');
+      }, 2600);
+    }
+
     render();
 
     // focus
@@ -181,6 +249,12 @@
     images = [];
     activeIndex = 0;
     if (thumbs) thumbs.innerHTML = '';
+    if (dots) {
+      dots.innerHTML = '';
+      dots.hidden = true;
+    }
+    if (swipeHint) swipeHint.classList.add('is-hidden');
+    setSwipeDrag(0);
     if (figure instanceof HTMLElement) {
       figure.style.removeProperty('--slayt-prev');
       figure.style.removeProperty('--slayt-next');
@@ -207,6 +281,7 @@
     swipePointerId = null;
     swipeStartX = 0;
     swipeStartY = 0;
+    setSwipeDrag(0);
   }
 
   function shouldHandleSwipe(target) {
@@ -256,6 +331,7 @@
     const dec = handleSwipeDelta(dx, dy);
     if (dec.decided && dec.horizontal) {
       event.preventDefault?.();
+      setSwipeDrag(dx);
     }
   });
 
@@ -265,7 +341,11 @@
     const dy = event.clientY - swipeStartY;
     const dec = handleSwipeDelta(dx, dy);
     if (dec.decided && dec.horizontal) {
-      tryCommitSwipe(dx);
+      if (!tryCommitSwipe(dx)) {
+        setSwipeDrag(0);
+      }
+    } else {
+      setSwipeDrag(0);
     }
     resetSwipe();
   });
@@ -294,6 +374,7 @@
     const dec = handleSwipeDelta(dx, dy);
     if (dec.decided && dec.horizontal) {
       event.preventDefault();
+      setSwipeDrag(dx);
     }
   }, { passive: false });
 
@@ -305,8 +386,14 @@
       const dy = t.clientY - swipeStartY;
       const dec = handleSwipeDelta(dx, dy);
       if (dec.decided && dec.horizontal) {
-        tryCommitSwipe(dx);
+        if (!tryCommitSwipe(dx)) {
+          setSwipeDrag(0);
+        }
+      } else {
+        setSwipeDrag(0);
       }
+    } else {
+      setSwipeDrag(0);
     }
     resetSwipe();
   }, { passive: true });

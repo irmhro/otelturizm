@@ -150,6 +150,10 @@
         .Where(x => !string.IsNullOrWhiteSpace(x.Name))
         .Skip(4)
         .ToList();
+    var amenityIconStrip = Model.Amenities
+        .Where(x => !string.IsNullOrWhiteSpace(x.Name))
+        .Take(8)
+        .ToList();
     var initialNightCount = Math.Max(1, reservationForm.CheckOutDate.DayNumber - reservationForm.CheckInDate.DayNumber);
     var initialRooms = Math.Max(1, reservationForm.RoomCount);
     var initialTotal = roomPriceSeed * initialNightCount * initialRooms;
@@ -172,6 +176,60 @@
         ? Math.Round(initialTotal / initialNightCount / initialRooms, 0)
         : 0m;
     var todayWeather = Model.Weather?.Days.FirstOrDefault();
+    string? ExtractNeighborhoodFromAddress(string? address)
+    {
+        var a = (address ?? string.Empty).Trim();
+        if (a.Length == 0) return null;
+
+        var idx = a.IndexOf("Mahallesi", StringComparison.OrdinalIgnoreCase);
+        if (idx > 0)
+        {
+            return a.Substring(0, idx + "Mahallesi".Length).Trim();
+        }
+
+        idx = a.IndexOf("Mah.", StringComparison.OrdinalIgnoreCase);
+        if (idx > 0)
+        {
+            return a.Substring(0, idx + "Mah.".Length).Trim();
+        }
+
+        return null;
+    }
+
+    string GetWeatherDayTone(string? conditionText)
+    {
+        var value = conditionText ?? string.Empty;
+        if (value.Contains("Yağ", StringComparison.OrdinalIgnoreCase)
+            || value.Contains("Sağanak", StringComparison.OrdinalIgnoreCase)
+            || value.Contains("Fırtına", StringComparison.OrdinalIgnoreCase)
+            || value.Contains("Çisenti", StringComparison.OrdinalIgnoreCase))
+        {
+            return "is-rainy";
+        }
+
+        if (value.Contains("Açık", StringComparison.OrdinalIgnoreCase) || value.Contains("Güneş", StringComparison.OrdinalIgnoreCase))
+        {
+            return "is-sunny";
+        }
+
+        if (value.Contains("Kar", StringComparison.OrdinalIgnoreCase))
+        {
+            return "is-snowy";
+        }
+
+        return "is-cloudy";
+    }
+
+    (string High, string Low) SplitWeatherTemperature(string? temperatureText)
+    {
+        var parts = (temperatureText ?? string.Empty).Split('/', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries);
+        return (parts.Length > 0 ? parts[0] : "—", parts.Length > 1 ? parts[1] : string.Empty);
+    }
+
+    var headerNeighborhood = ExtractNeighborhoodFromAddress(Model.Address);
+    var weatherAreaLabel = !string.IsNullOrWhiteSpace(headerNeighborhood)
+        ? headerNeighborhood
+        : (!string.IsNullOrWhiteSpace(Model.District) ? Model.District : Model.City);
     var weatherThemeClass = "weather-theme-cloudy";
     var weatherThemeTitle = "İlçe bazlı hava durumu";
     var weatherThemeSummary = "Bugün için dengeli bir gezi ritmi planlayabilirsiniz.";
@@ -411,7 +469,7 @@
  }
     @if (gallery.Count > 0)
     {
-        <section class="gallery-mobile-strip od-gallery od-gallery--mobile" id="galleryMobileStrip" data-slayt-lightbox="hotel-gallery" aria-label="Mobil galeri slider">
+        <section class="gallery-mobile-strip od-gallery od-gallery--mobile" id="galleryMobileStrip" data-slayt-lightbox="hotel-gallery" data-gallery-title="@Model.Name" aria-label="Mobil galeri slider">
             <div class="gallery-mobile-chrome" aria-hidden="false">
                 <a asp-controller="Oteller" asp-action="OtelListeleme" class="gallery-mobile-back" aria-label="@SharedLocalizer["Detail.BackToHotels"].Value">
                     <i class="fas fa-arrow-left" aria-hidden="true"></i>
@@ -425,15 +483,6 @@
                     </div>
                 }
             </div>
-            @if (Model.StarCount.HasValue && Model.StarCount.Value > 0)
-            {
-                <div class="gallery-star-badge gallery-star-badge-mobile" aria-label="@($"{Model.StarCount.Value} yıldızlı otel")">
-                    @for (var i = 0; i < Model.StarCount.Value; i++)
-                    {
-                        <i class="fas fa-star" aria-hidden="true"></i>
-                    }
-                </div>
-            }
             @if (gallery.Count > 1)
             {
                 <div class="gallery-mobile-nav" aria-label="Mobil galeri gezinme">
@@ -449,13 +498,39 @@
             {
             <p class="gallery-swipe-hint" aria-hidden="true"><i class="fas fa-hand-pointer"></i> @SharedLocalizer["Detail.Gallery.SwipeHint"].Value</p>
             }
-            <div class="gallery-mobile-track" id="galleryMobileTrack">
-                @for (var imageIndex = 0; imageIndex < gallery.Count; imageIndex++)
-                {
-                    <button type="button" class="gallery-mobile-slide" data-image="@gallery[imageIndex]" data-gallery-index="@imageIndex" aria-label="Görsel @(imageIndex + 1)">
-                        <img src="@gallery[imageIndex]" alt="@Model.Name mobil galeri @(imageIndex + 1)" />
-                    </button>
-                }
+            <div class="gallery-mobile-stage">
+                <div class="gallery-mobile-track" id="galleryMobileTrack">
+                    @for (var imageIndex = 0; imageIndex < gallery.Count; imageIndex++)
+                    {
+                        <button type="button" class="gallery-mobile-slide" data-image="@gallery[imageIndex]" data-gallery-index="@imageIndex" aria-label="Görsel @(imageIndex + 1)">
+                            <img src="@gallery[imageIndex]" alt="@Model.Name mobil galeri @(imageIndex + 1)" />
+                        </button>
+                    }
+                </div>
+                <div class="gallery-mobile-overlay">
+                    <div class="gallery-mobile-overlay-bottom">
+                        <h1 class="gallery-mobile-hotel-name">@Model.Name</h1>
+                        <div class="gallery-mobile-overlay-meta">
+                            @if (Model.StarCount.HasValue && Model.StarCount.Value > 0)
+                            {
+                                <div class="gallery-mobile-stars" aria-label="@($"{Model.StarCount.Value} yıldızlı otel")">
+                                    @for (var i = 0; i < Model.StarCount.Value; i++)
+                                    {
+                                        <i class="fas fa-star" aria-hidden="true"></i>
+                                    }
+                                </div>
+                            }
+                            else
+                            {
+                                <span class="gallery-mobile-stars gallery-mobile-stars--empty" aria-hidden="true"></span>
+                            }
+                            <button type="button" class="gallery-mobile-all-photos" data-gallery-index="0" data-slayt-trigger="hotel-gallery" aria-label="Tüm fotoğrafları aç">
+                                <i class="far fa-images" aria-hidden="true"></i>
+                                <span>Tüm Fotoğraflar (@gallery.Count)</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
             </div>
             <div class="gallery-mobile-footer">
                 @if (gallery.Count > 1)
@@ -483,11 +558,6 @@
                         }
                     </div>
                 }
-
-                <button type="button" class="gallery-mobile-all-photos" data-gallery-index="0" data-slayt-trigger="hotel-gallery" aria-label="Tüm fotoğrafları aç">
-                    <i class="far fa-images" aria-hidden="true"></i>
-                    <span>Tüm Fotoğraflar (@gallery.Count)</span>
-                </button>
             </div>
         </section>
     }
@@ -497,33 +567,10 @@
 <section class="detail-header hotel-title-section">
     <div class="detail-hero-head">
     <div class="hotel-name">
-        <h1>
-            @Model.Name
-        </h1>
+        <h1 class="hotel-title-heading hotel-title-heading--header">@Model.Name</h1>
         @{
-            string? ExtractNeighborhood(string? address)
-            {
-                var a = (address ?? string.Empty).Trim();
-                if (a.Length == 0) return null;
-
-                var idx = a.IndexOf("Mahallesi", StringComparison.OrdinalIgnoreCase);
-                if (idx > 0)
-                {
-                    return a.Substring(0, idx + "Mahallesi".Length).Trim();
-                }
-
-                idx = a.IndexOf("Mah.", StringComparison.OrdinalIgnoreCase);
-                if (idx > 0)
-                {
-                    return a.Substring(0, idx + "Mah.".Length).Trim();
-                }
-
-                return null;
-            }
-
-            var neighborhood = ExtractNeighborhood(Model.Address);
             var locationPieces = new List<string>();
-            if (!string.IsNullOrWhiteSpace(neighborhood)) locationPieces.Add(neighborhood);
+            if (!string.IsNullOrWhiteSpace(headerNeighborhood)) locationPieces.Add(headerNeighborhood);
             if (!string.IsNullOrWhiteSpace(Model.District)) locationPieces.Add(Model.District);
             if (!string.IsNullOrWhiteSpace(Model.City)) locationPieces.Add(Model.City);
             var locationOnly = string.Join(", ", locationPieces);
@@ -598,31 +645,65 @@
                         data-has-weather="@(Model.Weather is not null && Model.Weather.Days.Count > 0 ? "true" : "false")"
                         aria-haspopup="dialog"
                         aria-controls="weatherPopup">
-                    <span class="weather-inline-icon">
-                        <i class="fas @(todayWeather?.IconClass ?? "fa-cloud-sun")"></i>
-                    </span>
-                    <span class="weather-inline-copy">
-                        <strong>Hava durumu</strong>
-                        <small>
-                            @if (Model.Weather is not null && Model.Weather.Days.Count > 0)
-                            {
-                                @Model.Weather.LocationLabel
-                                @if (!string.IsNullOrWhiteSpace(todayWeather?.TemperatureText))
+                    <span class="weather-trigger-desktop">
+                        <span class="weather-inline-icon">
+                            <i class="fas @(todayWeather?.IconClass ?? "fa-cloud-sun")"></i>
+                        </span>
+                        <span class="weather-inline-copy">
+                            <strong>Hava durumu</strong>
+                            <small>
+                                @if (Model.Weather is not null && Model.Weather.Days.Count > 0)
                                 {
-                                    <text> • @todayWeather!.TemperatureText</text>
+                                    @Model.Weather.LocationLabel
+                                    @if (!string.IsNullOrWhiteSpace(todayWeather?.TemperatureText))
+                                    {
+                                        <text> • @todayWeather!.TemperatureText</text>
+                                    }
+                                    @if (!string.IsNullOrWhiteSpace(todayWeather?.ConditionText))
+                                    {
+                                        <text> • @todayWeather!.ConditionText</text>
+                                    }
                                 }
-                                @if (!string.IsNullOrWhiteSpace(todayWeather?.ConditionText))
+                                else
                                 {
-                                    <text> • @todayWeather!.ConditionText</text>
+                                    <text>@Model.District, @Model.City • Tahmin yüklenemedi</text>
                                 }
-                            }
-                            else
-                            {
-                                <text>@Model.District, @Model.City • Tahmin yüklenemedi</text>
-                            }
-                        </small>
+                            </small>
+                        </span>
+                        <span class="weather-inline-badge">3 günlük</span>
                     </span>
-                    <span class="weather-inline-badge">3 günlük</span>
+                    <span class="weather-trigger-mobile">
+                        <span class="weather-mobile-head">
+                            <i class="fas fa-location-dot" aria-hidden="true"></i>
+                            <strong>@weatherAreaLabel</strong>
+                            <span class="weather-mobile-kicker">3 günlük</span>
+                        </span>
+                        @if (Model.Weather is not null && Model.Weather.Days.Count > 0)
+                        {
+                            <span class="weather-mobile-days">
+                                @foreach (var day in Model.Weather.Days.Take(3))
+                                {
+                                    var dayTone = GetWeatherDayTone(day.ConditionText);
+                                    var temps = SplitWeatherTemperature(day.TemperatureText);
+                                    <span class="weather-mobile-day @dayTone">
+                        <span class="weather-mobile-day-period">@day.PeriodLabel</span>
+                                        <i class="fas @day.IconClass" aria-hidden="true"></i>
+                                        <span class="weather-mobile-day-temp">
+                                            <em>@temps.High</em>
+                                            @if (!string.IsNullOrWhiteSpace(temps.Low))
+                                            {
+                                                <small>@temps.Low</small>
+                                            }
+                                        </span>
+                                    </span>
+                                }
+                            </span>
+                        }
+                        else
+                        {
+                            <span class="weather-mobile-fallback">@Model.District, @Model.City • Tahmin yüklenemedi</span>
+                        }
+                    </span>
                 </button>
             </div>
         </div>
@@ -630,22 +711,6 @@
 </section>
 
 <section class="od-quick-facts detail-quick-facts" aria-label="@SharedLocalizer["Detail.QuickFacts.Aria"].Value">
-    <ul class="od-quick-facts__list">
-        <li class="od-quick-facts__item">
-            <span class="od-quick-facts__icon" aria-hidden="true"><i class="fas fa-door-open"></i></span>
-            <span class="od-quick-facts__copy">
-                <span class="od-quick-facts__label">@SharedLocalizer["Detail.QuickFacts.CheckIn"].Value</span>
-                <strong class="od-quick-facts__value">@checkInDisplay</strong>
-            </span>
-        </li>
-        <li class="od-quick-facts__item">
-            <span class="od-quick-facts__icon" aria-hidden="true"><i class="fas fa-door-closed"></i></span>
-            <span class="od-quick-facts__copy">
-                <span class="od-quick-facts__label">@SharedLocalizer["Detail.QuickFacts.CheckOut"].Value</span>
-                <strong class="od-quick-facts__value">@checkOutDisplay</strong>
-            </span>
-        </li>
-    </ul>
     <div class="od-quick-facts__chips">
         @if (Model.StarCount.HasValue && Model.StarCount.Value > 0)
         {
@@ -820,11 +885,27 @@
                     <i class="fas fa-chevron-down detail-collapsible__chevron" aria-hidden="true"></i>
                 </summary>
                 <div class="detail-collapsible__body">
+                    <ul class="od-about-checkinout od-quick-facts__list" aria-label="@SharedLocalizer["Detail.QuickFacts.Aria"].Value">
+                        <li class="od-quick-facts__item">
+                            <span class="od-quick-facts__icon" aria-hidden="true"><i class="fas fa-door-open"></i></span>
+                            <span class="od-quick-facts__copy">
+                                <span class="od-quick-facts__label">@SharedLocalizer["Detail.QuickFacts.CheckIn"].Value</span>
+                                <strong class="od-quick-facts__value">@checkInDisplay</strong>
+                            </span>
+                        </li>
+                        <li class="od-quick-facts__item">
+                            <span class="od-quick-facts__icon" aria-hidden="true"><i class="fas fa-door-closed"></i></span>
+                            <span class="od-quick-facts__copy">
+                                <span class="od-quick-facts__label">@SharedLocalizer["Detail.QuickFacts.CheckOut"].Value</span>
+                                <strong class="od-quick-facts__value">@checkOutDisplay</strong>
+                            </span>
+                        </li>
+                    </ul>
                     <p class="hotel-about-text" id="hotelAboutText">
                         @(!string.IsNullOrWhiteSpace(Model.LocationDescription) ? Model.LocationDescription : longDescription)
                     </p>
-                    <button type="button" class="hotel-about-toggle" id="hotelAboutToggle" hidden>
-                        @SharedLocalizer["Detail.About.ShowMore"].Value
+                    <button type="button" class="hotel-about-toggle" id="hotelAboutToggle" hidden data-label-more="Devamını gör" data-label-less="Kapat">
+                        Devamını gör
                     </button>
                 </div>
             </details>
@@ -839,7 +920,7 @@
                     </div>
                     @if (Model.Amenities.Count > 0)
                     {
-                        <div class="tabler-section-actions">
+                        <div class="tabler-section-actions od-amenities__see-all-desktop">
                             <button type="button" class="tabler-section-action-btn od-amenities__see-all" data-open-amenities>
                                 @SharedLocalizer["Detail.Amenities.SeeAll"].Value
                                 <i class="fas fa-chevron-right" aria-hidden="true"></i>
@@ -848,6 +929,26 @@
                     }
                 </div>
             </div>
+            @if (amenityIconStrip.Count > 0)
+            {
+                <div class="od-amenities__icon-row" role="list" aria-label="@SharedLocalizer["Detail.Amenities.Title"].Value">
+                    @foreach (var item in amenityIconStrip)
+                    {
+                        <button type="button"
+                                class="od-amenity-icon-tile"
+                                role="listitem"
+                                data-open-amenities
+                                aria-label="@item.Name"
+                                title="@item.Name">
+                            <span class="od-amenity-icon-tile__glyph" aria-hidden="true"><i class="fas @item.IconClass"></i></span>
+                        </button>
+                    }
+                </div>
+                <button type="button" class="od-amenities__see-all-mobile" data-open-amenities aria-haspopup="dialog">
+                    @SharedLocalizer["Detail.Amenities.SeeAll"].Value
+                    <i class="fas fa-chevron-right" aria-hidden="true"></i>
+                </button>
+            }
             <div class="od-amenities__scroll" role="list" aria-label="@SharedLocalizer["Detail.Amenities.Title"].Value">
                 @foreach (var item in Model.Amenities.Where(x => !string.IsNullOrWhiteSpace(x.Name)).Take(12))
                 {
@@ -1073,6 +1174,8 @@
                                             }
                                         </ul>
                                     }
+                                </div>
+                                <div class="room-card-actions-row od-room-card__actions">
                                     @if ((room.Features?.Count ?? 0) > 5)
                                     {
                                         <div class="room-feature-more-inline" data-room-feature-wrap>
@@ -1097,8 +1200,6 @@
                                             </div>
                                         </div>
                                     }
-                                </div>
-                                <div class="room-card-aux">
                                     <button type="button"
                                             class="room-detail-btn room-detail-btn--link"
                                             data-room-detail-open
@@ -1118,6 +1219,8 @@
                                         Detaylar
                                         <i class="fas fa-arrow-right" aria-hidden="true"></i>
                                     </button>
+                                </div>
+                                <div class="room-card-aux">
                                     @{
                                         var cancelClass = !string.IsNullOrWhiteSpace(room.CancellationText)
                                             && room.CancellationText.Contains("Ücretsiz", StringComparison.OrdinalIgnoreCase)
@@ -1460,48 +1563,56 @@
                             <i class="fas fa-plus"></i> Oda ekle
                         </button>
                     </div>
+                    <div class="multi-room-toast" id="multiRoomToast" role="status" aria-live="polite" hidden></div>
 
                     <div class="multi-room-list" id="roomItems"></div>
 
                     <template id="roomItemTemplate">
                         <section class="multi-room-item" data-room-item>
                             <div class="multi-room-item-head">
-                                <strong class="multi-room-item-title" data-room-title>Oda</strong>
+                                <div class="multi-room-item-head-main">
+                                    <strong class="multi-room-item-title" data-room-title>Oda</strong>
+                                    <span class="multi-room-item-summary" data-room-summary></span>
+                                </div>
                                 <button type="button" class="multi-room-remove" data-remove-room hidden>Sil</button>
                             </div>
                             <div class="multi-room-item-grid">
-                                <label>
-                                    <span>Giriş Tarihi</span>
-                                    <input type="date" data-field="checkIn" min="@todayDate" />
-                                </label>
-                                <label>
-                                    <span>Çıkış Tarihi</span>
-                                    <input type="date" data-field="checkOut" min="@todayDate" />
-                                </label>
-                                <label class="multi-room-item-span">
-                                    <span>Oda Tipi</span>
-                                    <select data-field="roomType">
-                                        @foreach (var room in reservableRoomOptions)
-                                        {
-                                            <option value="@room.RoomTypeId"
-                                                    data-price="@room.Price.ToString("0.00", System.Globalization.CultureInfo.InvariantCulture)"
-                                                    data-room-name="@room.Name"
-                                                    data-max-guests="@room.MaxGuestCount"
-                                                    data-max-adults="@room.MaxAdultCount"
-                                                    data-max-children="@room.MaxChildCount">
-                                                @room.Name
-                                            </option>
-                                        }
-                                    </select>
-                                </label>
-                                <label class="multi-room-quantity">
-                                    <span>Oda adedi</span>
-                                    <div class="room-quantity-control">
-                                        <button type="button" data-room-quantity-action="minus" aria-label="Oda adedini azalt">-</button>
-                                        <input type="number" data-field="roomCount" min="1" max="20" value="1" inputmode="numeric" />
-                                        <button type="button" data-room-quantity-action="plus" aria-label="Oda adedini artır">+</button>
-                                    </div>
-                                </label>
+                                <div class="multi-room-item-dates">
+                                    <label>
+                                        <span>Giriş Tarihi</span>
+                                        <input type="date" data-field="checkIn" min="@todayDate" />
+                                    </label>
+                                    <label>
+                                        <span>Çıkış Tarihi</span>
+                                        <input type="date" data-field="checkOut" min="@todayDate" />
+                                    </label>
+                                </div>
+                                <div class="multi-room-item-type-row">
+                                    <label class="multi-room-item-type">
+                                        <span>Oda Tipi</span>
+                                        <select data-field="roomType">
+                                            @foreach (var room in reservableRoomOptions)
+                                            {
+                                                <option value="@room.RoomTypeId"
+                                                        data-price="@room.Price.ToString("0.00", System.Globalization.CultureInfo.InvariantCulture)"
+                                                        data-room-name="@room.Name"
+                                                        data-max-guests="@room.MaxGuestCount"
+                                                        data-max-adults="@room.MaxAdultCount"
+                                                        data-max-children="@room.MaxChildCount">
+                                                    @room.Name
+                                                </option>
+                                            }
+                                        </select>
+                                    </label>
+                                    <label class="multi-room-quantity">
+                                        <span>Oda adedi</span>
+                                        <div class="room-quantity-control">
+                                            <button type="button" data-room-quantity-action="minus" aria-label="Oda adedini azalt">-</button>
+                                            <input type="number" data-field="roomCount" min="1" max="20" value="1" inputmode="numeric" />
+                                            <button type="button" data-room-quantity-action="plus" aria-label="Oda adedini artır">+</button>
+                                        </div>
+                                    </label>
+                                </div>
                             </div>
                         </section>
                     </template>
@@ -1993,18 +2104,18 @@
     </section>
 }
 
-@if (hiddenAmenities.Count > 0)
+@if (Model.Amenities.Any(x => !string.IsNullOrWhiteSpace(x.Name)))
 {
     <section class="detail-modal" id="amenitiesModal" hidden aria-hidden="true" role="dialog" aria-modal="true" aria-labelledby="amenitiesModalTitle">
         <div class="detail-modal-head">
             <div>
                 <span class="detail-modal-kicker">Tesis Olanaklari</span>
-                <h3 id="amenitiesModalTitle">Tüm öne çıkan özellikler</h3>
+                <h3 id="amenitiesModalTitle">@SharedLocalizer["Detail.Amenities.Title"].Value</h3>
             </div>
             <button type="button" class="detail-modal-close" data-close-modal="amenitiesModal"><i class="fas fa-times"></i></button>
         </div>
         <div class="amenities-modal-grid">
-            @foreach (var item in hiddenAmenities)
+            @foreach (var item in Model.Amenities.Where(x => !string.IsNullOrWhiteSpace(x.Name)))
             {
                 <div class="amenity-item amenity-item-lux"><i class="fas @item.IconClass"></i> @item.Name</div>
             }
@@ -2212,9 +2323,6 @@
             const roomDetailModalPrice = document.getElementById('roomDetailModalPrice');
             const roomDetailModalSelectBtn = document.getElementById('roomDetailModalSelectBtn');
             const roomDetailModalGrid = document.getElementById('roomDetailModalGrid');
-            const galleryMobileTrack = document.getElementById('galleryMobileTrack');
-            const galleryMobileDots = Array.from(document.querySelectorAll('[data-gallery-dot-index]'));
-            const galleryMobileThumbs = Array.from(document.querySelectorAll('[data-gallery-mobile-thumb-index]'));
             let adults = parseInt(document.getElementById('adultCountInput')?.value || '2', 10);
             let children = parseInt(document.getElementById('childCountInput')?.value || '0', 10);
             const roomCountInput = document.getElementById('roomCountInput');
@@ -2222,7 +2330,6 @@
             let childrenPerRoom = Math.max(0, children);
             let latestQuoteRequest = null;
             let activeGalleryIndex = 0;
-            let galleryScrollTicking = false;
             let activeRoomDetailGalleryItems = [];
             let activeRoomDetailName = 'Oda';
             let activeRoomDetailRoomId = '';
@@ -2533,40 +2640,16 @@
                 return false;
             }
 
-            function setActiveMobileDot(index) {
-                if (!galleryMobileDots.length) {
-                    return;
-                }
-
-                galleryMobileDots.forEach(function (dot) {
-                    const dotIndex = parseInt(dot.getAttribute('data-gallery-dot-index') || '0', 10);
-                    const isActive = dotIndex === index;
-                    dot.classList.toggle('active', isActive);
-                    dot.setAttribute('aria-selected', isActive ? 'true' : 'false');
-                });
-            }
-
-            function scrollMobileTrackTo(index) {
-                if (!galleryMobileTrack) {
-                    return;
-                }
-
-                const slide = galleryMobileTrack.querySelector('[data-gallery-index="' + index + '"]');
-                if (!slide) {
-                    return;
-                }
-
-                slide.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
-            }
-
             function syncMainImage(index) {
-                if (!Array.isArray(galleryImages) || !galleryImages.length || !mainImage) {
+                if (!Array.isArray(galleryImages) || !galleryImages.length) {
                     return;
                 }
 
                 const safeIndex = Math.min(Math.max(index, 0), galleryImages.length - 1);
                 activeGalleryIndex = safeIndex;
-                mainImage.src = galleryImages[safeIndex];
+                if (mainImage) {
+                    mainImage.src = galleryImages[safeIndex];
+                }
                 if (mainImageWrap instanceof HTMLElement) {
                     mainImageWrap.style.setProperty('--hotel-main-ambient', 'url(\"' + (galleryImages[safeIndex] || '') + '\")');
                 }
@@ -2584,11 +2667,24 @@
                     const thumbIndex = parseInt(thumb.getAttribute('data-gallery-index') || '0', 10);
                     thumb.classList.toggle('active', thumbIndex === safeIndex);
                 });
-                galleryMobileThumbs.forEach(function (thumb) {
+                document.querySelectorAll('.gallery-mobile-thumb').forEach(function (thumb) {
                     const thumbIndex = parseInt(thumb.getAttribute('data-gallery-mobile-thumb-index') || '0', 10);
                     thumb.classList.toggle('active', thumbIndex === safeIndex);
                 });
-                setActiveMobileDot(safeIndex);
+                document.querySelectorAll('[data-gallery-dot-index]').forEach(function (dot) {
+                    const dotIndex = parseInt(dot.getAttribute('data-gallery-dot-index') || '0', 10);
+                    const isActive = dotIndex === safeIndex;
+                    dot.classList.toggle('active', isActive);
+                    dot.setAttribute('aria-selected', isActive ? 'true' : 'false');
+                });
+            }
+
+            window.__otelDetayGallerySync = syncMainImage;
+
+            function scrollMobileGalleryIfNeeded(index) {
+                if (window.__otelDetayMobileGallery && typeof window.__otelDetayMobileGallery.scrollTo === 'function') {
+                    window.__otelDetayMobileGallery.scrollTo(index, 'smooth');
+                }
             }
 
             function openSlayt(images, title, startIndex) {
@@ -2618,11 +2714,10 @@
                 });
             });
 
-            document.querySelectorAll('.gallery-main-trigger, .gallery-mobile-slide, .gallery-all-photos-btn').forEach(function (button) {
+            document.querySelectorAll('.gallery-main-trigger, .gallery-all-photos-btn').forEach(function (button) {
                 button.addEventListener('click', function () {
                     const index = parseInt(button.getAttribute('data-gallery-index') || '0', 10);
                     syncMainImage(index);
-                    scrollMobileTrackTo(index);
                     openSlayt(galleryImages, '@Model.Name', index);
                 });
             });
@@ -2638,7 +2733,7 @@
                     const delta = direction === 'prev' ? -1 : 1;
                     const nextIndex = (activeGalleryIndex + delta + galleryImages.length) % galleryImages.length;
                     syncMainImage(nextIndex);
-                    scrollMobileTrackTo(nextIndex);
+                    scrollMobileGalleryIfNeeded(nextIndex);
                 });
             });
 
@@ -2661,7 +2756,7 @@
                 const delta = event.key === 'ArrowLeft' ? -1 : 1;
                 const nextIndex = (activeGalleryIndex + delta + galleryImages.length) % galleryImages.length;
                 syncMainImage(nextIndex);
-                scrollMobileTrackTo(nextIndex);
+                scrollMobileGalleryIfNeeded(nextIndex);
             });
 
             // Oda kartı görselleri: ortak slayt gösterim
@@ -2676,77 +2771,7 @@
                 });
             });
 
-            galleryMobileDots.forEach(function (dot) {
-                dot.addEventListener('click', function () {
-                    const index = parseInt(dot.getAttribute('data-gallery-dot-index') || '0', 10);
-                    syncMainImage(index);
-                    scrollMobileTrackTo(index);
-                });
-            });
-
-            galleryMobileThumbs.forEach(function (thumb) {
-                thumb.addEventListener('click', function () {
-                    const index = parseInt(thumb.getAttribute('data-gallery-mobile-thumb-index') || '0', 10);
-                    syncMainImage(index);
-                    scrollMobileTrackTo(index);
-                });
-            });
-
-            document.querySelectorAll('[data-gallery-mobile-nav]').forEach(function (button) {
-                button.addEventListener('click', function (event) {
-                    event.preventDefault();
-                    event.stopPropagation();
-                    if (!Array.isArray(galleryImages) || galleryImages.length < 2) {
-                        return;
-                    }
-
-                    const direction = button.getAttribute('data-gallery-mobile-nav');
-                    const delta = direction === 'prev' ? -1 : 1;
-                    const nextIndex = (activeGalleryIndex + delta + galleryImages.length) % galleryImages.length;
-                    syncMainImage(nextIndex);
-                    scrollMobileTrackTo(nextIndex);
-                });
-            });
-
-            galleryMobileTrack?.addEventListener('scroll', function () {
-                if (galleryScrollTicking) {
-                    return;
-                }
-
-                galleryScrollTicking = true;
-                window.requestAnimationFrame(function () {
-                    const slides = Array.from(galleryMobileTrack.querySelectorAll('.gallery-mobile-slide'));
-                    if (!slides.length) {
-                        galleryScrollTicking = false;
-                        return;
-                    }
-
-                    const trackRect = galleryMobileTrack.getBoundingClientRect();
-                    const trackCenter = trackRect.left + (trackRect.width / 2);
-                    let nearestIndex = activeGalleryIndex;
-                    let nearestDistance = Number.POSITIVE_INFINITY;
-
-                    slides.forEach(function (slide) {
-                        const rect = slide.getBoundingClientRect();
-                        const center = rect.left + (rect.width / 2);
-                        const distance = Math.abs(center - trackCenter);
-                        if (distance < nearestDistance) {
-                            nearestDistance = distance;
-                            nearestIndex = parseInt(slide.getAttribute('data-gallery-index') || '0', 10);
-                        }
-                    });
-
-                    if (nearestIndex !== activeGalleryIndex) {
-                        syncMainImage(nearestIndex);
-                    } else {
-                        setActiveMobileDot(nearestIndex);
-                    }
-
-                    galleryScrollTicking = false;
-                });
-            });
-
-            // Not: Eski inline lightbox event'leri kaldırıldı; ortak SlaytGorsel kullanılıyor.
+            // Not: Mobil galeri kaydirma oteldetay-gallery-mobile.js içinde yönetilir.
 
             function getDetailPageI18n() {
                 const root = document.querySelector('.otel-detail-template-v41');
@@ -3031,6 +3056,8 @@
                 const textEl = document.getElementById('hotelAboutText');
                 const toggleEl = document.getElementById('hotelAboutToggle');
                 const tablerBtn = document.querySelector('[data-about-toggle]');
+                const aboutMoreLabel = toggleEl?.getAttribute('data-label-more') || 'Devamını gör';
+                const aboutLessLabel = toggleEl?.getAttribute('data-label-less') || 'Kapat';
                 if (!(textEl instanceof HTMLElement) || !(toggleEl instanceof HTMLButtonElement)) {
                     return;
                 }
@@ -3043,7 +3070,7 @@
                     if (!needs) {
                         textEl.classList.remove('is-clamped', 'has-toggle');
                     }
-                    toggleEl.textContent = 'Tümünü gör';
+                    toggleEl.textContent = aboutMoreLabel;
                     if (tablerBtn instanceof HTMLElement) {
                         tablerBtn.hidden = !needs;
                         toggleEl.hidden = true;
@@ -3056,9 +3083,10 @@
                 }
 
                 function syncExpandedLabel(expanded) {
-                    const label = expanded ? 'Kapat' : 'Tümünü gör';
+                    const label = expanded ? aboutLessLabel : aboutMoreLabel;
                     const icon = expanded ? 'fa-chevron-up' : 'fa-chevron-down';
                     toggleEl.textContent = label;
+                    toggleEl.setAttribute('aria-expanded', expanded ? 'true' : 'false');
                     if (tablerBtn instanceof HTMLElement) {
                         tablerBtn.innerHTML = label + ' <i class="fas ' + icon + '" aria-hidden="true"></i>';
                     }
@@ -3123,15 +3151,24 @@
 
             function bindRoomItemEvents(item) {
                 if (!item) return;
-                item.querySelectorAll('select, input[type="date"]').forEach(function (el) {
+                item.querySelectorAll('select, input[type="date"], input[data-field="roomCount"]').forEach(function (el) {
                     el.addEventListener('change', function () {
                         const nodes = getRoomItemNodes();
                         const idx = nodes.indexOf(item);
                         if (idx >= 0) setActiveRoomIndex(idx);
                         normalizeRoomItemDates(item);
+                        updateRoomItemSummary(item);
                         syncRoomsJsonAndHiddenFields();
                         ensureGuestCapacity(false);
                         refreshPriceQuote();
+                    });
+                });
+
+                item.querySelectorAll('[data-room-quantity-action]').forEach(function (btn) {
+                    btn.addEventListener('click', function () {
+                        window.setTimeout(function () {
+                            updateRoomItemSummary(item);
+                        }, 0);
                     });
                 });
 
@@ -3160,6 +3197,49 @@
                 });
             }
 
+            function formatDateShort(iso) {
+                if (!iso) {
+                    return '—';
+                }
+                const parts = iso.split('-');
+                if (parts.length !== 3) {
+                    return iso;
+                }
+                return parts[2] + '/' + parts[1] + '/' + parts[0];
+            }
+
+            function updateRoomItemSummary(item) {
+                if (!item) {
+                    return;
+                }
+                const summaryEl = item.querySelector('[data-room-summary]');
+                if (!summaryEl) {
+                    return;
+                }
+                const data = getRoomItemData(item);
+                const datePart = (data.checkIn && data.checkOut)
+                    ? formatDateShort(data.checkIn) + ' – ' + formatDateShort(data.checkOut)
+                    : 'Tarih seçin';
+                const roomPart = data.roomName || 'Oda tipi seçin';
+                const countPart = (data.roomCount || 1) + ' oda';
+                summaryEl.textContent = datePart + ' · ' + roomPart + ' · ' + countPart;
+            }
+
+            function showRoomAddedToast(roomNumber) {
+                const toast = document.getElementById('multiRoomToast');
+                if (!toast) {
+                    return;
+                }
+                toast.textContent = 'Oda ' + roomNumber + ' eklendi — oda tipini seçin';
+                toast.hidden = false;
+                toast.classList.add('is-visible');
+                window.clearTimeout(showRoomAddedToast._timer);
+                showRoomAddedToast._timer = window.setTimeout(function () {
+                    toast.classList.remove('is-visible');
+                    toast.hidden = true;
+                }, 4200);
+            }
+
             function renumberRoomItems() {
                 const nodes = getRoomItemNodes();
                 nodes.forEach(function (node, idx) {
@@ -3174,6 +3254,7 @@
                     if (removeBtn) {
                         removeBtn.hidden = nodes.length <= 1;
                     }
+                    updateRoomItemSummary(node);
                 });
 
                 const root = document.getElementById('multiRoomRoot');
@@ -3211,6 +3292,26 @@
                 addRoomItem(firstData ? { roomTypeId: firstData.roomTypeId, checkIn: firstData.checkIn, checkOut: firstData.checkOut } : null);
                 syncRoomsJsonAndHiddenFields();
                 refreshPriceQuote();
+
+                const nodes = getRoomItemNodes();
+                const appended = nodes[nodes.length - 1];
+                if (!appended) {
+                    return;
+                }
+
+                showRoomAddedToast(nodes.length);
+                appended.classList.add('is-new-room');
+                window.setTimeout(function () {
+                    appended.classList.remove('is-new-room');
+                }, 2600);
+
+                appended.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                const roomTypeSelect = appended.querySelector('[data-field="roomType"]');
+                if (roomTypeSelect) {
+                    window.setTimeout(function () {
+                        try { roomTypeSelect.focus(); } catch (_) { /* ignore */ }
+                    }, 280);
+                }
             });
 
 
@@ -4596,13 +4697,15 @@
             });
             document.querySelectorAll('[data-open-amenities]').forEach(function (btn) {
                 btn.addEventListener('click', function () {
+                    if (amenitiesModal) {
+                        openModal(amenitiesModal);
+                        return;
+                    }
                     const expand = document.getElementById('amenitiesExpand');
                     if (expand && 'open' in expand) {
                         expand.open = true;
                         scrollToElementWithOffset(expand, 86);
-                        return;
                     }
-                    openModal(amenitiesModal);
                 });
             });
 
@@ -5080,6 +5183,7 @@
         })();
     </script>
     <script src="~/assets/js/booking-date-guard.js" asp-append-version="true" defer></script>
+    <script src="~/assets/js/oteldetay-gallery-mobile.js" asp-append-version="true" defer></script>
     <script src="~/assets/js/oteldetay-detail-mobile.js" asp-append-version="true" defer></script>
     <script src="~/assets/js/otel-detay.js" asp-append-version="true"></script>
     <partial name="~/Views/Shared/_FavoriteToggleScriptPartial.cshtml" />

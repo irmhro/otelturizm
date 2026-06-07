@@ -77,7 +77,7 @@ public class OtellerController : Controller
     [HttpGet("")]
     [HttpGet("istanbul")]
     [OutputCache(PolicyName = "public-short")]
-    public async Task<IActionResult> OtelListeleme([FromQuery] string? q, [FromQuery] string? city, [FromQuery] string? etiket, [FromQuery] string? filter, [FromQuery] string? kampanya, [FromQuery] int page, CancellationToken cancellationToken)
+    public async Task<IActionResult> OtelListeleme([FromQuery] string? q, [FromQuery] string? city, [FromQuery] string? etiket, [FromQuery] string? filter, [FromQuery] string? kampanya, [FromQuery] decimal? minPrice, [FromQuery] decimal? maxPrice, [FromQuery] int page, CancellationToken cancellationToken)
     {
         var listingCulture = ApplyRouteListingCulture();
         ViewData["PageCss"] = "otelliste_masaustu";
@@ -87,7 +87,7 @@ public class OtellerController : Controller
         var etiketN = HotelService.ResolveListingCampaignTag(etiket, filter);
         var kampanyaN = SearchTextNormalizer.Normalize(kampanya);
         var ctxBoost = Request.Cookies.TryGetValue("Otelturizm.SearchCtx", out var cx) ? cx.ToString() : null;
-        var model = await _hotelService.GetHotelListingPageAsync(searchTerm, etiketN, kampanyaN, page <= 0 ? 1 : page, ctxBoost, cancellationToken);
+        var model = await _hotelService.GetHotelListingPageAsync(searchTerm, etiketN, kampanyaN, page <= 0 ? 1 : page, ctxBoost, minPrice, maxPrice, cancellationToken);
         await ApplyFavoriteStatesAsync(model, cancellationToken);
         ApplyListingLoyaltyTouchpoints(model);
         var listingMeta = _internationalSeo.BuildListingMeta(
@@ -103,7 +103,7 @@ public class OtellerController : Controller
 
     [HttpGet("harita")]
     [OutputCache(PolicyName = "public-short")]
-    public async Task<IActionResult> HaritaOteller([FromQuery] string? q, [FromQuery] string? city, [FromQuery] string? etiket, [FromQuery] string? filter, [FromQuery] string? kampanya, CancellationToken cancellationToken)
+    public async Task<IActionResult> HaritaOteller([FromQuery] string? q, [FromQuery] string? city, [FromQuery] string? etiket, [FromQuery] string? filter, [FromQuery] string? kampanya, [FromQuery] decimal? minPrice, [FromQuery] decimal? maxPrice, CancellationToken cancellationToken)
     {
         ViewData["PageCss"] = "haritaoteller";
         ViewData["PageCssMobile"] = "haritaoteller.mobile";
@@ -112,7 +112,7 @@ public class OtellerController : Controller
         var etiketN = HotelService.ResolveListingCampaignTag(etiket, filter);
         var kampanyaN = SearchTextNormalizer.Normalize(kampanya);
         var ctxBoost = Request.Cookies.TryGetValue("Otelturizm.SearchCtx", out var cx) ? cx.ToString() : null;
-        var model = await _hotelService.GetHotelListingPageAsync(searchTerm, etiketN, kampanyaN, 1, ctxBoost, cancellationToken);
+        var model = await _hotelService.GetHotelListingPageAsync(searchTerm, etiketN, kampanyaN, 1, ctxBoost, minPrice, maxPrice, cancellationToken);
         await ApplyFavoriteStatesAsync(model, cancellationToken);
         var mapCulture = ApplyRouteListingCulture();
         ViewData["Title"] = string.IsNullOrWhiteSpace(model.SearchLabel)

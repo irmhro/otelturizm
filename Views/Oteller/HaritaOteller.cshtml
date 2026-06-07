@@ -35,9 +35,28 @@
         image = x.ImageUrl
     }).ToList();
     var serializedHotels = JsonSerializer.Serialize(mapPayload);
-    var cityOptions = mapHotels.Select(x => x.City).Where(x => !string.IsNullOrWhiteSpace(x)).Distinct(StringComparer.OrdinalIgnoreCase).OrderBy(x => x).ToList();
-    var districtOptions = mapHotels.Select(x => x.District).Where(x => !string.IsNullOrWhiteSpace(x)).Distinct(StringComparer.OrdinalIgnoreCase).OrderBy(x => x).ToList();
-    var neighborhoodOptions = mapHotels.Select(x => x.Neighborhood).Where(x => !string.IsNullOrWhiteSpace(x)).Distinct(StringComparer.OrdinalIgnoreCase).OrderBy(x => x).ToList();
+    var cityOptions = Model.Cities?.Any() == true
+        ? Model.Cities
+        : mapHotels.Select(x => x.City).Where(x => !string.IsNullOrWhiteSpace(x)).Distinct(StringComparer.OrdinalIgnoreCase).OrderBy(x => x).ToList();
+    var districtOptions = Model.Districts?.Any() == true
+        ? Model.Districts
+        : mapHotels.Select(x => x.District).Where(x => !string.IsNullOrWhiteSpace(x)).Distinct(StringComparer.OrdinalIgnoreCase).OrderBy(x => x).ToList();
+    var neighborhoodOptions = Model.Neighborhoods?.Any() == true
+        ? Model.Neighborhoods
+        : mapHotels.Select(x => x.Neighborhood).Where(x => !string.IsNullOrWhiteSpace(x)).Distinct(StringComparer.OrdinalIgnoreCase).OrderBy(x => x).ToList();
+    var pricedHotels = mapHotels.Where(x => x.StartingPrice is > 0m).ToList();
+    var priceMin = Model.MaxPrice > 0m
+        ? Model.MinPrice
+        : pricedHotels.Select(x => x.StartingPrice ?? 0m).DefaultIfEmpty(0m).Min();
+    var priceMax = Model.MaxPrice > 0m
+        ? Model.MaxPrice
+        : pricedHotels.Select(x => x.StartingPrice ?? 0m).DefaultIfEmpty(0m).Max();
+    var hasPriceRange = priceMax > 0m;
+    var activeMinPrice = Model.ActiveMinPrice is > 0m ? (int)Math.Floor(Model.ActiveMinPrice.Value) : (int?)null;
+    var activeMaxPrice = Model.ActiveMaxPrice is > 0m ? (int)Math.Ceiling(Model.ActiveMaxPrice.Value) : (int?)null;
+    var starOptions = Model.StarOptions?.Any() == true
+        ? Model.StarOptions
+        : mapHotels.Where(x => x.StarCount.HasValue).Select(x => x.StarCount!.Value).Distinct().OrderByDescending(x => x).ToList();
 }
 
 @section HeadStyles {
@@ -86,6 +105,10 @@
                 </div>
 
                 <div class="hotel-map-page__map-canvas" id="hotelMapCanvas">
+                    <button type="button" class="hotel-map-page__mobile-filter-btn" id="hotelMapOpenFilters" aria-controls="hotelMapFilterDrawer" aria-expanded="false">
+                        <i class="fas fa-sliders" aria-hidden="true"></i>
+                        <span>Filtrele</span>
+                    </button>
                     <div class="hotel-map-page__empty @(mapHotels.Count == 0 ? "" : "is-hidden")"
                          id="hotelMapEmptyState"
                          role="status"
@@ -106,62 +129,18 @@
                     <span><strong id="hotelMapVisibleCount">@mapHotels.Count</strong> sonuç</span>
                 </div>
 
-                <form class="hotel-map-page__filters" id="hotelMapFilterForm" autocomplete="off">
-                    <label class="hotel-map-page__field">
-                        <span>Otel adı</span>
-                        <input type="search"
-                               id="hotelMapSearchInput"
-                               placeholder="Otel adı ara"
-                               aria-label="Otel adı ara" />
-                    </label>
-                    <div class="hotel-map-page__filter-grid">
-                        <label class="hotel-map-page__field">
-                            <span>İl</span>
-                            <select id="hotelMapCityFilter" aria-label="İle göre filtrele">
-                                <option value="">Tüm iller</option>
-                                @foreach (var city in cityOptions)
-                                {
-                                    <option value="@city">@city</option>
-                                }
-                            </select>
-                        </label>
-                        <label class="hotel-map-page__field">
-                            <span>İlçe</span>
-                            <select id="hotelMapDistrictFilter" aria-label="İlçeye göre filtrele">
-                                <option value="">Tüm ilçeler</option>
-                                @foreach (var district in districtOptions)
-                                {
-                                    <option value="@district">@district</option>
-                                }
-                            </select>
-                        </label>
-                    </div>
-                    <div class="hotel-map-page__filter-grid">
-                        <label class="hotel-map-page__field">
-                            <span>Mahalle</span>
-                            <select id="hotelMapNeighborhoodFilter" aria-label="Mahalleye göre filtrele">
-                                <option value="">Tüm mahalleler</option>
-                                @foreach (var neighborhood in neighborhoodOptions)
-                                {
-                                    <option value="@neighborhood">@neighborhood</option>
-                                }
-                            </select>
-                        </label>
-                        <label class="hotel-map-page__field">
-                            <span>Puan</span>
-                            <select id="hotelMapRatingFilter" aria-label="Puana göre filtrele">
-                                <option value="">Tüm puanlar</option>
-                                <option value="9">9.0 ve üzeri</option>
-                                <option value="8">8.0 ve üzeri</option>
-                                <option value="7">7.0 ve üzeri</option>
-                            </select>
-                        </label>
-                    </div>
-                    <button type="button" class="hotel-map-page__clear" id="hotelMapClearFilters">
-                        <i class="fas fa-rotate-left" aria-hidden="true"></i>
-                        <span>Temizle</span>
-                    </button>
-                </form>
+                <partial name="~/Views/Oteller/_HaritaOtellerFilters.cshtml" model="Model" view-data="@(new ViewDataDictionary(ViewData) {
+                    { "MapFilterScope", "desktop" },
+                    { "MapCityOptions", cityOptions },
+                    { "MapDistrictOptions", districtOptions },
+                    { "MapNeighborhoodOptions", neighborhoodOptions },
+                    { "MapPriceMin", priceMin },
+                    { "MapPriceMax", priceMax },
+                    { "MapHasPriceRange", hasPriceRange },
+                    { "MapActiveMinPrice", activeMinPrice },
+                    { "MapActiveMaxPrice", activeMaxPrice },
+                    { "MapStarOptions", starOptions }
+                })" />
 
                 <div class="hotel-map-page__list" id="hotelMapHotelList">
                     @{ var mapListIndex = 0; }
@@ -183,6 +162,8 @@
                            data-district="@hotel.District"
                            data-neighborhood="@hotel.Neighborhood"
                            data-rating="@hotel.Rating.ToString(CultureInfo.InvariantCulture)"
+                           data-stars="@(hotel.StarCount ?? 0)"
+                           data-price="@((hotel.StartingPrice ?? 0m).ToString(CultureInfo.InvariantCulture))"
                            data-lat="@hotel.Latitude?.ToString(CultureInfo.InvariantCulture)"
                            data-lon="@hotel.Longitude?.ToString(CultureInfo.InvariantCulture)">
                             <div class="hotel-map-page__item-visual">
@@ -213,6 +194,33 @@
             </aside>
         </div>
     </div>
+
+    <div class="hotel-map-page__filter-overlay" id="hotelMapFilterOverlay" hidden></div>
+    <aside class="hotel-map-page__filter-drawer" id="hotelMapFilterDrawer" aria-hidden="true" aria-label="Harita filtreleri">
+        <div class="hotel-map-page__filter-drawer-handle" aria-hidden="true"></div>
+        <div class="hotel-map-page__filter-drawer-head">
+            <h2>Filtreleme</h2>
+            <button type="button" class="hotel-map-page__filter-drawer-close" id="hotelMapCloseFilters" aria-label="Kapat">Kapat</button>
+        </div>
+        <div class="hotel-map-page__filter-drawer-body">
+            <partial name="~/Views/Oteller/_HaritaOtellerFilters.cshtml" model="Model" view-data="@(new ViewDataDictionary(ViewData) {
+                { "MapFilterScope", "mobile" },
+                { "MapCityOptions", cityOptions },
+                { "MapDistrictOptions", districtOptions },
+                { "MapNeighborhoodOptions", neighborhoodOptions },
+                { "MapPriceMin", priceMin },
+                { "MapPriceMax", priceMax },
+                { "MapHasPriceRange", hasPriceRange },
+                { "MapActiveMinPrice", activeMinPrice },
+                { "MapActiveMaxPrice", activeMaxPrice },
+                { "MapStarOptions", starOptions }
+            })" />
+        </div>
+        <div class="hotel-map-page__filter-drawer-foot">
+            <button type="button" class="hotel-map-page__filter-clear" data-map-filter-reset>Sıfırla</button>
+            <button type="button" class="hotel-map-page__filter-apply" id="hotelMapApplyFilters">Uygula</button>
+        </div>
+    </aside>
 </section>
 
 <script type="application/json" id="hotelMapPayload">@Html.Raw(serializedHotels)</script>
@@ -230,18 +238,121 @@
             const mapCanvas = document.getElementById('hotelMapCanvas');
             const fitBtn = document.getElementById('fitHotelMapBtn');
             const payload = document.getElementById('hotelMapPayload');
-            const searchInput = document.getElementById('hotelMapSearchInput');
-            const cityFilter = document.getElementById('hotelMapCityFilter');
-            const districtFilter = document.getElementById('hotelMapDistrictFilter');
-            const neighborhoodFilter = document.getElementById('hotelMapNeighborhoodFilter');
-            const ratingFilter = document.getElementById('hotelMapRatingFilter');
-            const clearFilters = document.getElementById('hotelMapClearFilters');
             const visibleCount = document.getElementById('hotelMapVisibleCount');
             const pinCount = document.getElementById('hotelMapPinCount');
             const summaryText = document.getElementById('hotelMapSummaryText');
             const listItems = Array.from(document.querySelectorAll('[data-map-focus]'));
             const emptyState = document.getElementById('hotelMapEmptyState');
+            const filterDrawer = document.getElementById('hotelMapFilterDrawer');
+            const filterOverlay = document.getElementById('hotelMapFilterOverlay');
+            const openFiltersBtn = document.getElementById('hotelMapOpenFilters');
+            const closeFiltersBtn = document.getElementById('hotelMapCloseFilters');
+            const applyFiltersBtn = document.getElementById('hotelMapApplyFilters');
             if (!mapCanvas || !window.L) return;
+
+            function getFilterRoot() {
+                const isMobile = window.matchMedia('(max-width: 900px)').matches;
+                if (isMobile && filterDrawer?.classList.contains('is-open')) {
+                    return filterDrawer;
+                }
+                return document.querySelector('.hotel-map-page__sidebar') || filterDrawer || document;
+            }
+
+            function readFilterState() {
+                const root = getFilterRoot();
+                const stars = Array.from(root.querySelectorAll('.hotel-map-page__star-btn.is-active'))
+                    .map(function (btn) { return parseInt(btn.getAttribute('data-map-star') || '0', 10); })
+                    .filter(function (n) { return n > 0; });
+                const minEl = root.querySelector('.hotel-map-page__filter-min-price');
+                const maxEl = root.querySelector('.hotel-map-page__filter-max-price');
+                const minRaw = minEl?.value?.trim() || '';
+                const maxRaw = maxEl?.value?.trim() || '';
+                const minPrice = minRaw !== '' ? parseFloat(minRaw) || 0 : 0;
+                const maxPrice = maxRaw !== '' ? parseFloat(maxRaw) || Number.MAX_SAFE_INTEGER : Number.MAX_SAFE_INTEGER;
+                const priceFilterActive = minRaw !== '' || maxRaw !== '';
+                return {
+                    query: normalizeText(root.querySelector('.hotel-map-page__filter-search')?.value || ''),
+                    city: normalizeText(root.querySelector('.hotel-map-page__filter-city')?.value || ''),
+                    district: normalizeText(root.querySelector('.hotel-map-page__filter-district')?.value || ''),
+                    neighborhood: normalizeText(root.querySelector('.hotel-map-page__filter-neighborhood')?.value || ''),
+                    stars: stars,
+                    minPrice: minPrice,
+                    maxPrice: maxPrice,
+                    priceFilterActive: priceFilterActive
+                };
+            }
+
+            function writeFilterState(state, scope) {
+                const form = document.querySelector('form[data-map-filter-scope="' + scope + '"]');
+                if (!form || !state) return;
+                const setVal = function (selector, value) {
+                    const el = form.querySelector(selector);
+                    if (el) el.value = value || '';
+                };
+                setVal('.hotel-map-page__filter-search', state.queryRaw || '');
+                setVal('.hotel-map-page__filter-city', state.cityRaw || '');
+                setVal('.hotel-map-page__filter-district', state.districtRaw || '');
+                setVal('.hotel-map-page__filter-neighborhood', state.neighborhoodRaw || '');
+                const minEl = form.querySelector('.hotel-map-page__filter-min-price');
+                const maxEl = form.querySelector('.hotel-map-page__filter-max-price');
+                if (minEl) minEl.value = state.priceFilterActive ? String(state.minPrice || '') : '';
+                if (maxEl) maxEl.value = state.priceFilterActive && state.maxPrice !== Number.MAX_SAFE_INTEGER ? String(state.maxPrice) : '';
+                form.querySelectorAll('.hotel-map-page__star-btn').forEach(function (btn) {
+                    const star = parseInt(btn.getAttribute('data-map-star') || '0', 10);
+                    btn.classList.toggle('is-active', state.stars.indexOf(star) !== -1);
+                });
+            }
+
+            function syncFilterScopes(fromScope, toScope) {
+                const fromForm = document.querySelector('form[data-map-filter-scope="' + fromScope + '"]');
+                if (!fromForm) return;
+                writeFilterState({
+                    queryRaw: fromForm.querySelector('.hotel-map-page__filter-search')?.value || '',
+                    cityRaw: fromForm.querySelector('.hotel-map-page__filter-city')?.value || '',
+                    districtRaw: fromForm.querySelector('.hotel-map-page__filter-district')?.value || '',
+                    neighborhoodRaw: fromForm.querySelector('.hotel-map-page__filter-neighborhood')?.value || '',
+                    minPrice: parseFloat(fromForm.querySelector('.hotel-map-page__filter-min-price')?.value || '0') || 0,
+                    maxPrice: parseFloat(fromForm.querySelector('.hotel-map-page__filter-max-price')?.value || '0') || Number.MAX_SAFE_INTEGER,
+                    priceFilterActive: !!(fromForm.querySelector('.hotel-map-page__filter-min-price')?.value || fromForm.querySelector('.hotel-map-page__filter-max-price')?.value),
+                    stars: Array.from(fromForm.querySelectorAll('.hotel-map-page__star-btn.is-active')).map(function (btn) {
+                        return parseInt(btn.getAttribute('data-map-star') || '0', 10);
+                    }).filter(function (n) { return n > 0; })
+                }, toScope);
+            }
+
+            function openFilterDrawer() {
+                syncFilterScopes('desktop', 'mobile');
+                filterDrawer?.classList.add('is-open');
+                filterOverlay?.classList.add('is-open');
+                filterOverlay?.removeAttribute('hidden');
+                filterDrawer?.setAttribute('aria-hidden', 'false');
+                openFiltersBtn?.setAttribute('aria-expanded', 'true');
+                document.body.style.overflow = 'hidden';
+            }
+
+            function closeFilterDrawer() {
+                filterDrawer?.classList.remove('is-open');
+                filterOverlay?.classList.remove('is-open');
+                filterOverlay?.setAttribute('hidden', 'hidden');
+                filterDrawer?.setAttribute('aria-hidden', 'true');
+                openFiltersBtn?.setAttribute('aria-expanded', 'false');
+                document.body.style.overflow = '';
+            }
+
+            function resetAllFilters() {
+                document.querySelectorAll('form[data-map-filter-scope]').forEach(function (form) {
+                    form.querySelectorAll('input[type="search"], input[type="number"]').forEach(function (el) { el.value = ''; });
+                    form.querySelectorAll('select').forEach(function (el) { el.selectedIndex = 0; });
+                    form.querySelectorAll('.hotel-map-page__star-btn').forEach(function (btn) { btn.classList.remove('is-active'); });
+                });
+                try {
+                    const url = new URL(window.location.href);
+                    url.searchParams.delete('minPrice');
+                    url.searchParams.delete('maxPrice');
+                    window.history.replaceState({}, '', url);
+                } catch (_) { /* ignore */ }
+                applyMapState();
+            }
 
             let hotels = [];
             try {
@@ -354,23 +465,25 @@
                     citySearch: normalizeText(hotel.city),
                     districtSearch: normalizeText(hotel.district),
                     neighborhoodSearch: normalizeText(hotel.neighborhood),
-                    ratingValue: Number(hotel.rating || 0)
+                    keywordSearch: normalizeText([hotel.name, hotel.city, hotel.district, hotel.neighborhood].join(' ')),
+                    ratingValue: Number(hotel.rating || 0),
+                    starValue: Number(hotel.starCount || 0),
+                    priceValue: Number(hotel.price || 0)
                 });
             });
 
             function getFilteredEntries() {
-                const query = normalizeText(searchInput?.value || '');
-                const city = normalizeText(cityFilter?.value || '');
-                const district = normalizeText(districtFilter?.value || '');
-                const neighborhood = normalizeText(neighborhoodFilter?.value || '');
-                const minRating = Number(ratingFilter?.value || 0);
+                const state = readFilterState();
 
                 return markers.filter(function (entry) {
-                    if (query && entry.nameSearch.indexOf(query) === -1) return false;
-                    if (city && entry.citySearch !== city) return false;
-                    if (district && entry.districtSearch !== district) return false;
-                    if (neighborhood && entry.neighborhoodSearch !== neighborhood) return false;
-                    if (minRating > 0 && entry.ratingValue < minRating) return false;
+                    if (state.query && entry.keywordSearch.indexOf(state.query) === -1) return false;
+                    if (state.city && entry.citySearch !== state.city) return false;
+                    if (state.district && entry.districtSearch !== state.district) return false;
+                    if (state.neighborhood && entry.neighborhoodSearch !== state.neighborhood) return false;
+                    if (state.stars.length && state.stars.indexOf(entry.starValue) === -1) return false;
+                    if (state.priceFilterActive && entry.priceValue > 0) {
+                        if (entry.priceValue < state.minPrice || entry.priceValue > state.maxPrice) return false;
+                    }
                     return true;
                 });
             }
@@ -424,22 +537,47 @@
                 fitEntries(entries);
             }
 
-            fitBtn?.addEventListener('click', function () {
-                applyMapState();
+            fitBtn?.addEventListener('click', applyMapState);
+
+            document.querySelectorAll('form[data-map-filter-scope]').forEach(function (form) {
+                form.querySelectorAll('.hotel-map-page__filter-search, .hotel-map-page__filter-min-price, .hotel-map-page__filter-max-price').forEach(function (control) {
+                    control.addEventListener('input', function () {
+                        if (form.getAttribute('data-map-filter-scope') === 'desktop') applyMapState();
+                    });
+                });
+                form.querySelectorAll('.hotel-map-page__filter-city, .hotel-map-page__filter-district, .hotel-map-page__filter-neighborhood').forEach(function (control) {
+                    control.addEventListener('change', function () {
+                        if (form.getAttribute('data-map-filter-scope') === 'desktop') applyMapState();
+                    });
+                });
+                form.querySelectorAll('.hotel-map-page__star-btn').forEach(function (btn) {
+                    btn.addEventListener('click', function () {
+                        btn.classList.toggle('is-active');
+                        if (form.getAttribute('data-map-filter-scope') === 'desktop') applyMapState();
+                    });
+                });
             });
 
-            [searchInput, cityFilter, districtFilter, neighborhoodFilter, ratingFilter].forEach(function (control) {
-                control?.addEventListener('input', applyMapState);
-                control?.addEventListener('change', applyMapState);
+            document.querySelectorAll('[data-map-filter-reset]').forEach(function (btn) {
+                btn.addEventListener('click', resetAllFilters);
             });
 
-            clearFilters?.addEventListener('click', function () {
-                if (searchInput) searchInput.value = '';
-                if (cityFilter) cityFilter.value = '';
-                if (districtFilter) districtFilter.value = '';
-                if (neighborhoodFilter) neighborhoodFilter.value = '';
-                if (ratingFilter) ratingFilter.value = '';
+            openFiltersBtn?.addEventListener('click', openFilterDrawer);
+            closeFiltersBtn?.addEventListener('click', closeFilterDrawer);
+            filterOverlay?.addEventListener('click', closeFilterDrawer);
+            applyFiltersBtn?.addEventListener('click', function () {
+                syncFilterScopes('mobile', 'desktop');
+                const state = readFilterState();
+                try {
+                    const url = new URL(window.location.href);
+                    if (state.priceFilterActive && state.minPrice > 0) url.searchParams.set('minPrice', String(Math.floor(state.minPrice)));
+                    else url.searchParams.delete('minPrice');
+                    if (state.priceFilterActive && state.maxPrice > 0 && state.maxPrice < Number.MAX_SAFE_INTEGER) url.searchParams.set('maxPrice', String(Math.floor(state.maxPrice)));
+                    else url.searchParams.delete('maxPrice');
+                    window.history.replaceState({}, '', url);
+                } catch (_) { /* ignore */ }
                 applyMapState();
+                closeFilterDrawer();
             });
 
             listItems.forEach(function (link) {

@@ -33,9 +33,19 @@
         .OrderByDescending(x => x)
         .ToList();
     var priced = hotels.Where(x => (x.StartingPrice ?? 0m) > 0m).ToList();
-    var priceMin = priced.Select(x => x.StartingPrice ?? 0m).DefaultIfEmpty(0m).Min();
-    var priceMax = priced.Select(x => x.StartingPrice ?? 0m).DefaultIfEmpty(0m).Max();
-    var hasPriceRange = priceMin > 0m && priceMax >= priceMin;
+    var priceMin = Model.MaxPrice > 0m
+        ? Model.MinPrice
+        : priced.Select(x => x.StartingPrice ?? 0m).DefaultIfEmpty(0m).Min();
+    var priceMax = Model.MaxPrice > 0m
+        ? Model.MaxPrice
+        : priced.Select(x => x.StartingPrice ?? 0m).DefaultIfEmpty(0m).Max();
+    var hasPriceRange = priceMax > 0m;
+    var activeMinPrice = Model.ActiveMinPrice.HasValue && Model.ActiveMinPrice.Value > 0m
+        ? (int)Math.Floor(Model.ActiveMinPrice.Value)
+        : (int?)null;
+    var activeMaxPrice = Model.ActiveMaxPrice.HasValue && Model.ActiveMaxPrice.Value > 0m
+        ? (int)Math.Ceiling(Model.ActiveMaxPrice.Value)
+        : (int?)null;
 }
 
 <div class="otelliste-filters" data-filter-scope="@scope">
@@ -48,42 +58,44 @@
                autocomplete="off" />
     </div>
 
-    <div class="otelliste-filter-group">
-        <label for="@(prefix)city">İl</label>
-        <select id="@(prefix)city" class="otelliste-field otelliste-filter-city">
-            <option value="">Tüm iller</option>
-            @foreach (var city in cityOptions)
-            {
-                <option value="@city">@city</option>
-            }
-        </select>
-    </div>
+    <div class="otelliste-filter-location-grid">
+        <div class="otelliste-filter-group otelliste-filter-group--city">
+            <label for="@(prefix)city">İl</label>
+            <select id="@(prefix)city" class="otelliste-field otelliste-filter-city">
+                <option value="">Tüm iller</option>
+                @foreach (var city in cityOptions)
+                {
+                    <option value="@city">@city</option>
+                }
+            </select>
+        </div>
 
-    <div class="otelliste-filter-group">
-        <label for="@(prefix)district">İlçe</label>
-        <select id="@(prefix)district" class="otelliste-field otelliste-filter-district">
-            <option value="">Tüm ilçeler</option>
-            @foreach (var district in districtOptions)
-            {
-                <option value="@district">@district</option>
-            }
-        </select>
-    </div>
+        <div class="otelliste-filter-group otelliste-filter-group--district">
+            <label for="@(prefix)district">İlçe</label>
+            <select id="@(prefix)district" class="otelliste-field otelliste-filter-district">
+                <option value="">Tüm ilçeler</option>
+                @foreach (var district in districtOptions)
+                {
+                    <option value="@district">@district</option>
+                }
+            </select>
+        </div>
 
-    <div class="otelliste-filter-group">
-        <label for="@(prefix)neighborhood">Mahalle</label>
-        <select id="@(prefix)neighborhood" class="otelliste-field otelliste-filter-neighborhood">
-            <option value="">Tüm mahalleler</option>
-            @foreach (var neighborhood in neighborhoodOptions)
-            {
-                <option value="@neighborhood">@neighborhood</option>
-            }
-        </select>
+        <div class="otelliste-filter-group otelliste-filter-group--neighborhood">
+            <label for="@(prefix)neighborhood">Mahalle</label>
+            <select id="@(prefix)neighborhood" class="otelliste-field otelliste-filter-neighborhood">
+                <option value="">Tüm mahalleler</option>
+                @foreach (var neighborhood in neighborhoodOptions)
+                {
+                    <option value="@neighborhood">@neighborhood</option>
+                }
+            </select>
+        </div>
     </div>
 
     @if (hasPriceRange)
     {
-        <div class="otelliste-filter-group">
+        <div class="otelliste-filter-group otelliste-filter-group--price">
             <span class="otelliste-filter-label">Fiyat Aralığı (₺)</span>
             <div class="otelliste-price-row">
                 <input type="number"
@@ -92,16 +104,20 @@
                        placeholder="Min @((int)Math.Floor(priceMin))"
                        min="0"
                        step="1"
+                       value="@(activeMinPrice?.ToString(CultureInfo.InvariantCulture))"
                        data-default-min="@((int)Math.Floor(priceMin))"
-                       data-default-max="@((int)Math.Ceiling(priceMax))" />
+                       data-default-max="@((int)Math.Ceiling(priceMax))"
+                       aria-label="Minimum fiyat" />
                 <input type="number"
                        id="@(prefix)maxPrice"
                        class="otelliste-field otelliste-filter-max-price"
                        placeholder="Max @((int)Math.Ceiling(priceMax))"
                        min="0"
                        step="1"
+                       value="@(activeMaxPrice?.ToString(CultureInfo.InvariantCulture))"
                        data-default-min="@((int)Math.Floor(priceMin))"
-                       data-default-max="@((int)Math.Ceiling(priceMax))" />
+                       data-default-max="@((int)Math.Ceiling(priceMax))"
+                       aria-label="Maksimum fiyat" />
             </div>
         </div>
     }

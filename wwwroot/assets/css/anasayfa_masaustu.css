@@ -2372,8 +2372,13 @@ a.eco-pill:hover {
 
     .hero-stage .search-engine-shell {
         margin-top: 6px;
+        margin-bottom: 0;
         width: 100%;
         max-width: 100%;
+    }
+
+    .hero-stage .route-picker {
+        margin: 6px 0 6px;
     }
 
     .hero-stage .search-engine.search-engine-pro,
@@ -2503,7 +2508,7 @@ a.eco-pill:hover {
             minmax(60px, 0.36fr)
             minmax(118px, auto);
         gap: 10px 10px;
-        padding: 16px 0 14px;
+        padding: 16px 0 4px;
         align-items: end;
         background: transparent;
         border: none;
@@ -2512,6 +2517,11 @@ a.eco-pill:hover {
 
     .hero-section .search-pro-row-tags {
         background: transparent;
+    }
+
+    .hero-section .search-pro-row-tags.is-collapsed {
+        padding-top: 8px;
+        padding-bottom: 0;
     }
 
     .search-engine-pro .search-pro-field > label {
@@ -3989,7 +3999,7 @@ a.eco-pill:hover {
         align-content: center;
         column-gap: 8px;
         row-gap: 0;
-        padding: 11px 0;
+        padding: 8px 0 0;
         min-height: 0;
     }
 

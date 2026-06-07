@@ -1,0 +1,110 @@
+@model otelturizmnew.Models.Oteller.HotelListingPageViewModel
+@using System.Globalization
+@{
+    var scope = ViewData["MapFilterScope"] as string ?? "desktop";
+    var isMobile = scope == "mobile";
+    var id = isMobile ? "hotelMapM" : "hotelMap";
+    var cityOptions = ViewData["MapCityOptions"] as List<string> ?? new List<string>();
+    var districtOptions = ViewData["MapDistrictOptions"] as List<string> ?? new List<string>();
+    var neighborhoodOptions = ViewData["MapNeighborhoodOptions"] as List<string> ?? new List<string>();
+    var priceMin = ViewData["MapPriceMin"] is decimal pm ? pm : 0m;
+    var priceMax = ViewData["MapPriceMax"] is decimal px ? px : 0m;
+    var hasPriceRange = ViewData["MapHasPriceRange"] as bool? ?? priceMax > 0m;
+    var activeMinPrice = ViewData["MapActiveMinPrice"] as int?;
+    var activeMaxPrice = ViewData["MapActiveMaxPrice"] as int?;
+    var starOptions = ViewData["MapStarOptions"] as List<int> ?? new List<int> { 5, 4, 3, 2, 1 };
+}
+
+<form class="hotel-map-page__filters" id="@(id)FilterForm" data-map-filter-scope="@scope" autocomplete="off">
+    <label class="hotel-map-page__field hotel-map-page__field--search">
+        <span>Konum / Otel Ara</span>
+        <input type="search"
+               id="@(id)SearchInput"
+               class="hotel-map-page__filter-search"
+               placeholder="Otel adı, il, ilçe veya mahalle"
+               aria-label="Otel ara" />
+    </label>
+
+    <div class="hotel-map-page__filter-location-grid">
+        <label class="hotel-map-page__field">
+            <span>İl</span>
+            <select id="@(id)CityFilter" class="hotel-map-page__filter-city" aria-label="İle göre filtrele">
+                <option value="">Tüm iller</option>
+                @foreach (var city in cityOptions)
+                {
+                    <option value="@city">@city</option>
+                }
+            </select>
+        </label>
+        <label class="hotel-map-page__field">
+            <span>İlçe</span>
+            <select id="@(id)DistrictFilter" class="hotel-map-page__filter-district" aria-label="İlçeye göre filtrele">
+                <option value="">Tüm ilçeler</option>
+                @foreach (var district in districtOptions)
+                {
+                    <option value="@district">@district</option>
+                }
+            </select>
+        </label>
+        <label class="hotel-map-page__field hotel-map-page__field--neighborhood">
+            <span>Mahalle</span>
+            <select id="@(id)NeighborhoodFilter" class="hotel-map-page__filter-neighborhood" aria-label="Mahalleye göre filtrele">
+                <option value="">Tüm mahalleler</option>
+                @foreach (var neighborhood in neighborhoodOptions)
+                {
+                    <option value="@neighborhood">@neighborhood</option>
+                }
+            </select>
+        </label>
+    </div>
+
+    @if (starOptions.Count > 0)
+    {
+        <div class="hotel-map-page__field hotel-map-page__field--stars">
+            <span class="hotel-map-page__field-label">Yıldız</span>
+            <div class="hotel-map-page__star-options" role="group" aria-label="Yıldız filtresi">
+                @foreach (var star in starOptions.OrderByDescending(x => x))
+                {
+                    <button type="button" class="hotel-map-page__star-btn" data-map-star="@star">@star★</button>
+                }
+            </div>
+        </div>
+    }
+
+    @if (hasPriceRange)
+    {
+        <div class="hotel-map-page__field hotel-map-page__field--price">
+            <span class="hotel-map-page__field-label">Fiyat Aralığı (₺)</span>
+            <div class="hotel-map-page__price-row">
+                <input type="number"
+                       id="@(id)MinPrice"
+                       class="hotel-map-page__filter-min-price"
+                       placeholder="Min @((int)Math.Floor(priceMin))"
+                       min="0"
+                       step="1"
+                       value="@(activeMinPrice?.ToString(CultureInfo.InvariantCulture))"
+                       data-default-min="@((int)Math.Floor(priceMin))"
+                       data-default-max="@((int)Math.Ceiling(priceMax))"
+                       aria-label="Minimum fiyat" />
+                <input type="number"
+                       id="@(id)MaxPrice"
+                       class="hotel-map-page__filter-max-price"
+                       placeholder="Max @((int)Math.Ceiling(priceMax))"
+                       min="0"
+                       step="1"
+                       value="@(activeMaxPrice?.ToString(CultureInfo.InvariantCulture))"
+                       data-default-min="@((int)Math.Floor(priceMin))"
+                       data-default-max="@((int)Math.Ceiling(priceMax))"
+                       aria-label="Maksimum fiyat" />
+            </div>
+        </div>
+    }
+
+    @if (!isMobile)
+    {
+        <button type="button" class="hotel-map-page__clear" data-map-filter-reset>
+            <i class="fas fa-rotate-left" aria-hidden="true"></i>
+            <span>Temizle</span>
+        </button>
+    }
+</form>

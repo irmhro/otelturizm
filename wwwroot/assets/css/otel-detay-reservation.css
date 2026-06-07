@@ -11,10 +11,14 @@
 
 .otel-detail-template-v41.otel-detail-tabler .multi-room-item-head {
     display: flex;
-    align-items: center;
+    align-items: flex-start;
     justify-content: space-between;
     gap: 12px;
     margin-bottom: 10px;
+}
+
+.otel-detail-template-v41.otel-detail-tabler .multi-room-quantity {
+    grid-column: auto;
 }
 
 .otel-detail-template-v41.otel-detail-tabler .multi-room-item-title {

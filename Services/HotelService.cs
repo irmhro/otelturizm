@@ -510,7 +510,7 @@ public class HotelService : IHotelService
         return NormalizeCampaignTag(SearchTextNormalizer.Normalize(raw));
     }
 
-    public async Task<HotelListingPageViewModel> GetHotelListingPageAsync(string? searchTerm, string? campaignTag = null, string? campaignSlug = null, int page = 1, string? contextualSearchBoostNormalized = null, CancellationToken cancellationToken = default)
+    public async Task<HotelListingPageViewModel> GetHotelListingPageAsync(string? searchTerm, string? campaignTag = null, string? campaignSlug = null, int page = 1, string? contextualSearchBoostNormalized = null, decimal? minPrice = null, decimal? maxPrice = null, CancellationToken cancellationToken = default)
     {
         var normalizedSearch = string.IsNullOrWhiteSpace(searchTerm) ? string.Empty : searchTerm.Trim().ToLowerInvariant();
         var normalizedTag = string.IsNullOrWhiteSpace(campaignTag) ? string.Empty : campaignTag.Trim().ToLowerInvariant();
@@ -519,11 +519,13 @@ public class HotelService : IHotelService
         var ctxNorm = string.IsNullOrWhiteSpace(contextualSearchBoostNormalized)
             ? "-"
             : NormalizeSearchKeyword(contextualSearchBoostNormalized.Trim()).ToLowerInvariant();
+        var minKey = minPrice.HasValue && minPrice.Value > 0m ? minPrice.Value.ToString("0.##", CultureInfo.InvariantCulture) : "-";
+        var maxKey = maxPrice.HasValue && maxPrice.Value > 0m ? maxPrice.Value.ToString("0.##", CultureInfo.InvariantCulture) : "-";
 
-        var cacheKey = $"hotel-listing:v4:{normalizedSearch}:{normalizedTag}:{normalizedSlug}:p{safePage}:ctx:{ctxNorm}";
+        var cacheKey = $"hotel-listing:v5:{normalizedSearch}:{normalizedTag}:{normalizedSlug}:p{safePage}:ctx:{ctxNorm}:min:{minKey}:max:{maxKey}";
         var cached = await _cache.GetOrCreateAsync(
             cacheKey,
-            async ct => await GetHotelListingPageForSqlServerAsync(searchTerm, campaignTag, campaignSlug, safePage, contextualSearchBoostNormalized, ct),
+            async ct => await GetHotelListingPageForSqlServerAsync(searchTerm, campaignTag, campaignSlug, safePage, contextualSearchBoostNormalized, minPrice, maxPrice, ct),
             absoluteExpirationRelativeToNow: TimeSpan.FromSeconds(45),
             slidingExpiration: TimeSpan.FromSeconds(15),
             cancellationToken: cancellationToken);
@@ -548,6 +550,8 @@ public class HotelService : IHotelService
             TotalCount = src.TotalCount,
             MinPrice = src.MinPrice,
             MaxPrice = src.MaxPrice,
+            ActiveMinPrice = src.ActiveMinPrice,
+            ActiveMaxPrice = src.ActiveMaxPrice,
             Cities = new List<string>(src.Cities),
             Districts = new List<string>(src.Districts),
             Neighborhoods = new List<string>(src.Neighborhoods),
@@ -1103,7 +1107,7 @@ public class HotelService : IHotelService
         };
     }
 
-    private async Task<HotelListingPageViewModel> GetHotelListingPageForSqlServerAsync(string? searchTerm, string? campaignTag, string? campaignSlug, int page, string? contextualCityHint, CancellationToken cancellationToken, bool allowFuzzyFallback = true)
+    private async Task<HotelListingPageViewModel> GetHotelListingPageForSqlServerAsync(string? searchTerm, string? campaignTag, string? campaignSlug, int page, string? contextualCityHint, decimal? minPrice, decimal? maxPrice, CancellationToken cancellationToken, bool allowFuzzyFallback = true)
     {
         const decimal listingVatPercent = 10m;
         const decimal listingAccommodationPercent = 2m;
@@ -1632,9 +1636,12 @@ public class HotelService : IHotelService
         }
 
         filteredHotels = ApplySponsorPinning(filteredHotels, normalizedSearchKeyword);
+        model.MinPrice = filteredHotels.Where(x => x.StartingPrice.HasValue && x.StartingPrice.Value > 0m).Select(x => x.StartingPrice!.Value).DefaultIfEmpty(0).Min();
+        model.MaxPrice = filteredHotels.Where(x => x.StartingPrice.HasValue && x.StartingPrice.Value > 0m).Select(x => x.StartingPrice!.Value).DefaultIfEmpty(0).Max();
+        model.ActiveMinPrice = minPrice is > 0m ? minPrice : null;
+        model.ActiveMaxPrice = maxPrice is > 0m ? maxPrice : null;
+        filteredHotels = ApplyListingPriceFilter(filteredHotels, minPrice, maxPrice);
         model.TotalCount = filteredHotels.Count;
-        model.MinPrice = filteredHotels.Where(x => x.StartingPrice.HasValue).Select(x => x.StartingPrice!.Value).DefaultIfEmpty(0).Min();
-        model.MaxPrice = filteredHotels.Where(x => x.StartingPrice.HasValue).Select(x => x.StartingPrice!.Value).DefaultIfEmpty(0).Max();
         model.Cities = filteredHotels.Select(x => x.City).Where(x => !string.IsNullOrWhiteSpace(x)).Distinct(StringComparer.OrdinalIgnoreCase).OrderBy(x => x).ToList();
         model.Districts = filteredHotels.Select(x => x.District).Where(x => !string.IsNullOrWhiteSpace(x)).Distinct(StringComparer.OrdinalIgnoreCase).OrderBy(x => x).ToList();
         model.Neighborhoods = filteredHotels.Select(x => x.Neighborhood).Where(x => !string.IsNullOrWhiteSpace(x)).Distinct(StringComparer.OrdinalIgnoreCase).OrderBy(x => x).ToList();
@@ -1684,7 +1691,7 @@ public class HotelService : IHotelService
                 var fallbackKeyword = NormalizeSearchKeyword(fallbackValue);
                 if (!string.Equals(fallbackKeyword, normalizedSearchKeyword, StringComparison.OrdinalIgnoreCase))
                 {
-                    var fallbackModel = await GetHotelListingPageForSqlServerAsync(fallbackValue, campaignTag, campaignSlug, 1, contextualCityHint, cancellationToken, false);
+                    var fallbackModel = await GetHotelListingPageForSqlServerAsync(fallbackValue, campaignTag, campaignSlug, 1, contextualCityHint, minPrice, maxPrice, cancellationToken, false);
                     fallbackModel.SearchTerm = normalizedSearchTerm;
                     fallbackModel.SearchLabel = $"{normalizedSearchTerm} için {bestMatch.Label}";
                     fallbackModel.City = fallbackModel.SearchLabel;
@@ -1694,6 +1701,45 @@ public class HotelService : IHotelService
         }
 
         return model;
+    }
+
+    private static List<HotelListingCardViewModel> ApplyListingPriceFilter(
+        List<HotelListingCardViewModel> hotels,
+        decimal? minPrice,
+        decimal? maxPrice)
+    {
+        if (hotels.Count == 0)
+        {
+            return hotels;
+        }
+
+        var hasMin = minPrice is > 0m;
+        var hasMax = maxPrice is > 0m;
+        if (!hasMin && !hasMax)
+        {
+            return hotels;
+        }
+
+        return hotels.Where(hotel =>
+        {
+            var price = hotel.StartingPrice ?? 0m;
+            if (price <= 0m)
+            {
+                return false;
+            }
+
+            if (hasMin && price < minPrice!.Value)
+            {
+                return false;
+            }
+
+            if (hasMax && price > maxPrice!.Value)
+            {
+                return false;
+            }
+
+            return true;
+        }).ToList();
     }
 
     private static List<HotelListingCardViewModel> ApplySponsorPinning(List<HotelListingCardViewModel> hotels, string regionKey)
