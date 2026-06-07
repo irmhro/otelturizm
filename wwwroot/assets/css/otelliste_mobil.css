@@ -5,6 +5,11 @@
         padding: 0 0 16px;
     }
 
+    .otelliste-page-shell.anasayfa-page {
+        --home-drawer-auth-h: 38px;
+        --home-header-action-h: 40px;
+    }
+
     .otelliste-page .otelliste-empty[hidden],
     .otelliste-page .otelliste-hotel-card[hidden] {
         display: none !important;
@@ -47,16 +52,18 @@
     }
 
     .otelliste-page .otelliste-page-hero-inner {
-        padding: 12px 16px 14px;
+        padding: 8px 16px 10px;
     }
 
     .otelliste-page .otelliste-page-hero {
         margin-bottom: 0;
+        border-bottom: 1px solid var(--otl-border, #EBE9E4);
+        background: #fff;
     }
 
     .otelliste-page .otelliste-top-search-panel {
         padding: 0;
-        margin-bottom: 0;
+        margin-bottom: 8px;
     }
 
     .otelliste-page .otelliste-top-search-row {
@@ -122,7 +129,7 @@
 
     .otelliste-page .otelliste-container {
         flex-direction: column;
-        padding: 0 16px;
+        padding: 12px 16px 0;
         gap: 0;
         max-width: 100%;
     }
@@ -131,65 +138,97 @@
         display: none;
     }
 
-    /* Sticky mobil araç çubuğu */
+    /* Sticky mobil araç çubuğu — 3 eşit sütun (Filtrele | Sırala | Harita) */
     .otelliste-page .otelliste-mobile-bar {
-        display: flex !important;
+        display: grid !important;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
         position: sticky;
         top: calc(var(--home-header-sticky-h, 56px));
-        z-index: 90;
-        margin: 0 0 12px;
-        padding: 10px 16px;
+        z-index: 88;
+        gap: 8px;
+        margin: 0;
+        padding: 0 0 2px;
         width: 100%;
         box-sizing: border-box;
-        background: rgba(252, 251, 249, 0.94);
-        backdrop-filter: blur(16px);
-        -webkit-backdrop-filter: blur(16px);
-        border-bottom: 1px solid var(--otl-border, #EBE9E4);
-        gap: 8px;
-        box-shadow: 0 4px 14px rgba(26, 25, 25, 0.04);
-    }
-
-    .otelliste-page .otelliste-mobile-filter-btn,
-    .otelliste-page .otelliste-mobile-map-btn {
-        border-radius: 10px;
-    }
-
-    .otelliste-page .otelliste-mobile-filter-btn {
-        flex: 1.1;
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        gap: 7px;
-        min-height: var(--home-btn-min-height, 40px);
-        padding: 0 14px;
-        border-radius: 0;
-        border: 1px solid var(--otl-border, #EBE9E4);
-        background: #fff;
-        font-weight: 800;
-        font-size: var(--otl-type-btn, 12px);
-        font-family: inherit;
-        color: var(--otl-dark, #1A1919);
-        cursor: pointer;
+        background: rgba(255, 255, 255, 0.98);
+        backdrop-filter: blur(12px);
+        -webkit-backdrop-filter: blur(12px);
+        border: 0;
         box-shadow: none;
     }
 
-    .otelliste-page .otelliste-mobile-filter-btn i {
-        color: var(--otl-crimson, #E30A17);
-        font-size: 13px;
-    }
-
-    .otelliste-page .otelliste-mobile-filter-btn .otelliste-filter-count {
+    .otelliste-page .otelliste-mobile-bar-btn,
+    .otelliste-page .otelliste-mobile-filter-btn,
+    .otelliste-page .otelliste-mobile-sort,
+    .otelliste-page .otelliste-mobile-map-btn {
         display: inline-flex;
         align-items: center;
         justify-content: center;
-        min-width: 18px;
-        height: 18px;
-        padding: 0 5px;
-        border-radius: 0;
+        gap: 5px;
+        min-width: 0;
+        width: 100%;
+        min-height: var(--home-header-action-h, 40px);
+        height: var(--home-header-action-h, 40px);
+        padding: 0 8px;
+        border: 1px solid var(--otl-border, #EBE9E4);
+        border-radius: 10px;
+        background: #fff;
+        color: var(--otl-dark, #1A1919);
+        font-family: inherit;
+        font-size: 11.5px;
+        font-weight: 700;
+        line-height: 1;
+        letter-spacing: 0.01em;
+        text-decoration: none;
+        cursor: pointer;
+        box-shadow: 0 1px 2px rgba(26, 25, 25, 0.04);
+        transition: background 0.18s ease, border-color 0.18s ease, color 0.18s ease;
+    }
+
+    .otelliste-page .otelliste-mobile-bar-btn:active,
+    .otelliste-page .otelliste-mobile-filter-btn:active,
+    .otelliste-page .otelliste-mobile-map-btn:active {
+        background: rgba(227, 10, 23, 0.06);
+        border-color: rgba(227, 10, 23, 0.22);
+    }
+
+    .otelliste-page .otelliste-mobile-bar-btn i,
+    .otelliste-page .otelliste-mobile-filter-btn i,
+    .otelliste-page .otelliste-mobile-map-btn i,
+    .otelliste-page .otelliste-mobile-sort-icon {
+        flex-shrink: 0;
+        font-size: 12px;
+        color: var(--otl-crimson, #E30A17);
+    }
+
+    .otelliste-page .otelliste-mobile-bar-label {
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        min-width: 0;
+    }
+
+    .otelliste-page .otelliste-mobile-filter-btn {
+        position: relative;
+    }
+
+    .otelliste-page .otelliste-mobile-filter-btn .otelliste-filter-count {
+        position: absolute;
+        top: -4px;
+        right: -4px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-width: 16px;
+        height: 16px;
+        padding: 0 4px;
+        border-radius: 999px;
         background: var(--otl-crimson, #E30A17);
         color: #fff;
-        font-size: 10px;
+        font-size: 9px;
         font-weight: 800;
+        line-height: 1;
+        border: 2px solid #fff;
     }
 
     .otelliste-page .otelliste-mobile-filter-btn .otelliste-filter-count:empty,
@@ -198,50 +237,52 @@
     }
 
     .otelliste-page .otelliste-mobile-sort {
-        flex: 1;
-        min-width: 0;
+        position: relative;
+        padding: 0 8px 0 28px;
+        overflow: hidden;
+    }
+
+    .otelliste-page .otelliste-mobile-sort-icon {
+        position: absolute;
+        left: 10px;
+        top: 50%;
+        transform: translateY(-50%);
+        pointer-events: none;
     }
 
     .otelliste-page .otelliste-mobile-sort select {
         width: 100%;
-        min-height: var(--home-btn-min-height, 40px);
-        padding: 0 12px;
-        border-radius: var(--home-btn-radius, 8px);
-        border: 1px solid var(--otl-border, #EBE9E4);
-        background: #fff;
-        font-weight: 700;
-        font-size: 13px;
+        min-width: 0;
+        height: 100%;
+        margin: 0;
+        padding: 0 16px 0 0;
+        border: 0;
+        background: transparent;
         font-family: inherit;
-        color: var(--otl-dark, #1A1919);
+        font-size: 11.5px;
+        font-weight: 700;
+        color: inherit;
+        appearance: none;
+        -webkit-appearance: none;
+        text-align: center;
+        text-align-last: center;
+        cursor: pointer;
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath fill='%236E6E77' d='M1 1l4 4 4-4'/%3E%3C/svg%3E");
+        background-repeat: no-repeat;
+        background-position: right 2px center;
     }
 
-    .otelliste-page .otelliste-mobile-map-btn {
-        flex-shrink: 0;
-        width: var(--home-btn-min-height, 40px);
-        height: var(--home-btn-min-height, 40px);
-        border-radius: 0;
-        border: 1px solid var(--otl-border, #EBE9E4);
-        background: #fff;
-        color: var(--otl-dark, #1A1919);
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        text-decoration: none;
-        box-shadow: none;
-    }
-
-    .otelliste-page .otelliste-mobile-map-btn i {
-        font-size: 14px;
-        color: var(--otl-crimson, #E30A17);
+    .otelliste-page .otelliste-mobile-sort select:focus {
+        outline: 0;
     }
 
     /* Başlık alanı */
     .otelliste-page .otelliste-results-head {
         flex-direction: column;
         align-items: stretch;
-        margin-bottom: 10px;
-        padding: 0 0 10px;
-        gap: 8px;
+        margin-bottom: 8px;
+        padding: 0;
+        gap: 6px;
         background: transparent;
         border: 0;
         box-shadow: none;
@@ -357,10 +398,151 @@
     }
 
     .otelliste-page .otelliste-fav-btn {
-        width: 36px;
-        height: 36px;
+        width: 44px;
+        height: 44px;
         bottom: 6px;
         right: 6px;
+        touch-action: manipulation;
+    }
+
+    .otelliste-page .otelliste-fav-btn.is-fav-burst i {
+        animation: otlFavPop 0.45s ease;
+    }
+
+    @keyframes otlFavPop {
+        0% { transform: scale(1); }
+        35% { transform: scale(1.35); }
+        100% { transform: scale(1); }
+    }
+
+    .otelliste-page .otelliste-card-media img {
+        touch-action: pan-y pinch-zoom;
+    }
+
+    .otelliste-page .otelliste-card-meta-row {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 4px 6px;
+        margin-bottom: 2px;
+    }
+
+    .otelliste-page .otelliste-card-rating-chip,
+    .otelliste-page .otelliste-card-type-chip,
+    .otelliste-page .otelliste-card-discount-pill,
+    .otelliste-page .otelliste-card-cancel-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 3px;
+        padding: 2px 7px;
+        border-radius: 999px;
+        font-size: 9px;
+        font-weight: 800;
+        line-height: 1.2;
+        white-space: nowrap;
+    }
+
+    .otelliste-page .otelliste-card-rating-chip {
+        background: rgba(26, 25, 25, 0.06);
+        color: var(--otl-dark, #1A1919);
+    }
+
+    .otelliste-page .otelliste-card-type-chip {
+        background: rgba(0, 59, 149, 0.08);
+        color: #0f5bd7;
+        text-transform: capitalize;
+    }
+
+    .otelliste-page .otelliste-card-discount-pill {
+        background: rgba(227, 10, 23, 0.1);
+        color: var(--otl-crimson, #E30A17);
+    }
+
+    .otelliste-page .otelliste-card-cancel-badge {
+        background: rgba(22, 163, 74, 0.1);
+        color: #15803d;
+    }
+
+    .otelliste-page .otelliste-card-amenity-more {
+        flex: 0 0 auto;
+        border: 1px solid var(--otl-border, #EBE9E4);
+        border-radius: 999px;
+        background: #fff;
+        padding: 2px 8px;
+        font-family: inherit;
+        font-size: 10px;
+        font-weight: 800;
+        color: var(--otl-dark, #1A1919);
+        cursor: pointer;
+        touch-action: manipulation;
+    }
+
+    .otelliste-page .otelliste-card-amenities[data-amenity-expanded="true"] .otelliste-card-amenity-more {
+        display: none;
+    }
+
+    .otelliste-page .otelliste-card-amenities[data-amenity-expanded="true"] .otelliste-card-amenities-extra {
+        display: inline-flex;
+    }
+
+    .otelliste-page .otelliste-card-amenities-extra {
+        display: none;
+    }
+
+    .otelliste-page .otelliste-card-price-old {
+        display: block;
+        font-size: 12px;
+        font-weight: 600;
+        color: #9ca3af;
+        text-decoration: line-through;
+        line-height: 1.2;
+        margin-bottom: 1px;
+    }
+
+    .otelliste-page .otelliste-card-cta--secondary {
+        background: #fff;
+        color: var(--otl-crimson, #E30A17);
+        border: 1px solid rgba(227, 10, 23, 0.35);
+    }
+
+    .otelliste-page .otelliste-card-cta.is-loading {
+        opacity: 0.72;
+        pointer-events: none;
+    }
+
+    .otelliste-page .otelliste-mobile-bar.is-compact .otelliste-mobile-bar-btn,
+    .otelliste-page .otelliste-mobile-bar.is-compact .otelliste-mobile-filter-btn,
+    .otelliste-page .otelliste-mobile-bar.is-compact .otelliste-mobile-sort,
+    .otelliste-page .otelliste-mobile-bar.is-compact .otelliste-mobile-map-btn {
+        min-height: 34px;
+        height: 34px;
+        font-size: 10.5px;
+        gap: 4px;
+        border-radius: 8px;
+    }
+
+    .otelliste-page .otelliste-mobile-bar.is-compact .otelliste-mobile-bar-btn i,
+    .otelliste-page .otelliste-mobile-bar.is-compact .otelliste-mobile-sort-icon {
+        font-size: 11px;
+    }
+
+    .otelliste-page .otelliste-mobile-filter-btn .otelliste-filter-count.is-pulse {
+        animation: otlFilterBadgePulse 0.45s ease;
+    }
+
+    @keyframes otlFilterBadgePulse {
+        0% { transform: scale(1); }
+        45% { transform: scale(1.18); }
+        100% { transform: scale(1); }
+    }
+
+    .otelliste-page .otelliste-filter-drawer-handle {
+        flex-shrink: 0;
+        width: 40px;
+        height: 4px;
+        margin: 8px auto 0;
+        border-radius: 999px;
+        background: rgba(26, 25, 25, 0.16);
     }
 
     .otelliste-page .otelliste-card-body {
@@ -391,6 +573,8 @@
         flex-wrap: nowrap;
         overflow-x: auto;
         -webkit-overflow-scrolling: touch;
+        overscroll-behavior-x: contain;
+        scroll-snap-type: x proximity;
         scrollbar-width: none;
         gap: 6px;
         margin: 2px -2px 0;
@@ -478,88 +662,203 @@
         display: flex;
         align-items: center;
         justify-content: space-between;
-        padding: 14px 16px;
-        background: rgba(255, 255, 255, 0.98);
+        gap: 10px;
+        min-height: var(--home-header-bar-h, 56px);
+        padding: 0 14px;
+        background: #fff;
         border-bottom: 1px solid var(--otl-border, #EBE9E4);
-        backdrop-filter: blur(12px);
     }
 
     .otelliste-page .otelliste-filter-drawer-head h2 {
         margin: 0;
-        font-size: var(--otl-type-section, 20px);
+        font-size: 15px;
         font-weight: 800;
-        letter-spacing: -0.02em;
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
         display: flex;
         align-items: center;
         gap: 8px;
+        color: var(--otl-dark, #1A1919);
     }
 
     .otelliste-page .otelliste-filter-drawer-head h2::before {
         content: '';
         width: 4px;
-        height: 16px;
+        height: 14px;
         background: var(--otl-sun, #FF9E00);
         border-radius: 2px;
+        flex-shrink: 0;
     }
 
     .otelliste-page .otelliste-filter-drawer-close {
-        width: 44px;
-        height: 44px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: auto;
+        min-width: 72px;
+        height: 34px;
+        margin-left: auto;
+        padding: 0 14px;
         border: 1px solid var(--otl-border, #EBE9E4);
-        border-radius: var(--home-btn-radius, 8px);
-        background: var(--otl-bg, #FCFBF9);
-        font-size: 16px;
+        border-radius: 999px;
+        background: #fff;
+        font-family: inherit;
+        font-size: 12px;
+        font-weight: 700;
+        letter-spacing: 0.02em;
+        line-height: 1;
         cursor: pointer;
         color: var(--otl-dark, #1A1919);
+        box-shadow: 0 1px 2px rgba(26, 25, 25, 0.04);
+    }
+
+    .otelliste-page .otelliste-filter-drawer-close:active {
+        background: rgba(227, 10, 23, 0.06);
+        border-color: rgba(227, 10, 23, 0.22);
+        color: var(--otl-crimson, #E30A17);
     }
 
     .otelliste-page .otelliste-filter-drawer-body {
         flex: 1;
         overflow-y: auto;
-        padding: 16px;
+        padding: 12px 14px 16px;
         -webkit-overflow-scrolling: touch;
+        background: var(--otl-bg, #FCFBF9);
+    }
+
+    .otelliste-page .otelliste-filter-drawer-body .otelliste-filters {
+        gap: 10px;
+    }
+
+    .otelliste-page .otelliste-filter-drawer-body .otelliste-filter-group {
+        margin: 0;
+        padding: 12px 14px;
+        border: 1px solid var(--otl-border, #EBE9E4);
+        border-radius: 12px;
+        background: #fff;
+        box-shadow: 0 2px 8px rgba(26, 25, 25, 0.03);
     }
 
     .otelliste-page .otelliste-filter-drawer-body .otelliste-filter-group > label,
     .otelliste-page .otelliste-filter-drawer-body .otelliste-filter-group > .otelliste-filter-label {
-        font-size: var(--otl-type-field-sub, 11px);
+        font-size: 11px;
+        font-weight: 800;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+        color: var(--otl-muted, #6E6E77);
+        margin-bottom: 10px;
     }
 
     .otelliste-page .otelliste-filter-drawer-body .otelliste-field,
     .otelliste-page .otelliste-filter-drawer-body select,
-    .otelliste-page .otelliste-filter-drawer-body input {
-        font-size: var(--otl-type-input-value, 14px);
-        min-height: var(--home-btn-min-height, 40px);
+    .otelliste-page .otelliste-filter-drawer-body input[type="search"],
+    .otelliste-page .otelliste-filter-drawer-body input[type="number"] {
+        min-height: var(--home-header-action-h, 40px);
+        padding: 0 12px;
+        border-radius: 10px;
+        border: 1px solid var(--otl-border, #EBE9E4);
+        background: var(--otl-bg, #FCFBF9);
+        font-size: 14px;
+        font-weight: 600;
+    }
+
+    .otelliste-page .otelliste-filter-drawer-body .otelliste-field:focus,
+    .otelliste-page .otelliste-filter-drawer-body select:focus,
+    .otelliste-page .otelliste-filter-drawer-body input:focus {
+        outline: 0;
+        border-color: rgba(227, 10, 23, 0.35);
+        box-shadow: 0 0 0 3px rgba(227, 10, 23, 0.08);
+    }
+
+    .otelliste-page .otelliste-filter-drawer-body .otelliste-price-row {
+        gap: 8px;
+    }
+
+    .otelliste-page .otelliste-filter-drawer-body .otelliste-star-options {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+    }
+
+    .otelliste-page .otelliste-filter-drawer-body .otelliste-star-btn {
+        flex: 1 1 calc(20% - 6px);
+        min-width: 52px;
+        min-height: 36px;
+        padding: 0 4px;
+        border-radius: 10px;
+        font-size: 11px;
+        font-weight: 700;
+        text-align: center;
     }
 
     .otelliste-page .otelliste-filter-drawer-body .otelliste-check-list {
         max-height: none;
+        gap: 4px;
+    }
+
+    .otelliste-page .otelliste-filter-drawer-body .otelliste-check {
+        min-height: 44px;
+        padding: 8px 10px;
+        border-radius: 10px;
+        font-size: 13px;
+        font-weight: 600;
+    }
+
+    .otelliste-page .otelliste-filter-drawer-body .otelliste-check input {
+        width: 18px;
+        height: 18px;
+        flex-shrink: 0;
+    }
+
+    .otelliste-page .otelliste-filter-drawer-body .otelliste-check:active {
+        background: rgba(227, 10, 23, 0.05);
     }
 
     .otelliste-page .otelliste-filter-drawer-foot {
         flex-shrink: 0;
         display: grid;
-        grid-template-columns: 1fr 1.2fr;
+        grid-template-columns: 1fr 1.35fr;
         gap: 8px;
-        padding: 12px 16px calc(12px + env(safe-area-inset-bottom, 0px));
-        background: linear-gradient(180deg, rgba(255, 255, 255, 0.88), #fff);
+        padding: 10px 14px calc(10px + env(safe-area-inset-bottom, 0px));
+        background: #fff;
         border-top: 1px solid var(--otl-border, #EBE9E4);
-        box-shadow: 0 -8px 20px rgba(26, 25, 25, 0.06);
+        box-shadow: 0 -6px 18px rgba(26, 25, 25, 0.06);
+    }
+
+    .otelliste-page .otelliste-filter-drawer .otelliste-btn-reset,
+    .otelliste-page .otelliste-filter-drawer .otelliste-btn-apply {
+        min-height: var(--home-drawer-auth-h, 38px);
+        height: var(--home-drawer-auth-h, 38px);
+        padding: 0 12px;
+        border-radius: 10px;
+        font-size: 11.5px;
+        font-weight: 700;
+        line-height: 1;
     }
 
     .otelliste-page .otelliste-filter-drawer .otelliste-btn-reset {
         margin-top: 0;
+        border: 1px solid var(--otl-border, #EBE9E4);
+        background: #fff;
+        color: var(--otl-dark, #1A1919);
+    }
+
+    .otelliste-page .otelliste-filter-drawer .otelliste-btn-reset:active {
+        background: var(--otl-dark, #1A1919);
+        border-color: var(--otl-dark, #1A1919);
+        color: #fff;
     }
 
     .otelliste-page .otelliste-filter-drawer .otelliste-btn-apply {
         display: block;
-        background: var(--otl-crimson, #E30A17);
         border: 0;
+        background: var(--otl-crimson, #E30A17);
         color: #fff;
     }
 
     .otelliste-page .otelliste-filter-drawer .otelliste-btn-apply:active {
         transform: scale(0.98);
+        background: var(--otl-dark, #1A1919);
     }
 
     .otelliste-page .otelliste-filter-overlay {
@@ -615,5 +914,15 @@
 
     .otelliste-page .otelliste-hotel-card:active {
         transform: none;
+    }
+
+    .otelliste-page .otelliste-mobile-bar,
+    .otelliste-page .otelliste-mobile-bar-btn {
+        transition: none;
+    }
+
+    .otelliste-page .otelliste-fav-btn.is-fav-burst i,
+    .otelliste-page .otelliste-mobile-filter-btn .otelliste-filter-count.is-pulse {
+        animation: none;
     }
 }

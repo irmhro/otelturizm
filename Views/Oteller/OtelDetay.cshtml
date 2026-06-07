@@ -306,7 +306,8 @@
                 class="detail-quick-action favorite-btn is-tone-fav @(Model.IsFavorite ? "active" : string.Empty)"
                 data-hotel-id="@Model.Id"
                 data-source-page="OtelDetay"
-                aria-label="Favoriye ekle">
+                aria-label="Favoriye ekle"
+                aria-pressed="@(Model.IsFavorite ? "true" : "false")">
             <i class="@(Model.IsFavorite ? "fas" : "far") fa-heart" aria-hidden="true"></i>
             <span data-favorite-label>@(Model.IsFavorite ? "Favoride" : "Favori")</span>
         </button>
@@ -329,7 +330,8 @@
                 class="favorite-btn gallery-favorite-btn @(Model.IsFavorite ? "active" : string.Empty)"
                 data-hotel-id="@Model.Id"
                 data-source-page="OtelDetay"
-                aria-label="Favoriye ekle">
+                aria-label="Favoriye ekle"
+                aria-pressed="@(Model.IsFavorite ? "true" : "false")">
             <i class="@(Model.IsFavorite ? "fas" : "far") fa-heart" aria-hidden="true"></i>
             <span class="sr-only" data-favorite-label>@(Model.IsFavorite ? "Favoride" : "Favoriye Ekle")</span>
         </button>
@@ -973,15 +975,16 @@
                                 </div>
                                 @if (roomGalleryResolved.Count > 1)
                                 {
-                                    <div class="room-thumb-strip" aria-label="@room.Name görselleri">
+                                    <div class="room-thumb-strip @(roomGalleryResolved.Count > 5 ? "has-many-thumbs" : string.Empty)" aria-label="@room.Name görselleri">
                                         @for (var imageIndex = 0; imageIndex < Math.Min(roomGalleryResolved.Count, 6); imageIndex++)
                                         {
                                             <button type="button"
-                                                    class="room-gallery-trigger room-thumb-item @(imageIndex == 0 ? "active" : string.Empty)"
+                                                    class="room-thumb-item @(imageIndex == 0 ? "active" : string.Empty)"
                                                     data-room-name="@room.Name"
                                                     data-room-id="@room.RoomTypeId"
-                                                    data-room-gallery-start="@imageIndex"
-                                                    aria-label="@room.Name görsel @(imageIndex + 1)">
+                                                    data-thumb-index="@imageIndex"
+                                                    aria-label="@room.Name görsel @(imageIndex + 1)"
+                                                    @(imageIndex == 0 ? "aria-current=\"true\"" : null)>
                                                 <img src="@roomGalleryResolved[imageIndex]"
                                                      alt="@room.Name görsel @(imageIndex + 1)"
                                                      loading="lazy"
@@ -1109,7 +1112,13 @@
                                         Detaylar
                                         <i class="fas fa-arrow-right" aria-hidden="true"></i>
                                     </button>
-                                    <span class="cancellation-badge"><i class="fas fa-check-circle"></i> @room.CancellationText</span>
+                                    @{
+                                        var cancelClass = !string.IsNullOrWhiteSpace(room.CancellationText)
+                                            && room.CancellationText.Contains("Ücretsiz", StringComparison.OrdinalIgnoreCase)
+                                            ? "is-free"
+                                            : "is-restricted";
+                                    }
+                                    <span class="cancellation-badge @cancelClass"><i class="fas fa-check-circle"></i> @room.CancellationText</span>
                                 </div>
                             </div>
                         </div>
@@ -1472,6 +1481,7 @@
 
     <div class="booking-modal-backdrop" id="bookingModalBackdrop" hidden></div>
     <aside class="booking-sidebar od-detail__booking" id="bookingSidebar">
+        <div class="booking-sheet-handle" aria-hidden="true"></div>
         <div class="booking-card">
             <button type="button" class="booking-modal-close" id="bookingModalClose" aria-label="Rezervasyon panelini kapat">
                 <i class="fas fa-times"></i>
@@ -1681,17 +1691,23 @@
         </div>
     </aside>
 
-    <div class="mobile-booking-bar od-sticky-cta mob-sticky-cta fe-world-safe-bottom" id="mobileBookingBar" role="region" aria-label="@SharedLocalizer["Booking.MobileSummary"].Value">
-        <div class="mobile-booking-summary">
-            @if (initialInclusiveNightly > 0m)
-            {
-                <span class="mobile-booking-from">@SharedLocalizer["Detail.Booking.FromNight"].Value</span>
-            }
-            <span class="mobile-booking-label">@SharedLocalizer["Detail.Booking.Total"].Value</span>
-            <strong id="mobileBookingPrice" class="mobile-booking-total">@(initialTotal > 0m ? $"₺{initialTotal:N0}" : (Model.LowestRoomPrice > 0m ? $"₺{Model.GuestInclusiveNightlyFromStoredNet(Model.LowestRoomPrice):N0}" : "—"))</strong>
+    <div class="mobile-booking-bar od-mobile-bottom-dock od-sticky-cta mob-sticky-cta fe-world-safe-bottom" id="mobileBookingBar" role="region" aria-label="@SharedLocalizer["Booking.MobileSummary"].Value">
+        <div class="mobile-booking-bar__row mobile-booking-bar__row--price">
+            <div class="mobile-booking-price-main">
+                <div class="mobile-booking-price-labels">
+                    @if (initialInclusiveNightly > 0m)
+                    {
+                        <span class="mobile-booking-from">@SharedLocalizer["Detail.Booking.FromNight"].Value</span>
+                    }
+                    <span class="mobile-booking-label">@SharedLocalizer["Detail.Booking.Total"].Value</span>
+                </div>
+                <strong id="mobileBookingPrice" class="mobile-booking-total">@(initialTotal > 0m ? $"₺{initialTotal:N0}" : (Model.LowestRoomPrice > 0m ? $"₺{Model.GuestInclusiveNightlyFromStoredNet(Model.LowestRoomPrice):N0}" : "—"))</strong>
+            </div>
             <small class="mobile-booking-tax-note">@SharedLocalizer["Detail.Booking.TaxesNote"].Value</small>
         </div>
-        <button type="button" class="mobile-booking-cta" id="openBookingSheetBtn">@SharedLocalizer["Detail.Booking.GoToReserve"].Value</button>
+        <div class="mobile-booking-bar__row mobile-booking-bar__row--cta">
+            <button type="button" class="mobile-booking-cta" id="openBookingSheetBtn">@SharedLocalizer["Detail.Booking.GoToReserve"].Value</button>
+        </div>
     </div>
 
 </section>
@@ -3285,7 +3301,25 @@
 
             if (shareButton && shareMenu) {
                 bindShareActions();
-                shareButton.addEventListener('click', function () {
+                shareButton.addEventListener('click', async function (event) {
+                    if (isMobileBookingMode() && navigator.share) {
+                        event.preventDefault();
+                        event.stopPropagation();
+                        const shareUrl = window.location.href;
+                        const hotelTitle = (document.querySelector('.detail-header h1')?.textContent || 'Otelturizm').trim();
+                        try {
+                            await navigator.share({ title: hotelTitle, text: hotelTitle, url: shareUrl });
+                            closeShareMenu();
+                        } catch (_) {
+                            if (shareMenu.hidden) {
+                                openShareMenu();
+                            } else {
+                                closeShareMenu();
+                            }
+                        }
+                        return;
+                    }
+
                     if (shareMenu.hidden) {
                         openShareMenu();
                     } else {

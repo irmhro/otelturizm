@@ -39,12 +39,12 @@ Referans: Booking/Expedia mobil otel detay, anasayfa premium tokenları, mevcut 
 - [x] M3.01 Breadcrumb yatay scroll chip
 - [x] M3.02 Geri link mobil gizle (galeri back kullan)
 - [x] M3.03 Quick action ikon-only 44px touch
-- [ ] M3.04 Paylaş native Web Share API
-- [ ] M3.05 Favori auth gate toast
+- [x] M3.04 Paylaş native Web Share API
+- [x] M3.05 Favori auth gate toast
 - [ ] M3.06 Chat CTA tek tap
-- [ ] M3.07 Quick action yatay scroll (dikey stack kaldır)
-- [ ] M3.08 aria-label tüm aksiyonlar
-- [ ] M3.09 Breadcrumb schema mobil uyum
+- [x] M3.07 Quick action yatay scroll (dikey stack kaldır)
+- [x] M3.08 aria-label tüm aksiyonlar
+- [x] M3.09 Breadcrumb schema mobil uyum
 - [ ] M3.10 Sticky header çakışma testi
 
 ## M4 — Otel başlık kartı (10)
@@ -91,11 +91,11 @@ Referans: Booking/Expedia mobil otel detay, anasayfa premium tokenları, mevcut 
 - [x] M7.01 Yatay scroll snap 56px kare
 - [x] M7.02 Aktif thumb crimson border
 - [x] M7.03 Scrollbar gizle
-- [ ] M7.04 Thumb tap → kapak preview sync (JS)
-- [ ] M7.05 6+ thumb fade edge hint
-- [ ] M7.06 Thumb keyboard focus ring
-- [ ] M7.07 Thumb aria-current active
-- [ ] M7.08 Swipe thumb strip momentum
+- [x] M7.04 Thumb tap → kapak preview sync (JS)
+- [x] M7.05 6+ thumb fade edge hint
+- [x] M7.06 Thumb keyboard focus ring
+- [x] M7.07 Thumb aria-current active
+- [x] M7.08 Swipe thumb strip momentum
 - [ ] M7.09 Thumb loading skeleton
 - [ ] M7.10 Thumb reduced motion
 
@@ -105,11 +105,11 @@ Referans: Booking/Expedia mobil otel detay, anasayfa premium tokenları, mevcut 
 - [x] M8.02 Başlık 1.05rem kompakt
 - [x] M8.03 Specs 2 satır clamp
 - [x] M8.04 Meta pill wrap
-- [ ] M8.05 Özellik listesi ikon hizası
+- [x] M8.05 Özellik listesi ikon hizası
 - [ ] M8.06 Diğer özellikler accordion animasyon
 - [ ] M8.07 Detaylar modal sheet
-- [ ] M8.08 İptal rozeti renk kodu
-- [ ] M8.09 Boş oda uyarı banner
+- [x] M8.08 İptal rozeti renk kodu
+- [x] M8.09 Boş oda uyarı banner
 - [ ] M8.10 Oda kartı skeleton loading
 
 ## M9 — Oda fiyat & CTA foot (10)
@@ -118,8 +118,8 @@ Referans: Booking/Expedia mobil otel detay, anasayfa premium tokenları, mevcut 
 - [x] M9.02 CTA pill crimson 44px min-height
 - [x] M9.03 İndirim stack eski fiyat + pill
 - [x] M9.04 Gece başlığı kicker uppercase
-- [ ] M9.05 Vergi dahil etiketi kompakt
-- [ ] M9.06 Fiyat yok disabled state metni
+- [x] M9.05 Vergi dahil etiketi kompakt
+- [x] M9.06 Fiyat yok disabled state metni
 - [ ] M9.07 Çoklu gece toplam tooltip
 - [ ] M9.08 Kampanya countdown chip
 - [ ] M9.09 CTA loading state
@@ -131,11 +131,11 @@ Referans: Booking/Expedia mobil otel detay, anasayfa premium tokenları, mevcut 
 - [x] M10.02 Backdrop blur + opacity
 - [x] M10.03 Sheet drag handle çizgi
 - [x] M10.04 Safe-area alt padding
-- [ ] M10.05 Swipe-down kapatma
-- [ ] M10.06 Focus trap sheet açık
-- [ ] M10.07 Escape kapatma
+- [x] M10.05 Swipe-down kapatma
+- [x] M10.06 Focus trap sheet açık
+- [x] M10.07 Escape kapatma
 - [ ] M10.08 Tarih picker native mobil
-- [ ] M10.09 Misafir stepper 44px
+- [x] M10.09 Misafir stepper 44px
 - [ ] M10.10 Multi-room accordion mobil
 
 ## M11 — Sticky alt bar (10)
@@ -231,15 +231,15 @@ Referans: Booking/Expedia mobil otel detay, anasayfa premium tokenları, mevcut 
 
 ## M18 — Performans (10)
 
-- [ ] M18.01 LCP galeri ilk görsel preload
-- [ ] M18.02 Oda görselleri lazy below fold
+- [x] M18.01 LCP galeri ilk görsel preload
+- [x] M18.02 Oda görselleri lazy below fold
 - [ ] M18.03 CSS kritik inline değerlendirme
 - [ ] M18.04 JS defer otel-detay.js split
 - [ ] M18.05 Harita iframe intersection lazy
 - [ ] M18.06 Font subset Türkçe
 - [ ] M18.07 Image CDN resize param
 - [ ] M18.08 Cache-Control static assets
-- [ ] M18.09 CLS oda kartı reserved height
+- [x] M18.09 CLS oda kartı reserved height
 - [ ] M18.10 Lighthouse mobil hedef 90+
 
 ## M19 — i18n & RTL (10)

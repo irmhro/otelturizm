@@ -243,6 +243,7 @@
         if (filterCountEl) {
             filterCountEl.textContent = activeCount > 0 ? String(activeCount) : '';
             filterCountEl.setAttribute('data-count', String(activeCount));
+            filterCountEl.setAttribute('aria-label', activeCount > 0 ? activeCount + ' aktif filtre' : 'Aktif filtre yok');
         }
     }
 
@@ -379,6 +380,42 @@
     document.getElementById('otellisteCloseDrawer')?.addEventListener('click', closeDrawer);
     document.getElementById('otellisteApplyDrawer')?.addEventListener('click', applyMobileToDesktop);
     overlay?.addEventListener('click', closeDrawer);
+
+    (function initDrawerSwipeDismiss() {
+        if (!drawer || !window.matchMedia('(max-width: 900px)').matches) {
+            return;
+        }
+
+        let startY = 0;
+        let tracking = false;
+
+        drawer.addEventListener('touchstart', (event) => {
+            if (!drawer.classList.contains('is-open') || !event.touches || event.touches.length !== 1) {
+                return;
+            }
+            const body = drawer.querySelector('.otelliste-filter-drawer-body');
+            if (body && body.scrollTop > 8) {
+                return;
+            }
+            startY = event.touches[0].clientY;
+            tracking = true;
+        }, { passive: true });
+
+        drawer.addEventListener('touchmove', (event) => {
+            if (!tracking || !event.touches || event.touches.length !== 1) {
+                return;
+            }
+            const deltaY = event.touches[0].clientY - startY;
+            if (deltaY > 72) {
+                tracking = false;
+                closeDrawer();
+            }
+        }, { passive: true });
+
+        drawer.addEventListener('touchend', () => {
+            tracking = false;
+        }, { passive: true });
+    })();
 
     sortDesktop?.addEventListener('change', () => {
         syncSort(sortDesktop, sortMobile);

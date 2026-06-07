@@ -3,6 +3,7 @@
 @media (max-width: 900px) {
     .oteldetay-page .mobile-booking-bar {
         display: flex !important;
+        flex-direction: column;
     }
 
     .oteldetay-page .booking-sidebar.od-detail__booking:not(.is-open) {
@@ -23,7 +24,7 @@
     }
 
     .oteldetay-page {
-        padding-bottom: calc(96px + env(safe-area-inset-bottom, 0px));
+        padding-bottom: calc(124px + env(safe-area-inset-bottom, 0px));
         overflow-x: clip;
         max-width: 100%;
         display: flex;
@@ -840,9 +841,30 @@
     }
 
     .oteldetay-page .guest-btn {
-        width: 40px;
-        height: 40px;
+        width: 44px;
+        height: 44px;
         border-radius: 10px;
+    }
+
+    .oteldetay-page .room-quantity-control button {
+        min-width: 44px;
+        min-height: 44px;
+    }
+
+    .oteldetay-page .booking-sheet-handle {
+        width: 40px;
+        height: 4px;
+        margin: 8px auto 0;
+        border-radius: 999px;
+        background: rgba(26, 25, 25, 0.16);
+        flex-shrink: 0;
+    }
+
+    .oteldetay-page .booking-price-tax-note,
+    .oteldetay-page .mobile-booking-tax-note {
+        font-size: 10px;
+        line-height: 1.35;
+        color: #6b7280;
     }
 
     .oteldetay-page .booking-advanced-grid {
@@ -861,26 +883,6 @@
 
     .oteldetay-page .mobile-booking-bar {
         padding: 10px 16px calc(10px + env(safe-area-inset-bottom, 0px));
-        gap: 10px;
-    }
-
-    .oteldetay-page .mobile-booking-summary {
-        flex: 1;
-        min-width: 0;
-    }
-
-    .oteldetay-page .mobile-booking-total {
-        font-size: 20px;
-    }
-
-    .oteldetay-page .mobile-booking-cta {
-        flex: 0 0 auto;
-        min-width: 132px;
-        min-height: 44px;
-        padding: 0 18px;
-        font-size: 12px;
-        font-weight: 800;
-        border-radius: 999px;
     }
 
     /* Grid tek sütun */
@@ -999,7 +1001,25 @@
         margin: 0;
         scroll-snap-type: x mandatory;
         -webkit-overflow-scrolling: touch;
+        overscroll-behavior-x: contain;
         scrollbar-width: none;
+        position: relative;
+    }
+
+    .oteldetay-page #roomsCard .room-thumb-strip.has-many-thumbs::after {
+        content: '';
+        position: absolute;
+        top: 0;
+        right: 0;
+        width: 28px;
+        height: 100%;
+        pointer-events: none;
+        background: linear-gradient(90deg, rgba(255, 255, 255, 0) 0%, rgba(255, 255, 255, 0.96) 88%);
+    }
+
+    .oteldetay-page #roomsCard .room-thumb-item:focus-visible {
+        outline: 2px solid var(--od-crimson, #E30A17);
+        outline-offset: 2px;
     }
 
     .oteldetay-page #roomsCard .room-thumb-strip::-webkit-scrollbar {
@@ -1067,6 +1087,37 @@
 
     .oteldetay-page #roomsCard .room-feature-item {
         font-size: 0.78rem;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+    }
+
+    .oteldetay-page #roomsCard .room-feature-item i {
+        width: 14px;
+        text-align: center;
+        flex-shrink: 0;
+    }
+
+    .oteldetay-page #roomsCard .cancellation-badge.is-free {
+        color: #15803d;
+        background: rgba(22, 163, 74, 0.1);
+        border-radius: 999px;
+        padding: 3px 8px;
+    }
+
+    .oteldetay-page #roomsCard .cancellation-badge.is-restricted {
+        color: #b45309;
+        background: rgba(245, 158, 11, 0.12);
+        border-radius: 999px;
+        padding: 3px 8px;
+    }
+
+    .oteldetay-page #roomsCard .room-card.od-room-card {
+        min-height: 320px;
+    }
+
+    .oteldetay-page #roomsCard .room-card-cover img {
+        content-visibility: auto;
     }
 
     .oteldetay-page #roomsCard .room-card-aux {
@@ -1206,26 +1257,48 @@
         pointer-events: auto;
     }
 
-    /* Mobil alt rezervasyon barı */
-    .oteldetay-page .mobile-booking-bar {
+    /* Mobil alt menü — 2 satır: fiyat özeti + tam genişlik CTA */
+    .oteldetay-page .mobile-booking-bar.od-mobile-bottom-dock {
         display: flex;
+        flex-direction: column;
+        align-items: stretch;
         position: fixed;
         bottom: 0;
         left: 0;
         right: 0;
-        z-index: 100;
-        align-items: center;
-        justify-content: space-between;
-        gap: 12px;
-        padding: 12px 16px calc(12px + env(safe-area-inset-bottom, 0px));
+        z-index: 1020;
+        gap: 8px;
+        padding: 10px 16px calc(10px + env(safe-area-inset-bottom, 0px));
         background: rgba(255, 255, 255, 0.98);
-        backdrop-filter: blur(14px);
-        -webkit-backdrop-filter: blur(14px);
+        backdrop-filter: blur(16px);
+        -webkit-backdrop-filter: blur(16px);
         border-top: 1px solid var(--od-border, #EBE9E4);
-        box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.06);
+        box-shadow: 0 -8px 24px rgba(26, 25, 25, 0.08);
     }
 
-    .oteldetay-page .mobile-booking-summary {
+    .oteldetay-page .mobile-booking-bar__row {
+        width: 100%;
+        min-width: 0;
+    }
+
+    .oteldetay-page .mobile-booking-bar__row--price {
+        display: flex;
+        align-items: flex-end;
+        justify-content: space-between;
+        gap: 10px 12px;
+        padding-bottom: 2px;
+    }
+
+    .oteldetay-page .mobile-booking-price-main {
+        display: flex;
+        align-items: flex-end;
+        justify-content: space-between;
+        gap: 10px;
+        flex: 1;
+        min-width: 0;
+    }
+
+    .oteldetay-page .mobile-booking-price-labels {
         display: flex;
         flex-direction: column;
         gap: 2px;
@@ -1233,42 +1306,71 @@
     }
 
     .oteldetay-page .mobile-booking-from {
-        font-size: 10px;
+        font-size: 9px;
         font-weight: 800;
         text-transform: uppercase;
         letter-spacing: 0.06em;
         color: var(--od-muted, #6E6E77);
+        line-height: 1.2;
+    }
+
+    .oteldetay-page .mobile-booking-label {
+        font-size: 11px;
+        font-weight: 700;
+        color: var(--od-dark, #1A1919);
+        line-height: 1.2;
     }
 
     .oteldetay-page .mobile-booking-total {
+        flex-shrink: 0;
         font-size: 22px;
         font-weight: 900;
         color: var(--od-crimson, #E30A17);
         letter-spacing: -0.02em;
-        line-height: 1.1;
+        line-height: 1;
     }
 
     .oteldetay-page .mobile-booking-tax-note {
-        font-size: 10px;
+        flex: 0 0 auto;
+        max-width: 38%;
+        font-size: 9px;
+        line-height: 1.35;
         color: var(--od-muted, #6E6E77);
         font-weight: 600;
+        text-align: right;
+    }
+
+    .oteldetay-page .mobile-booking-bar__row--cta {
+        display: block;
     }
 
     .oteldetay-page .mobile-booking-cta {
-        flex-shrink: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 100%;
+        min-height: 44px;
+        padding: 0 16px;
         border: 0;
+        border-radius: 12px;
         background: var(--od-crimson, #E30A17);
         color: #fff;
-        padding: 12px 22px;
-        border-radius: 999px;
+        font-family: inherit;
+        font-size: 13px;
         font-weight: 800;
-        font-size: var(--od-type-btn, 12px);
-        min-height: var(--home-btn-min-height, 40px);
+        letter-spacing: 0.01em;
         cursor: pointer;
+        box-shadow: 0 8px 20px rgba(227, 10, 23, 0.22);
     }
 
     .oteldetay-page .mobile-booking-cta:active {
         transform: scale(0.98);
+        background: var(--od-dark, #1A1919);
+    }
+
+    /* Eski tek satır summary — geriye dönük */
+    .oteldetay-page .mobile-booking-summary {
+        display: none;
     }
 
     .oteldetay-page .detail-location-map {

@@ -101,35 +101,36 @@
                     </div>
                 }
             </div>
-        </div>
-    </div>
 
-    <div class="otelliste-mobile-bar" aria-label="Mobil filtre ve sıralama">
-        <button type="button" class="otelliste-mobile-filter-btn" id="otellisteOpenDrawer" aria-controls="otellisteFilterDrawer">
-            <i class="fas fa-sliders-h" aria-hidden="true"></i>
-            Filtrele
-            <span class="otelliste-filter-count" id="otellisteActiveFilterCount" data-count="0"></span>
-        </button>
-        <div class="otelliste-mobile-sort">
-            <select id="otellisteSortMobile" class="otelliste-sort" aria-label="Sıralama">
-                <option value="recommended">Önerilen</option>
-                <option value="price-asc">Fiyat ↑</option>
-                <option value="price-desc">Fiyat ↓</option>
-                <option value="rating-desc">Puan</option>
-            </select>
+            <div class="otelliste-mobile-bar" id="otellisteMobileBar" role="toolbar" aria-label="Liste araç çubuğu">
+                <button type="button" class="otelliste-mobile-bar-btn otelliste-mobile-filter-btn" id="otellisteOpenDrawer" aria-controls="otellisteFilterDrawer" aria-label="Filtrele">
+                    <i class="fas fa-sliders" aria-hidden="true"></i>
+                    <span class="otelliste-mobile-bar-label">Filtrele</span>
+                    <span class="otelliste-filter-count" id="otellisteActiveFilterCount" data-count="0"></span>
+                </button>
+                <div class="otelliste-mobile-bar-btn otelliste-mobile-sort">
+                    <i class="fas fa-arrow-down-wide-short otelliste-mobile-sort-icon" aria-hidden="true"></i>
+                    <select id="otellisteSortMobile" class="otelliste-sort" aria-label="Sıralama">
+                        <option value="recommended">Önerilen</option>
+                        <option value="price-asc">Fiyat ↑</option>
+                        <option value="price-desc">Fiyat ↓</option>
+                        <option value="rating-desc">Puan</option>
+                    </select>
+                </div>
+                <a class="otelliste-mobile-bar-btn otelliste-mobile-map-btn" href="@mapListingUrl" aria-label="Harita görünümü" title="Harita görünümünde otelleri göster">
+                    <i class="fas fa-map-location-dot" aria-hidden="true"></i>
+                    <span class="otelliste-mobile-bar-label">Harita</span>
+                </a>
+            </div>
         </div>
-        <a class="otelliste-mobile-map-btn" href="@mapListingUrl" aria-label="Harita görünümü">
-            <i class="fas fa-map-location-dot" aria-hidden="true"></i>
-        </a>
     </div>
 
     <div class="otelliste-filter-overlay" id="otellisteFilterOverlay" hidden></div>
     <aside class="otelliste-filter-drawer" id="otellisteFilterDrawer" aria-hidden="true" aria-label="Filtreleme seçenekleri">
+        <div class="otelliste-filter-drawer-handle" aria-hidden="true"></div>
         <div class="otelliste-filter-drawer-head">
             <h2>Filtreleme</h2>
-            <button type="button" class="otelliste-filter-drawer-close" id="otellisteCloseDrawer" aria-label="Kapat">
-                <i class="fas fa-times" aria-hidden="true"></i>
-            </button>
+            <button type="button" class="otelliste-filter-drawer-close" id="otellisteCloseDrawer" aria-label="Kapat">Kapat</button>
         </div>
         <div class="otelliste-filter-drawer-body">
             <partial name="~/Views/Oteller/_OtelListelemeFilters.cshtml" model="Model" view-data="@(new ViewDataDictionary(ViewData) { { "FilterScope", "mobile" } })" />
@@ -208,6 +209,13 @@
                     @foreach (var hotel in hotels)
                     {
                         var price = hotel.StartingPrice ?? 0m;
+                        var originalPrice = hotel.HasDiscount && hotel.OriginalPrice.HasValue && hotel.OriginalPrice.Value > 0m
+                            ? hotel.OriginalPrice.Value
+                            : 0m;
+                        var amenityItemsList = hotel.AmenityItems ?? new List<otelturizmnew.Models.Oteller.HotelAmenityViewModel>();
+                        var visibleAmenityItems = amenityItemsList.Take(3).ToList();
+                        var hiddenAmenityCount = Math.Max(0, amenityItemsList.Count - visibleAmenityItems.Count);
+                        var allAmenityLabel = string.Join(", ", amenityItemsList.Select(a => a.Name).Where(n => !string.IsNullOrWhiteSpace(n)));
                         var isFirst = ReferenceEquals(hotel, hotels[0]);
                         var amenitiesSafe = hotel.Amenities ?? new List<string>();
                         var campaignSlugsSafe = hotel.CampaignSlugs ?? new List<string>();
@@ -267,6 +275,24 @@
                             </button>
                             </div>
                             <div class="otelliste-card-body">
+                                <div class="otelliste-card-meta-row">
+                                    @if (hotel.Rating > 0)
+                                    {
+                                        <span class="otelliste-card-rating-chip">@hotel.Rating.ToString("0.0", CultureInfo.InvariantCulture) ★</span>
+                                    }
+                                    @if (!string.IsNullOrWhiteSpace(hotel.PropertyType))
+                                    {
+                                        <span class="otelliste-card-type-chip">@hotel.PropertyType</span>
+                                    }
+                                    @if (hotel.HasDiscount && hotel.DiscountPercent > 0)
+                                    {
+                                        <span class="otelliste-card-discount-pill">-%@hotel.DiscountPercent</span>
+                                    }
+                                    @if (hotel.HasFreeCancellation)
+                                    {
+                                        <span class="otelliste-card-cancel-badge"><i class="fas fa-check-circle" aria-hidden="true"></i> Ücretsiz iptal</span>
+                                    }
+                                </div>
                                 <h3 class="otelliste-card-title">
                                     <a href="@detailUrl">@hotel.Name</a>
                                 </h3>
@@ -286,20 +312,28 @@
                                         +@hotel.EstimatedLoyaltyPoints.Value puan kazanın
                                     </p>
                                 }
-                                @if (hotel.AmenityItems?.Count > 0 || hotel.StarCount > 0)
+                                @if (amenityItemsList.Count > 0 || hotel.StarCount > 0)
                                 {
-                                    <div class="otelliste-card-amenities">
+                                    <div class="otelliste-card-amenities" data-amenity-expanded="false">
                                         @if (hotel.StarCount > 0)
                                         {
                                             <span><i class="fas fa-star" aria-hidden="true"></i> @hotel.StarCount yıldız</span>
                                         }
-                                        @foreach (var amenity in (hotel.AmenityItems ?? new List<otelturizmnew.Models.Oteller.HotelAmenityViewModel>()).Take(3))
+                                        @foreach (var amenity in visibleAmenityItems)
                                         {
                                             <span><i class="fas @amenity.IconClass" aria-hidden="true"></i> @amenity.Name</span>
                                         }
-                                        @if (hotel.HasFreeCancellation)
+                                        @foreach (var amenity in amenityItemsList.Skip(3))
                                         {
-                                            <span><i class="fas fa-check-circle" aria-hidden="true"></i> Ücretsiz iptal</span>
+                                            <span class="otelliste-card-amenities-extra"><i class="fas @amenity.IconClass" aria-hidden="true"></i> @amenity.Name</span>
+                                        }
+                                        @if (hiddenAmenityCount > 0)
+                                        {
+                                            <button type="button" class="otelliste-card-amenity-more" data-amenity-more aria-label="@hiddenAmenityCount özellik daha">+@hiddenAmenityCount</button>
+                                        }
+                                        @if (!string.IsNullOrWhiteSpace(allAmenityLabel))
+                                        {
+                                            <span class="sr-only otelliste-card-amenities-full">@allAmenityLabel</span>
                                         }
                                     </div>
                                 }
@@ -307,15 +341,26 @@
                                     <div class="otelliste-card-price">
                                         @if (price > 0m)
                                         {
+                                            if (originalPrice > price)
+                                            {
+                                                <span class="otelliste-card-price-old">@($"{originalPrice:N0} ₺")</span>
+                                            }
                                             @($"{price:N0} ₺")
-                                            <small>/ gece</small>
+                                            <small>/ gece · vergi dahil</small>
                                         }
                                         else
                                         {
                                             <small>Fiyat sor</small>
                                         }
                                     </div>
-                                    <a class="otelliste-card-cta" href="@detailUrl">İncele</a>
+                                    @if (price > 0m)
+                                    {
+                                        <a class="otelliste-card-cta" href="@detailUrl">İncele</a>
+                                    }
+                                    else
+                                    {
+                                        <a class="otelliste-card-cta otelliste-card-cta--secondary" href="@detailUrl">Fiyat sor</a>
+                                    }
                                 </div>
                             </div>
                         </article>

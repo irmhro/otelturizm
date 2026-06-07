@@ -38,14 +38,14 @@ Referans: anasayfa premium tokenları, Booking/Expedia mobil liste UX, mevcut `o
 
 - [x] M3.01 Sticky top `header-sticky-h` offset
 - [x] M3.02 Filtrele | Sırala | Harita 3'lü düzen
-- [ ] M3.03 Scroll-down bar compact mod (mini)
-- [ ] M3.04 Aktif filtre badge animasyon
+- [x] M3.03 Scroll-down bar compact mod (mini)
+- [x] M3.04 Aktif filtre badge animasyon
 - [x] M3.05 Blur arka plan + border-bottom
-- [ ] M3.06 Harita ikon tooltip
-- [ ] M3.07 Sıralama native picker iOS stil
-- [ ] M3.08 Bar z-index header alt/üst çakışma testi
-- [ ] M3.09 Reduced motion sticky transition kapalı
-- [ ] M3.10 Bar aria `role=toolbar`
+- [x] M3.06 Harita ikon tooltip
+- [x] M3.07 Sıralama native picker iOS stil
+- [x] M3.08 Bar z-index header alt/üst çakışma testi
+- [x] M3.09 Reduced motion sticky transition kapalı
+- [x] M3.10 Bar aria `role=toolbar`
 
 ## M4 — Sonuç başlığı & meta (10)
 
@@ -77,7 +77,7 @@ Referans: anasayfa premium tokenları, Booking/Expedia mobil liste UX, mevcut `o
 
 - [x] M6.01 Yatay layout sol sütun görsel
 - [x] M6.02 Görsel `object-fit: cover` sabit min-height
-- [ ] M6.03 Touch swipe galeri (data-gallery)
+- [x] M6.03 Touch swipe galeri (data-gallery)
 - [ ] M6.04 Galeri dot indicator
 - [ ] M6.05 Lazy load + blur-up LQIP
 - [ ] M6.06 WebP/srcset responsive
@@ -91,11 +91,11 @@ Referans: anasayfa premium tokenları, Booking/Expedia mobil liste UX, mevcut `o
 - [x] M7.01 Başlık 2 satır clamp
 - [x] M7.02 Konum tek satır ellipsis
 - [x] M7.03 Lead oda satırı kompakt
-- [ ] M7.04 Yıldız inline rating chip
-- [ ] M7.05 İndirim yüzde pill
-- [ ] M7.06 Ücretsiz iptal yeşil micro-badge
+- [x] M7.04 Yıldız inline rating chip
+- [x] M7.05 İndirim yüzde pill
+- [x] M7.06 Ücretsiz iptal yeşil micro-badge
 - [ ] M7.07 Mesafe km (konum API)
-- [ ] M7.08 Tesis tipi chip (Butik/Resort)
+- [x] M7.08 Tesis tipi chip (Butik/Resort)
 - [ ] M7.09 Kart tıklama ripple/haptic hook
 - [ ] M7.10 Long press favori preview
 
@@ -104,11 +104,11 @@ Referans: anasayfa premium tokenları, Booking/Expedia mobil liste UX, mevcut `o
 - [x] M8.01 Foot her zaman görünür — column stack
 - [x] M8.02 Tam genişlik “İncele” CTA 44px
 - [x] M8.03 Fiyat + “/ gece” + vergi notu
-- [ ] M8.04 Çizili eski fiyat indirimli kart
+- [x] M8.04 Çizili eski fiyat indirimli kart
 - [ ] M8.05 “X gece toplam” tarih query ile
-- [ ] M8.06 Fiyat yok “Fiyat sor” CTA secondary
+- [x] M8.06 Fiyat yok “Fiyat sor” CTA secondary
 - [ ] M8.07 Sticky mini CTA scroll (opsiyonel)
-- [ ] M8.08 CTA loading navigate state
+- [x] M8.08 CTA loading navigate state
 - [ ] M8.09 Deep link detay + oda param
 - [ ] M8.10 A/B CTA metin (“Rezervasyon” vs “İncele”)
 
@@ -116,25 +116,25 @@ Referans: anasayfa premium tokenları, Booking/Expedia mobil liste UX, mevcut `o
 
 - [x] M9.01 Yatay scroll taşma düzeltmesi
 - [x] M9.02 `flex-shrink: 0` pill
-- [ ] M9.03 Max 3 görünür + “+N” expand
+- [x] M9.03 Max 3 görünür + “+N” expand
 - [ ] M9.04 İkon tutarlılık audit
 - [ ] M9.05 Özellik filtresi ile pill sync highlight
-- [ ] M9.06 UPPERCASE → title case CSS
-- [ ] M9.07 Scroll momentum iOS
+- [x] M9.06 UPPERCASE → title case CSS
+- [x] M9.07 Scroll momentum iOS
 - [ ] M9.08 Amenities keyboard scroll
 - [ ] M9.09 High contrast mode border
-- [ ] M9.10 Screen reader amenity list hidden full
+- [x] M9.10 Screen reader amenity list hidden full
 
 ## M10 — Favori butonu (10)
 
 - [x] M10.01 44×44 touch target
-- [ ] M10.02 Giriş yönlendirme toast
-- [ ] M10.03 Animasyon heart pop
+- [x] M10.02 Giriş yönlendirme toast
+- [x] M10.03 Animasyon heart pop
 - [ ] M10.04 Offline favori queue
-- [ ] M10.05 aria-pressed sync
+- [x] M10.05 aria-pressed sync
 - [ ] M10.06 Favori sayısı badge (otel)
 - [ ] M10.07 Konum: medya sağ alt vs header
-- [ ] M10.08 Double-tap engelle
+- [x] M10.08 Double-tap engelle
 - [ ] M10.09 Analytics favori event
 - [ ] M10.10 Panel favoriler sync
 
@@ -235,9 +235,9 @@ Referans: anasayfa premium tokenları, Booking/Expedia mobil liste UX, mevcut `o
 - [x] M18.02 Amenity strip scroll snap (plan)
 - [ ] M18.03 Pull refresh liste
 - [ ] M18.04 Haptic feedback CTA (PWA)
-- [ ] M18.05 Pinch zoom engelle görsel
+- [x] M18.05 Pinch zoom engelle görsel
 - [ ] M18.06 Long press context menu
-- [ ] M18.07 Drawer swipe dismiss
+- [x] M18.07 Drawer swipe dismiss
 - [ ] M18.08 Double-tap zoom önleme
 - [ ] M18.09 Touch drag sort (favori)
 - [ ] M18.10 Gesture conflict harita link
