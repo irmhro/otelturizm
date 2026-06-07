@@ -23,9 +23,39 @@
     }
 
     .oteldetay-page {
-        padding-bottom: calc(88px + env(safe-area-inset-bottom, 0px));
+        padding-bottom: calc(96px + env(safe-area-inset-bottom, 0px));
         overflow-x: clip;
         max-width: 100%;
+        display: flex;
+        flex-direction: column;
+    }
+
+    .oteldetay-page .gallery-grid.od-gallery--desktop {
+        order: 0;
+    }
+
+    .oteldetay-page .od-gallery--mobile {
+        order: 1;
+    }
+
+    .oteldetay-page .detail-header.hotel-title-section {
+        order: 2;
+    }
+
+    .oteldetay-page .detail-breadcrumb.detail-breadcrumb-with-weather {
+        order: 3;
+    }
+
+    .oteldetay-page .od-quick-facts {
+        order: 4;
+    }
+
+    .oteldetay-page .detail-grid.od-detail__layout {
+        order: 5;
+    }
+
+    .oteldetay-page .mobile-booking-bar {
+        order: 99;
     }
 
     .oteldetay-page *,
@@ -48,29 +78,112 @@
     }
 
     .oteldetay-page .detail-breadcrumb {
-        padding: 10px 0 8px;
+        padding: 0 16px 10px;
+        width: calc(100% - 32px);
+        margin: 0 auto;
+        background: transparent;
+        border: 0;
+        flex-direction: column;
+        align-items: stretch;
+        gap: 0;
     }
 
-    .oteldetay-page .detail-breadcrumb-left .detail-back-link {
+    .oteldetay-page .detail-breadcrumb-left {
         display: none;
     }
 
     .oteldetay-page .detail-breadcrumb-right {
-        width: 100%;
-        justify-content: flex-start;
-        overflow-x: auto;
-        scrollbar-width: none;
-        flex-wrap: nowrap;
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
         gap: 8px;
-        padding-bottom: 2px;
+        width: 100%;
+        overflow: visible;
+        flex-wrap: nowrap;
+        padding-bottom: 0;
+    }
+
+    .oteldetay-page .detail-breadcrumb-right .detail-share-wrap {
+        min-width: 0;
+    }
+
+    .oteldetay-page .detail-breadcrumb-right .detail-share-wrap .detail-quick-action {
+        width: 100%;
+    }
+
+    .oteldetay-page .detail-quick-action {
+        display: inline-flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 3px;
+        width: 100%;
+        min-height: var(--home-header-action-h, 40px);
+        height: auto;
+        padding: 8px 6px;
+        border-radius: 10px;
+        border: 1px solid var(--od-border, #EBE9E4);
+        background: #fff;
+        font-size: 10px;
+        font-weight: 700;
+        line-height: 1.1;
+        box-shadow: 0 1px 2px rgba(26, 25, 25, 0.04);
+    }
+
+    .oteldetay-page .detail-quick-action i {
+        font-size: 14px;
+        color: var(--od-crimson, #E30A17);
     }
 
     .oteldetay-page .detail-quick-action span {
-        display: none;
+        display: block;
+        max-width: 100%;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    .oteldetay-page .detail-quick-action.is-tone-talk i {
+        color: var(--od-crimson, #E30A17);
+    }
+
+    .oteldetay-page .detail-quick-action.is-tone-fav.active {
+        border-color: rgba(227, 10, 23, 0.35);
+        background: rgba(227, 10, 23, 0.06);
     }
 
     .oteldetay-page .gallery-swipe-hint {
-        display: none !important;
+        display: flex !important;
+        position: absolute;
+        left: 50%;
+        bottom: 68px;
+        transform: translateX(-50%);
+        z-index: 4;
+        align-items: center;
+        gap: 6px;
+        padding: 5px 12px;
+        border-radius: 999px;
+        background: rgba(15, 23, 42, 0.62);
+        color: #fff;
+        font-size: 10px;
+        font-weight: 700;
+        pointer-events: none;
+        white-space: nowrap;
+    }
+
+    .oteldetay-page .gallery-mobile-track {
+        touch-action: pan-x;
+        cursor: grab;
+        scroll-snap-stop: always;
+    }
+
+    .oteldetay-page .gallery-mobile-track.is-dragging {
+        cursor: grabbing;
+        scroll-snap-type: none;
+    }
+
+    .oteldetay-page .gallery-mobile-track.is-dragging .gallery-mobile-slide img {
+        pointer-events: none;
+        user-select: none;
     }
 
     .oteldetay-page .od-gallery--mobile {
@@ -347,13 +460,6 @@
         z-index: 1020;
     }
 
-    .oteldetay-page .detail-quick-action {
-        min-width: 44px;
-        min-height: 44px;
-        justify-content: center;
-        padding: 8px 12px;
-    }
-
     /* Masaüstü galeri gizle, mobil slider göster */
     .oteldetay-page .gallery-grid.od-gallery--desktop,
     .oteldetay-page .gallery-filmstrip-wrap {
@@ -362,9 +468,12 @@
 
     /* Bilgi kartı */
     .oteldetay-page .detail-header.hotel-title-section {
-        padding: 18px 16px;
+        padding: 14px 16px;
         border-radius: 18px;
         margin-top: 0;
+        width: calc(100% - 32px);
+        margin-left: auto;
+        margin-right: auto;
     }
 
     .oteldetay-page .hotel-name h1 {
@@ -385,19 +494,393 @@
 
     .oteldetay-page .weather-inline-trigger {
         width: 100%;
-        border-radius: 14px;
+        border-radius: 12px;
+        padding: 10px 12px;
+        min-height: 44px;
     }
 
+    .oteldetay-page .weather-inline-copy strong {
+        font-size: 12px;
+    }
+
+    .oteldetay-page .weather-inline-copy small {
+        font-size: 11px;
+        line-height: 1.35;
+    }
+
+    .oteldetay-page .weather-inline-badge {
+        font-size: 10px;
+        padding: 4px 8px;
+    }
+
+    /* Giriş / çıkış — yatay 2 kolon */
     .oteldetay-page .od-quick-facts {
         flex-direction: column;
-        align-items: flex-start;
-        margin: 12px auto 16px;
+        align-items: stretch;
+        margin: 0 auto 12px;
+        padding: 0;
+        gap: 10px;
+    }
+
+    .oteldetay-page .od-quick-facts__list {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 8px;
+        width: 100%;
+        margin: 0;
+        padding: 0;
+        list-style: none;
+    }
+
+    .oteldetay-page .od-quick-facts__item {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 10px 12px;
+        border-radius: 12px;
+        border: 1px solid var(--od-border, #EBE9E4);
+        background: #fff;
+        min-height: 56px;
+    }
+
+    .oteldetay-page .od-quick-facts__icon {
+        width: 32px;
+        height: 32px;
+        border-radius: 10px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        background: rgba(227, 10, 23, 0.08);
+        color: var(--od-crimson, #E30A17);
+        flex-shrink: 0;
+    }
+
+    .oteldetay-page .od-quick-facts__label {
+        font-size: 10px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+        color: var(--od-muted, #6E6E77);
+    }
+
+    .oteldetay-page .od-quick-facts__value {
+        font-size: 14px;
+        font-weight: 800;
     }
 
     .oteldetay-page .od-quick-facts__chips {
         display: flex;
-        flex-wrap: wrap;
+        flex-wrap: nowrap;
+        overflow-x: auto;
         gap: 8px;
+        padding-bottom: 4px;
+        scrollbar-width: none;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    .oteldetay-page .od-quick-facts__chips::-webkit-scrollbar {
+        display: none;
+    }
+
+    .oteldetay-page .od-chip {
+        flex: 0 0 auto;
+        white-space: nowrap;
+    }
+
+    /* Tesis açıklama */
+    .oteldetay-page .detail-about-collapsible .detail-collapsible__body {
+        font-size: 14px;
+        line-height: 1.55;
+    }
+
+    .oteldetay-page .detail-collapsible__summary {
+        min-height: 44px;
+        align-items: center;
+    }
+
+    /* Tesis özellikleri — tek satır kayan şerit */
+    .oteldetay-page .od-section--amenities .amenities-list-clean,
+    .oteldetay-page .od-section--amenities .amenities-expand {
+        display: none !important;
+    }
+
+    .oteldetay-page .od-amenities__scroll {
+        display: flex;
+        flex-wrap: nowrap;
+        overflow-x: auto;
+        gap: 8px;
+        padding: 4px 0 8px;
+        margin: 0 -2px;
+        scroll-snap-type: x proximity;
+        -webkit-overflow-scrolling: touch;
+        scrollbar-width: none;
+    }
+
+    .oteldetay-page .od-amenities__scroll::-webkit-scrollbar {
+        display: none;
+    }
+
+    .oteldetay-page .od-amenity-chip {
+        flex: 0 0 auto;
+        scroll-snap-align: start;
+        min-height: 36px;
+        padding: 8px 14px;
+        font-size: 11px;
+        font-weight: 700;
+        white-space: nowrap;
+    }
+
+    .oteldetay-page .od-section--amenities .tabler-section-actions {
+        width: auto;
+    }
+
+    .oteldetay-page .od-section--amenities .tabler-section-action-btn {
+        width: auto;
+        min-height: 36px;
+        padding: 0 12px;
+        font-size: 11px;
+    }
+
+    /* Kurallar — 2 sütun kart */
+    .oteldetay-page .od-section--policies .od-policy-list {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 10px;
+        list-style: none;
+        margin: 0;
+        padding: 0;
+    }
+
+    .oteldetay-page .od-section--policies .od-policy-item {
+        display: flex;
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 8px;
+        padding: 12px;
+        border-radius: 14px;
+        border: 1px solid var(--od-border, #EBE9E4);
+        background: #fff;
+        min-height: 0;
+        grid-template-columns: unset;
+    }
+
+    .oteldetay-page .od-section--policies .od-policy-icon {
+        width: 32px;
+        height: 32px;
+        border-radius: 10px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        background: rgba(227, 10, 23, 0.08);
+        color: var(--od-crimson, #E30A17);
+    }
+
+    .oteldetay-page .od-section--policies .od-policy-item strong {
+        font-size: 11px;
+        font-weight: 800;
+        text-transform: uppercase;
+        letter-spacing: 0.03em;
+    }
+
+    .oteldetay-page .od-section--policies .od-policy-item p,
+    .oteldetay-page .od-section--policies .od-policy-item small {
+        font-size: 11px;
+        line-height: 1.4;
+        margin: 0;
+    }
+
+    /* Oda özellikleri — yatay scroll chip */
+    .oteldetay-page #roomsCard .room-feature-list {
+        display: flex;
+        flex-wrap: nowrap;
+        overflow-x: auto;
+        gap: 8px;
+        margin: 0;
+        padding: 2px 0 4px;
+        list-style: none;
+        scrollbar-width: none;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    .oteldetay-page #roomsCard .room-feature-list::-webkit-scrollbar {
+        display: none;
+    }
+
+    .oteldetay-page #roomsCard .room-feature-item {
+        flex: 0 0 auto;
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        padding: 6px 10px;
+        border-radius: 999px;
+        border: 1px solid var(--od-border, #EBE9E4);
+        background: var(--od-bg, #FCFBF9);
+        font-size: 10px;
+        font-weight: 700;
+        white-space: nowrap;
+    }
+
+    .oteldetay-page #roomsCard .room-feature-item i {
+        color: var(--od-crimson, #E30A17);
+        font-size: 10px;
+    }
+
+    .oteldetay-page #roomsCard .od-room-card__meta {
+        display: flex;
+        flex-wrap: nowrap;
+        overflow-x: auto;
+        gap: 6px;
+        scrollbar-width: none;
+        padding-bottom: 2px;
+    }
+
+    .oteldetay-page #roomsCard .od-pill {
+        flex: 0 0 auto;
+        font-size: 10px;
+        white-space: nowrap;
+    }
+
+    .oteldetay-page #roomsCard .room-price-total,
+    .oteldetay-page #roomsCard .room-price-inclusive-label {
+        font-size: 10px;
+    }
+
+    /* Yorumlar mobil */
+    .oteldetay-page .review-summary.review-summary--ota {
+        padding: 12px;
+        border-radius: 16px;
+        border: 1px solid var(--od-border, #EBE9E4);
+        background: #fff;
+    }
+
+    .oteldetay-page .review-score-circle {
+        width: 72px;
+        height: 72px;
+    }
+
+    .oteldetay-page .review-score-circle strong {
+        font-size: 22px;
+    }
+
+    .oteldetay-page .review-bars {
+        gap: 8px;
+    }
+
+    .oteldetay-page .review-bars > div {
+        grid-template-columns: 72px 1fr 28px;
+        font-size: 11px;
+    }
+
+    .oteldetay-page .review-toolbar {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .oteldetay-page .review-toolbar-right {
+        width: 100%;
+    }
+
+    .oteldetay-page .review-sort select {
+        width: 100%;
+        min-height: 40px;
+        border-radius: 10px;
+    }
+
+    .oteldetay-page .review-card-head {
+        flex-wrap: wrap;
+        gap: 6px;
+    }
+
+    .oteldetay-page .review-card-text {
+        font-size: 13px;
+        line-height: 1.5;
+    }
+
+    /* Rezervasyon sheet — gelişmiş mobil */
+    .oteldetay-page .booking-sidebar.od-detail__booking {
+        padding: 0 0 calc(env(safe-area-inset-bottom, 0px));
+    }
+
+    .oteldetay-page .booking-card {
+        border-radius: 20px 20px 0 0;
+        padding: 12px 16px 20px;
+        max-height: 92vh;
+        overflow-y: auto;
+    }
+
+    .oteldetay-page .booking-price-head--ota {
+        padding-bottom: 12px;
+        margin-bottom: 12px;
+        border-bottom: 1px solid var(--od-border, #EBE9E4);
+    }
+
+    .oteldetay-page .booking-price-total {
+        font-size: 26px;
+    }
+
+    .oteldetay-page .multi-room-item-grid {
+        grid-template-columns: 1fr;
+        gap: 10px;
+    }
+
+    .oteldetay-page .multi-room-item-grid label {
+        min-height: 44px;
+    }
+
+    .oteldetay-page .multi-room-item-grid input,
+    .oteldetay-page .multi-room-item-grid select {
+        min-height: 44px;
+        border-radius: 10px;
+        font-size: 14px;
+    }
+
+    .oteldetay-page .guest-row {
+        min-height: 48px;
+        padding: 8px 0;
+    }
+
+    .oteldetay-page .guest-btn {
+        width: 40px;
+        height: 40px;
+        border-radius: 10px;
+    }
+
+    .oteldetay-page .booking-advanced-grid {
+        grid-template-columns: 1fr;
+        gap: 10px;
+    }
+
+    .oteldetay-page .booking-submit-btn,
+    .oteldetay-page .booking-card .btn-primary {
+        width: 100%;
+        min-height: 48px;
+        border-radius: 12px;
+        font-size: 14px;
+        font-weight: 800;
+    }
+
+    .oteldetay-page .mobile-booking-bar {
+        padding: 10px 16px calc(10px + env(safe-area-inset-bottom, 0px));
+        gap: 10px;
+    }
+
+    .oteldetay-page .mobile-booking-summary {
+        flex: 1;
+        min-width: 0;
+    }
+
+    .oteldetay-page .mobile-booking-total {
+        font-size: 20px;
+    }
+
+    .oteldetay-page .mobile-booking-cta {
+        flex: 0 0 auto;
+        min-width: 132px;
+        min-height: 44px;
+        padding: 0 18px;
+        font-size: 12px;
+        font-weight: 800;
+        border-radius: 999px;
     }
 
     /* Grid tek sütun */

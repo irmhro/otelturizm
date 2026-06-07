@@ -258,9 +258,9 @@
                 data-authenticated="@(Model.IsLoggedInUser ? "true" : "false")"
                 data-can-start="@(Model.HasCompletedReservationAtHotel ? "true" : "false")"
                 data-info-message="@Model.ConversationInfoMessage"
-                aria-label="Görüşme Başlat">
+                aria-label="Sohbet">
             <i class="far fa-comments" aria-hidden="true"></i>
-            <span>Görüşme Başlat</span>
+            <span>Sohbet</span>
         </button>
         <div class="detail-share-wrap">
             <button type="button" id="shareHotelBtn" class="detail-quick-action is-tone-share" aria-haspopup="true" aria-expanded="false" aria-controls="shareMenu" aria-label="Paylaş">
@@ -308,7 +308,7 @@
                 data-source-page="OtelDetay"
                 aria-label="Favoriye ekle">
             <i class="@(Model.IsFavorite ? "fas" : "far") fa-heart" aria-hidden="true"></i>
-            <span data-favorite-label>@(Model.IsFavorite ? "Favoride" : "Favoriye Ekle")</span>
+            <span data-favorite-label>@(Model.IsFavorite ? "Favoride" : "Favori")</span>
         </button>
     </div>
 </section>
@@ -4999,6 +4999,7 @@
             setInterval(beat, 45000);
         })();
     </script>
+    <script src="~/assets/js/oteldetay-detail-mobile.js" asp-append-version="true" defer></script>
     <script src="~/assets/js/otel-detay.js" asp-append-version="true"></script>
     <partial name="~/Views/Shared/_FavoriteToggleScriptPartial.cshtml" />
 }
