@@ -50,6 +50,7 @@
     max-width: 1240px;
     margin: 0 auto;
     padding: 0 24px;
+    box-sizing: border-box;
 }
 
 /* Marka solda, link grupları sağda — yan yana */

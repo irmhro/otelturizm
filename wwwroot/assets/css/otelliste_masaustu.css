@@ -8,6 +8,12 @@
     overflow-x: hidden;
 }
 
+.otelliste-page-shell *,
+.otelliste-page-shell *::before,
+.otelliste-page-shell *::after {
+    box-sizing: border-box;
+}
+
 .otelliste-page-shell .public-premium-main {
     padding: 0 0 52px;
     min-height: 0;
@@ -37,6 +43,7 @@
     --otl-shadow-card: 0 6px 18px rgba(26, 25, 25, 0.04);
     --otl-shadow-card-hover: 0 10px 24px rgba(26, 25, 25, 0.08);
     --otl-shadow-sidebar: none;
+    --otl-page-max: var(--page-max-width, 1240px);
 
     font-family: inherit;
     -webkit-font-smoothing: antialiased;
@@ -68,8 +75,8 @@
 
 .otelliste-page .otelliste-page-hero-inner {
     box-sizing: border-box;
-    width: 100%;
-    max-width: 1240px;
+    width: min(var(--otl-page-max, var(--page-max-width, 1240px)), calc(100% - 48px));
+    max-width: none;
     margin: 0 auto;
     padding: 16px 24px 18px;
 }
@@ -202,8 +209,8 @@
 
 .otelliste-page .otelliste-container {
     box-sizing: border-box;
-    width: 100%;
-    max-width: 1240px;
+    width: min(var(--otl-page-max, var(--page-max-width, 1240px)), calc(100% - 48px));
+    max-width: none;
     margin: 0 auto;
     padding: 0 24px;
     display: flex;
