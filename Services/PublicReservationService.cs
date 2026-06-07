@@ -72,12 +72,18 @@ public class PublicReservationService : IPublicReservationService
             return;
         }
 
+        if (!_dawnSurpriseService.IsEligible(httpContext))
+        {
+            return;
+        }
+
         var dawnPercent = _dawnSurpriseService.GetActive(httpContext)?.Percent ?? 0;
         if (dawnPercent <= 0)
         {
             return;
         }
 
+        var originalTotal = pricing.TotalAmount;
         var total = pricing.TotalAmount;
         var net = pricing.NetRoomAmount;
         var vat = pricing.VatAmount;
@@ -85,6 +91,9 @@ public class PublicReservationService : IPublicReservationService
         var tax = pricing.TaxAmount;
         if (DawnSurprisePricing.TryApplyPercent(ref total, ref net, ref vat, ref acc, ref tax, dawnPercent))
         {
+            pricing.OriginalTotalBeforeDawn = originalTotal;
+            pricing.DawnSurprisePercent = dawnPercent;
+            pricing.DawnSurpriseDiscountAmount = originalTotal - total;
             pricing.TotalAmount = total;
             pricing.NetRoomAmount = net;
             pricing.VatAmount = vat;
@@ -97,6 +106,7 @@ public class PublicReservationService : IPublicReservationService
     {
         var originalTotal = pricing.TotalAmount;
         var dawnPercent = _httpContextAccessor.HttpContext is { } httpContext
+            && _dawnSurpriseService.IsEligible(httpContext)
             ? _dawnSurpriseService.GetActive(httpContext)?.Percent ?? 0
             : 0;
         var discountAmount = 0m;
@@ -208,6 +218,7 @@ public class PublicReservationService : IPublicReservationService
 
         var totalAmountOverall = perRoomPricing.Sum(x => x.Pricing.TotalAmount);
         var dawnPercent = _httpContextAccessor.HttpContext is { } httpContext
+            && _dawnSurpriseService.IsEligible(httpContext)
             ? _dawnSurpriseService.GetActive(httpContext)?.Percent ?? 0
             : 0;
 
@@ -357,6 +368,7 @@ public class PublicReservationService : IPublicReservationService
                     [HAVALE_EFT_BEKLEYEN_TUTARI], [ODEME_REFERANS_NO],
                     [TAHSIL_EDILEN_TUTAR], [KALAN_TAHSIL_EDILECEK_TUTAR], [ON_ODEME_TUTARI], [KALAN_ODEME_TUTARI],
                     [OTEL_ONAY_DURUMU], [FIRMA_ONAY_DURUMU],
+                    [INDIRIM_TUTARI], [SAFAK_SURPRIZI_ORANI], [SAFAK_SURPRIZI_INDIRIM_TUTARI],
                     [KAYNAK], [REZERVASYON_KANALI], [OZEL_ISTEKLER], [REZERVASYON_TASLAGI_ID]
                 )
                 VALUES
@@ -374,6 +386,7 @@ public class PublicReservationService : IPublicReservationService
                     @havalePendingAmount, @bankTransferReferenceSql,
                     0, @remainingCollectionAmount, 0, @remainingCollectionAmount,
                     'Beklemede', 'Onay Gerekmiyor',
+                    @discountAmount, @dawnSurprisePercent, @dawnSurpriseDiscountAmount,
                     'Web', 'Web', @note, @draftId
                 );
                 SELECT CAST(SCOPE_IDENTITY() AS bigint);";
@@ -450,6 +463,9 @@ public class PublicReservationService : IPublicReservationService
                     insertCommand.Parameters.AddWithValue("@havalePendingAmount", havale);
                     insertCommand.Parameters.AddWithValue("@bankTransferReferenceSql", string.IsNullOrWhiteSpace(paymentPlan.BankTransferReference) ? DBNull.Value : paymentPlan.BankTransferReference.Trim());
                     insertCommand.Parameters.AddWithValue("@remainingCollectionAmount", pricing.TotalAmount);
+                    insertCommand.Parameters.AddWithValue("@discountAmount", pricing.DawnSurpriseDiscountAmount > 0m ? pricing.DawnSurpriseDiscountAmount : DBNull.Value);
+                    insertCommand.Parameters.AddWithValue("@dawnSurprisePercent", pricing.DawnSurprisePercent > 0 ? pricing.DawnSurprisePercent : DBNull.Value);
+                    insertCommand.Parameters.AddWithValue("@dawnSurpriseDiscountAmount", pricing.DawnSurpriseDiscountAmount > 0m ? pricing.DawnSurpriseDiscountAmount : DBNull.Value);
                     insertCommand.Parameters.AddWithValue("@draftId", draftId);
                     var reservationIdRaw = await insertCommand.ExecuteScalarAsync(cancellationToken);
                     reservationId = Convert.ToInt64(reservationIdRaw ?? 0L, CultureInfo.InvariantCulture);
@@ -525,6 +541,10 @@ public class PublicReservationService : IPublicReservationService
 
             await EnsureReservationHotelFavoriteAsync(connection, (SqlTransaction)transaction, authenticatedUserId, form.HotelId, hotel.Slug, cancellationToken);
             await transaction.CommitAsync(cancellationToken);
+            if (dawnPercent > 0 && _httpContextAccessor.HttpContext is { } httpContextAfterCommit)
+            {
+                _dawnSurpriseService.Clear(httpContextAfterCommit);
+            }
             try
             {
                 await QueueReservationEmailsAsync(emailJobs, cancellationToken);
@@ -1556,6 +1576,9 @@ public class PublicReservationService : IPublicReservationService
         public decimal AccommodationTaxAmount { get; set; }
         public decimal TaxAmount { get; set; }
         public decimal TotalAmount { get; set; }
+        public int DawnSurprisePercent { get; set; }
+        public decimal DawnSurpriseDiscountAmount { get; set; }
+        public decimal OriginalTotalBeforeDawn { get; set; }
         public long? CommissionRuleId { get; set; }
         public decimal CommissionRate { get; set; }
         public decimal CommissionAmount { get; set; }

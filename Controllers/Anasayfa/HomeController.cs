@@ -67,26 +67,45 @@ public class HomeController : Controller
     }
 
     [HttpGet("/api/dawn-surprise/status")]
+    [IgnoreAntiforgeryToken]
     public IActionResult DawnSurpriseStatus()
     {
+        var eligible = _dawnSurpriseService.IsEligible(HttpContext);
+        if (!eligible)
+        {
+            return Json(new { active = false, eligible = false });
+        }
+
         var state = _dawnSurpriseService.GetActive(HttpContext);
         if (state is null)
         {
-            return Json(new { active = false });
+            return Json(new { active = false, eligible = true });
         }
 
         return Json(new
         {
             active = true,
+            eligible = true,
             percent = state.Percent,
             remainingSeconds = state.RemainingSeconds
         });
     }
 
     [HttpPost("/api/dawn-surprise/open")]
+    [IgnoreAntiforgeryToken]
     public IActionResult DawnSurpriseOpen()
     {
+        if (!_dawnSurpriseService.IsEligible(HttpContext))
+        {
+            return Json(new { success = false, message = "Bu kampanya yalnizca Turkiye kullanicilari icindir." });
+        }
+
         var result = _dawnSurpriseService.Open(HttpContext);
+        if (result is null)
+        {
+            return Json(new { success = false, message = "Kutu acilamadi. Lutfen tekrar deneyin." });
+        }
+
         return Json(new
         {
             success = true,

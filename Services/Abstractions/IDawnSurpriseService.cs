@@ -2,8 +2,10 @@ namespace otelturizmnew.Services.Abstractions;
 
 public interface IDawnSurpriseService
 {
+    bool IsEligible(HttpContext httpContext);
     DawnSurpriseState? GetActive(HttpContext httpContext);
-    DawnSurpriseOpenResult Open(HttpContext httpContext);
+    DawnSurpriseOpenResult? Open(HttpContext httpContext);
+    void Clear(HttpContext httpContext);
 }
 
 public sealed class DawnSurpriseState
