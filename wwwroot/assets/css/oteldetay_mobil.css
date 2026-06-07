@@ -2014,6 +2014,17 @@
         font-style: normal !important;
         color: var(--od-dark, #1A1919) !important;
         margin: 0 !important;
+        max-height: none !important;
+        overflow: visible !important;
+        display: block !important;
+        -webkit-line-clamp: unset !important;
+        word-break: break-word !important;
+        overflow-wrap: anywhere !important;
+    }
+
+    .oteldetay-page.otel-detail-template-v41 #reviewsSection .review-body {
+        min-width: 0 !important;
+        overflow: visible !important;
     }
 
     .oteldetay-page.otel-detail-template-v41 #reviewsSection .review-more {
