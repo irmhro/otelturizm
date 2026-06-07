@@ -18,7 +18,7 @@ Referans: Booking/Expedia mobil otel detay, anasayfa premium tokenları, mevcut 
 - [ ] M1.06 Landscape 568px min-height düzen
 - [ ] M1.07 901–1024px tek sütun zorla
 - [ ] M1.08 iOS rubber-band scroll sınırı
-- [ ] M1.09 Print mobil gizleme
+- [x] M1.09 Print mobil gizleme
 - [ ] M1.10 PWA standalone viewport meta
 
 ## M2 — Üst galeri slider (10)
@@ -65,7 +65,7 @@ Referans: Booking/Expedia mobil otel detay, anasayfa premium tokenları, mevcut 
 - [x] M5.01 Dikey stack chips
 - [x] M5.02 Chip wrap gap 8px
 - [ ] M5.03 Check-in/out saat ikonları
-- [ ] M5.04 Ücretsiz iptal vurgu rengi
+- [x] M5.04 Ücretsiz iptal vurgu rengi
 - [ ] M5.05 Chip yatay scroll alternatif
 - [ ] M5.06 DB'den dinamik chip sırası
 - [ ] M5.07 Chip tooltip uzun metin
@@ -145,7 +145,7 @@ Referans: Booking/Expedia mobil otel detay, anasayfa premium tokenları, mevcut 
 - [ ] M11.03 Scroll-up bar compact mod
 - [ ] M11.04 Bar animasyon reduced motion
 - [ ] M11.05 Bar aria live fiyat güncelleme
-- [ ] M11.06 Bar tık → sheet aç
+- [x] M11.06 Bar tık → sheet aç
 - [ ] M11.07 Bar gizle galeri fullscreen
 - [ ] M11.08 Bar shadow scroll state
 - [ ] M11.09 Bar i18n metinleri
@@ -183,7 +183,7 @@ Referans: Booking/Expedia mobil otel detay, anasayfa premium tokenları, mevcut 
 - [x] M14.02 Topic strip yatay scroll
 - [x] M14.03 Review kart border radius
 - [ ] M14.04 Filtre chip sheet
-- [ ] M14.05 Sıralama native select
+- [x] M14.05 Sıralama native select mobil stil
 - [ ] M14.06 Fotoğraflı yorum grid
 - [ ] M14.07 Yanıt ver accordion
 - [ ] M14.08 Helpful vote touch
@@ -270,6 +270,6 @@ Referans: Booking/Expedia mobil otel detay, anasayfa premium tokenları, mevcut 
 
 ---
 
-**İlerleme özeti (M-v2):** ~42 / 200 tamamlandı
+**İlerleme özeti (V4):** ~58 / 200 tamamlandı · V3 Orchestra + V4 yorum kartları (2026-06-07)
 
-**Sonraki sprint:** M7.04 thumb preview sync, M10.05 swipe kapat, M11.03 compact bar, M18.09 CLS reserve
+**Sonraki sprint:** M14.04 topic sheet, M13.02 harita lazy, M17 a11y audit

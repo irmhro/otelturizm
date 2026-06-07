@@ -576,3 +576,18 @@
 - [x] **Y20** Orchestra sign-off
 
 **Toplam madde:** 500
+
+## Z — V4 Yorum Kartları Sprint (12) · Grup 06
+
+- [x] **Z01** V3 bar grid bug fix (3 kolon label|bar|skor)
+- [x] **Z02** Özet skor yatay kompakt satır
+- [x] **Z03** Kategori bar crimson gradient
+- [x] **Z04** Topic strip yatay scroll snap
+- [x] **Z05** Toolbar pill + sıralama select stil
+- [x] **Z06** Review card grid meta (avatar|metin|skor)
+- [x] **Z07** Avatar rounded square koyu gradient
+- [x] **Z08** Verified badge yeşil chip
+- [x] **Z09** Yorum metni 14px normal (italic kaldır)
+- [x] **Z10** Devamını oku crimson link
+- [x] **Z11** Sayfalama tam genişlik buton
+- [x] **Z12** Gizli duplicate Yorumlara git CTA
