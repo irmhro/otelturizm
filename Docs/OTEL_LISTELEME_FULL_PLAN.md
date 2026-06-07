@@ -172,3 +172,14 @@ Mevcut `otelliste-*` tasarımı korunarak DB-first liste, filtre, harita ve SEO 
 3. Liste ücretsiz iptal rozeti + SQL join
 4. Filtre URL hydrate (`?q=`)
 5. DemoImageSeed `DEMO-%` kod desteği
+
+## UI parity sprint (2026-05-25) — anasayfa referans
+
+- [x] U1 Kart `--radius-premium` + gölge (`otelliste_masaustu.css`)
+- [x] U2 Grid gap 24px, amenity pill token font
+- [x] U3 Mobil touch 44px (CTA, fav, pagination, drawer close)
+- [x] U4 Mobil drawer duplicate sıfırla/uygula gizleme
+- [x] U5 Konsept pill `border-radius: 999px`
+- [x] U6 Arama input token font, search row radius
+- [ ] U7 Kart hover galeri swipe (L1.15)
+- [ ] U8 Lead oda adı alt satır (L1.16)

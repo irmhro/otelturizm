@@ -789,6 +789,64 @@
     color: var(--od-crimson);
 }
 
+/* —— Yorumlar (masaüstü OTA düzeni) —— */
+.oteldetay-page .review-summary.review-summary--ota {
+    display: grid;
+    grid-template-columns: minmax(140px, 200px) minmax(0, 1fr);
+    gap: 24px;
+    align-items: start;
+    padding: 8px 0 16px;
+}
+
+.oteldetay-page .review-summary-score-col {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    gap: 8px;
+}
+
+.oteldetay-page .review-topic-strip {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin: 12px 0;
+}
+
+.oteldetay-page .review-topic-chip {
+    padding: 8px 14px;
+    border-radius: 999px;
+    border: 1px solid var(--od-border);
+    background: var(--od-bg);
+    font-size: var(--od-type-card-meta);
+    font-weight: 700;
+    color: var(--od-dark);
+    cursor: pointer;
+}
+
+.oteldetay-page .review-toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 16px;
+}
+
+.oteldetay-page .review-card {
+    padding: 16px 18px;
+    border-radius: var(--od-radius);
+    border: 1px solid var(--od-border);
+    background: #fff;
+    margin-bottom: 12px;
+}
+
+@media (max-width: 1100px) {
+    .oteldetay-page .od-similar-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
 @media (max-width: 900px) {
     .oteldetay-page .od-similar-grid {
         grid-template-columns: repeat(2, minmax(0, 1fr));

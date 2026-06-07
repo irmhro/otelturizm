@@ -21,8 +21,8 @@
     --otl-muted: var(--text-muted, #6E6E77);
     --otl-border: var(--border-subtle, #EBE9E4);
     --otl-bg: var(--bg-warm, #FCFBF9);
-    --otl-radius: 0;
-    --otl-card-radius: 0;
+    --otl-radius: var(--radius-premium, 16px);
+    --otl-card-radius: var(--radius-premium, 16px);
     --otl-type-section: var(--home-type-section, 22px);
     --otl-type-section-link: var(--home-type-section-link, 13px);
     --otl-type-card-title: var(--home-type-card-title, 14.5px);
@@ -34,8 +34,8 @@
     --otl-type-btn: var(--home-type-btn, 13px);
     --otl-btn-h: var(--home-btn-min-height, 40px);
     --otl-media-ratio: 52.5%;
-    --otl-shadow-card: 0 1px 0 rgba(26, 25, 25, 0.04);
-    --otl-shadow-card-hover: 0 8px 20px rgba(26, 25, 25, 0.08);
+    --otl-shadow-card: 0 6px 18px rgba(26, 25, 25, 0.04);
+    --otl-shadow-card-hover: 0 10px 24px rgba(26, 25, 25, 0.08);
     --otl-shadow-sidebar: none;
 
     font-family: inherit;
@@ -90,7 +90,7 @@
     padding: 0;
     background: #fff;
     border: 1px solid var(--otl-border);
-    border-radius: 0;
+    border-radius: var(--home-btn-radius, 8px);
     box-shadow: var(--otl-shadow-card);
 }
 
@@ -113,7 +113,7 @@
     min-width: 0;
     border: 0;
     background: transparent;
-    font-size: 15px;
+    font-size: var(--otl-type-input);
     font-weight: 600;
     font-family: inherit;
     color: var(--otl-dark);
@@ -540,7 +540,7 @@
     align-items: center;
     gap: 6px;
     padding: 8px 14px;
-    border-radius: 0;
+    border-radius: 999px;
     border: 1px solid var(--otl-border);
     background: #fff;
     font-size: var(--otl-type-card-meta);
@@ -571,7 +571,7 @@
 .otelliste-page .otelliste-hotel-grid {
     display: grid;
     grid-template-columns: repeat(4, minmax(0, 1fr));
-    gap: 16px;
+    gap: 24px;
 }
 
 .otelliste-page .otelliste-hotel-card {
@@ -662,8 +662,8 @@
     position: absolute;
     bottom: 10px;
     right: 10px;
-    width: 34px;
-    height: 34px;
+    width: 44px;
+    height: 44px;
     border-radius: 50%;
     border: 1px solid rgba(255, 255, 255, 0.65);
     background: rgba(255, 255, 255, 0.94);
@@ -728,7 +728,7 @@
     display: flex;
     flex-wrap: wrap;
     gap: 6px;
-    font-size: 11px;
+    font-size: var(--otl-type-card-meta);
     font-weight: 700;
     color: var(--otl-muted);
 }
@@ -738,7 +738,7 @@
     align-items: center;
     gap: 4px;
     padding: 3px 8px;
-    border-radius: 0;
+    border-radius: 999px;
     background: var(--otl-bg);
     border: 1px solid var(--otl-border);
 }

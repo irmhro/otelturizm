@@ -163,11 +163,11 @@
         width: 100%;
         min-height: var(--home-btn-min-height, 40px);
         padding: 0 12px;
-        border-radius: 0;
+        border-radius: var(--home-btn-radius, 8px);
         border: 1px solid var(--otl-border, #EBE9E4);
         background: #fff;
         font-weight: 700;
-        font-size: var(--otl-type-card-meta, 11px);
+        font-size: 13px;
         font-family: inherit;
         color: var(--otl-dark, #1A1919);
     }
@@ -243,8 +243,8 @@
     }
 
     .otelliste-page .otelliste-hotel-card {
-        border-radius: 0;
-        box-shadow: 0 1px 0 rgba(26, 25, 25, 0.04);
+        border-radius: var(--radius-premium, 16px);
+        box-shadow: var(--otl-shadow-card, 0 6px 18px rgba(26, 25, 25, 0.04));
     }
 
     .otelliste-page .otelliste-hotel-card:active {
@@ -273,18 +273,19 @@
     }
 
     .otelliste-page .otelliste-card-cta {
-        min-height: 34px;
-        padding: 0 14px;
+        min-height: 44px;
+        padding: 0 16px;
         display: inline-flex;
         align-items: center;
-        background: var(--otl-dark, #1A1919);
+        justify-content: center;
+        background: var(--otl-crimson, #E30A17);
         color: #fff;
-        border-radius: 0;
-        font-size: var(--otl-type-card-action, 12px);
+        border-radius: var(--home-btn-radius, 8px);
+        font-size: var(--otl-type-card-action, 13px);
     }
 
     .otelliste-page .otelliste-card-cta:hover {
-        background: var(--otl-crimson, #E30A17);
+        background: var(--otl-dark, #1A1919);
         color: #fff;
     }
 
@@ -335,10 +336,10 @@
     }
 
     .otelliste-page .otelliste-filter-drawer-close {
-        width: 38px;
-        height: 38px;
+        width: 44px;
+        height: 44px;
         border: 1px solid var(--otl-border, #EBE9E4);
-        border-radius: 0;
+        border-radius: var(--home-btn-radius, 8px);
         background: var(--otl-bg, #FCFBF9);
         font-size: 16px;
         cursor: pointer;
@@ -416,9 +417,20 @@
     }
 
     .otelliste-page .otelliste-pagination a {
-        min-width: 36px;
-        height: 36px;
-        font-size: var(--otl-type-card-meta, 11px);
+        min-width: 44px;
+        height: 44px;
+        font-size: var(--otl-type-card-meta, 12px);
+    }
+
+    /* Drawer gövdesindeki tekrarlayan sıfırla/uygula — footer kullanılır */
+    .otelliste-page .otelliste-filter-drawer-body > .otelliste-btn-reset,
+    .otelliste-page .otelliste-filter-drawer-body > .otelliste-btn-apply {
+        display: none;
+    }
+
+    .otelliste-page .otelliste-fav-btn {
+        width: 44px;
+        height: 44px;
     }
 
     .otelliste-page .otelliste-empty {

@@ -469,3 +469,13 @@ Dosya sözleşmesi: `OtelDetay.cshtml`, `oteldetay_masaustu.css`, `oteldetay_mob
 - Ücretsiz iptal quick fact chip
 - Demo Maidan yorum seed SQL
 
+## UI parity sprint (2026-05-25) — mobil + masaüstü
+
+- [x] **U-D1** Mobil galeri kart kabuğu (rounded shell, thumb strip, nav 44px)
+- [x] **U-D2** Breadcrumb geri link gizle (galeri chrome back)
+- [x] **U-D3** Yorumlar OTA layout CSS (mobil stack + masaüstü grid)
+- [x] **U-D4** Section headrow mobil stack + full-width aksiyon
+- [x] **U-D5** Sticky booking bar z-index 1020 + sheet grabber
+- [x] **U-D6** Benzer oteller 2-col @1100px
+- [ ] **U-D7** Legacy `otel-detay-world.css` token birleştirme
+- [ ] **U-D8** Desktop gallery overlap margin düzeltmesi

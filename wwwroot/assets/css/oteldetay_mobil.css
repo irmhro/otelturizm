@@ -27,6 +27,10 @@
         padding: 10px 0 8px;
     }
 
+    .oteldetay-page .detail-breadcrumb-left .detail-back-link {
+        display: none;
+    }
+
     .oteldetay-page .detail-breadcrumb-right {
         width: 100%;
         justify-content: flex-start;
@@ -41,23 +45,19 @@
         display: none;
     }
 
-    .oteldetay-page .detail-quick-action {
-        min-width: 38px;
-        justify-content: center;
-        padding: 8px 10px;
-    }
-
-    /* Masaüstü galeri gizle, mobil slider göster */
-    .oteldetay-page .gallery-grid.od-gallery--desktop,
-    .oteldetay-page .gallery-filmstrip-wrap {
-        display: none;
+    .oteldetay-page .gallery-swipe-hint {
+        display: none !important;
     }
 
     .oteldetay-page .od-gallery--mobile {
         display: block;
-        width: 100%;
-        margin: 0 0 12px;
         position: relative;
+        margin: 0 16px 14px;
+        padding: 12px;
+        background: #fff;
+        border-radius: 22px;
+        border: 1px solid var(--od-border, #EBE9E4);
+        box-shadow: 0 8px 24px rgba(26, 25, 25, 0.06);
     }
 
     .oteldetay-page .gallery-mobile-track {
@@ -66,6 +66,10 @@
         scroll-snap-type: x mandatory;
         scrollbar-width: none;
         -webkit-overflow-scrolling: touch;
+        height: clamp(240px, 56vw, 320px);
+        border-radius: 18px;
+        overflow: hidden;
+        background: #eceae6;
     }
 
     .oteldetay-page .gallery-mobile-slide {
@@ -73,11 +77,11 @@
         scroll-snap-align: start;
         border: 0;
         padding: 0;
-        height: 280px;
-        background: #eceae6;
+        height: 100%;
     }
 
     .oteldetay-page .gallery-mobile-slide img {
+        border-radius: 18px;
         width: 100%;
         height: 100%;
         object-fit: cover;
@@ -85,9 +89,9 @@
 
     .oteldetay-page .gallery-mobile-chrome {
         position: absolute;
-        top: 12px;
-        left: 12px;
-        right: 12px;
+        top: 24px;
+        left: 24px;
+        right: 24px;
         z-index: 4;
         display: flex;
         align-items: center;
@@ -101,8 +105,8 @@
     }
 
     .oteldetay-page .gallery-mobile-back {
-        width: 38px;
-        height: 38px;
+        width: 44px;
+        height: 44px;
         border-radius: 50%;
         background: rgba(255, 255, 255, 0.94);
         display: inline-flex;
@@ -120,6 +124,181 @@
         border-radius: 999px;
         font-size: 12px;
         font-weight: 800;
+    }
+
+    .oteldetay-page .gallery-mobile-nav {
+        position: absolute;
+        inset: 0;
+        z-index: 3;
+        pointer-events: none;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 0 10px;
+    }
+
+    .oteldetay-page .gallery-mobile-nav-btn {
+        pointer-events: auto;
+        width: 44px;
+        height: 44px;
+        border: 0;
+        border-radius: 50%;
+        background: rgba(26, 25, 25, 0.55);
+        color: #fff;
+        backdrop-filter: blur(8px);
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .oteldetay-page .gallery-mobile-back {
+        width: 44px;
+        height: 44px;
+    }
+
+    .oteldetay-page .gallery-mobile-footer {
+        margin-top: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
+        flex-wrap: wrap;
+    }
+
+    .oteldetay-page .gallery-mobile-thumbs {
+        display: flex;
+        gap: 8px;
+        overflow-x: auto;
+        flex: 1;
+        scrollbar-width: none;
+        padding-bottom: 2px;
+    }
+
+    .oteldetay-page .gallery-mobile-thumb {
+        flex: 0 0 56px;
+        width: 56px;
+        height: 56px;
+        border-radius: 12px;
+        overflow: hidden;
+        border: 2px solid transparent;
+        padding: 0;
+        background: transparent;
+    }
+
+    .oteldetay-page .gallery-mobile-thumb.active {
+        border-color: var(--od-crimson, #E30A17);
+    }
+
+    .oteldetay-page .gallery-mobile-thumb img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+
+    .oteldetay-page .gallery-mobile-all-photos {
+        min-height: 44px;
+        padding: 0 16px;
+        border-radius: 999px;
+        border: 1px solid var(--od-border, #EBE9E4);
+        background: var(--od-bg, #FCFBF9);
+        font-size: 12px;
+        font-weight: 700;
+        color: var(--od-dark, #1A1919);
+        white-space: nowrap;
+    }
+
+    .oteldetay-page .gallery-mobile-dots {
+        display: none;
+    }
+
+    .oteldetay-page .tabler-section-headrow {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 10px;
+    }
+
+    .oteldetay-page .tabler-section-actions {
+        width: 100%;
+    }
+
+    .oteldetay-page .tabler-section-actions .tabler-section-action-btn {
+        width: 100%;
+        min-height: 44px;
+        justify-content: center;
+    }
+
+    .oteldetay-page .review-summary.review-summary--ota {
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+        padding: 4px 0 12px;
+    }
+
+    .oteldetay-page .review-summary-score-col {
+        text-align: center;
+        align-items: center;
+    }
+
+    .oteldetay-page .review-topic-strip {
+        display: flex;
+        overflow-x: auto;
+        gap: 8px;
+        padding-bottom: 4px;
+        scrollbar-width: none;
+    }
+
+    .oteldetay-page .review-topic-chip {
+        flex-shrink: 0;
+        padding: 8px 14px;
+        border-radius: 999px;
+        border: 1px solid var(--od-border, #EBE9E4);
+        background: var(--od-bg, #FCFBF9);
+        font-size: 12px;
+        font-weight: 700;
+        color: var(--od-dark, #1A1919);
+    }
+
+    .oteldetay-page .review-toolbar {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        align-items: center;
+        margin-bottom: 12px;
+    }
+
+    .oteldetay-page .review-card {
+        padding: 14px;
+        border-radius: 16px;
+        border: 1px solid var(--od-border, #EBE9E4);
+        background: #fff;
+        margin-bottom: 12px;
+    }
+
+    .oteldetay-page .booking-card::before {
+        content: '';
+        display: block;
+        width: 40px;
+        height: 4px;
+        border-radius: 999px;
+        background: var(--od-border, #EBE9E4);
+        margin: 0 auto 14px;
+    }
+
+    .oteldetay-page .mobile-booking-bar {
+        z-index: 1020;
+    }
+
+    .oteldetay-page .detail-quick-action {
+        min-width: 44px;
+        min-height: 44px;
+        justify-content: center;
+        padding: 8px 12px;
+    }
+
+    /* Masaüstü galeri gizle, mobil slider göster */
+    .oteldetay-page .gallery-grid.od-gallery--desktop,
+    .oteldetay-page .gallery-filmstrip-wrap {
+        display: none;
     }
 
     /* Bilgi kartı */
