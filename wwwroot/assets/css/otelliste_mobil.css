@@ -5,6 +5,10 @@
         padding: 0 0 16px;
     }
 
+    .otelliste-page-shell.anasayfa-page .public-premium-main {
+        padding-top: 0;
+    }
+
     .otelliste-page-shell.anasayfa-page {
         --home-drawer-auth-h: 38px;
         --home-header-action-h: 40px;
@@ -52,11 +56,11 @@
     }
 
     .otelliste-page .otelliste-page-hero-inner {
-        padding: 8px 16px 10px;
+        padding: 6px 16px 8px;
     }
 
     .otelliste-page .otelliste-page-hero {
-        margin-bottom: 0;
+        margin: 0;
         border-bottom: 1px solid var(--otl-border, #EBE9E4);
         background: #fff;
     }
@@ -129,7 +133,7 @@
 
     .otelliste-page .otelliste-container {
         flex-direction: column;
-        padding: 12px 16px 0;
+        padding: 8px 16px 0;
         gap: 0;
         max-width: 100%;
     }
@@ -276,24 +280,35 @@
         outline: 0;
     }
 
-    /* Başlık alanı */
+    /* Başlık alanı — kompakt tek satır (flex-basis 240px boşluk fix) */
     .otelliste-page .otelliste-results-head {
-        flex-direction: column;
-        align-items: stretch;
-        margin-bottom: 8px;
+        flex-direction: row;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 6px;
         padding: 0;
-        gap: 6px;
+        gap: 8px;
         background: transparent;
         border: 0;
         box-shadow: none;
+        min-height: 0;
+    }
+
+    .otelliste-page .otelliste-page-title-wrap {
+        flex: 0 1 auto;
+        min-width: 0;
+        min-height: 0;
     }
 
     .otelliste-page .otelliste-results-meta {
-        justify-content: flex-start;
+        flex: 0 0 auto;
+        justify-content: flex-end;
+        margin-left: auto;
     }
 
     .otelliste-page .otelliste-page-title {
-        font-size: var(--otl-type-section, 20px);
+        font-size: var(--otl-type-section, 18px);
+        margin: 0;
     }
 
     .otelliste-page .otelliste-page-title::before {

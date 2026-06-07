@@ -2325,13 +2325,10 @@
             }
 
             function applyInlineBookingMode() {
-                if (!roomsCard || !(bookingSidebar instanceof HTMLElement)) {
-                    return;
-                }
+                /* Mobilde inline rezervasyon kapalı — her zaman bottom sheet popup */
+                rootShell?.classList.remove('booking-inline-mobile');
 
                 if (!isMobileBookingMode()) {
-                    rootShell?.classList.remove('booking-inline-mobile');
-                    // restore original DOM placement (desktop)
                     if (originalBackdropParent && bookingModalBackdrop instanceof HTMLElement) {
                         originalBackdropParent.insertBefore(bookingModalBackdrop, originalBackdropNext);
                     }
@@ -2341,24 +2338,12 @@
                     return;
                 }
 
-                // mobile: move booking right under rooms
-                rootShell?.classList.add('booking-inline-mobile');
-                bookingSidebar.classList.remove('is-open');
-                if (bookingModalBackdrop instanceof HTMLElement) {
-                    bookingModalBackdrop.hidden = true;
-                    bookingModalBackdrop.classList.remove('is-open');
+                if (originalBackdropParent && bookingModalBackdrop instanceof HTMLElement && bookingModalBackdrop.parentElement !== originalBackdropParent) {
+                    originalBackdropParent.insertBefore(bookingModalBackdrop, originalBackdropNext);
                 }
-                document.documentElement.classList.remove('modal-open');
-                document.body.classList.remove('modal-open');
-
-                const insertAfter = roomsCard;
-                const parent = insertAfter.parentElement;
-                if (!parent) return;
-
-                if (bookingModalBackdrop instanceof HTMLElement && bookingModalBackdrop.parentElement !== parent) {
-                    parent.insertBefore(bookingModalBackdrop, insertAfter.nextSibling);
+                if (originalBookingParent && bookingSidebar instanceof HTMLElement && bookingSidebar.parentElement !== originalBookingParent) {
+                    originalBookingParent.insertBefore(bookingSidebar, originalBookingNext);
                 }
-                parent.insertBefore(bookingSidebar, bookingModalBackdrop instanceof HTMLElement ? bookingModalBackdrop.nextSibling : insertAfter.nextSibling);
             }
 
             function openBookingSheet() {
@@ -2964,12 +2949,7 @@
                     scrollToBookingArea();
                     return;
                 }
-                if (isInlineBookingMode()) {
-                    scrollToBookingArea();
-                    return;
-                }
                 openBookingSheet();
-                setTimeout(scrollToBookingArea, 90);
             });
 
             bookingModalClose?.addEventListener('click', function () {
@@ -3096,25 +3076,38 @@
             })();
 
             function normalizeRoomItemDates(item) {
-                const todayText = '@todayDate';
+                if (window.otelturizmBookingDates && typeof window.otelturizmBookingDates.bindRoomItem === 'function') {
+                    window.otelturizmBookingDates.bindRoomItem(item);
+                    return;
+                }
+
                 const checkInEl = item?.querySelector('[data-field="checkIn"]');
                 const checkOutEl = item?.querySelector('[data-field="checkOut"]');
                 if (!checkInEl || !checkOutEl) {
                     return;
                 }
 
+                const todayText = (window.otelturizmBookingDates && window.otelturizmBookingDates.localToday)
+                    ? window.otelturizmBookingDates.localToday()
+                    : '@todayDate';
+
                 if (!checkInEl.value || checkInEl.value < todayText) {
                     checkInEl.value = todayText;
                 }
 
-                const checkInDate = new Date(checkInEl.value + 'T00:00:00');
+                checkInEl.min = todayText;
+
+                const parts = checkInEl.value.split('-').map(Number);
+                const checkInDate = new Date(parts[0], parts[1] - 1, parts[2]);
                 if (Number.isNaN(checkInDate.getTime())) {
                     return;
                 }
 
                 const minCheckOutDate = new Date(checkInDate);
                 minCheckOutDate.setDate(minCheckOutDate.getDate() + 1);
-                const minCheckOutText = minCheckOutDate.toISOString().slice(0, 10);
+                const minCheckOutText = minCheckOutDate.getFullYear() + '-'
+                    + String(minCheckOutDate.getMonth() + 1).padStart(2, '0') + '-'
+                    + String(minCheckOutDate.getDate()).padStart(2, '0');
                 checkOutEl.min = minCheckOutText;
                 if (!checkOutEl.value || checkOutEl.value <= checkInEl.value) {
                     checkOutEl.value = minCheckOutText;
@@ -3202,6 +3195,7 @@
                 normalizeRoomItemDates(appended);
                 bindRoomItemEvents(appended);
                 renumberRoomItems();
+                document.dispatchEvent(new CustomEvent('otelturizm:room-item-added', { detail: { item: appended } }));
             }
 
             addRoomBtn?.addEventListener('click', function () {
@@ -5033,6 +5027,7 @@
             setInterval(beat, 45000);
         })();
     </script>
+    <script src="~/assets/js/booking-date-guard.js" asp-append-version="true" defer></script>
     <script src="~/assets/js/oteldetay-detail-mobile.js" asp-append-version="true" defer></script>
     <script src="~/assets/js/otel-detay.js" asp-append-version="true"></script>
     <partial name="~/Views/Shared/_FavoriteToggleScriptPartial.cshtml" />

@@ -6,12 +6,12 @@
         flex-direction: column;
     }
 
-    .oteldetay-page .booking-sidebar.od-detail__booking:not(.is-open) {
-        visibility: hidden;
+    .oteldetay-page-shell.anasayfa-page .public-premium-main {
+        padding-top: 0;
     }
 
-    .oteldetay-page .booking-sidebar.od-detail__booking.is-open {
-        visibility: visible;
+    .oteldetay-page-shell .public-premium-main {
+        padding-top: 0;
     }
 
     .oteldetay-page-shell.anasayfa-page .oteldetay-page {
@@ -29,13 +29,75 @@
         max-width: 100%;
         display: flex;
         flex-direction: column;
+        gap: 0;
+    }
+
+    /* Overlay / modal katmanı — flex akışından çıkar (Misafir yorumu üstte görünme fix) */
+    .oteldetay-page > .detail-modal-backdrop,
+    .oteldetay-page > .review-modal,
+    .oteldetay-page > .review-insight-modal,
+    .oteldetay-page > .detail-modal,
+    .oteldetay-page > .room-pick-popover,
+    .oteldetay-page > .discount-modal,
+    .oteldetay-page > .booking-modal-backdrop,
+    .oteldetay-page > #profileCompletionModal,
+    .oteldetay-page > #weatherPopupBackdrop,
+    .oteldetay-page > #weatherPopup,
+    .oteldetay-page > #amenitiesModal,
+    .oteldetay-page > #roomDetailModal {
+        display: none !important;
+        position: fixed;
+        inset: 0;
+        order: 9999;
+        margin: 0;
+        width: auto;
+        max-width: none;
+    }
+
+    .oteldetay-page > .review-modal.is-open,
+    .oteldetay-page > .review-insight-modal.is-open,
+    .oteldetay-page > .detail-modal:not([hidden]),
+    .oteldetay-page > .room-pick-popover:not([hidden]),
+    .oteldetay-page > .discount-modal:not([hidden]),
+    .oteldetay-page > .booking-modal-backdrop.is-open,
+    .oteldetay-page > .booking-modal-backdrop:not([hidden]).is-open {
+        display: block !important;
+    }
+
+    .oteldetay-page > .detail-modal-backdrop:not([hidden]) {
+        display: block !important;
+        position: fixed;
+        inset: 0;
+        z-index: 1080;
+    }
+
+    .oteldetay-page > .review-modal.is-open {
+        z-index: 2100;
+    }
+
+    .oteldetay-page > .review-insight-modal.is-open {
+        z-index: 2150;
+    }
+
+    .oteldetay-page > .booking-modal-backdrop.is-open {
+        z-index: 1090;
     }
 
     .oteldetay-page .gallery-grid.od-gallery--desktop {
-        order: 0;
+        order: -1;
+        display: none !important;
+    }
+
+    .oteldetay-page .gallery-filmstrip-wrap {
+        order: -1;
+        display: none !important;
     }
 
     .oteldetay-page .od-gallery--mobile {
+        order: 0;
+    }
+
+    .oteldetay-page .detail-breadcrumb.detail-breadcrumb-with-weather {
         order: 1;
     }
 
@@ -43,20 +105,20 @@
         order: 2;
     }
 
-    .oteldetay-page .detail-breadcrumb.detail-breadcrumb-with-weather {
+    .oteldetay-page .od-quick-facts {
         order: 3;
     }
 
-    .oteldetay-page .od-quick-facts {
+    .oteldetay-page .detail-grid.od-detail__layout {
         order: 4;
     }
 
-    .oteldetay-page .detail-grid.od-detail__layout {
+    .oteldetay-page .booking-sidebar.od-detail__booking {
         order: 5;
     }
 
     .oteldetay-page .mobile-booking-bar {
-        order: 99;
+        order: 6;
     }
 
     .oteldetay-page *,
@@ -72,18 +134,18 @@
     .oteldetay-page .od-quick-facts,
     .oteldetay-page .detail-grid,
     .oteldetay-page .od-gallery--mobile {
-        width: calc(100% - 32px);
-        max-width: calc(100% - 32px);
+        width: 100%;
+        max-width: 100%;
         margin-left: auto;
         margin-right: auto;
     }
 
     .oteldetay-page .detail-breadcrumb {
-        padding: 0 16px 10px;
-        width: calc(100% - 32px);
-        margin: 0 auto;
-        background: transparent;
-        border: 0;
+        padding: 8px 16px;
+        width: 100%;
+        margin: 0;
+        background: #fff;
+        border-bottom: 1px solid var(--od-border, #EBE9E4);
         flex-direction: column;
         align-items: stretch;
         gap: 0;
@@ -190,12 +252,16 @@
     .oteldetay-page .od-gallery--mobile {
         display: block;
         position: relative;
-        margin: 0 auto 14px;
+        order: 0;
+        width: 100%;
+        max-width: 100%;
+        margin: 0 0 10px;
         padding: 0;
         background: #fff;
-        border-radius: 20px;
-        border: 1px solid var(--od-border, #EBE9E4);
-        box-shadow: 0 8px 24px rgba(26, 25, 25, 0.06);
+        border-radius: 0;
+        border: 0;
+        border-bottom: 1px solid var(--od-border, #EBE9E4);
+        box-shadow: none;
         overflow: hidden;
     }
 
@@ -470,11 +536,11 @@
     /* Bilgi kartı */
     .oteldetay-page .detail-header.hotel-title-section {
         padding: 14px 16px;
-        border-radius: 18px;
-        margin-top: 0;
-        width: calc(100% - 32px);
-        margin-left: auto;
-        margin-right: auto;
+        border-radius: 0;
+        margin: 0;
+        width: 100%;
+        background: #fff;
+        border-bottom: 1px solid var(--od-border, #EBE9E4);
     }
 
     .oteldetay-page .hotel-name h1 {
@@ -797,28 +863,7 @@
         line-height: 1.5;
     }
 
-    /* Rezervasyon sheet — gelişmiş mobil */
-    .oteldetay-page .booking-sidebar.od-detail__booking {
-        padding: 0 0 calc(env(safe-area-inset-bottom, 0px));
-    }
-
-    .oteldetay-page .booking-card {
-        border-radius: 20px 20px 0 0;
-        padding: 12px 16px 20px;
-        max-height: 92vh;
-        overflow-y: auto;
-    }
-
-    .oteldetay-page .booking-price-head--ota {
-        padding-bottom: 12px;
-        margin-bottom: 12px;
-        border-bottom: 1px solid var(--od-border, #EBE9E4);
-    }
-
-    .oteldetay-page .booking-price-total {
-        font-size: 26px;
-    }
-
+    /* Rezervasyon form alanları */
     .oteldetay-page .multi-room-item-grid {
         grid-template-columns: 1fr;
         gap: 10px;
@@ -1219,17 +1264,23 @@
         box-shadow: none;
     }
 
-    /* Sidebar rezervasyon — sheet modunda */
+    /* Sidebar rezervasyon — premium bottom sheet (popup) */
     .oteldetay-page .booking-sidebar.od-detail__booking {
         position: fixed;
         inset: auto 0 0 0;
         z-index: 1100;
-        transform: translateY(100%);
-        transition: transform 0.28s cubic-bezier(0.4, 0, 0.2, 1);
-        max-height: 92vh;
-        overflow-y: auto;
-        padding: 0 16px calc(16px + env(safe-area-inset-bottom, 0px));
+        transform: translateY(calc(100% + 12px));
+        transition: transform 0.32s cubic-bezier(0.32, 0.72, 0, 1);
+        max-height: min(92vh, 760px);
+        overflow: visible;
+        padding: 0;
+        margin: 0;
+        width: 100%;
+        max-width: 100%;
         pointer-events: none;
+        background: transparent;
+        box-shadow: none;
+        visibility: visible;
     }
 
     .oteldetay-page .booking-sidebar.od-detail__booking.is-open {
@@ -1237,24 +1288,134 @@
         pointer-events: auto;
     }
 
+    .oteldetay-page .booking-sidebar.od-detail__booking:not(.is-open) {
+        visibility: visible;
+    }
+
+    .oteldetay-page .booking-sheet-handle {
+        width: 44px;
+        height: 5px;
+        margin: 0 auto 8px;
+        border-radius: 999px;
+        background: rgba(26, 25, 25, 0.18);
+        flex-shrink: 0;
+    }
+
     .oteldetay-page .booking-card {
-        border-radius: 22px 22px 0 0;
-        padding: 20px 16px;
+        border-radius: 24px 24px 0 0;
+        padding: 0 16px calc(20px + env(safe-area-inset-bottom, 0px));
+        max-height: min(88vh, 720px);
+        overflow-y: auto;
+        -webkit-overflow-scrolling: touch;
+        background: #fff;
+        border: 1px solid var(--od-border, #EBE9E4);
+        border-bottom: 0;
+        box-shadow: 0 -20px 60px rgba(26, 25, 25, 0.14);
+    }
+
+    .oteldetay-page .booking-card::before {
+        display: none;
+    }
+
+    .oteldetay-page .booking-modal-close {
+        position: absolute;
+        top: 12px;
+        right: 12px;
+        z-index: 2;
+        width: 40px;
+        height: 40px;
+        border: 0;
+        border-radius: 999px;
+        background: rgba(26, 25, 25, 0.06);
+        color: var(--od-dark, #1A1919);
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .oteldetay-page .booking-price-head--ota {
+        padding: 16px 44px 14px 0;
+        margin-bottom: 12px;
+        border-bottom: 1px solid var(--od-border, #EBE9E4);
+    }
+
+    .oteldetay-page .booking-price-total {
+        font-size: 28px;
+        font-weight: 900;
+        color: var(--od-crimson, #E30A17);
+        letter-spacing: -0.02em;
+    }
+
+    .oteldetay-page .booking-price-unit,
+    .oteldetay-page .booking-price-tax-note {
+        font-size: 11px;
+        line-height: 1.4;
+        color: var(--od-muted, #6E6E77);
+    }
+
+    .oteldetay-page .multi-room-head {
+        margin-bottom: 10px;
+    }
+
+    .oteldetay-page .multi-room-item {
+        border: 1px solid var(--od-border, #EBE9E4);
+        border-radius: 14px;
+        padding: 12px;
+        margin-bottom: 10px;
+        background: var(--od-bg, #FCFBF9);
+    }
+
+    .oteldetay-page .multi-room-item-grid label > span {
+        font-size: 11px;
+        font-weight: 700;
+        color: var(--od-muted, #6E6E77);
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+    }
+
+    .oteldetay-page .booking-submit-btn,
+    .oteldetay-page .booking-card .reserve-btn,
+    .oteldetay-page .booking-card .btn-primary {
+        width: 100%;
+        min-height: 52px;
+        border-radius: 14px;
+        font-size: 15px;
+        font-weight: 800;
+        background: var(--od-crimson, #E30A17);
+        box-shadow: 0 12px 28px rgba(227, 10, 23, 0.24);
     }
 
     .oteldetay-page .booking-modal-backdrop {
         position: fixed;
         inset: 0;
         z-index: 1090;
-        background: rgba(26, 25, 25, 0.48);
+        background: rgba(26, 25, 25, 0.52);
+        backdrop-filter: blur(6px);
+        -webkit-backdrop-filter: blur(6px);
         opacity: 0;
         pointer-events: none;
-        transition: opacity 0.25s ease;
+        transition: opacity 0.28s ease;
     }
 
-    .oteldetay-page .booking-modal-backdrop:not([hidden]) {
+    .oteldetay-page .booking-modal-backdrop.is-open {
         opacity: 1;
         pointer-events: auto;
+    }
+
+    .oteldetay-page .detail-grid.od-detail__layout {
+        width: 100%;
+        padding: 0 16px;
+        gap: 14px;
+    }
+
+    .oteldetay-page .content-card {
+        border-radius: 16px;
+        margin-bottom: 12px;
+    }
+
+    .oteldetay-page .od-quick-facts {
+        padding: 0 16px 10px;
+        margin: 0 0 8px;
     }
 
     /* Mobil alt menü — 2 satır: fiyat özeti + tam genişlik CTA */
