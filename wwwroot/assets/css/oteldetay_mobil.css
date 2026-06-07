@@ -84,6 +84,85 @@
         z-index: 1080;
     }
 
+    /* Bilgilendirme / profil / onay popup — ortalanmış kart (inset:0 full-screen fix) */
+    .oteldetay-page > #detailInfoModal.detail-info-modal,
+    .oteldetay-page > #profileCompletionModal.detail-profile-modal,
+    .oteldetay-page > #reservationConfirmModal.detail-confirm-modal {
+        position: fixed !important;
+        inset: auto !important;
+        top: 50% !important;
+        left: 50% !important;
+        right: auto !important;
+        bottom: auto !important;
+        width: min(360px, calc(100% - 32px)) !important;
+        max-width: calc(100% - 32px) !important;
+        max-height: min(88vh, 560px) !important;
+        height: auto !important;
+        margin: 0 !important;
+        padding: 18px 16px 16px !important;
+        border-radius: 18px !important;
+        background: #fff !important;
+        border: 1px solid var(--od-border, #EBE9E4) !important;
+        box-shadow: 0 24px 60px rgba(15, 23, 42, 0.28) !important;
+        overflow: auto !important;
+        z-index: 2200 !important;
+        opacity: 0;
+        transform: translate(-50%, -48%) scale(0.96);
+        transition: opacity 0.18s ease, transform 0.18s ease;
+    }
+
+    .oteldetay-page > #detailInfoModal.detail-info-modal.is-open,
+    .oteldetay-page > #profileCompletionModal.detail-profile-modal.is-open,
+    .oteldetay-page > #reservationConfirmModal.detail-confirm-modal.is-open {
+        display: flex !important;
+        flex-direction: column !important;
+        opacity: 1 !important;
+        transform: translate(-50%, -50%) scale(1) !important;
+    }
+
+    .oteldetay-page > #detailActionBackdrop.is-open {
+        z-index: 2190 !important;
+    }
+
+    .oteldetay-page > #detailInfoModal .detail-modal-head h3 {
+        font-size: 1.15rem !important;
+        line-height: 1.25 !important;
+    }
+
+    .oteldetay-page > #detailInfoModal .detail-modal-copy {
+        margin: 0 0 14px !important;
+        font-size: 0.92rem !important;
+        line-height: 1.5 !important;
+        color: var(--od-muted, #6E6E77) !important;
+    }
+
+    .oteldetay-page > #detailInfoModal .detail-modal-actions {
+        display: flex !important;
+        flex-direction: column !important;
+        gap: 8px !important;
+        width: 100% !important;
+    }
+
+    .oteldetay-page > #detailInfoModal .detail-modal-actions .detail-modal-primary,
+    .oteldetay-page > #detailInfoModal .detail-modal-actions .detail-modal-secondary {
+        width: 100% !important;
+        min-height: 44px !important;
+        justify-content: center !important;
+        text-align: center !important;
+    }
+
+    .oteldetay-page > #detailInfoModal.detail-info-modal {
+        position: fixed !important;
+        padding-top: 42px !important;
+    }
+
+    .oteldetay-page > #detailInfoModal > .detail-modal-close {
+        position: absolute;
+        top: 12px;
+        right: 12px;
+        z-index: 2;
+    }
+
     .oteldetay-page > .review-modal.is-open {
         z-index: 2100;
     }
