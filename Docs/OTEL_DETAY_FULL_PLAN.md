@@ -2,6 +2,8 @@
 
 Dosya sözleşmesi: `OtelDetay.cshtml`, `oteldetay_masaustu.css`, `oteldetay_mobil.css`, partial `_OtelDetay*`.
 
+**Mobil alt plan (200 madde):** [OTEL_DETAY_MOBILE_FULL_PLAN.md](./OTEL_DETAY_MOBILE_FULL_PLAN.md)
+
 ## D0 — Altyapı — route, service, cache
 
 - [ ] **D0.01** Route `/oteller/{slug}` + i18n prefix

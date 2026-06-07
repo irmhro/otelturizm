@@ -24,6 +24,14 @@
 
     .oteldetay-page {
         padding-bottom: calc(88px + env(safe-area-inset-bottom, 0px));
+        overflow-x: clip;
+        max-width: 100%;
+    }
+
+    .oteldetay-page *,
+    .oteldetay-page *::before,
+    .oteldetay-page *::after {
+        box-sizing: border-box;
     }
 
     .oteldetay-page .detail-breadcrumb,
@@ -31,8 +39,12 @@
     .oteldetay-page .gallery-filmstrip-wrap,
     .oteldetay-page .detail-header,
     .oteldetay-page .od-quick-facts,
-    .oteldetay-page .detail-grid {
+    .oteldetay-page .detail-grid,
+    .oteldetay-page .od-gallery--mobile {
         width: calc(100% - 32px);
+        max-width: calc(100% - 32px);
+        margin-left: auto;
+        margin-right: auto;
     }
 
     .oteldetay-page .detail-breadcrumb {
@@ -64,12 +76,41 @@
     .oteldetay-page .od-gallery--mobile {
         display: block;
         position: relative;
-        margin: 0 16px 14px;
-        padding: 12px;
+        margin: 0 auto 14px;
+        padding: 0;
         background: #fff;
-        border-radius: 22px;
+        border-radius: 20px;
         border: 1px solid var(--od-border, #EBE9E4);
         box-shadow: 0 8px 24px rgba(26, 25, 25, 0.06);
+        overflow: hidden;
+    }
+
+    .oteldetay-page .gallery-star-badge,
+    .oteldetay-page .gallery-star-badge.gallery-star-badge-mobile {
+        position: absolute;
+        left: 12px;
+        bottom: 72px;
+        top: auto;
+        z-index: 5;
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        padding: 6px 10px;
+        border-radius: 999px;
+        background: rgba(15, 23, 42, 0.72);
+        color: #fbbf24;
+        border: 1px solid rgba(251, 191, 36, 0.28);
+        font-size: 11px;
+        font-weight: 900;
+        line-height: 1;
+        backdrop-filter: blur(8px);
+        -webkit-backdrop-filter: blur(8px);
+        box-shadow: 0 10px 22px rgba(15, 23, 42, 0.18);
+        pointer-events: none;
+    }
+
+    .oteldetay-page .gallery-star-badge i {
+        color: #fbbf24;
     }
 
     .oteldetay-page .gallery-mobile-track {
@@ -78,8 +119,11 @@
         scroll-snap-type: x mandatory;
         scrollbar-width: none;
         -webkit-overflow-scrolling: touch;
-        height: clamp(240px, 56vw, 320px);
-        border-radius: 18px;
+        width: 100%;
+        height: auto;
+        aspect-ratio: 4 / 3;
+        max-height: min(56vw, 300px);
+        border-radius: 0;
         overflow: hidden;
         background: #eceae6;
     }
@@ -93,17 +137,18 @@
     }
 
     .oteldetay-page .gallery-mobile-slide img {
-        border-radius: 18px;
+        border-radius: 0;
         width: 100%;
         height: 100%;
         object-fit: cover;
+        display: block;
     }
 
     .oteldetay-page .gallery-mobile-chrome {
         position: absolute;
-        top: 24px;
-        left: 24px;
-        right: 24px;
+        top: 12px;
+        left: 12px;
+        right: 12px;
         z-index: 4;
         display: flex;
         align-items: center;
@@ -169,12 +214,14 @@
     }
 
     .oteldetay-page .gallery-mobile-footer {
-        margin-top: 12px;
+        margin-top: 0;
+        padding: 10px 12px 12px;
         display: flex;
         align-items: center;
         justify-content: space-between;
         gap: 10px;
-        flex-wrap: wrap;
+        flex-wrap: nowrap;
+        background: #fff;
     }
 
     .oteldetay-page .gallery-mobile-thumbs {
@@ -376,21 +423,266 @@
         grid-template-columns: 1fr;
     }
 
-    /* Oda kartları dikey */
-    .oteldetay-page .room-card-main.od-room-card__body {
+    /* Oda kartları — M-v2: sabit en-boy oranı, thumb şeridi, fiyat foot */
+    .oteldetay-page #roomsCard .room-list {
+        display: flex;
         flex-direction: column;
+        gap: 14px;
     }
 
-    .oteldetay-page .room-card-media {
+    .oteldetay-page #roomsCard .room-card.od-room-card {
+        display: flex;
+        flex-direction: column;
+        border: 1px solid var(--od-border, #EBE9E4);
+        border-radius: 18px;
+        overflow: hidden;
+        background: #fff;
+        box-shadow: 0 6px 18px rgba(26, 25, 25, 0.05);
+    }
+
+    .oteldetay-page #roomsCard .room-card-main.od-room-card__body {
+        display: flex;
+        flex-direction: column;
+        gap: 0;
+        min-width: 0;
+    }
+
+    .oteldetay-page #roomsCard .room-card-media {
         width: 100%;
+        min-width: 0;
+        max-width: 100%;
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        padding: 12px 12px 0;
+        background: transparent;
+        overflow: visible;
     }
 
-    .oteldetay-page .room-card-cover img {
-        min-height: 180px;
+    .oteldetay-page #roomsCard .room-card-cover {
+        position: relative;
+        width: 100%;
+        aspect-ratio: 16 / 10;
+        border-radius: 14px;
+        overflow: hidden;
+        background: #eceae6;
+        border: 1px solid rgba(235, 233, 228, 0.9);
     }
 
-    .oteldetay-page .od-room-card__content {
-        padding: 16px;
+    .oteldetay-page #roomsCard .room-card-cover .room-gallery-trigger {
+        display: block;
+        width: 100%;
+        height: 100%;
+        padding: 0;
+        margin: 0;
+        border: 0;
+        background: transparent;
+        cursor: pointer;
+    }
+
+    .oteldetay-page #roomsCard .room-card-cover img {
+        width: 100%;
+        height: 100%;
+        min-height: unset;
+        max-height: none;
+        object-fit: cover;
+        display: block;
+    }
+
+    .oteldetay-page #roomsCard .room-gallery-count {
+        position: absolute;
+        top: 10px;
+        right: 10px;
+        z-index: 2;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 6px 10px;
+        border-radius: 999px;
+        background: rgba(255, 255, 255, 0.94);
+        border: 1px solid rgba(235, 233, 228, 0.95);
+        color: var(--od-dark, #1A1919);
+        font-size: 11px;
+        font-weight: 800;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+    }
+
+    .oteldetay-page #roomsCard .room-thumb-strip {
+        display: flex;
+        gap: 8px;
+        overflow-x: auto;
+        overflow-y: hidden;
+        padding: 0 0 4px;
+        margin: 0;
+        scroll-snap-type: x mandatory;
+        -webkit-overflow-scrolling: touch;
+        scrollbar-width: none;
+    }
+
+    .oteldetay-page #roomsCard .room-thumb-strip::-webkit-scrollbar {
+        display: none;
+    }
+
+    .oteldetay-page #roomsCard .room-thumb-item {
+        flex: 0 0 56px;
+        width: 56px;
+        height: 56px;
+        border: 2px solid transparent;
+        border-radius: 12px;
+        overflow: hidden;
+        padding: 0;
+        background: #fff;
+        scroll-snap-align: start;
+        opacity: 0.88;
+    }
+
+    .oteldetay-page #roomsCard .room-thumb-item.active {
+        opacity: 1;
+        border-color: var(--od-crimson, #E30A17);
+        box-shadow: 0 4px 12px rgba(227, 10, 23, 0.18);
+    }
+
+    .oteldetay-page #roomsCard .room-thumb-item img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        display: block;
+    }
+
+    .oteldetay-page #roomsCard .od-room-card__content {
+        padding: 14px 16px 12px;
+        min-width: 0;
+    }
+
+    .oteldetay-page #roomsCard .od-room-card__title {
+        font-size: 1.05rem;
+        line-height: 1.25;
+    }
+
+    .oteldetay-page #roomsCard .od-room-card__meta {
+        margin-top: 8px;
+    }
+
+    .oteldetay-page #roomsCard .od-room-card__specs {
+        font-size: 0.82rem;
+        line-height: 1.45;
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+    }
+
+    .oteldetay-page #roomsCard .room-feature-row {
+        margin-top: 10px;
+    }
+
+    .oteldetay-page #roomsCard .room-feature-list {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px 10px;
+    }
+
+    .oteldetay-page #roomsCard .room-feature-item {
+        font-size: 0.78rem;
+    }
+
+    .oteldetay-page #roomsCard .room-card-aux {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 8px 12px;
+        margin-top: 10px;
+    }
+
+    .oteldetay-page #roomsCard .room-detail-btn--link {
+        min-height: 40px;
+        padding: 0;
+        font-size: 0.82rem;
+        font-weight: 700;
+    }
+
+    .oteldetay-page #roomsCard .cancellation-badge {
+        font-size: 0.78rem;
+    }
+
+    .oteldetay-page #roomsCard .room-price-box.od-room-card__pricing {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) auto;
+        grid-template-areas: "price cta";
+        align-items: center;
+        gap: 10px 14px;
+        padding: 14px 16px;
+        margin: 0;
+        min-width: 0;
+        border-top: 1px solid var(--od-border, #EBE9E4);
+        background: linear-gradient(180deg, #fff 0%, #fcfbfa 100%);
+        text-align: left;
+    }
+
+    .oteldetay-page #roomsCard .room-price-value {
+        grid-area: price;
+        display: flex;
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 2px;
+        width: auto;
+    }
+
+    .oteldetay-page #roomsCard .room-price-kicker {
+        font-size: 0.68rem;
+        font-weight: 700;
+        color: #64748b;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+    }
+
+    .oteldetay-page #roomsCard .room-price-box strong {
+        font-size: 1.25rem;
+        line-height: 1.1;
+        color: var(--od-dark, #1A1919);
+    }
+
+    .oteldetay-page #roomsCard .room-price-old {
+        font-size: 0.82rem;
+        color: #94a3b8;
+        text-decoration: line-through;
+    }
+
+    .oteldetay-page #roomsCard .room-price-discount-pill {
+        display: inline-flex;
+        padding: 2px 8px;
+        border-radius: 999px;
+        background: rgba(227, 10, 23, 0.1);
+        color: var(--od-crimson, #E30A17);
+        font-size: 0.72rem;
+        font-weight: 800;
+    }
+
+    .oteldetay-page #roomsCard .room-price-actions {
+        grid-area: cta;
+        display: flex;
+        justify-content: flex-end;
+        width: auto;
+        margin: 0;
+    }
+
+    .oteldetay-page #roomsCard .select-room-btn {
+        min-height: 44px;
+        min-width: 120px;
+        padding: 0 18px;
+        border-radius: 999px;
+        border: 0;
+        background: var(--od-crimson, #E30A17);
+        color: #fff;
+        font-size: 0.82rem;
+        font-weight: 800;
+        white-space: nowrap;
+        box-shadow: 0 8px 20px rgba(227, 10, 23, 0.22);
+    }
+
+    .oteldetay-page #roomsCard .select-room-btn:disabled {
+        background: #94a3b8;
+        box-shadow: none;
     }
 
     /* Sidebar rezervasyon — sheet modunda */
