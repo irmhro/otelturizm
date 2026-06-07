@@ -192,4 +192,6 @@ Mevcut `otelliste-*` tasarımı korunarak DB-first liste, filtre, harita ve SEO 
 | B3 | Mobilde filtre barı görünmüyordu | `otelliste_mobil.css` yükleme + `display:flex !important` |
 | B4 | Masaüstü: sidebar filtre + grid OK | — |
 | B5 | Mobil: drawer filtre + sticky bar + tek sütun kart | CSS dosyası fix sonrası doğrulandı |
+
+**Mobil 200 maddelik plan:** [OTEL_LISTELEME_MOBILE_FULL_PLAN.md](OTEL_LISTELEME_MOBILE_FULL_PLAN.md) — M-v2 yatay kart, amenity scroll, CTA foot (2026-05-25)
 - [x] U8 Lead oda adı alt satır (L1.16)
