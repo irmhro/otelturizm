@@ -231,6 +231,7 @@
       crossorigin="anonymous" />
 <link rel="stylesheet" href="~/assets/css/otel-detay-reservation.css" asp-append-version="true" />
 <link rel="stylesheet" href="~/assets/css/otel-detay-world.css" asp-append-version="true" />
+<link rel="stylesheet" href="~/assets/css/otel-detay-mobile-lock.css" asp-append-version="true" media="(max-width: 900px)" />
 }
 
 <div class="oteldetay-page otel-detail-template-v41 otel-detail-tabler od-detail"
@@ -780,7 +781,8 @@
         };
     }).ToList();
 
-    var reviewFeedPayload = sortedReviews.Select(r =>
+    var reviewFeedSource = (Model.Reviews ?? new List<otelturizmnew.Models.Oteller.HotelReviewViewModel>()).ToList();
+    var reviewFeedPayload = reviewFeedSource.Select((r, order) =>
     {
         var normalized = NormalizeReviewText(r.Text);
         var topicKeys = reviewTopicDefinitions
@@ -790,10 +792,14 @@
             .ToList();
         return new
         {
+            order,
             name = MaskName(r.Name),
             date = r.DateText,
             score = r.Score.ToString("0.0", System.Globalization.CultureInfo.InvariantCulture),
+            scoreNum = r.Score,
             text = FixMojibake(r.Text),
+            avatar = !string.IsNullOrWhiteSpace(r.Avatar) ? r.Avatar : "OT",
+            reservationTail = r.ReservationNoTail,
             topics = topicKeys
         };
     }).ToList();
@@ -1207,65 +1213,6 @@
 
             @* Oda galeri modalı kaldırıldı: ortak SlaytGorsel kullanılıyor *@
 
-            <section class="detail-modal room-detail-modal" id="roomDetailModal" hidden aria-hidden="true" role="dialog" aria-modal="true" aria-labelledby="roomDetailModalTitle">
-                <div class="detail-modal-head room-detail-modal-head">
-                    <div>
-                        <span class="detail-modal-kicker">Oda Detayı</span>
-                        <h3 id="roomDetailModalTitle">Oda özellikleri</h3>
-                    </div>
-                    <button type="button" class="detail-modal-close" data-close-modal="roomDetailModal" aria-label="Kapat">
-                        <i class="fas fa-times"></i>
-                    </button>
-                </div>
-                <div class="room-detail-modal-body">
-                    <div class="room-detail-modal-summary">
-                        <div class="room-detail-modal-copy">
-                            <strong id="roomDetailModalRoomName">Seçilen oda</strong>
-                            <p id="roomDetailModalSpecs">Oda detayları burada gösterilir.</p>
-                            <p class="room-detail-modal-description" id="roomDetailModalDescription">Oda sunumu burada gösterilir.</p>
-                        </div>
-                        <div class="room-detail-modal-meta">
-                            <span class="room-detail-modal-badge" id="roomDetailModalGalleryBadge">0 görsel</span>
-                            <span class="room-detail-modal-badge" id="roomDetailModalFeatureBadge">0 özellik</span>
-                            <button type="button" class="room-detail-modal-gallery-open" id="roomDetailModalGalleryOpen">
-                                <i class="fas fa-images"></i>
-                                Slaytı Aç
-                            </button>
-                        </div>
-                    </div>
-                    <div class="room-detail-modal-stats" id="roomDetailModalStats">
-                        <div class="room-detail-modal-stat">
-                            <span>Yatak Tipi</span>
-                            <strong id="roomDetailModalBedType">-</strong>
-                        </div>
-                        <div class="room-detail-modal-stat">
-                            <span>Metrekare</span>
-                            <strong id="roomDetailModalSquareMeter">-</strong>
-                        </div>
-                        <div class="room-detail-modal-stat">
-                            <span>Kapasite</span>
-                            <strong id="roomDetailModalCapacity">-</strong>
-                        </div>
-                        <div class="room-detail-modal-stat room-detail-modal-stat-price">
-                            <span>Fiyat</span>
-                            <strong id="roomDetailModalPrice">-</strong>
-                            <small>Vergiler dahil</small>
-                        </div>
-                    </div>
-                    <div class="room-detail-modal-note" id="roomDetailModalCancellation">Koşullar rezervasyon adımında yeniden doğrulanır.</div>
-                    <div class="room-detail-modal-section">
-                        <div class="room-detail-modal-section-head">
-                            <h4>Oda özellikleri</h4>
-                            <span>Tüm mevcut özellikler</span>
-                        </div>
-                        <div class="room-detail-modal-grid" id="roomDetailModalGrid"></div>
-                    </div>
-                    <div class="room-detail-modal-actions">
-                        <button type="button" class="room-detail-modal-secondary" data-close-modal="roomDetailModal">Kapat</button>
-                        <button type="button" class="room-detail-modal-primary" id="roomDetailModalSelectBtn">Odayı Seç</button>
-                    </div>
-                </div>
-            </section>
         </article>
 
         <article class="content-card od-section od-section--reviews" id="reviewsSection">
@@ -1757,6 +1704,66 @@
 }
 
 <div class="detail-modal-backdrop" id="detailActionBackdrop" hidden></div>
+
+<section class="detail-modal room-detail-modal" id="roomDetailModal" hidden aria-hidden="true" role="dialog" aria-modal="true" aria-labelledby="roomDetailModalTitle">
+    <div class="detail-modal-head room-detail-modal-head">
+        <div>
+            <span class="detail-modal-kicker">Oda Detayı</span>
+            <h3 id="roomDetailModalTitle">Oda özellikleri</h3>
+        </div>
+        <button type="button" class="detail-modal-close" data-close-modal="roomDetailModal" aria-label="Kapat">
+            <i class="fas fa-times"></i>
+        </button>
+    </div>
+    <div class="room-detail-modal-body">
+        <div class="room-detail-modal-summary">
+            <div class="room-detail-modal-copy">
+                <strong id="roomDetailModalRoomName">Seçilen oda</strong>
+                <p id="roomDetailModalSpecs">Oda detayları burada gösterilir.</p>
+                <p class="room-detail-modal-description" id="roomDetailModalDescription">Oda sunumu burada gösterilir.</p>
+            </div>
+            <div class="room-detail-modal-meta">
+                <span class="room-detail-modal-badge" id="roomDetailModalGalleryBadge">0 görsel</span>
+                <span class="room-detail-modal-badge" id="roomDetailModalFeatureBadge">0 özellik</span>
+                <button type="button" class="room-detail-modal-gallery-open" id="roomDetailModalGalleryOpen">
+                    <i class="fas fa-images"></i>
+                    Slaytı Aç
+                </button>
+            </div>
+        </div>
+        <div class="room-detail-modal-stats" id="roomDetailModalStats">
+            <div class="room-detail-modal-stat">
+                <span>Yatak Tipi</span>
+                <strong id="roomDetailModalBedType">-</strong>
+            </div>
+            <div class="room-detail-modal-stat">
+                <span>Metrekare</span>
+                <strong id="roomDetailModalSquareMeter">-</strong>
+            </div>
+            <div class="room-detail-modal-stat">
+                <span>Kapasite</span>
+                <strong id="roomDetailModalCapacity">-</strong>
+            </div>
+            <div class="room-detail-modal-stat room-detail-modal-stat-price">
+                <span>Fiyat</span>
+                <strong id="roomDetailModalPrice">-</strong>
+                <small>Vergiler dahil</small>
+            </div>
+        </div>
+        <div class="room-detail-modal-note" id="roomDetailModalCancellation">Koşullar rezervasyon adımında yeniden doğrulanır.</div>
+        <div class="room-detail-modal-section">
+            <div class="room-detail-modal-section-head">
+                <h4>Oda özellikleri</h4>
+                <span>Tüm mevcut özellikler</span>
+            </div>
+            <div class="room-detail-modal-grid" id="roomDetailModalGrid"></div>
+        </div>
+        <div class="room-detail-modal-actions">
+            <button type="button" class="room-detail-modal-secondary" data-close-modal="roomDetailModal">Kapat</button>
+            <button type="button" class="room-detail-modal-primary" id="roomDetailModalSelectBtn">Odayı Seç</button>
+        </div>
+    </div>
+</section>
 
 <div class="review-modal" id="reviewModal" aria-hidden="true">
     <div class="review-modal-backdrop" data-review-modal-close></div>
@@ -4972,31 +4979,76 @@
             })();
 
             const reviewSortSelect = document.getElementById('reviewSortSelect');
-            reviewSortSelect?.addEventListener('change', function () {
-                const url = new URL(window.location.href);
-                url.searchParams.set('reviewSort', reviewSortSelect.value || 'new');
-                url.searchParams.set('reviewPage', '1');
-                const reviewDynamic = document.getElementById('reviewSectionDynamic');
+            const reviewDynamic = document.getElementById('reviewSectionDynamic');
+            const reviewFeedPayloadEl = document.getElementById('reviewFeedPayloadJson');
+            const reviewVerifiedLabel = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(SharedLocalizer["Detail.Review.Verified"].Value));
+            let reviewFeedItems = [];
+            try {
+                reviewFeedItems = JSON.parse(reviewFeedPayloadEl?.textContent || '[]');
+            } catch (_) {
+                reviewFeedItems = [];
+            }
+
+            function sortReviewFeedItems(items, sortValue) {
+                const copy = (items || []).slice();
+                if (sortValue === 'best') {
+                    copy.sort(function (a, b) { return (parseFloat(b?.score) || 0) - (parseFloat(a?.score) || 0); });
+                } else if (sortValue === 'worst') {
+                    copy.sort(function (a, b) { return (parseFloat(a?.score) || 0) - (parseFloat(b?.score) || 0); });
+                } else if (sortValue === 'old') {
+                    copy.sort(function (a, b) { return (a?.order || 0) - (b?.order || 0); });
+                } else {
+                    copy.sort(function (a, b) { return (b?.order || 0) - (a?.order || 0); });
+                }
+                return copy;
+            }
+
+            function renderReviewFeedList(sortValue) {
                 if (!reviewDynamic) {
-                    window.location.href = url.toString();
                     return;
                 }
 
-                fetch(url.toString(), { headers: { 'X-Requested-With': 'XMLHttpRequest' } })
-                    .then(function (r) { return r.text(); })
-                    .then(function (html) {
-                        const doc = new DOMParser().parseFromString(html, 'text/html');
-                        const next = doc.getElementById('reviewSectionDynamic');
-                        if (!next) {
-                            window.location.href = url.toString();
-                            return;
-                        }
-                        reviewDynamic.innerHTML = next.innerHTML;
-                        initReviewReadMore();
-                    })
-                    .catch(function () {
-                        window.location.href = url.toString();
-                    });
+                const sorted = sortReviewFeedItems(reviewFeedItems, sortValue || 'new');
+                const pageItems = sorted.slice(0, 10);
+                if (pageItems.length === 0) {
+                    reviewDynamic.innerHTML = '<div class="review-card"><p>Bu tesis icin onayli misafir yorumu bulunmuyor.</p></div>';
+                    return;
+                }
+
+                reviewDynamic.innerHTML = '<div class="review-list">' + pageItems.map(function (item) {
+                    const verified = item?.reservationTail
+                        ? '<span class="review-verified-badge"><i class="fas fa-circle-check" aria-hidden="true"></i> ' + escapeHtml(reviewVerifiedLabel) + '</span>'
+                        : '';
+                    return '<article class="review-card">' +
+                        '<div class="review-meta">' +
+                            '<div class="review-meta-author">' +
+                                '<span class="review-avatar" aria-hidden="true">' + escapeHtml(item?.avatar || 'OT') + '</span>' +
+                                '<div>' +
+                                    '<h4>' + escapeHtml(item?.name || 'Misafir') + '</h4>' +
+                                    '<p class="review-meta-date">' + escapeHtml(item?.date || '') + verified + '</p>' +
+                                '</div>' +
+                            '</div>' +
+                            '<span class="review-chip">' + escapeHtml(item?.score || '') + '</span>' +
+                        '</div>' +
+                        '<div class="review-body" data-review-card>' +
+                            '<p class="review-text" data-review-text>' + escapeHtml(item?.text || '') + '</p>' +
+                            '<button type="button" class="review-more" data-review-more hidden>Devamını oku</button>' +
+                            '<span data-review-fulltext hidden>' + escapeHtml(item?.text || '') + '</span>' +
+                        '</div>' +
+                    '</article>';
+                }).join('') + '</div>';
+
+                initReviewReadMore();
+            }
+
+            reviewSortSelect?.addEventListener('change', function () {
+                const sortValue = reviewSortSelect.value || 'new';
+                renderReviewFeedList(sortValue);
+                const url = new URL(window.location.href);
+                url.searchParams.set('reviewSort', sortValue);
+                url.searchParams.set('reviewPage', '1');
+                window.history.replaceState({}, '', url.toString());
+                document.getElementById('reviewsSection')?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
             });
         })();
     </script>

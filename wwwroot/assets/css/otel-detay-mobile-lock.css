@@ -1,0 +1,459 @@
+/* Otel detay mobil kilidi — HeadStyles sonunda yüklenir (masaustu/world override) */
+
+@media (max-width: 900px) {
+    html:has(.oteldetay-page),
+    body.oteldetay-page-shell,
+    .oteldetay-page-shell .public-premium-main {
+        overflow-x: clip;
+        max-width: 100%;
+    }
+
+    .oteldetay-page.otel-detail-template-v41.otel-detail-tabler.od-detail {
+        --od-type-section: 18px;
+        --od-type-card-title: 14px;
+        --od-type-card-location: 12px;
+        --od-type-card-meta: 11px;
+        --od-type-btn: 13px;
+        --home-type-section: 18px;
+        --home-type-card-title: 14px;
+        --home-type-btn: 13px;
+        overflow-x: clip;
+        width: 100%;
+        max-width: 100%;
+        min-width: 0;
+    }
+
+    .oteldetay-page.otel-detail-template-v41.od-detail .detail-breadcrumb,
+    .oteldetay-page.otel-detail-template-v41.od-detail .gallery-grid,
+    .oteldetay-page.otel-detail-template-v41.od-detail .gallery-filmstrip-wrap,
+    .oteldetay-page.otel-detail-template-v41.od-detail .detail-header,
+    .oteldetay-page.otel-detail-template-v41.od-detail .od-quick-facts,
+    .oteldetay-page.otel-detail-template-v41.od-detail .detail-grid,
+    .oteldetay-page.otel-detail-template-v41.od-detail .od-gallery--mobile {
+        width: 100% !important;
+        max-width: 100% !important;
+        margin-inline: 0 !important;
+        box-sizing: border-box;
+    }
+
+    .oteldetay-page.otel-detail-template-v41.od-detail .detail-breadcrumb {
+        padding-inline: 16px;
+    }
+
+    .oteldetay-page.otel-detail-template-v41.od-detail .detail-grid.od-detail__layout {
+        display: flex !important;
+        flex-direction: column !important;
+        grid-template-columns: none !important;
+        width: 100% !important;
+        max-width: 100% !important;
+        min-width: 0 !important;
+        padding: 0 16px !important;
+        gap: 14px !important;
+        margin-bottom: 20px !important;
+    }
+
+    .oteldetay-page.otel-detail-template-v41.od-detail .detail-grid.od-detail__layout > * {
+        min-width: 0;
+        max-width: 100%;
+    }
+
+    .oteldetay-page.otel-detail-template-v41.od-detail .content-card {
+        width: 100% !important;
+        max-width: 100% !important;
+        min-width: 0 !important;
+        box-sizing: border-box;
+    }
+
+    .oteldetay-page.otel-detail-template-v41.od-detail .hotel-name h1 {
+        font-size: clamp(1.25rem, 5.5vw, 1.45rem) !important;
+        line-height: 1.2 !important;
+        letter-spacing: -0.02em !important;
+    }
+
+    .oteldetay-page.otel-detail-template-v41.od-detail .tabler-section-head h2,
+    .oteldetay-page.otel-detail-template-v41.od-detail .detail-collapsible__summary h2 {
+        font-size: 1.125rem !important;
+        line-height: 1.25 !important;
+        font-weight: 800 !important;
+    }
+
+    .oteldetay-page.otel-detail-template-v41.od-detail .tabler-section-head p,
+    .oteldetay-page.otel-detail-template-v41.od-detail .tabler-section-titles p {
+        font-size: 12px !important;
+    }
+
+    .oteldetay-page.otel-detail-template-v41.od-detail .tabler-section-action-btn,
+    .oteldetay-page.otel-detail-template-v41.od-detail .detail-quick-action,
+    .oteldetay-page.otel-detail-template-v41.od-detail .detail-back-link {
+        min-height: 44px !important;
+        font-size: 13px !important;
+        font-weight: 700 !important;
+    }
+
+    .oteldetay-page.otel-detail-template-v41.od-detail .tabler-section-actions .tabler-section-action-btn {
+        width: 100% !important;
+        justify-content: center !important;
+    }
+
+    /* Oda kartları — masaustu yatay flex'i ez */
+    .oteldetay-page.otel-detail-template-v41.od-detail #roomsCard .room-list {
+        display: flex !important;
+        flex-direction: column !important;
+        gap: 14px !important;
+        width: 100% !important;
+        max-width: 100% !important;
+    }
+
+    .oteldetay-page.otel-detail-template-v41.od-detail #roomsCard .room-card.od-room-card,
+    .oteldetay-page.otel-detail-template-v41.od-detail #roomsCard .od-room-card {
+        display: flex !important;
+        flex-direction: column !important;
+        width: 100% !important;
+        max-width: 100% !important;
+        min-width: 0 !important;
+        margin-inline: 0 !important;
+        overflow: hidden !important;
+    }
+
+    .oteldetay-page.otel-detail-template-v41.od-detail #roomsCard .room-card-main.od-room-card__body,
+    .oteldetay-page.otel-detail-template-v41.od-detail #roomsCard .od-room-card__body {
+        display: flex !important;
+        flex-direction: column !important;
+        flex-wrap: nowrap !important;
+        width: 100% !important;
+        max-width: 100% !important;
+        min-width: 0 !important;
+        gap: 0 !important;
+    }
+
+    .oteldetay-page.otel-detail-template-v41.od-detail #roomsCard .room-card-media {
+        width: 100% !important;
+        max-width: 100% !important;
+        min-width: 0 !important;
+        flex: none !important;
+        flex-shrink: 0 !important;
+        padding: 12px 12px 0 !important;
+    }
+
+    .oteldetay-page.otel-detail-template-v41.od-detail #roomsCard .room-card-cover {
+        width: 100% !important;
+        max-width: 100% !important;
+        aspect-ratio: 16 / 10 !important;
+        border-radius: 14px !important;
+        overflow: hidden !important;
+    }
+
+    .oteldetay-page.otel-detail-template-v41.od-detail #roomsCard .room-card-cover img {
+        width: 100% !important;
+        height: 100% !important;
+        min-height: 0 !important;
+        max-height: none !important;
+        object-fit: cover !important;
+        display: block !important;
+    }
+
+    .oteldetay-page.otel-detail-template-v41.od-detail #roomsCard .room-thumb-strip {
+        max-width: 100% !important;
+        overscroll-behavior-x: contain;
+    }
+
+    .oteldetay-page.otel-detail-template-v41.od-detail #roomsCard .od-room-card__content {
+        width: 100% !important;
+        min-width: 0 !important;
+        padding: 14px 16px 12px !important;
+        flex: 1 1 auto !important;
+    }
+
+    .oteldetay-page.otel-detail-template-v41.od-detail #roomsCard .od-room-card__title {
+        font-size: 1.05rem !important;
+        line-height: 1.25 !important;
+        font-weight: 800 !important;
+    }
+
+    .oteldetay-page.otel-detail-template-v41.od-detail #roomsCard .od-room-card__specs {
+        font-size: 0.82rem !important;
+    }
+
+    .oteldetay-page.otel-detail-template-v41.od-detail #roomsCard .room-price-box.od-room-card__pricing {
+        display: grid !important;
+        grid-template-columns: minmax(0, 1fr) auto !important;
+        width: 100% !important;
+        max-width: 100% !important;
+        min-width: 0 !important;
+        padding: 14px 16px !important;
+        border-top: 1px solid var(--od-border, #EBE9E4) !important;
+        border-left: 0 !important;
+    }
+
+    .oteldetay-page.otel-detail-template-v41.od-detail #roomsCard .select-room-btn,
+    .oteldetay-page.otel-detail-template-v41.od-detail #roomsCard .room-select-btn {
+        min-height: 44px !important;
+        min-width: 112px !important;
+        padding: 0 16px !important;
+        font-size: 13px !important;
+        font-weight: 800 !important;
+        border-radius: 999px !important;
+        white-space: nowrap !important;
+    }
+
+    .oteldetay-page.otel-detail-template-v41.od-detail #roomsCard .room-price-box strong {
+        font-size: 1.2rem !important;
+    }
+
+    .oteldetay-page.otel-detail-template-v41.od-detail .booking-sidebar.od-detail__booking {
+        position: fixed !important;
+        inset: auto 0 0 0 !important;
+        top: auto !important;
+        width: 100% !important;
+        max-width: 100% !important;
+        margin: 0 !important;
+    }
+
+    .oteldetay-page.otel-detail-template-v41.od-detail .od-gallery--mobile {
+        padding: 0 !important;
+    }
+
+    .oteldetay-page.otel-detail-template-v41.od-detail .detail-location-map,
+    .oteldetay-page.otel-detail-template-v41.od-detail .leaflet-container {
+        width: 100% !important;
+        max-width: 100% !important;
+    }
+
+    .oteldetay-page.otel-detail-template-v41.od-detail .mobile-booking-bar .btn,
+    .oteldetay-page.otel-detail-template-v41.od-detail .mobile-booking-bar button {
+        min-height: 48px !important;
+        font-size: 14px !important;
+        font-weight: 800 !important;
+    }
+
+    /* Oda detay modal — mobil bottom sheet */
+    .oteldetay-page > #roomDetailModal.room-detail-modal {
+        display: none !important;
+        position: fixed !important;
+        inset: auto 0 0 0 !important;
+        top: auto !important;
+        z-index: 2200 !important;
+        width: 100% !important;
+        max-width: 100% !important;
+        max-height: min(92vh, 760px) !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        border-radius: 20px 20px 0 0 !important;
+        background: #fff !important;
+        box-shadow: 0 -12px 40px rgba(26, 25, 25, 0.16) !important;
+        overflow: hidden !important;
+        flex-direction: column !important;
+    }
+
+    .oteldetay-page > #roomDetailModal.room-detail-modal.is-open {
+        display: flex !important;
+    }
+
+    .oteldetay-page > #roomDetailModal .room-detail-modal-head {
+        display: flex !important;
+        align-items: flex-start !important;
+        justify-content: space-between !important;
+        gap: 12px !important;
+        padding: 16px 16px 12px !important;
+        border-bottom: 1px solid var(--od-border, #EBE9E4) !important;
+        flex-shrink: 0 !important;
+    }
+
+    .oteldetay-page > #roomDetailModal .detail-modal-kicker {
+        display: block !important;
+        font-size: 11px !important;
+        font-weight: 700 !important;
+        color: var(--od-muted, #6E6E77) !important;
+        text-transform: uppercase !important;
+        letter-spacing: 0.04em !important;
+        margin-bottom: 4px !important;
+    }
+
+    .oteldetay-page > #roomDetailModal .room-detail-modal-head h3 {
+        margin: 0 !important;
+        font-size: 1.125rem !important;
+        line-height: 1.25 !important;
+        font-weight: 800 !important;
+    }
+
+    .oteldetay-page > #roomDetailModal .room-detail-modal-body {
+        display: flex !important;
+        flex-direction: column !important;
+        gap: 14px !important;
+        padding: 14px 16px calc(16px + env(safe-area-inset-bottom, 0px)) !important;
+        overflow-y: auto !important;
+        -webkit-overflow-scrolling: touch !important;
+        flex: 1 1 auto !important;
+        min-height: 0 !important;
+    }
+
+    .oteldetay-page > #roomDetailModal .room-detail-modal-summary {
+        display: flex !important;
+        flex-direction: column !important;
+        gap: 10px !important;
+    }
+
+    .oteldetay-page > #roomDetailModal .room-detail-modal-copy strong {
+        display: block !important;
+        font-size: 1rem !important;
+        font-weight: 800 !important;
+        margin-bottom: 6px !important;
+    }
+
+    .oteldetay-page > #roomDetailModal .room-detail-modal-copy p {
+        margin: 0 0 6px !important;
+        font-size: 13px !important;
+        line-height: 1.5 !important;
+        color: var(--od-dark, #1A1919) !important;
+    }
+
+    .oteldetay-page > #roomDetailModal .room-detail-modal-meta {
+        display: flex !important;
+        flex-wrap: wrap !important;
+        gap: 8px !important;
+        align-items: center !important;
+    }
+
+    .oteldetay-page > #roomDetailModal .room-detail-modal-badge {
+        display: inline-flex !important;
+        align-items: center !important;
+        padding: 6px 10px !important;
+        border-radius: 999px !important;
+        border: 1px solid var(--od-border, #EBE9E4) !important;
+        background: var(--od-bg, #FCFBF9) !important;
+        font-size: 11px !important;
+        font-weight: 700 !important;
+    }
+
+    .oteldetay-page > #roomDetailModal .room-detail-modal-gallery-open {
+        min-height: 36px !important;
+        padding: 0 12px !important;
+        border-radius: 999px !important;
+        border: 1px solid var(--od-border, #EBE9E4) !important;
+        background: #fff !important;
+        font-size: 12px !important;
+        font-weight: 700 !important;
+        display: inline-flex !important;
+        align-items: center !important;
+        gap: 6px !important;
+    }
+
+    .oteldetay-page > #roomDetailModal .room-detail-modal-stats {
+        display: grid !important;
+        grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+        gap: 8px !important;
+    }
+
+    .oteldetay-page > #roomDetailModal .room-detail-modal-stat {
+        padding: 10px 12px !important;
+        border-radius: 12px !important;
+        border: 1px solid var(--od-border, #EBE9E4) !important;
+        background: var(--od-bg, #FCFBF9) !important;
+    }
+
+    .oteldetay-page > #roomDetailModal .room-detail-modal-stat span {
+        display: block !important;
+        font-size: 11px !important;
+        color: var(--od-muted, #6E6E77) !important;
+        margin-bottom: 4px !important;
+    }
+
+    .oteldetay-page > #roomDetailModal .room-detail-modal-stat strong {
+        font-size: 14px !important;
+        font-weight: 800 !important;
+    }
+
+    .oteldetay-page > #roomDetailModal .room-detail-modal-stat-price {
+        grid-column: 1 / -1 !important;
+    }
+
+    .oteldetay-page > #roomDetailModal .room-detail-modal-note {
+        font-size: 12px !important;
+        line-height: 1.45 !important;
+        color: var(--od-muted, #6E6E77) !important;
+        padding: 10px 12px !important;
+        border-radius: 12px !important;
+        background: var(--od-bg, #FCFBF9) !important;
+    }
+
+    .oteldetay-page > #roomDetailModal .room-detail-modal-section-head {
+        display: flex !important;
+        align-items: baseline !important;
+        justify-content: space-between !important;
+        gap: 8px !important;
+        margin-bottom: 10px !important;
+    }
+
+    .oteldetay-page > #roomDetailModal .room-detail-modal-section-head h4 {
+        margin: 0 !important;
+        font-size: 14px !important;
+        font-weight: 800 !important;
+    }
+
+    .oteldetay-page > #roomDetailModal .room-detail-modal-section-head span {
+        font-size: 11px !important;
+        color: var(--od-muted, #6E6E77) !important;
+    }
+
+    .oteldetay-page > #roomDetailModal .room-detail-modal-grid {
+        display: flex !important;
+        flex-direction: column !important;
+        gap: 8px !important;
+    }
+
+    .oteldetay-page > #roomDetailModal .room-detail-modal-item {
+        display: flex !important;
+        align-items: center !important;
+        gap: 10px !important;
+        padding: 10px 12px !important;
+        border-radius: 12px !important;
+        border: 1px solid var(--od-border, #EBE9E4) !important;
+        background: #fff !important;
+        font-size: 13px !important;
+        font-weight: 600 !important;
+    }
+
+    .oteldetay-page > #roomDetailModal .room-detail-modal-item i {
+        width: 24px !important;
+        height: 24px !important;
+        flex-shrink: 0 !important;
+        border-radius: 999px !important;
+        display: inline-flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        background: rgba(22, 163, 74, 0.1) !important;
+        color: #15803d !important;
+        font-size: 11px !important;
+    }
+
+    .oteldetay-page > #roomDetailModal .room-detail-modal-actions {
+        display: grid !important;
+        grid-template-columns: 1fr 1fr !important;
+        gap: 10px !important;
+        padding-top: 4px !important;
+    }
+
+    .oteldetay-page > #roomDetailModal .room-detail-modal-primary,
+    .oteldetay-page > #roomDetailModal .room-detail-modal-secondary {
+        min-height: 48px !important;
+        border-radius: 999px !important;
+        font-size: 14px !important;
+        font-weight: 800 !important;
+    }
+
+    .oteldetay-page > #roomDetailModal .room-detail-modal-primary {
+        background: var(--od-crimson, #E30A17) !important;
+        color: #fff !important;
+        border: 0 !important;
+    }
+
+    .oteldetay-page > #roomDetailModal .room-detail-modal-secondary {
+        background: #fff !important;
+        border: 1px solid var(--od-border, #EBE9E4) !important;
+        color: var(--od-dark, #1A1919) !important;
+    }
+
+    .oteldetay-page > #detailActionBackdrop.is-open {
+        z-index: 2190 !important;
+    }
+}

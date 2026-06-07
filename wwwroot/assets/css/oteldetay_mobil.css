@@ -57,8 +57,21 @@
     .oteldetay-page > .review-modal.is-open,
     .oteldetay-page > .review-insight-modal.is-open,
     .oteldetay-page > .detail-modal:not([hidden]),
+    .oteldetay-page > .detail-modal.is-open,
+    .oteldetay-page > #roomDetailModal.is-open,
     .oteldetay-page > .room-pick-popover:not([hidden]),
     .oteldetay-page > .discount-modal:not([hidden]),
+    .oteldetay-page > .booking-modal-backdrop.is-open,
+    .oteldetay-page > .booking-modal-backdrop:not([hidden]).is-open {
+        display: flex !important;
+        flex-direction: column !important;
+    }
+
+    .oteldetay-page > .review-modal.is-open,
+    .oteldetay-page > .review-insight-modal.is-open {
+        display: block !important;
+    }
+
     .oteldetay-page > .booking-modal-backdrop.is-open,
     .oteldetay-page > .booking-modal-backdrop:not([hidden]).is-open {
         display: block !important;
@@ -708,32 +721,50 @@
         font-size: 11px;
     }
 
-    /* Kurallar — 2 sütun kart */
+    /* Kurallar — mobil düz metin, tek sütun */
+    .oteldetay-page .od-section--policies.content-card {
+        border: 0 !important;
+        border-radius: 0 !important;
+        box-shadow: none !important;
+        background: transparent !important;
+        padding: 0 16px 16px !important;
+        margin-bottom: 0 !important;
+    }
+
+    .oteldetay-page .od-section--policies .tabler-section-head {
+        padding: 0 0 10px !important;
+    }
+
     .oteldetay-page .od-section--policies .od-policy-list {
-        display: grid;
-        grid-template-columns: repeat(2, minmax(0, 1fr));
-        gap: 10px;
+        display: flex !important;
+        flex-direction: column !important;
+        gap: 0 !important;
         list-style: none;
         margin: 0;
         padding: 0;
     }
 
     .oteldetay-page .od-section--policies .od-policy-item {
-        display: flex;
-        flex-direction: column;
-        align-items: flex-start;
-        gap: 8px;
-        padding: 12px;
-        border-radius: 14px;
-        border: 1px solid var(--od-border, #EBE9E4);
-        background: #fff;
+        display: flex !important;
+        flex-direction: row !important;
+        align-items: flex-start !important;
+        gap: 12px !important;
+        padding: 12px 0 !important;
+        border: 0 !important;
+        border-bottom: 1px solid var(--od-border, #EBE9E4) !important;
+        border-radius: 0 !important;
+        background: transparent !important;
         min-height: 0;
-        grid-template-columns: unset;
+    }
+
+    .oteldetay-page .od-section--policies .od-policy-item:last-child {
+        border-bottom: 0 !important;
     }
 
     .oteldetay-page .od-section--policies .od-policy-icon {
         width: 32px;
         height: 32px;
+        flex-shrink: 0;
         border-radius: 10px;
         display: inline-flex;
         align-items: center;
@@ -743,53 +774,154 @@
     }
 
     .oteldetay-page .od-section--policies .od-policy-item strong {
-        font-size: 11px;
+        font-size: 13px;
         font-weight: 800;
-        text-transform: uppercase;
-        letter-spacing: 0.03em;
+        text-transform: none;
+        letter-spacing: 0;
+        display: block;
+        margin-bottom: 4px;
     }
 
     .oteldetay-page .od-section--policies .od-policy-item p,
     .oteldetay-page .od-section--policies .od-policy-item small {
-        font-size: 11px;
-        line-height: 1.4;
+        font-size: 13px;
+        line-height: 1.5;
         margin: 0;
+        color: var(--od-dark, #1A1919);
     }
 
-    /* Oda özellikleri — yatay scroll chip */
+    .oteldetay-page .od-section--policies .od-policy-detail {
+        display: block;
+        margin-top: 4px;
+        color: var(--od-muted, #6E6E77);
+        font-size: 12px;
+    }
+
+    /* Tesis hakkında — düz metin */
+    .oteldetay-page .od-section--about.content-card {
+        border: 0 !important;
+        box-shadow: none !important;
+        background: #fff !important;
+        padding: 0 !important;
+    }
+
+    .oteldetay-page .od-section--about .hotel-about-text {
+        border: 0 !important;
+        background: transparent !important;
+        padding: 0 !important;
+        font-size: 14px !important;
+        line-height: 1.6 !important;
+    }
+
+    /* Oda özellikleri — dikey akış + panel */
+    .oteldetay-page #roomsCard .room-feature-row {
+        display: flex !important;
+        flex-direction: column !important;
+        align-items: stretch !important;
+        gap: 8px !important;
+        margin-top: 10px !important;
+        width: 100% !important;
+    }
+
     .oteldetay-page #roomsCard .room-feature-list {
-        display: flex;
-        flex-wrap: nowrap;
-        overflow-x: auto;
-        gap: 8px;
-        margin: 0;
-        padding: 2px 0 4px;
-        list-style: none;
-        scrollbar-width: none;
-        -webkit-overflow-scrolling: touch;
-    }
-
-    .oteldetay-page #roomsCard .room-feature-list::-webkit-scrollbar {
-        display: none;
+        display: flex !important;
+        flex-wrap: wrap !important;
+        overflow: visible !important;
+        gap: 6px !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        list-style: none !important;
     }
 
     .oteldetay-page #roomsCard .room-feature-item {
-        flex: 0 0 auto;
-        display: inline-flex;
-        align-items: center;
-        gap: 5px;
-        padding: 6px 10px;
-        border-radius: 999px;
-        border: 1px solid var(--od-border, #EBE9E4);
-        background: var(--od-bg, #FCFBF9);
-        font-size: 10px;
-        font-weight: 700;
-        white-space: nowrap;
+        display: inline-flex !important;
+        align-items: center !important;
+        gap: 6px !important;
+        padding: 6px 10px !important;
+        border-radius: 999px !important;
+        border: 1px solid var(--od-border, #EBE9E4) !important;
+        background: var(--od-bg, #FCFBF9) !important;
+        font-size: 11px !important;
+        font-weight: 700 !important;
+        white-space: normal !important;
     }
 
-    .oteldetay-page #roomsCard .room-feature-item i {
-        color: var(--od-crimson, #E30A17);
-        font-size: 10px;
+    .oteldetay-page #roomsCard .room-feature-more-inline {
+        width: 100% !important;
+        margin: 0 !important;
+    }
+
+    .oteldetay-page #roomsCard .room-feature-more-btn {
+        display: inline-flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        gap: 6px !important;
+        width: 100% !important;
+        min-height: 40px !important;
+        padding: 0 14px !important;
+        border-radius: 12px !important;
+        border: 1px solid var(--od-border, #EBE9E4) !important;
+        background: #fff !important;
+        color: var(--od-dark, #1A1919) !important;
+        font-size: 13px !important;
+        font-weight: 700 !important;
+    }
+
+    .oteldetay-page #roomsCard .room-feature-panel {
+        margin-top: 8px !important;
+        padding: 12px !important;
+        border-radius: 14px !important;
+        border: 1px solid var(--od-border, #EBE9E4) !important;
+        background: var(--od-bg, #FCFBF9) !important;
+        width: 100% !important;
+        box-sizing: border-box !important;
+    }
+
+    .oteldetay-page #roomsCard .room-feature-panel[hidden] {
+        display: none !important;
+    }
+
+    .oteldetay-page #roomsCard .room-feature-panel-title {
+        margin: 0 0 10px !important;
+        font-size: 13px !important;
+        font-weight: 800 !important;
+    }
+
+    .oteldetay-page #roomsCard .room-feature-panel-list {
+        list-style: none !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        display: flex !important;
+        flex-direction: column !important;
+        gap: 8px !important;
+    }
+
+    .oteldetay-page #roomsCard .room-feature-panel-item {
+        display: flex !important;
+        align-items: center !important;
+        gap: 10px !important;
+        font-size: 13px !important;
+        font-weight: 600 !important;
+        color: var(--od-dark, #1A1919) !important;
+    }
+
+    .oteldetay-page #roomsCard .room-feature-panel-item i {
+        width: 24px !important;
+        height: 24px !important;
+        flex-shrink: 0 !important;
+        border-radius: 999px !important;
+        display: inline-flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        background: rgba(22, 163, 74, 0.1) !important;
+        color: #15803d !important;
+        font-size: 11px !important;
+    }
+
+    .oteldetay-page #roomsCard .room-feature-panel-item span {
+        white-space: normal !important;
+        overflow: visible !important;
+        text-overflow: unset !important;
     }
 
     .oteldetay-page #roomsCard .od-room-card__meta {
@@ -1870,15 +2002,34 @@
     }
 
     .oteldetay-page.otel-detail-template-v41 #reviewsSection .review-toolbar {
-        flex-direction: row !important;
-        align-items: center !important;
-        justify-content: space-between !important;
+        flex-direction: column !important;
+        align-items: stretch !important;
+        justify-content: flex-start !important;
         gap: 10px !important;
         margin-bottom: 12px !important;
-        padding: 10px 12px !important;
+        padding: 12px !important;
         border-radius: 12px !important;
         background: var(--od-bg, #FCFBF9) !important;
         border: 1px solid var(--od-border, #EBE9E4) !important;
+    }
+
+    .oteldetay-page.otel-detail-template-v41 #reviewsSection .review-toolbar-right,
+    .oteldetay-page.otel-detail-template-v41 #reviewsSection .review-sort {
+        width: 100% !important;
+    }
+
+    .oteldetay-page.otel-detail-template-v41 #reviewsSection .review-sort select {
+        width: 100% !important;
+    }
+
+    .oteldetay-page.otel-detail-template-v41 #reviewsSection .review-list {
+        display: flex !important;
+        flex-direction: column !important;
+        gap: 10px !important;
+    }
+
+    .oteldetay-page.otel-detail-template-v41 #reviewsSection .review-card {
+        width: 100% !important;
     }
 
     .oteldetay-page.otel-detail-template-v41 #reviewsSection .review-toolbar-left {
@@ -2086,22 +2237,6 @@
     .oteldetay-page .detail-grid.od-detail__layout {
         gap: 0 !important;
         padding: 0 !important;
-    }
-
-    .oteldetay-page #roomsCard .room-feature-list {
-        display: flex !important;
-        flex-wrap: nowrap !important;
-        overflow-x: auto !important;
-        gap: 8px !important;
-    }
-
-    .oteldetay-page #roomsCard .room-feature-item {
-        flex: 0 0 auto !important;
-        padding: 6px 10px !important;
-        border-radius: 999px !important;
-        border: 1px solid var(--od-border, #EBE9E4) !important;
-        background: var(--od-bg, #FCFBF9) !important;
-        font-size: 10px !important;
     }
 
     .oteldetay-page .tabler-section-titles p {

@@ -7,14 +7,16 @@
     --od-radius-pill: 999px;
 }
 
-.otel-detail-template-v41.od-detail .detail-breadcrumb,
-.otel-detail-template-v41.od-detail .gallery-grid,
-.otel-detail-template-v41.od-detail .gallery-filmstrip-wrap,
-.otel-detail-template-v41.od-detail .detail-header,
-.otel-detail-template-v41.od-detail .od-quick-facts,
-.otel-detail-template-v41.od-detail .detail-grid {
-    width: min(var(--page-max-width, 1280px), calc(100% - 48px));
-    margin-inline: auto;
+@media (min-width: 901px) {
+    .otel-detail-template-v41.od-detail .detail-breadcrumb,
+    .otel-detail-template-v41.od-detail .gallery-grid,
+    .otel-detail-template-v41.od-detail .gallery-filmstrip-wrap,
+    .otel-detail-template-v41.od-detail .detail-header,
+    .otel-detail-template-v41.od-detail .od-quick-facts,
+    .otel-detail-template-v41.od-detail .detail-grid {
+        width: min(var(--page-max-width, 1280px), calc(100% - 48px));
+        margin-inline: auto;
+    }
 }
 
 /* Quick facts — Booking / Otelz */
