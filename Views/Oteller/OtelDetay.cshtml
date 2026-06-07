@@ -227,6 +227,11 @@
     }
 
     var headerNeighborhood = ExtractNeighborhoodFromAddress(Model.Address);
+    var headerLocationPieces = new List<string>();
+    if (!string.IsNullOrWhiteSpace(headerNeighborhood)) headerLocationPieces.Add(headerNeighborhood);
+    if (!string.IsNullOrWhiteSpace(Model.District)) headerLocationPieces.Add(Model.District);
+    if (!string.IsNullOrWhiteSpace(Model.City)) headerLocationPieces.Add(Model.City);
+    var headerLocationText = string.Join(", ", headerLocationPieces);
     var weatherAreaLabel = !string.IsNullOrWhiteSpace(headerNeighborhood)
         ? headerNeighborhood
         : (!string.IsNullOrWhiteSpace(Model.District) ? Model.District : Model.City);
@@ -510,29 +515,62 @@
                 <div class="gallery-mobile-overlay">
                     <div class="gallery-mobile-overlay-bottom">
                         <h1 class="gallery-mobile-hotel-name">@Model.Name</h1>
-                        <div class="gallery-mobile-overlay-meta">
-                            @if (Model.StarCount.HasValue && Model.StarCount.Value > 0)
-                            {
-                                <div class="gallery-mobile-stars" aria-label="@($"{Model.StarCount.Value} yıldızlı otel")">
-                                    @for (var i = 0; i < Model.StarCount.Value; i++)
+                        <div class="gallery-mobile-hero-meta">
+                            <p class="gallery-mobile-location" role="text">
+                                <i class="fas fa-location-dot" aria-hidden="true"></i>
+                                <span>@headerLocationText</span>
+                            </p>
+                            <div class="rating-summary detail-rating-chip gallery-mobile-rating"
+                                 data-rating-jump
+                                 role="button"
+                                 tabindex="0"
+                                 aria-label="@SharedLocalizer["Detail.Reviews.GoTo"].Value">
+                                <div class="rating-big">
+                                    <span class="rating-number">@(Model.Rating > 0 ? Model.Rating.ToString("0.0") : "0.0")</span>
+                                    <span class="rating-max">/10</span>
+                                </div>
+                                <div class="rating-text">
+                                    @if (Model.ReviewCount <= 0)
                                     {
-                                        <i class="fas fa-star" aria-hidden="true"></i>
+                                        <strong>@SharedLocalizer["Detail.Rating.Pending"].Value</strong>
+                                        <span>@SharedLocalizer["Detail.Rating.NoReviews"].Value</span>
+                                    }
+                                    else
+                                    {
+                                        <strong>@Model.RatingText</strong>
+                                        <span>@SharedLocalizer["Detail.Rating.ReviewCount", Model.ReviewCount].Value</span>
                                     }
                                 </div>
-                            }
-                            else
-                            {
-                                <span class="gallery-mobile-stars gallery-mobile-stars--empty" aria-hidden="true"></span>
-                            }
-                            <button type="button" class="gallery-mobile-all-photos" data-gallery-index="0" data-slayt-trigger="hotel-gallery" aria-label="Tüm fotoğrafları aç">
-                                <i class="far fa-images" aria-hidden="true"></i>
-                                <span>Tüm Fotoğraflar (@gallery.Count)</span>
-                            </button>
+                            </div>
                         </div>
                     </div>
+                    <button type="button"
+                            class="gallery-mobile-all-photos"
+                            data-gallery-index="0"
+                            data-slayt-trigger="hotel-gallery"
+                            aria-label="Tüm fotoğrafları aç">
+                        <i class="far fa-images" aria-hidden="true"></i>
+                        <span>Tüm Fotoğraflar (@gallery.Count)</span>
+                    </button>
                 </div>
             </div>
             <div class="gallery-mobile-footer">
+                <div class="gallery-mobile-footer-meta">
+                    @if (Model.StarCount.HasValue && Model.StarCount.Value > 0)
+                    {
+                        <span class="gallery-mobile-type-chip gallery-mobile-type-chip--stars" aria-label="@($"{Model.StarCount.Value} yıldızlı otel")">
+                            @for (var starIndex = 0; starIndex < Model.StarCount.Value; starIndex++)
+                            {
+                                <i class="fas fa-star" aria-hidden="true"></i>
+                            }
+                            <span>@SharedLocalizer["Detail.QuickFacts.StarHotel", Model.StarCount.Value].Value</span>
+                        </span>
+                    }
+                    <span class="gallery-mobile-type-chip">
+                        <i class="fas fa-hotel" aria-hidden="true"></i>
+                        <span>@SharedLocalizer["Detail.QuickFacts.Hotel"].Value</span>
+                    </span>
+                </div>
                 @if (gallery.Count > 1)
                 {
                     <div class="gallery-mobile-thumbs" id="galleryMobileThumbs" aria-label="Mobil galeri küçük görseller">
@@ -568,16 +606,9 @@
     <div class="detail-hero-head">
     <div class="hotel-name">
         <h1 class="hotel-title-heading hotel-title-heading--header">@Model.Name</h1>
-        @{
-            var locationPieces = new List<string>();
-            if (!string.IsNullOrWhiteSpace(headerNeighborhood)) locationPieces.Add(headerNeighborhood);
-            if (!string.IsNullOrWhiteSpace(Model.District)) locationPieces.Add(Model.District);
-            if (!string.IsNullOrWhiteSpace(Model.City)) locationPieces.Add(Model.City);
-            var locationOnly = string.Join(", ", locationPieces);
-        }
         <p class="detail-location od-header__location-pill" role="text">
             <i class="fas fa-location-dot" aria-hidden="true"></i>
-            <span>@locationOnly</span>
+            <span>@headerLocationText</span>
         </p>
         <div class="detail-title-subnav" aria-label="Hızlı gezinme">
             @if (!string.IsNullOrWhiteSpace(Model.VideoUrl))
@@ -617,7 +648,7 @@
         }
 
     </div>
-    <div class="rating-summary detail-rating-chip" id="ratingSummaryJump" role="button" tabindex="0" aria-label="@SharedLocalizer["Detail.Reviews.GoTo"].Value">
+    <div class="rating-summary detail-rating-chip detail-rating-chip--desktop" id="ratingSummaryJump" data-rating-jump role="button" tabindex="0" aria-label="@SharedLocalizer["Detail.Reviews.GoTo"].Value">
         <div class="rating-big">
             <span class="rating-number">@(Model.Rating > 0 ? Model.Rating.ToString("0.0") : "0.0")</span>
             <span class="rating-max">/10</span>
@@ -4715,17 +4746,18 @@
                 window.scrollTo({ top: Math.max(0, top), behavior: 'smooth' });
             }
 
-            const ratingSummaryJump = document.getElementById('ratingSummaryJump');
-            ratingSummaryJump?.addEventListener('click', function () {
-                const target = document.getElementById('reviewsSection');
-                scrollToElementWithOffset(target, 86);
-            });
-            ratingSummaryJump?.addEventListener('keydown', function (event) {
-                if (event.key === 'Enter' || event.key === ' ') {
-                    event.preventDefault();
+            document.querySelectorAll('[data-rating-jump]').forEach(function (ratingSummaryJump) {
+                ratingSummaryJump.addEventListener('click', function () {
                     const target = document.getElementById('reviewsSection');
                     scrollToElementWithOffset(target, 86);
-                }
+                });
+                ratingSummaryJump.addEventListener('keydown', function (event) {
+                    if (event.key === 'Enter' || event.key === ' ') {
+                        event.preventDefault();
+                        const target = document.getElementById('reviewsSection');
+                        scrollToElementWithOffset(target, 86);
+                    }
+                });
             });
 
             document.querySelectorAll('[data-scroll-booking]').forEach(function (btn) {

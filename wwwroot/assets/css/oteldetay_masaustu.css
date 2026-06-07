@@ -206,6 +206,14 @@
     display: none;
 }
 
+.oteldetay-page .detail-rating-chip--desktop {
+    display: flex;
+}
+
+.oteldetay-page .gallery-mobile-rating {
+    display: none;
+}
+
 /* —— Otel bilgi kartı —— */
 .oteldetay-page .detail-header.hotel-title-section {
     background: #fff;
