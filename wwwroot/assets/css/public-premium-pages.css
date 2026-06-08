@@ -17,8 +17,7 @@
 .sozlesme-page,
 .destek-page,
 .deneyimler-page,
-.otelliste-page-shell,
-.login-page {
+.otelliste-page-shell {
     --page-max-width: 1240px;
     --page-content-gutter: 24px;
     --page-content-inset: 48px;
@@ -31,8 +30,7 @@
 .kurumsal-page .corp-page__inner,
 .firma-page .fir-body.container,
 .kampanyalar-page .kmp-body.container,
-.sozlesme-page .sozlesme-body.container,
-.login-page .login-container {
+.sozlesme-page .sozlesme-body.container {
     box-sizing: border-box;
     width: min(var(--page-max-width, 1240px), calc(100% - var(--page-content-inset, 48px)));
     max-width: none;
@@ -166,12 +164,5 @@
         width: 100%;
         padding-left: 16px;
         padding-right: 16px;
-    }
-
-    .login-page .login-container {
-        width: 100%;
-        max-width: 100%;
-        padding-left: 0;
-        padding-right: 0;
     }
 }

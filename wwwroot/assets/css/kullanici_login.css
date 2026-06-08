@@ -709,18 +709,33 @@
 }
 
 @media (max-width: 900px) {
-    .login-main {
-        padding: 16px 12px 32px;
+    .login-page .login-main {
+        padding: 8px max(var(--auth-page-pad-x, 12px), env(safe-area-inset-right)) 32px max(var(--auth-page-pad-x, 12px), env(safe-area-inset-left));
         min-height: 0;
     }
 
-    .auth-form-panel {
-        padding: 24px 18px 20px;
+    .login-page .login-container {
+        width: 100%;
+        max-width: 100%;
+        padding-left: 0;
+        padding-right: 0;
+    }
+
+    .login-page .auth-card,
+    .login-page .auth-card-admin,
+    .login-page .auth-card--solo,
+    .login-page .auth-card--verify {
+        max-width: 100%;
+        width: 100%;
+    }
+
+    .login-page .auth-form-panel {
+        padding: 24px var(--auth-page-pad-x, 12px) 20px;
         order: 1;
     }
 
-    .auth-info {
-        padding: 22px 18px;
+    .login-page .auth-info {
+        padding: 22px var(--auth-page-pad-x, 12px);
         order: 2;
     }
 
