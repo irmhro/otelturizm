@@ -4,6 +4,8 @@
         width: 100%;
         max-width: 100%;
         overflow-x: clip;
+        --page-content-inset: 0;
+        --page-content-gutter: 0;
     }
 
     .login-page .home-header-shell {
@@ -16,10 +18,10 @@
         width: 100%;
         max-width: 100%;
         box-sizing: border-box;
-        padding: 14px max(12px, env(safe-area-inset-right)) 28px max(12px, env(safe-area-inset-left));
+        padding: 16px max(16px, env(safe-area-inset-right)) 28px max(16px, env(safe-area-inset-left));
     }
 
-    .login-container {
+    .login-page .login-container {
         width: 100%;
         max-width: 100%;
         padding: 0;
@@ -289,7 +291,7 @@
     }
 
     .login-main:has(.auth-card--verify) {
-        padding: 12px max(12px, env(safe-area-inset-right)) 20px max(12px, env(safe-area-inset-left));
+        padding: 16px max(16px, env(safe-area-inset-right)) 20px max(16px, env(safe-area-inset-left));
     }
 
     .auth-card--verify .auth-verify-banner {
