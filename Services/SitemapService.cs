@@ -99,12 +99,13 @@ public sealed class SitemapService : ISitemapService
 
             var indexEntries = new List<SitemapIndexEntry>
             {
-                new("static.xml", now, staticEntries.Count),
-                new("hotels.xml", hotelEntries.MaxBy(x => x.LastModifiedUtc)?.LastModifiedUtc ?? now, hotelEntries.Count),
-                new("rooms.xml", roomEntries.MaxBy(x => x.LastModifiedUtc)?.LastModifiedUtc ?? now, roomEntries.Count),
-                new("campaigns.xml", campaignEntries.MaxBy(x => x.LastModifiedUtc)?.LastModifiedUtc ?? now, campaignEntries.Count),
-                new("blog.xml", blogEntries.MaxBy(x => x.LastModifiedUtc)?.LastModifiedUtc ?? now, blogEntries.Count),
-                new("locations.xml", locationEntries.MaxBy(x => x.LastModifiedUtc)?.LastModifiedUtc ?? now, locationEntries.Count)
+                new("sitemaps/static.xml", now, staticEntries.Count),
+                new("sitemaps/hotels.xml", hotelEntries.MaxBy(x => x.LastModifiedUtc)?.LastModifiedUtc ?? now, hotelEntries.Count),
+                new("sitemaps/rooms.xml", roomEntries.MaxBy(x => x.LastModifiedUtc)?.LastModifiedUtc ?? now, roomEntries.Count),
+                new("sitemaps/campaigns.xml", campaignEntries.MaxBy(x => x.LastModifiedUtc)?.LastModifiedUtc ?? now, campaignEntries.Count),
+                new("sitemaps/blog.xml", blogEntries.MaxBy(x => x.LastModifiedUtc)?.LastModifiedUtc ?? now, blogEntries.Count),
+                new("sitemaps/locations.xml", locationEntries.MaxBy(x => x.LastModifiedUtc)?.LastModifiedUtc ?? now, locationEntries.Count),
+                new("feeds/hotel-offers.json", now, 0)
             };
 
             foreach (var regional in regionalFiles)
