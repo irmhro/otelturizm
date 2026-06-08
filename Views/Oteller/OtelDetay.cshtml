@@ -1548,6 +1548,7 @@
                 <input type="hidden" id="profileCompletionRequired" value="@(Model.ProfilePrompt.IsProfileIncomplete && Model.IsLoggedInUser ? "true" : "false")" />
                 <input type="hidden" name="RoomsJson" id="roomsJsonInput" value="" />
 
+                <div class="od-booking-counters-desktop-row">
                 <div class="multi-room" id="multiRoomRoot">
                     <div class="multi-room-head">
                         <span class="multi-room-title">Oda seçimi</span>
@@ -1576,52 +1577,53 @@
                                         <input type="date" data-field="checkOut" min="@todayDate" />
                                     </label>
                                 </div>
-                                <div class="multi-room-item-type-row">
-                                    <label class="multi-room-item-type">
-                                        <span>Oda Tipi</span>
-                                        <select data-field="roomType">
-                                            @foreach (var room in reservableRoomOptions)
+                                <label class="multi-room-item-type">
+                                    <span>Oda Tipi</span>
+                                    <select data-field="roomType">
+                                        @foreach (var room in reservableRoomOptions)
+                                        {
+                                            if (room.RoomTypeId == selectedRoomSeed?.RoomTypeId)
                                             {
-                                                if (room.RoomTypeId == selectedRoomSeed?.RoomTypeId)
-                                                {
-                                                    <option value="@room.RoomTypeId"
-                                                            selected="selected"
-                                                            data-price="@room.Price.ToString("0.00", System.Globalization.CultureInfo.InvariantCulture)"
-                                                            data-room-name="@room.Name"
-                                                            data-max-guests="@room.MaxGuestCount"
-                                                            data-max-adults="@room.MaxAdultCount"
-                                                            data-max-children="@room.MaxChildCount">
-                                                        @room.Name
-                                                    </option>
-                                                }
-                                                else
-                                                {
-                                                    <option value="@room.RoomTypeId"
-                                                            data-price="@room.Price.ToString("0.00", System.Globalization.CultureInfo.InvariantCulture)"
-                                                            data-room-name="@room.Name"
-                                                            data-max-guests="@room.MaxGuestCount"
-                                                            data-max-adults="@room.MaxAdultCount"
-                                                            data-max-children="@room.MaxChildCount">
-                                                        @room.Name
-                                                    </option>
-                                                }
+                                                <option value="@room.RoomTypeId"
+                                                        selected="selected"
+                                                        data-price="@room.Price.ToString("0.00", System.Globalization.CultureInfo.InvariantCulture)"
+                                                        data-room-name="@room.Name"
+                                                        data-max-guests="@room.MaxGuestCount"
+                                                        data-max-adults="@room.MaxAdultCount"
+                                                        data-max-children="@room.MaxChildCount">
+                                                    @room.Name
+                                                </option>
                                             }
-                                        </select>
-                                    </label>
-                                    <label class="multi-room-quantity">
-                                        <span>Oda adedi</span>
-                                        <div class="room-quantity-control">
-                                            <button type="button" data-room-quantity-action="minus" aria-label="Oda adedini azalt">-</button>
-                                            <input type="number" data-field="roomCount" min="1" max="20" value="1" inputmode="numeric" />
-                                            <button type="button" data-room-quantity-action="plus" aria-label="Oda adedini artır">+</button>
-                                        </div>
-                                    </label>
-                                </div>
+                                            else
+                                            {
+                                                <option value="@room.RoomTypeId"
+                                                        data-price="@room.Price.ToString("0.00", System.Globalization.CultureInfo.InvariantCulture)"
+                                                        data-room-name="@room.Name"
+                                                        data-max-guests="@room.MaxGuestCount"
+                                                        data-max-adults="@room.MaxAdultCount"
+                                                        data-max-children="@room.MaxChildCount">
+                                                    @room.Name
+                                                </option>
+                                            }
+                                        }
+                                    </select>
+                                </label>
+                            </div>
+                            <div class="od-booking-counters-band od-booking-counters-band--item">
+                                <label class="multi-room-quantity">
+                                    <span>Oda adedi</span>
+                                    <div class="room-quantity-control">
+                                        <button type="button" data-room-quantity-action="minus" aria-label="Oda adedini azalt">-</button>
+                                        <input type="number" data-field="roomCount" min="1" max="20" value="1" inputmode="numeric" />
+                                        <button type="button" data-room-quantity-action="plus" aria-label="Oda adedini artır">+</button>
+                                    </div>
+                                </label>
                             </div>
                         </section>
                     </template>
                 </div>
 
+                <div class="od-booking-counters-band od-booking-counters-band--guests" aria-label="Oda ve misafir sayısı">
                 <div class="guest-row">
                     <span>Yetişkin</span>
                     <div class="guest-controls">
@@ -1640,6 +1642,8 @@
                         <button type="button" class="guest-btn" data-target="child" data-action="plus">+</button>
                     </div>
                     <input type="hidden" name="ChildCount" id="childCountInput" value="@reservationForm.ChildCount" />
+                </div>
+                </div>
                 </div>
 
                 <input type="hidden" name="RoomCount" id="roomCountInput" value="1" />

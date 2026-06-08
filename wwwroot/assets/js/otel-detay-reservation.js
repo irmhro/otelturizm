@@ -1,6 +1,10 @@
 (function () {
     'use strict';
 
+    if (window.__otelDetayInlineV41) {
+        return;
+    }
+
     const form = document.getElementById('bookingForm');
     if (!(form instanceof HTMLFormElement)) return;
 
