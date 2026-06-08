@@ -4746,6 +4746,11 @@ public class AdminService : IAdminService
 
     private static (string Title, string Subtitle, string[] Columns, string EmptyMessage, string? InfoNote) GetSectionConfig(string sectionKey)
     {
+        if (AdminNavigationCatalog.TryGetSectionMeta(sectionKey, out var catalogMeta))
+        {
+            return (catalogMeta.Title, catalogMeta.Subtitle, catalogMeta.Columns, catalogMeta.EmptyMessage, null);
+        }
+
         return sectionKey switch
         {
             "users" => ("Kullanicilar", "Tum kullanici tiplerini, rollerini ve hesap durumlarini veritabani kayitlari ile yonetin.", new[] { "Kullanici", "E-posta", "Telefon", "Uyelik", "Rezervasyon", "Puan", "Durum", "Islem" }, "Kullanici kaydi bulunamadi.", null),
@@ -4984,6 +4989,11 @@ public class AdminService : IAdminService
 
     private static string GetTableSql(string sectionKey)
     {
+        if (AdminNavigationCatalog.TryGetSectionMeta(sectionKey, out var catalogMeta))
+        {
+            return catalogMeta.ListSql;
+        }
+
         return sectionKey switch
         {
             "users" => @"SELECT TOP (40)
