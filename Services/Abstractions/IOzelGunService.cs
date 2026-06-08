@@ -5,4 +5,5 @@ namespace otelturizmnew.Services.Abstractions;
 public interface IOzelGunService
 {
     Task<OzelGunTodayViewModel?> GetTodayAsync(CancellationToken cancellationToken = default);
+    void InvalidateCache();
 }

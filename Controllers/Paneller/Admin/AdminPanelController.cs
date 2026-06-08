@@ -40,14 +40,20 @@ public class AdminPanelController : Controller
     private readonly IPanelThemeService _panelThemeService;
     private readonly IPlatformPackageService _platformPackageService;
     private readonly IAdminLocationService _adminLocationService;
+    private readonly IAdminHomepageHotelsService _adminHomepageHotelsService;
+    private readonly IAdminOzelGunlerService _adminOzelGunlerService;
+    private readonly IAdminPuanYonetimiService _adminPuanYonetimiService;
 
-    public AdminPanelController(IAdminService adminService, IAdminEmailRoutingService adminEmailRoutingService, IAdminRbacService adminRbacService, IAdminHotelManagementService adminHotelManagementService, IAdminLocationService adminLocationService, IContractContentService contractContentService, IDevelopmentRequestService developmentRequestService, IPhoneVerificationService phoneVerificationService, IAuditLogService auditLogService, IImageStorageService imageStorageService, ISitemapService sitemapService, IAdminSupportArticleService adminSupportArticleService, IWebHostEnvironment environment, IHttpClientFactory httpClientFactory, IOutputCacheStore outputCacheStore, ISecureFileService secureFileService, IGrowthGovernanceService growthGovernance, IPanelThemeService panelThemeService, IPlatformPackageService platformPackageService)
+    public AdminPanelController(IAdminService adminService, IAdminEmailRoutingService adminEmailRoutingService, IAdminRbacService adminRbacService, IAdminHotelManagementService adminHotelManagementService, IAdminLocationService adminLocationService, IAdminHomepageHotelsService adminHomepageHotelsService, IAdminOzelGunlerService adminOzelGunlerService, IAdminPuanYonetimiService adminPuanYonetimiService, IContractContentService contractContentService, IDevelopmentRequestService developmentRequestService, IPhoneVerificationService phoneVerificationService, IAuditLogService auditLogService, IImageStorageService imageStorageService, ISitemapService sitemapService, IAdminSupportArticleService adminSupportArticleService, IWebHostEnvironment environment, IHttpClientFactory httpClientFactory, IOutputCacheStore outputCacheStore, ISecureFileService secureFileService, IGrowthGovernanceService growthGovernance, IPanelThemeService panelThemeService, IPlatformPackageService platformPackageService)
     {
         _adminService = adminService;
         _adminEmailRoutingService = adminEmailRoutingService;
         _adminRbacService = adminRbacService;
         _adminHotelManagementService = adminHotelManagementService;
         _adminLocationService = adminLocationService;
+        _adminHomepageHotelsService = adminHomepageHotelsService;
+        _adminOzelGunlerService = adminOzelGunlerService;
+        _adminPuanYonetimiService = adminPuanYonetimiService;
         _contractContentService = contractContentService;
         _developmentRequestService = developmentRequestService;
         _phoneVerificationService = phoneVerificationService;
@@ -1420,6 +1426,222 @@ public class AdminPanelController : Controller
 
     [HttpGet("yoneticiler")]
     public Task<IActionResult> Managers(CancellationToken cancellationToken) => RenderSectionAsync("managers", "Managers", cancellationToken);
+
+    [HttpGet("ozel-gunler")]
+    public async Task<IActionResult> OzelGunler([FromQuery] int? editId, CancellationToken cancellationToken = default)
+    {
+        if (!CanAccessAdminPanel())
+        {
+            return RedirectToAction("UserLogin", "Auth");
+        }
+
+        if (await RequirePermissionOrForbidAsync("admin.ozel_gunler", cancellationToken) is { } denied)
+        {
+            return denied;
+        }
+
+        var model = await _adminOzelGunlerService.GetPageAsync(GetFullName(), GetEmail(), GetUserRole(), editId, cancellationToken);
+        ViewData["Title"] = model.Shell.PanelTitle;
+        ViewData["PageCssPath"] = "admin_panel_section_masaustu";
+        return View("~/Views/Paneller/Admin/OzelGunler.cshtml", model);
+    }
+
+    [HttpPost("ozel-gunler/kaydet")]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> SaveOzelGun(AdminOzelGunForm form, CancellationToken cancellationToken = default)
+    {
+        if (!CanAccessAdminPanel()) return RedirectToAction("UserLogin", "Auth");
+        if (await RequirePermissionOrForbidAsync("admin.ozel_gunler", cancellationToken) is { } denied) return denied;
+
+        var (success, message) = await _adminOzelGunlerService.SaveAsync(form, cancellationToken);
+        TempData[success ? "AdminMessage" : "AdminError"] = message;
+        return form.Id is > 0
+            ? Redirect($"/admin/ozel-gunler?editId={form.Id}")
+            : Redirect("/admin/ozel-gunler");
+    }
+
+    [HttpPost("ozel-gunler/sil")]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> DeleteOzelGun([FromForm] int Id, CancellationToken cancellationToken = default)
+    {
+        if (!CanAccessAdminPanel()) return RedirectToAction("UserLogin", "Auth");
+        if (await RequirePermissionOrForbidAsync("admin.ozel_gunler", cancellationToken) is { } denied) return denied;
+
+        var (success, message) = await _adminOzelGunlerService.DeleteAsync(Id, cancellationToken);
+        TempData[success ? "AdminMessage" : "AdminError"] = message;
+        return Redirect("/admin/ozel-gunler");
+    }
+
+    [HttpGet("puan-yonetimi")]
+    public async Task<IActionResult> PuanYonetimi([FromQuery] string? tab, [FromQuery] long? editRuleId, [FromQuery] long? filterUserId, CancellationToken cancellationToken = default)
+    {
+        if (!CanAccessAdminPanel())
+        {
+            return RedirectToAction("UserLogin", "Auth");
+        }
+
+        if (await RequirePermissionOrForbidAsync("admin.puan_yonetimi", cancellationToken) is { } denied)
+        {
+            return denied;
+        }
+
+        var model = await _adminPuanYonetimiService.GetPageAsync(GetFullName(), GetEmail(), GetUserRole(), tab, editRuleId, filterUserId, cancellationToken);
+        ViewData["Title"] = model.Shell.PanelTitle;
+        ViewData["PageCssPath"] = "admin_panel_section_masaustu";
+        return View("~/Views/Paneller/Admin/PuanYonetimi.cshtml", model);
+    }
+
+    [HttpPost("puan-yonetimi/kural-kaydet")]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> SavePuanRule(AdminPuanAyarForm form, [FromForm] string? tab, CancellationToken cancellationToken = default)
+    {
+        if (!CanAccessAdminPanel()) return RedirectToAction("UserLogin", "Auth");
+        if (await RequirePermissionOrForbidAsync("admin.puan_yonetimi", cancellationToken) is { } denied) return denied;
+
+        var (success, message) = await _adminPuanYonetimiService.SaveRuleAsync(form, cancellationToken);
+        TempData[success ? "AdminMessage" : "AdminError"] = message;
+        var activeTab = string.Equals(form.AyarTipi, "INDIRIM", StringComparison.OrdinalIgnoreCase) ? "indirim" : "kazanim";
+        if (!string.IsNullOrWhiteSpace(tab))
+        {
+            activeTab = tab;
+        }
+
+        return form.Id is > 0
+            ? Redirect($"/admin/puan-yonetimi?tab={activeTab}&editRuleId={form.Id}")
+            : Redirect($"/admin/puan-yonetimi?tab={activeTab}");
+    }
+
+    [HttpPost("puan-yonetimi/kural-sil")]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> DeletePuanRule([FromForm] long Id, [FromForm] string? tab, CancellationToken cancellationToken = default)
+    {
+        if (!CanAccessAdminPanel()) return RedirectToAction("UserLogin", "Auth");
+        if (await RequirePermissionOrForbidAsync("admin.puan_yonetimi", cancellationToken) is { } denied) return denied;
+
+        var (success, message) = await _adminPuanYonetimiService.DeleteRuleAsync(Id, cancellationToken);
+        TempData[success ? "AdminMessage" : "AdminError"] = message;
+        return Redirect($"/admin/puan-yonetimi?tab={(string.IsNullOrWhiteSpace(tab) ? "kazanim" : tab)}");
+    }
+
+    [HttpPost("puan-yonetimi/kullanici-duzenle")]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> AdjustPuanKullanici(AdminPuanKullaniciAdjustForm form, CancellationToken cancellationToken = default)
+    {
+        if (!CanAccessAdminPanel()) return RedirectToAction("UserLogin", "Auth");
+        if (await RequirePermissionOrForbidAsync("admin.puan_yonetimi", cancellationToken) is { } denied) return denied;
+
+        var (success, message) = await _adminPuanYonetimiService.AdjustUserPointsAsync(form, cancellationToken);
+        TempData[success ? "AdminMessage" : "AdminError"] = message;
+        return Redirect($"/admin/puan-yonetimi?tab=kullanici&filterUserId={form.UserId}");
+    }
+
+    [HttpGet("anasayfa-oteller")]
+    public async Task<IActionResult> AnasayfaOteller([FromQuery] long? sectionId, CancellationToken cancellationToken = default)
+    {
+        if (!CanAccessAdminPanel())
+        {
+            return RedirectToAction("UserLogin", "Auth");
+        }
+
+        if (await RequirePermissionOrForbidAsync("admin.homepage_hotels", cancellationToken) is { } denied)
+        {
+            return denied;
+        }
+
+        var model = await _adminHomepageHotelsService.GetPageAsync(GetFullName(), GetEmail(), GetUserRole(), sectionId, cancellationToken);
+        ViewData["Title"] = model.Shell.PanelTitle;
+        ViewData["PageCssPath"] = "admin_panel_section_masaustu";
+        return View("~/Views/Paneller/Admin/AnasayfaOteller.cshtml", model);
+    }
+
+    [HttpGet("anasayfa-oteller/otel-ara")]
+    public async Task<IActionResult> SearchAnasayfaHotels([FromQuery] string? q, [FromQuery] int limit = 20, CancellationToken cancellationToken = default)
+    {
+        if (!CanAccessAdminPanel())
+        {
+            return Unauthorized();
+        }
+
+        if (!await CanAccessAsync("admin.homepage_hotels", cancellationToken))
+        {
+            return Forbid();
+        }
+
+        var results = await _adminHomepageHotelsService.SearchPublishedHotelsAsync(q, limit, cancellationToken);
+        return Json(results);
+    }
+
+    [HttpPost("anasayfa-oteller/otel-ekle")]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> AddAnasayfaHotel(AdminHomepageAddHotelForm form, CancellationToken cancellationToken = default)
+    {
+        if (!CanAccessAdminPanel()) return RedirectToAction("UserLogin", "Auth");
+        if (await RequirePermissionOrForbidAsync("admin.homepage_hotels", cancellationToken) is { } denied) return denied;
+
+        var (success, message) = await _adminHomepageHotelsService.AddHotelToSectionAsync(form.SectionId, form.HotelId, cancellationToken);
+        TempData[success ? "AdminMessage" : "AdminError"] = message;
+        return Redirect($"/admin/anasayfa-oteller?sectionId={form.SectionId}");
+    }
+
+    [HttpPost("anasayfa-oteller/otel-kaldir")]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> RemoveAnasayfaHotel(AdminHomepageRemoveHotelForm form, CancellationToken cancellationToken = default)
+    {
+        if (!CanAccessAdminPanel()) return RedirectToAction("UserLogin", "Auth");
+        if (await RequirePermissionOrForbidAsync("admin.homepage_hotels", cancellationToken) is { } denied) return denied;
+
+        var (success, message) = await _adminHomepageHotelsService.RemoveHotelFromSectionAsync(form.EntryId, cancellationToken);
+        TempData[success ? "AdminMessage" : "AdminError"] = message;
+        return Redirect($"/admin/anasayfa-oteller?sectionId={form.SectionId}");
+    }
+
+    [HttpPost("anasayfa-oteller/otel-tasi")]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> MoveAnasayfaHotel(AdminHomepageMoveHotelForm form, CancellationToken cancellationToken = default)
+    {
+        if (!CanAccessAdminPanel()) return RedirectToAction("UserLogin", "Auth");
+        if (await RequirePermissionOrForbidAsync("admin.homepage_hotels", cancellationToken) is { } denied) return denied;
+
+        var (success, message) = await _adminHomepageHotelsService.MoveHotelAsync(form.EntryId, form.Direction, cancellationToken);
+        TempData[success ? "AdminMessage" : "AdminError"] = message;
+        return Redirect($"/admin/anasayfa-oteller?sectionId={form.SectionId}");
+    }
+
+    [HttpPost("anasayfa-oteller/bolum-ekle")]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> CreateAnasayfaSection(AdminHomepageSectionForm form, CancellationToken cancellationToken = default)
+    {
+        if (!CanAccessAdminPanel()) return RedirectToAction("UserLogin", "Auth");
+        if (await RequirePermissionOrForbidAsync("admin.homepage_hotels", cancellationToken) is { } denied) return denied;
+
+        var (success, message, sectionId) = await _adminHomepageHotelsService.CreateSectionAsync(form, cancellationToken);
+        TempData[success ? "AdminMessage" : "AdminError"] = message;
+        return Redirect(sectionId.HasValue ? $"/admin/anasayfa-oteller?sectionId={sectionId.Value}" : "/admin/anasayfa-oteller");
+    }
+
+    [HttpPost("anasayfa-oteller/bolum-guncelle")]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> UpdateAnasayfaSection(AdminHomepageSectionForm form, CancellationToken cancellationToken = default)
+    {
+        if (!CanAccessAdminPanel()) return RedirectToAction("UserLogin", "Auth");
+        if (await RequirePermissionOrForbidAsync("admin.homepage_hotels", cancellationToken) is { } denied) return denied;
+
+        var (success, message) = await _adminHomepageHotelsService.UpdateSectionAsync(form, cancellationToken);
+        TempData[success ? "AdminMessage" : "AdminError"] = message;
+        return Redirect(form.Id.HasValue ? $"/admin/anasayfa-oteller?sectionId={form.Id.Value}" : "/admin/anasayfa-oteller");
+    }
+
+    [HttpPost("anasayfa-oteller/bolum-sil")]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> DeleteAnasayfaSection([FromForm] long sectionId, CancellationToken cancellationToken = default)
+    {
+        if (!CanAccessAdminPanel()) return RedirectToAction("UserLogin", "Auth");
+        if (await RequirePermissionOrForbidAsync("admin.homepage_hotels", cancellationToken) is { } denied) return denied;
+
+        var (success, message) = await _adminHomepageHotelsService.DeleteSectionAsync(sectionId, cancellationToken);
+        TempData[success ? "AdminMessage" : "AdminError"] = message;
+        return Redirect("/admin/anasayfa-oteller");
+    }
 
     [HttpGet("oteller")]
     public async Task<IActionResult> Hotels([FromQuery] string? q, [FromQuery] string? city, [FromQuery] string? district, [FromQuery] string? neighborhood, [FromQuery] string? publishStatus, [FromQuery] string? approvalStatus, [FromQuery] int page = 1, [FromQuery] int pageSize = 20, CancellationToken cancellationToken = default)

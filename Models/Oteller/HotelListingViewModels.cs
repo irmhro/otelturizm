@@ -107,6 +107,12 @@ public class HotelListingCardViewModel
     /// <summary>Listede gösterilen gecelik fiyatın bağlı olduğu oda tipi adı (bugünkü satır).</summary>
     public string? ListingLeadRoomName { get; set; }
 
+    /// <summary>Bugün satışa açık en yüksek gecelik fiyatlı oda adı.</summary>
+    public string? ListingMaxRoomName { get; set; }
+
+    /// <summary>En yüksek oda gecelik fiyatı (vergiler dahil, liste görünümü).</summary>
+    public decimal? ListingMaxRoomPrice { get; set; }
+
     /// <summary>Liste kartında ücretsiz iptal rozeti (T381).</summary>
     public bool HasFreeCancellation { get; set; }
 

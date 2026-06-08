@@ -1,15 +1,16 @@
-@import url("./deneyimler.css");
-
 @media (max-width: 900px) {
     .deneyimler-page {
         --home-type-btn: 12px;
         --home-btn-min-height: 40px;
         --page-content-inset: 32px;
+        /* public-premium-pages.css :root 88px override — mobil header yüksekliği */
+        --home-header-sticky-h: var(--home-header-bar-h, 56px);
     }
 
     .dxp-shell {
         padding-left: 16px;
         padding-right: 16px;
+        overflow-x: clip;
     }
 
     .dxp-hero__grid {
@@ -19,6 +20,7 @@
     .dxp-hero__mosaic {
         min-height: 240px;
         margin-top: 4px;
+        max-width: none;
     }
 
     .dxp-mosaic-card--1 {
@@ -48,11 +50,11 @@
     }
 
     .dxp-category-nav {
-        top: calc(var(--home-header-sticky-h, 88px) - 1px);
-        margin-left: -16px;
-        margin-right: -16px;
-        padding-left: 16px;
-        padding-right: 16px;
+        top: calc(var(--home-header-bar-h, 56px) - 1px);
+        margin-left: calc(-1 * var(--page-content-gutter, 16px));
+        margin-right: calc(-1 * var(--page-content-gutter, 16px));
+        padding-left: var(--page-content-gutter, 16px);
+        padding-right: var(--page-content-gutter, 16px);
     }
 
     .dxp-bento {

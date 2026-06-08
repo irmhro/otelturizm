@@ -90,6 +90,65 @@
     </div>
 </section>
 
+@if (Model.HotelPointBalances.Count > 0)
+{
+    <section class="content-header">
+        <div class="page-title">
+            <h2>Otel Bazli Puanlarim</h2>
+            <p>Kazandiginiz puanlar otel bazindadir; yalnizca ilgili tesiste indirim olarak kullanilabilir.</p>
+        </div>
+    </section>
+
+    <section class="features-grid loyalty-feature-grid">
+        @foreach (var hotelBalance in Model.HotelPointBalances)
+        {
+            <article class="feature-card">
+                <div class="feature-header">
+                    <div class="feature-icon feature-tone-gold"><i class="fas fa-hotel"></i></div>
+                    <div>
+                        <h3>@hotelBalance.HotelName</h3>
+                        <p class="text-muted small">@hotelBalance.HotelCity</p>
+                    </div>
+                </div>
+                <div class="stats-mini-grid">
+                    <div class="stat-mini-card">
+                        <div class="stat-mini-content">
+                            <h3>@hotelBalance.AvailablePoints.ToString("N0")</h3>
+                            <p>Kullanilabilir puan</p>
+                        </div>
+                    </div>
+                    <div class="stat-mini-card">
+                        <div class="stat-mini-content">
+                            <h3>@(hotelBalance.DiscountPercent.HasValue ? $"%{hotelBalance.DiscountPercent.Value:N0}" : "—")</h3>
+                            <p>Uygulanabilir indirim</p>
+                        </div>
+                    </div>
+                </div>
+                @if (hotelBalance.RecentMovements.Count > 0)
+                {
+                    <div class="loyalty-hotel-movements">
+                        <h4>Son hareketler</h4>
+                        @foreach (var movement in hotelBalance.RecentMovements)
+                        {
+                            <div class="alert-item">
+                                <div>
+                                    <div class="alert-hotel">@movement.Title</div>
+                                    <div class="alert-sub">@movement.DateText · @movement.Description</div>
+                                </div>
+                                <span class="alert-price">@movement.PointChangeText</span>
+                            </div>
+                        }
+                    </div>
+                }
+                else if (!string.IsNullOrWhiteSpace(hotelBalance.LastEarnedText))
+                {
+                    <p class="feature-empty">Son kazanim: @hotelBalance.LastEarnedText</p>
+                }
+            </article>
+        }
+    </section>
+}
+
 <section class="features-grid loyalty-feature-grid">
     <article class="feature-card">
         <div class="feature-header">

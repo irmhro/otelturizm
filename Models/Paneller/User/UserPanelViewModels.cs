@@ -266,6 +266,29 @@ public class UserLoyaltyPageViewModel
     public List<UserLoyaltyRecommendationViewModel> Recommendations { get; set; } = new();
     public UserLoyaltyBudgetPlanForm BudgetPlanForm { get; set; } = new();
     public UserLoyaltyTravelPlanForm TravelPlanForm { get; set; } = new();
+    public List<UserHotelPointsBalanceViewModel> HotelPointBalances { get; set; } = new();
+}
+
+public class UserHotelPointsBalanceViewModel
+{
+    public long HotelId { get; set; }
+    public string HotelName { get; set; } = string.Empty;
+    public string HotelCity { get; set; } = string.Empty;
+    public int TotalEarned { get; set; }
+    public int AvailablePoints { get; set; }
+    public int UsedPoints { get; set; }
+    public decimal? DiscountPercent { get; set; }
+    public string? LastEarnedText { get; set; }
+    public List<UserHotelPointMovementViewModel> RecentMovements { get; set; } = new();
+}
+
+public class UserHotelPointMovementViewModel
+{
+    public string DateText { get; set; } = string.Empty;
+    public string Title { get; set; } = string.Empty;
+    public string Description { get; set; } = string.Empty;
+    public int PointChange { get; set; }
+    public string PointChangeText { get; set; } = string.Empty;
 }
 
 public class UserLoyaltyRecentCityViewModel

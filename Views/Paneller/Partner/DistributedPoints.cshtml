@@ -1,0 +1,79 @@
+@model otelturizmnew.Models.Paneller.Partner.PartnerDistributedPointsPageViewModel
+@{
+    Layout = "~/Views/Paneller/Partner/_PartnerPanelLayout.cshtml";
+    ViewData["PartnerShell"] = Model.Shell;
+}
+
+<section class="partner-growth-hero">
+    <div>
+        <p class="partner-room-kicker">Sadakat programı</p>
+        <h2>Dağıtılan Puanlar</h2>
+        <p>Tesisinizde misafirlerin kazandığı otel bazlı puan bakiyeleri. Puanlar yalnızca ilgili tesiste kullanılabilir.</p>
+    </div>
+    @if (Model.SelectedHotelId is > 0)
+    {
+        <div class="partner-chip ot-badge ot-badge--info">Otel ID: <strong>@Model.SelectedHotelId</strong></div>
+    }
+</section>
+
+<section class="partner-grid">
+    <article class="partner-stat-card tone-success">
+        <i class="fas fa-coins"></i>
+        <strong>@Model.TotalDistributedPoints.ToString("N0")</strong>
+        <span>Toplam dağıtılan puan</span>
+    </article>
+    <article class="partner-stat-card tone-info">
+        <i class="fas fa-users"></i>
+        <strong>@Model.ActiveBalanceCount.ToString("N0")</strong>
+        <span>Aktif misafir bakiyesi</span>
+    </article>
+</section>
+
+<section class="partner-section-card">
+    <div class="partner-section-head">
+        <div>
+            <h2>Misafir puan bakiyeleri</h2>
+            <p><code>PUAN_KULLANICI</code> tablosu — otel bazlı kazanım kayıtları.</p>
+        </div>
+    </div>
+    @if (Model.Rows.Count == 0)
+    {
+        <div class="partner-empty-state">
+            <strong>Henüz dağıtılmış puan yok</strong>
+            <p>Tamamlanan rezervasyonlardan kazanılan puanlar burada listelenir.</p>
+        </div>
+    }
+    else
+    {
+        <div class="partner-table-wrap">
+            <table class="partner-table">
+                <thead>
+                    <tr>
+                        <th>Misafir</th>
+                        <th>Otel</th>
+                        <th>Toplam Kazanılan</th>
+                        <th>Kullanılabilir</th>
+                        <th>Kullanılan</th>
+                        <th>Son Kazanım</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var row in Model.Rows)
+                    {
+                        <tr>
+                            <td>
+                                <strong>@row.UserDisplayName</strong>
+                                <div class="text-muted small">#@row.UserId</div>
+                            </td>
+                            <td>@row.HotelName</td>
+                            <td>@row.TotalEarned.ToString("N0")</td>
+                            <td>@row.AvailablePoints.ToString("N0")</td>
+                            <td>@row.UsedPoints.ToString("N0")</td>
+                            <td>@(string.IsNullOrWhiteSpace(row.LastEarnedText) ? "—" : row.LastEarnedText)</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
+</section>

@@ -40,6 +40,7 @@ public class OtellerController : Controller
     private readonly IReservationVelocityGuard _velocityGuard;
     private readonly HotelPresenceTracker _presenceTracker;
     private readonly InternationalSeoService _internationalSeo;
+    private readonly IHotelPointsService _hotelPointsService;
     private readonly ILogger<OtellerController> _logger;
 
     public OtellerController(
@@ -56,6 +57,7 @@ public class OtellerController : Controller
         IReservationVelocityGuard velocityGuard,
         HotelPresenceTracker presenceTracker,
         InternationalSeoService internationalSeo,
+        IHotelPointsService hotelPointsService,
         ILogger<OtellerController> logger)
     {
         _hotelService = hotelService;
@@ -71,6 +73,7 @@ public class OtellerController : Controller
         _velocityGuard = velocityGuard;
         _presenceTracker = presenceTracker;
         _internationalSeo = internationalSeo;
+        _hotelPointsService = hotelPointsService;
         _logger = logger;
     }
 
@@ -758,7 +761,7 @@ public class OtellerController : Controller
         foreach (var hotel in model.Hotels)
         {
             var nightly = hotel.DiscountedPrice ?? hotel.StartingPrice;
-            hotel.EstimatedLoyaltyPoints = otelturizmnew.Utils.LoyaltyPointsEstimator.EstimateFromNightlyPrice(nightly);
+            hotel.EstimatedLoyaltyPoints = _hotelPointsService.EstimateFromNightlyPrice(nightly);
         }
     }
 

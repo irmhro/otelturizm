@@ -9,6 +9,8 @@ public class AnasayfaViewModel
     public List<HomeDestinationCardViewModel> PopularDestinations { get; set; } = new();
     public List<HomeHotelCardViewModel> PopularHotels { get; set; } = new();
     public List<HomeHotelCardViewModel> WeekendHotels { get; set; } = new();
+    public List<HomeHotelCardViewModel> FeaturedRouteHotels { get; set; } = new();
+    public List<HomeCategorySectionViewModel> CustomHomepageSections { get; set; } = new();
     public List<HomeCategorySectionViewModel> CategorySections { get; set; } = new();
 }
 
@@ -48,6 +50,7 @@ public class HomeDestinationCardViewModel
     public string District { get; set; } = string.Empty;
     public int HotelCount { get; set; }
     public string LeadText { get; set; } = string.Empty;
+    public List<string> RecentHotelNames { get; set; } = new();
     public string ImageUrl { get; set; } = string.Empty;
     public string ListingUrl { get; set; } = string.Empty;
 }

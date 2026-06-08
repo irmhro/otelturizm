@@ -3,7 +3,6 @@
 @{
     var currentAction = ViewContext.RouteData.Values["action"]?.ToString() ?? "Dashboard";
     bool IsActive(string action) => string.Equals(currentAction, action, StringComparison.OrdinalIgnoreCase);
-    string Active(string action) => IsActive(action) ? "active" : string.Empty;
     bool Can(string code) => Model.Permissions.Contains("*") || Model.HasPermission(code);
 
     int BadgeValue(string? badgeKey) => badgeKey switch

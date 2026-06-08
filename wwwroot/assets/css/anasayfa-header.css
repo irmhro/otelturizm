@@ -74,6 +74,135 @@ header.navbar .container {
 
 .utility-left {
     color: #A1A1AA;
+    flex: 1;
+    min-width: 0;
+}
+
+.utility-pulse {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    min-width: 0;
+    flex: 1;
+}
+
+.utility-pulse__clock {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    flex-shrink: 0;
+    color: rgba(255, 255, 255, 0.78);
+    white-space: nowrap;
+}
+
+.utility-pulse__clock i {
+    color: var(--anatolian-sun);
+    font-size: 11px;
+}
+
+.utility-pulse__greeting {
+    color: #fff;
+    font-weight: 700;
+}
+
+.utility-pulse__time {
+    font-variant-numeric: tabular-nums;
+    font-weight: 800;
+    color: #fff;
+}
+
+.utility-pulse__tz {
+    padding: 1px 5px;
+    border-radius: 4px;
+    background: rgba(255, 255, 255, 0.08);
+    color: rgba(255, 255, 255, 0.55);
+    font-size: 9px;
+    font-weight: 800;
+    letter-spacing: 0.04em;
+}
+
+.utility-pulse__divider {
+    width: 1px;
+    height: 14px;
+    background: rgba(255, 255, 255, 0.14);
+    flex-shrink: 0;
+}
+
+.utility-pulse__destinations {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    min-width: 0;
+    flex-shrink: 1;
+}
+
+.utility-pulse__dest {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 3px 8px;
+    border-radius: 999px;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    background: rgba(255, 255, 255, 0.04);
+    color: rgba(255, 255, 255, 0.88);
+    font-size: 10.5px;
+    font-weight: 700;
+    text-decoration: none;
+    white-space: nowrap;
+    transition: border-color 0.2s ease, background 0.2s ease, color 0.2s ease;
+}
+
+.utility-pulse__dest i {
+    font-size: 9px;
+    color: var(--anatolian-sun);
+}
+
+.utility-pulse__dest:hover,
+.utility-pulse__dest:focus-visible {
+    border-color: rgba(255, 158, 0, 0.45);
+    background: rgba(255, 255, 255, 0.08);
+    color: #fff;
+}
+
+.utility-pulse__rotator {
+    position: relative;
+    min-width: 180px;
+    height: 18px;
+    overflow: hidden;
+    flex-shrink: 0;
+}
+
+.utility-pulse__insight {
+    position: absolute;
+    inset: 0;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    color: rgba(255, 255, 255, 0.72);
+    font-size: 11px;
+    font-weight: 600;
+    text-decoration: none;
+    opacity: 0;
+    transform: translateY(6px);
+    transition: opacity 0.35s ease, transform 0.35s ease;
+    white-space: nowrap;
+    pointer-events: none;
+}
+
+.utility-pulse__insight.is-active {
+    opacity: 1;
+    transform: translateY(0);
+    pointer-events: auto;
+}
+
+.utility-pulse__insight i {
+    color: var(--anatolian-sun);
+    font-size: 10px;
+}
+
+.utility-pulse__insight:hover,
+.utility-pulse__insight:focus-visible {
+    color: #fff;
 }
 
 .utility-left strong,
@@ -504,6 +633,24 @@ header.navbar {
     .anasayfa-page .utility-bar {
         padding: 7px 0;
         font-size: 11px;
+    }
+
+    @media (max-width: 1180px) {
+        .utility-pulse__destinations .utility-pulse__dest:nth-child(n+4) {
+            display: none;
+        }
+    }
+
+    @media (max-width: 1040px) {
+        .utility-pulse__rotator {
+            display: none;
+        }
+    }
+
+    @media (max-width: 960px) {
+        .utility-pulse__destinations .utility-pulse__dest:nth-child(n+3) {
+            display: none;
+        }
     }
 
     :root {

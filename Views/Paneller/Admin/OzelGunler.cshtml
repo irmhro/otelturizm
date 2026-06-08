@@ -1,0 +1,195 @@
+@model otelturizmnew.Models.Paneller.Admin.AdminOzelGunlerPageViewModel
+@{
+    Layout = "~/Views/Paneller/Admin/_AdminPanelLayout.cshtml";
+    ViewData["AdminShell"] = Model.Shell;
+    ViewData["PageCssPath"] = "admin_panel_section_masaustu";
+    var form = Model.Form;
+    var isEdit = form.Id is > 0;
+}
+
+<section class="admin-section-card">
+    <div class="admin-section-head">
+        <div>
+            <p class="mini-caption">OTEL & ENVANTER</p>
+            <h2>Özel Günler</h2>
+            <span><strong>OZEL_GUNLER</strong> tablosu — anasayfa logo altı vitrin ve özel gün kutlamaları.</span>
+        </div>
+        <div class="admin-section-actions">
+            <span class="badge bg-light text-dark">@Model.TotalCount kayıt</span>
+        </div>
+    </div>
+
+    <div class="admin-table-wrap">
+        <table class="admin-table">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Kod</th>
+                    <th>Gün Adı</th>
+                    <th>Ay</th>
+                    <th>Kural</th>
+                    <th>Emoji</th>
+                    <th>Kategori</th>
+                    <th>Kutlama Metni</th>
+                    <th>Sıra</th>
+                    <th>Aktif</th>
+                    <th>Oluşturma</th>
+                    <th class="text-end">İşlem</th>
+                </tr>
+            </thead>
+            <tbody>
+            @if (Model.Rows.Count == 0)
+            {
+                <tr>
+                    <td colspan="12">Kayıt bulunamadı. Aşağıdaki formdan yeni özel gün ekleyin veya migration seed çalıştırın.</td>
+                </tr>
+            }
+            else
+            {
+                foreach (var row in Model.Rows)
+                {
+                    <tr>
+                        <td>@row.Id</td>
+                        <td><code>@row.GunKodu</code></td>
+                        <td><strong>@row.GunAdi</strong></td>
+                        <td>@row.AyText</td>
+                        <td>
+                            <span class="badge bg-light text-dark">@row.KuralTipi</span>
+                            <div class="text-muted small">@row.KuralText</div>
+                        </td>
+                        <td>@(string.IsNullOrWhiteSpace(row.Emoji) ? "—" : row.Emoji)</td>
+                        <td>@(string.IsNullOrWhiteSpace(row.Kategori) ? "—" : row.Kategori)</td>
+                        <td class="small">@(string.IsNullOrWhiteSpace(row.KutlamaMetni) ? "—" : row.KutlamaMetni)</td>
+                        <td>@row.Siralama</td>
+                        <td>
+                            @if (row.AktifMi)
+                            {
+                                <span class="badge bg-success">Aktif</span>
+                            }
+                            else
+                            {
+                                <span class="badge bg-secondary">Pasif</span>
+                            }
+                        </td>
+                        <td class="small text-muted">@row.OlusturulmaTarihiText</td>
+                        <td class="text-end">
+                            <a class="btn btn-outline-primary btn-sm" href="/admin/ozel-gunler?editId=@row.Id">Düzenle</a>
+                            <form method="post" action="/admin/ozel-gunler/sil" class="d-inline" onsubmit="return confirm('Bu özel gün kaydı silinsin mi?');">
+                                @Html.AntiForgeryToken()
+                                <input type="hidden" name="Id" value="@row.Id" />
+                                <button type="submit" class="btn btn-outline-danger btn-sm">Sil</button>
+                            </form>
+                        </td>
+                    </tr>
+                }
+            }
+            </tbody>
+        </table>
+    </div>
+</section>
+
+<section class="admin-section-card" style="margin-top: 1rem;">
+    <div class="admin-section-head">
+        <div>
+            <p class="mini-caption">@(isEdit ? "GÜNCELLE" : "YENİ KAYIT")</p>
+            <h2>@(isEdit ? "Özel gün düzenle" : "Özel gün ekle")</h2>
+            <span>Kural tipi <strong>SABIT</strong> ise ay+gün; <strong>NINCI_HAFTA_GUNU</strong> ise ay + hafta no + haftanın günü kullanılır.</span>
+        </div>
+        @if (isEdit)
+        {
+            <a class="btn btn-outline-secondary btn-sm" href="/admin/ozel-gunler">Yeni kayıt modu</a>
+        }
+    </div>
+
+    <form method="post" action="/admin/ozel-gunler/kaydet" class="admin-form-grid" id="ozelGunForm">
+        @Html.AntiForgeryToken()
+        <input type="hidden" name="Id" value="@(form.Id ?? 0)" />
+
+        <label>
+            <span>Gün Kodu (benzersiz)</span>
+            <input type="text" name="GunKodu" value="@form.GunKodu" required maxlength="80" placeholder="orn: 23-nisan" @(isEdit ? "readonly" : "") />
+        </label>
+        <label class="admin-form-span">
+            <span>Gün Adı</span>
+            <input type="text" name="GunAdi" value="@form.GunAdi" required maxlength="200" />
+        </label>
+        <label>
+            <span>Ay</span>
+            <select name="Ay">
+                @for (var m = 1; m <= 12; m++)
+                {
+                    <option value="@m" selected="@(form.Ay == m)">@m</option>
+                }
+            </select>
+        </label>
+        <label>
+            <span>Kural Tipi</span>
+            <select name="KuralTipi" id="kuralTipiSelect">
+                <option value="SABIT" selected="@(string.Equals(form.KuralTipi, "SABIT", StringComparison.OrdinalIgnoreCase))">Sabit tarih (Ay/Gün)</option>
+                <option value="NINCI_HAFTA_GUNU" selected="@(string.Equals(form.KuralTipi, "NINCI_HAFTA_GUNU", StringComparison.OrdinalIgnoreCase))">N. hafta + haftanın günü</option>
+            </select>
+        </label>
+        <label data-kural-field="sabit">
+            <span>Gün (1–31)</span>
+            <input type="number" name="Gun" value="@form.Gun" min="1" max="31" />
+        </label>
+        <label data-kural-field="hafta">
+            <span>Hafta No (1–5)</span>
+            <input type="number" name="KuralParam1" value="@form.KuralParam1" min="1" max="5" />
+        </label>
+        <label data-kural-field="hafta">
+            <span>Haftanın Günü</span>
+            <select name="KuralParam2">
+                <option value="">Seçin</option>
+                <option value="1" selected="@(form.KuralParam2 == 1)">Pazartesi</option>
+                <option value="2" selected="@(form.KuralParam2 == 2)">Salı</option>
+                <option value="3" selected="@(form.KuralParam2 == 3)">Çarşamba</option>
+                <option value="4" selected="@(form.KuralParam2 == 4)">Perşembe</option>
+                <option value="5" selected="@(form.KuralParam2 == 5)">Cuma</option>
+                <option value="6" selected="@(form.KuralParam2 == 6)">Cumartesi</option>
+                <option value="0" selected="@(form.KuralParam2 == 0)">Pazar</option>
+            </select>
+        </label>
+        <label>
+            <span>Emoji</span>
+            <input type="text" name="Emoji" value="@form.Emoji" maxlength="16" placeholder="🎉" />
+        </label>
+        <label>
+            <span>Kategori</span>
+            <input type="text" name="Kategori" value="@form.Kategori" maxlength="80" placeholder="Ulusal / Dini / ..." />
+        </label>
+        <label class="admin-form-span">
+            <span>Kutlama Metni</span>
+            <input type="text" name="KutlamaMetni" value="@form.KutlamaMetni" maxlength="300" />
+        </label>
+        <label>
+            <span>Sıralama</span>
+            <input type="number" name="Siralama" value="@form.Siralama" min="1" />
+        </label>
+        <label class="checkbox-inline">
+            <input type="checkbox" name="AktifMi" value="true" @(form.AktifMi ? "checked" : "") />
+            <span>Aktif</span>
+        </label>
+        <div class="admin-form-actions">
+            <button type="submit" class="btn btn-primary">@(isEdit ? "Güncelle" : "Ekle")</button>
+        </div>
+    </form>
+</section>
+
+<script>
+    (function () {
+        const select = document.getElementById('kuralTipiSelect');
+        const sabitFields = document.querySelectorAll('[data-kural-field="sabit"]');
+        const haftaFields = document.querySelectorAll('[data-kural-field="hafta"]');
+        if (!select) return;
+
+        function syncKuralFields() {
+            const isSabit = select.value === 'SABIT';
+            sabitFields.forEach(el => { el.style.display = isSabit ? '' : 'none'; });
+            haftaFields.forEach(el => { el.style.display = isSabit ? 'none' : ''; });
+        }
+
+        select.addEventListener('change', syncKuralFields);
+        syncKuralFields();
+    })();
+</script>

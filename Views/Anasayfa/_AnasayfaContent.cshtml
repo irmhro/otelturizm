@@ -1,6 +1,9 @@
 @model otelturizmnew.Models.Anasayfa.AnasayfaViewModel
 @{
-    var featuredHotels = (Model.PopularHotels?.Any() == true ? Model.PopularHotels : Model.WeekendHotels)?.Take(4).ToList() ?? new();
+    var featuredHotels = Model.FeaturedRouteHotels?.Any() == true
+        ? Model.FeaturedRouteHotels
+        : (Model.PopularHotels?.Any() == true ? Model.PopularHotels : Model.WeekendHotels)?.Take(4).ToList() ?? new();
+    var customHomeSections = Model.CustomHomepageSections ?? new();
     var fallbackImages = new[]
     {
         "https://images.unsplash.com/photo-1566073771259-6a8506099945?w=700&auto=format&fit=crop&q=80",
@@ -334,6 +337,65 @@
             }
         </section>
 
+        @foreach (var customSection in customHomeSections)
+        {
+            if (customSection.Hotels is null || customSection.Hotels.Count == 0)
+            {
+                continue;
+            }
+
+            <h2 class="section-headline"><span class="headline-left">@customSection.Title</span><a class="headline-link" href="/oteller">Tümünü gör</a></h2>
+            @if (!string.IsNullOrWhiteSpace(customSection.Etiket))
+            {
+                <p class="section-subline">@customSection.Etiket</p>
+            }
+            <section class="hotel-grid">
+                @{
+                    var customIndex = 0;
+                }
+                @foreach (var hotel in customSection.Hotels)
+                {
+                    var image = !string.IsNullOrWhiteSpace(hotel.ImageUrl) ? hotel.ImageUrl : fallbackImages[customIndex % fallbackImages.Length];
+                    var detailUrl = string.IsNullOrWhiteSpace(hotel.DetailSlug) ? "/oteller" : $"/oteller/{Uri.EscapeDataString(hotel.DetailSlug)}";
+                    var location = !string.IsNullOrWhiteSpace(hotel.LocationText) ? hotel.LocationText : $"{hotel.District}, {hotel.City}".Trim(' ', ',');
+                    var hasDiscount = hotel.HasDiscount && hotel.OriginalPrice.HasValue && hotel.DiscountedPrice.HasValue;
+                    <article class="hotel-card">
+                        <a href="@detailUrl" class="home-premium-card-link" aria-label="@hotel.Name detay">
+                            <div class="img-holder">
+                                <img src="@image" alt="@hotel.Name" loading="lazy" decoding="async" />
+                                <span class="badge-lux">★★★★★</span>
+                            </div>
+                            <div class="hotel-card-body">
+                                <h3 class="hotel-title">@hotel.Name</h3>
+                                <p class="hotel-desc"><i class="fas fa-location-dot"></i> @location</p>
+                                <div class="price-row">
+                                    <div class="price-inline">
+                                        @if (hasDiscount)
+                                        {
+                                            <strong>₺@hotel.DiscountedPrice!.Value.ToString("N0")</strong>
+                                            <small class="price-tax-note">Vergiler dahil · %@hotel.DiscountPercent indirim</small>
+                                        }
+                                        else if (hotel.StartingPrice.HasValue)
+                                        {
+                                            <strong>₺@hotel.StartingPrice.Value.ToString("N0")</strong>
+                                            <small class="price-tax-note">Vergiler dahil</small>
+                                        }
+                                        else
+                                        {
+                                            <strong>@hotel.PriceText</strong>
+                                            <small class="price-tax-note">Vergiler dahil</small>
+                                        }
+                                    </div>
+                                    <span class="card-link">İncele →</span>
+                                </div>
+                            </div>
+                        </a>
+                    </article>
+                    customIndex++;
+                }
+            </section>
+        }
+
         <div class="section-headline"><span class="headline-left">Güncel Fırsatlar</span></div>
         <section class="deals-row">
             <a class="deal-card" href="/kampanyalar">
@@ -421,18 +483,27 @@
                     var destListingUrl = string.IsNullOrWhiteSpace(dest.ListingUrl)
                         ? $"/oteller?q={Uri.EscapeDataString(dest.City)}"
                         : dest.ListingUrl;
-                    var destAria = $"{dest.City} — {dest.HotelCount} otel";
+                    var recentNames = dest.RecentHotelNames?.Where(n => !string.IsNullOrWhiteSpace(n)).Take(3).ToList() ?? new List<string>();
+                    var destAria = recentNames.Count > 0
+                        ? $"{dest.City} — {string.Join(", ", recentNames)}"
+                        : dest.City;
                     <a class="dest-card" href="@destListingUrl" aria-label="@destAria">
                         <img class="dest-img" src="@destImage" alt="@dest.City" width="72" height="72" loading="lazy" decoding="async" />
                         <div class="dest-meta">
                             <h4>@dest.City</h4>
-                            <p>
-                                @dest.HotelCount otel
-                                @if (!string.IsNullOrWhiteSpace(dest.LeadText))
-                                {
-                                    <span class="dest-meta-detail"> · @dest.LeadText</span>
-                                }
-                            </p>
+                            @if (recentNames.Count > 0)
+                            {
+                                <div class="dest-recent-ticker" data-dest-ticker aria-live="polite">
+                                    @for (var nameIndex = 0; nameIndex < recentNames.Count; nameIndex++)
+                                    {
+                                        <p class="dest-recent-name@(nameIndex == 0 ? " is-active" : string.Empty)" data-dest-ticker-item>@recentNames[nameIndex]</p>
+                                    }
+                                </div>
+                            }
+                            else
+                            {
+                                <p class="dest-recent-fallback">Yeni otelleri keşfedin</p>
+                            }
                         </div>
                     </a>
                 }

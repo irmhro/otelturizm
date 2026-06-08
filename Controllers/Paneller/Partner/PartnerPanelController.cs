@@ -22,8 +22,9 @@ public class PartnerPanelController : Controller
     private readonly IPanelThemeService _panelThemeService;
     private readonly ISecureFileService _secureFileService;
     private readonly IPlatformPackageService _platformPackageService;
+    private readonly IHotelPointsService _hotelPointsService;
 
-    public PartnerPanelController(IPartnerService partnerService, IAuthService authService, IUserPanelService userPanelService, IOutputCacheStore outputCacheStore, IPanelThemeService panelThemeService, ISecureFileService secureFileService, IPlatformPackageService platformPackageService)
+    public PartnerPanelController(IPartnerService partnerService, IAuthService authService, IUserPanelService userPanelService, IOutputCacheStore outputCacheStore, IPanelThemeService panelThemeService, ISecureFileService secureFileService, IPlatformPackageService platformPackageService, IHotelPointsService hotelPointsService)
     {
         _partnerService = partnerService;
         _authService = authService;
@@ -32,6 +33,7 @@ public class PartnerPanelController : Controller
         _panelThemeService = panelThemeService;
         _secureFileService = secureFileService;
         _platformPackageService = platformPackageService;
+        _hotelPointsService = hotelPointsService;
     }
 
     private async Task EvictPublicOutputCacheAsync(CancellationToken cancellationToken)
@@ -1307,6 +1309,43 @@ public class PartnerPanelController : Controller
             ViewData["Title"] = "Favori Misafirler";
             ViewData["PageCssPath"] = "paneller/partner/favorite-guests";
             return View("~/Views/Paneller/Partner/FavoriteGuests.cshtml", model);
+        }
+        catch (InvalidOperationException ex) when (ex.Message.Contains("yetkili otel", StringComparison.OrdinalIgnoreCase))
+        {
+            return View("~/Views/Paneller/Partner/NoHotelAssigned.cshtml");
+        }
+    }
+
+    [HttpGet("dagitilan-puanlar")]
+    public async Task<IActionResult> DistributedPoints(long? otelId, CancellationToken cancellationToken)
+    {
+        if (!IsPartnerUser()) return Redirect("/partner-giris");
+        try
+        {
+            var dashboard = await _partnerService.GetDashboardAsync(GetUserId(), otelId, cancellationToken: cancellationToken);
+            var rows = await _hotelPointsService.GetPartnerDistributedPointsAsync(GetUserId(), dashboard.Shell.SelectedHotelId, cancellationToken);
+            var model = new PartnerDistributedPointsPageViewModel
+            {
+                Shell = dashboard.Shell,
+                SelectedHotelId = dashboard.Shell.SelectedHotelId,
+                TotalDistributedPoints = rows.Sum(static x => x.TotalEarned),
+                ActiveBalanceCount = rows.Count(static x => x.AvailablePoints > 0),
+                Rows = rows.Select(static row => new PartnerDistributedPointsRowViewModel
+                {
+                    HotelId = row.HotelId,
+                    HotelName = row.HotelName,
+                    UserId = row.UserId,
+                    UserDisplayName = row.UserDisplayName,
+                    TotalEarned = row.TotalEarned,
+                    AvailablePoints = row.AvailablePoints,
+                    UsedPoints = row.UsedPoints,
+                    LastEarnedText = row.LastEarnedText
+                }).ToList()
+            };
+            ViewData["PartnerShell"] = model.Shell;
+            ViewData["Title"] = "Dağıtılan Puanlar";
+            ViewData["PageCssPath"] = "paneller/partner/distributed-points";
+            return View("~/Views/Paneller/Partner/DistributedPoints.cshtml", model);
         }
         catch (InvalidOperationException ex) when (ex.Message.Contains("yetkili otel", StringComparison.OrdinalIgnoreCase))
         {

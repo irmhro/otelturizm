@@ -43,13 +43,21 @@
     .hero-stage {
         padding: 0;
         margin: 0;
+        width: 100%;
+        max-width: 100%;
+        border-radius: 16px;
+        border: 1px solid rgba(235, 233, 228, 0.65);
+        background: rgba(255, 255, 255, 0.98);
+        box-shadow: 0 12px 32px rgba(26, 25, 25, 0.06);
+        overflow: hidden;
     }
 
     .hero-top-grid--solo .hero-headline-pro {
-        max-width: min(420px, 92vw);
+        max-width: none;
         width: 100%;
-        margin-inline: auto;
-        align-items: center;
+        margin-inline: 0;
+        align-items: flex-start;
+        text-align: left;
     }
 
     /* Arama — legacy form (search-engine-pro hariç) */
@@ -245,6 +253,15 @@
     }
 
     .dest-meta p {
+        font-size: 11px;
+    }
+
+    .dest-recent-ticker {
+        min-height: 16px;
+    }
+
+    .dest-recent-name,
+    .dest-recent-fallback {
         font-size: 11px;
     }
 
@@ -531,8 +548,10 @@
 /* ===== anasayfa_mobil.css — v5 katmanı ===== */
 @media (max-width: 900px) {
     .hero-top-grid {
-        gap: 16px;
-        margin-bottom: 18px;
+        gap: 10px;
+        margin-bottom: 0;
+        padding: 14px 14px 10px;
+        border-bottom: 1px solid rgba(235, 233, 228, 0.35);
     }
 
     .hero-top-grid .hero-campaigns {
@@ -540,24 +559,37 @@
     }
 
     .hero-top-grid:not(.hero-top-grid--solo) .hero-headline-pro {
-        text-align: center;
-        align-items: center;
+        text-align: left;
+        align-items: flex-start;
         margin-bottom: 0;
     }
 
     .hero-top-grid:not(.hero-top-grid--solo) .hero-kicker,
     .hero-top-grid:not(.hero-top-grid--solo) .hero-title-row {
-        justify-content: center;
+        justify-content: flex-start;
     }
 
     .hero-headline-pro {
         margin-bottom: 0;
-        padding: 0 2px;
-        gap: 10px;
+        padding: 0;
+        gap: 8px;
         width: 100%;
-        max-width: min(420px, 92vw);
-        margin-inline: auto;
-        align-items: center;
+        max-width: none;
+        margin-inline: 0;
+        align-items: flex-start;
+        text-align: left;
+        box-sizing: border-box;
+    }
+
+    .hero-headline-pro .hero-ozel-gun,
+    .hero-headline-pro .hero-kicker {
+        justify-content: flex-start;
+        width: 100%;
+    }
+
+    .hero-meta-chip--ozel {
+        padding: 8px 16px 9px;
+        max-width: 100%;
     }
 
     .hero-meta-chip-text {
@@ -572,11 +604,6 @@
     .hero-meta-chip--brand .hero-meta-chip-text {
         font-size: 8px;
         letter-spacing: 0.1em;
-    }
-
-    .hero-meta-chip--ozel {
-        padding: 8px 16px 9px;
-        max-width: min(340px, 92vw);
     }
 
     .hero-meta-chip-label {
@@ -602,48 +629,50 @@
 
     .hero-title.hero-title-pro--headline {
         width: 100%;
-        max-width: min(400px, 92vw);
-        margin-inline: auto;
-        font-size: clamp(20px, 6vw, 32px);
-        line-height: 1.14;
-        gap: clamp(3px, 0.8vw, 5px);
-        text-align: center;
-        align-items: center;
+        max-width: none;
+        margin-inline: 0;
+        font-size: clamp(19px, 5.4vw, 28px);
+        line-height: 1.2;
+        gap: clamp(4px, 1vw, 6px);
+        text-align: left;
+        align-items: flex-start;
+        text-wrap: balance;
     }
 
     .hero-title-pro--headline .hero-title-row--spread {
-        justify-content: center;
-        flex-wrap: nowrap;
-        gap: clamp(0.14em, 1vw, 0.28em);
+        justify-content: flex-start;
+        flex-wrap: wrap;
+        gap: 0.18em 0.28em;
         width: 100%;
-        max-width: min(400px, 92vw);
-        margin-inline: auto;
+        max-width: none;
+        margin-inline: 0;
     }
 
     .hero-title-pro--headline .hero-title-row--line {
-        flex-wrap: nowrap;
+        flex-wrap: wrap;
+        overflow: visible;
     }
 
     .hero-title-pro--headline .hero-title-row--spread .hero-title-word {
         flex: 0 1 auto;
-        white-space: nowrap;
+        white-space: normal;
     }
 
     .hero-title-row {
         display: flex;
-        flex-wrap: nowrap;
+        flex-wrap: wrap;
         align-items: baseline;
-        justify-content: center;
-        gap: clamp(0.14em, 1vw, 0.28em);
+        justify-content: flex-start;
+        gap: 0.18em 0.28em;
         width: 100%;
-        max-width: min(400px, 92vw);
-        margin-inline: auto;
-        white-space: nowrap;
-        text-align: center;
+        max-width: none;
+        margin-inline: 0;
+        white-space: normal;
+        text-align: left;
     }
 
     .hero-title-row .hero-title-word {
-        white-space: nowrap;
+        white-space: normal;
     }
 
     .hero-title-row--impact {
@@ -658,8 +687,10 @@
     .search-engine-shell {
         width: 100%;
         max-width: 100%;
-        margin-top: 4px;
-        margin-bottom: 12px;
+        margin-top: 0;
+        margin-bottom: 0;
+        padding: 0 14px 14px;
+        box-sizing: border-box;
     }
 
     .search-engine.search-engine-pro {
@@ -673,7 +704,7 @@
         border: none !important;
         box-shadow: none !important;
         background: transparent !important;
-        margin: 0 auto 4px;
+        margin: 0;
     }
 
     .hero-section .search-pro-row-trip {
@@ -720,7 +751,7 @@
         display: grid !important;
         grid-template-columns: 1fr 1fr;
         gap: 12px 10px;
-        padding: 16px 0 14px;
+        padding: 12px 0 14px;
         border-bottom: 1px solid rgba(235, 233, 228, 0.35);
         background: transparent;
     }
@@ -938,8 +969,8 @@
     }
 
     .hero-headline-pro {
-        margin-bottom: 20px;
-        gap: 10px;
+        margin-bottom: 0;
+        gap: 8px;
     }
 
     .hero-kicker {
@@ -947,34 +978,34 @@
     }
 
     .hero-title-row {
-        gap: 0.24em;
+        gap: 0.18em 0.24em;
     }
 
     .hero-title.hero-title-pro {
-        font-size: clamp(24px, 7vw, 34px);
+        font-size: clamp(22px, 6.6vw, 30px);
         letter-spacing: -0.028em;
     }
 
     .hero-title.hero-title-pro--headline {
         width: 100%;
-        max-width: min(360px, 90vw);
-        margin-inline: auto;
-        font-size: clamp(18px, 5.6vw, 26px);
-        line-height: 1.16;
-        gap: 3px;
-        letter-spacing: -0.024em;
-        text-align: center;
+        max-width: none;
+        margin-inline: 0;
+        font-size: clamp(17px, 5vw, 24px);
+        line-height: 1.22;
+        gap: 4px;
+        letter-spacing: -0.022em;
+        text-align: left;
     }
 
     .hero-title-pro--headline .hero-title-row--spread {
-        justify-content: center;
-        flex-wrap: nowrap;
-        gap: clamp(0.12em, 0.9vw, 0.22em);
-        max-width: min(360px, 90vw);
+        justify-content: flex-start;
+        flex-wrap: wrap;
+        gap: 0.16em 0.22em;
+        max-width: none;
     }
 
     .hero-title-pro--headline .hero-title-row--spread .hero-title-word {
-        white-space: nowrap;
+        white-space: normal;
     }
 
     .search-pro-row-trip {

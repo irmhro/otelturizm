@@ -28,6 +28,7 @@ public class PublicReservationService : IPublicReservationService
     private readonly IWeatherService _weatherService;
     private readonly IDawnSurpriseService _dawnSurpriseService;
     private readonly IUserLoyaltyPointsService _loyaltyPointsService;
+    private readonly IHotelPointsService _hotelPointsService;
     private readonly IHttpContextAccessor _httpContextAccessor;
     private readonly ILogger<PublicReservationService> _logger;
 
@@ -41,6 +42,7 @@ public class PublicReservationService : IPublicReservationService
         IWeatherService weatherService,
         IDawnSurpriseService dawnSurpriseService,
         IUserLoyaltyPointsService loyaltyPointsService,
+        IHotelPointsService hotelPointsService,
         IHttpContextAccessor httpContextAccessor,
         ILogger<PublicReservationService> logger)
     {
@@ -54,6 +56,7 @@ public class PublicReservationService : IPublicReservationService
         _weatherService = weatherService;
         _dawnSurpriseService = dawnSurpriseService;
         _loyaltyPointsService = loyaltyPointsService;
+        _hotelPointsService = hotelPointsService;
         _httpContextAccessor = httpContextAccessor;
         _logger = logger;
     }
@@ -397,6 +400,7 @@ public class PublicReservationService : IPublicReservationService
                 SELECT CAST(SCOPE_IDENTITY() AS bigint);";
 
             var createdReservationIds = new List<long>(perRoomPricing.Count);
+            var createdReservationAwards = new List<(long ReservationId, decimal TotalAmount)>(perRoomPricing.Count);
             var createdReservationNos = new List<string>(perRoomPricing.Count);
             var emailJobs = new List<ReservationEmailJob>(perRoomPricing.Count * 2);
             var remainingKapida = paymentPlan.KapidaTutari;
@@ -502,6 +506,7 @@ public class PublicReservationService : IPublicReservationService
                 }
                 await InsertReservationPaymentLinesAsync(connection, (SqlTransaction)transaction, reservationId, splitPlan, cancellationToken);
                 createdReservationIds.Add(reservationId);
+                createdReservationAwards.Add((reservationId, pricing.TotalAmount));
                 createdReservationNos.Add(reservationNo);
 
                 emailJobs.Add(new ReservationEmailJob(
@@ -552,13 +557,24 @@ public class PublicReservationService : IPublicReservationService
             }
             try
             {
-                foreach (var reservationId in createdReservationIds)
+                foreach (var (reservationId, totalAmount) in createdReservationAwards)
                 {
-                    await _loyaltyPointsService.TryAwardReservationPointsAsync(
+                    await _hotelPointsService.TryAwardReservationPointsAsync(
                         authenticatedUserId,
+                        form.HotelId,
                         reservationId,
-                        LoyaltyPointsEstimator.ReservationPreviewPoints,
+                        totalAmount,
                         cancellationToken);
+
+                    var points = _hotelPointsService.CalculateEarnPoints(totalAmount);
+                    if (points > 0)
+                    {
+                        await _loyaltyPointsService.TryAwardReservationPointsAsync(
+                            authenticatedUserId,
+                            reservationId,
+                            points,
+                            cancellationToken);
+                    }
                 }
             }
             catch (Exception loyaltyException)

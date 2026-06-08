@@ -2,6 +2,8 @@
 @using System.Globalization
 @using otelturizmnew.Services
 @{
+    // Geçici: harita geliştirme aşamasında — otel listesinden harita linklerini gizle
+    var showHotelListingMap = false;
     var hotels = Model.Hotels ?? new List<otelturizmnew.Models.Oteller.HotelListingCardViewModel>();
     var listingPathLang = InternationalSeoPaths.ResolveCultureFromPath(Context.Request.Path.Value ?? "/");
     string HotelDetailUrl(string slug) => InternationalSeoPaths.BuildPublicPath(listingPathLang, InternationalSeoPaths.PageKindDetail, null, slug);
@@ -126,7 +128,7 @@
                 }
             </div>
 
-            <div class="otelliste-mobile-bar" id="otellisteMobileBar" role="toolbar" aria-label="Liste araç çubuğu">
+            <div class="otelliste-mobile-bar@(showHotelListingMap ? "" : " otelliste-mobile-bar--no-map")" id="otellisteMobileBar" role="toolbar" aria-label="Liste araç çubuğu">
                 <button type="button" class="otelliste-mobile-bar-btn otelliste-mobile-filter-btn" id="otellisteOpenDrawer" aria-controls="otellisteFilterDrawer" aria-label="Filtrele">
                     <i class="fas fa-sliders" aria-hidden="true"></i>
                     <span class="otelliste-mobile-bar-label">Filtrele</span>
@@ -141,10 +143,13 @@
                         <option value="rating-desc">Puan</option>
                     </select>
                 </div>
-                <a class="otelliste-mobile-bar-btn otelliste-mobile-map-btn" href="@mapListingUrl" aria-label="Harita görünümü" title="Harita görünümünde otelleri göster">
-                    <i class="fas fa-map-location-dot" aria-hidden="true"></i>
-                    <span class="otelliste-mobile-bar-label">Harita</span>
-                </a>
+                @if (showHotelListingMap)
+                {
+                    <a class="otelliste-mobile-bar-btn otelliste-mobile-map-btn" href="@mapListingUrl" aria-label="Harita görünümü" title="Harita görünümünde otelleri göster">
+                        <i class="fas fa-map-location-dot" aria-hidden="true"></i>
+                        <span class="otelliste-mobile-bar-label">Harita</span>
+                    </a>
+                }
             </div>
         </div>
     </div>
@@ -198,11 +203,14 @@
                         <option value="price-desc">Fiyat (Yüksek → Düşük)</option>
                         <option value="rating-desc">Değerlendirme</option>
                     </select>
-                    <div class="otelliste-toolbar-actions">
-                        <a class="otelliste-map-link" href="@mapListingUrl">
-                            <i class="fas fa-map-location-dot" aria-hidden="true"></i> Harita
-                        </a>
-                    </div>
+                    @if (showHotelListingMap)
+                    {
+                        <div class="otelliste-toolbar-actions">
+                            <a class="otelliste-map-link" href="@mapListingUrl">
+                                <i class="fas fa-map-location-dot" aria-hidden="true"></i> Harita
+                            </a>
+                        </div>
+                    }
                 </div>
             </header>
 
@@ -224,7 +232,10 @@
                         <p>Filtreleri sıfırlayın veya tüm otellere dönün.</p>
                         <div class="otelliste-empty-actions">
                             <a class="otelliste-card-cta" href="@allHotelsUrl">Tüm Oteller</a>
-                            <a class="otelliste-map-link" href="@mapListingUrl">Haritada Ara</a>
+                            @if (showHotelListingMap)
+                            {
+                                <a class="otelliste-map-link" href="@mapListingUrl">Haritada Ara</a>
+                            }
                         </div>
                     </div>
                 }
@@ -261,6 +272,10 @@
                         var badgeText = !string.IsNullOrWhiteSpace(hotel.CampaignBadgeText)
                             ? hotel.CampaignBadgeText
                             : (hotel.HasDiscount ? "İndirim" : (hotel.IsFeatured ? "Öne Çıkan" : string.Empty));
+                        var showMaxRoomLine = !string.IsNullOrWhiteSpace(hotel.ListingMaxRoomName)
+                            && hotel.ListingMaxRoomPrice is > 0m
+                            && (!string.Equals(hotel.ListingMaxRoomName, hotel.ListingLeadRoomName, StringComparison.OrdinalIgnoreCase)
+                                || !price.Equals(hotel.ListingMaxRoomPrice.Value));
                         <article class="otelliste-hotel-card"
                                  data-hotel-id="@hotel.Id"
                                  data-keywords="@keywords"
@@ -280,13 +295,9 @@
                                      alt="@hotel.Name"
                                      @(isFirst ? "fetchpriority=\"high\" loading=\"eager\"" : "loading=\"lazy\"")
                                      decoding="async" />
-                                @if (!string.IsNullOrWhiteSpace(badgeText))
+                                @if (!string.IsNullOrWhiteSpace(badgeText) && !string.Equals(badgeText, hotel.City, StringComparison.OrdinalIgnoreCase))
                                 {
                                     <span class="otelliste-card-badge">@badgeText</span>
-                                }
-                                @if (hotel.Rating > 0)
-                                {
-                                    <span class="otelliste-card-rating">@hotel.Rating.ToString("0.0", CultureInfo.InvariantCulture) ★</span>
                                 }
                             </a>
                             <button type="button"
@@ -300,21 +311,35 @@
                             </div>
                             <div class="otelliste-card-body">
                                 <div class="otelliste-card-meta-row">
-                                    @if (hotel.Rating > 0)
+                                    <div class="otelliste-card-meta-primary">
+                                        @if (hotel.Rating > 0)
+                                        {
+                                            <span class="otelliste-card-rating-chip">@hotel.Rating.ToString("0.0", CultureInfo.InvariantCulture) ★</span>
+                                        }
+                                        @if (!string.IsNullOrWhiteSpace(hotel.PropertyType))
+                                        {
+                                            <span class="otelliste-card-type-chip">@hotel.PropertyType</span>
+                                        }
+                                        @if (Model.ShowLoyaltyTouchpoints && hotel.EstimatedLoyaltyPoints is > 0)
+                                        {
+                                            <span class="otelliste-card-loyalty otelliste-card-loyalty--inline" data-loyalty-hook="listing-card">
+                                                <i class="fas fa-gift" aria-hidden="true"></i>
+                                                +@hotel.EstimatedLoyaltyPoints.Value puan kazanın
+                                            </span>
+                                        }
+                                    </div>
+                                    @if ((hotel.HasDiscount && hotel.DiscountPercent > 0) || hotel.HasFreeCancellation)
                                     {
-                                        <span class="otelliste-card-rating-chip">@hotel.Rating.ToString("0.0", CultureInfo.InvariantCulture) ★</span>
-                                    }
-                                    @if (!string.IsNullOrWhiteSpace(hotel.PropertyType))
-                                    {
-                                        <span class="otelliste-card-type-chip">@hotel.PropertyType</span>
-                                    }
-                                    @if (hotel.HasDiscount && hotel.DiscountPercent > 0)
-                                    {
-                                        <span class="otelliste-card-discount-pill">-%@hotel.DiscountPercent</span>
-                                    }
-                                    @if (hotel.HasFreeCancellation)
-                                    {
-                                        <span class="otelliste-card-cancel-badge"><i class="fas fa-check-circle" aria-hidden="true"></i> Ücretsiz iptal</span>
+                                        <div class="otelliste-card-meta-secondary">
+                                            @if (hotel.HasDiscount && hotel.DiscountPercent > 0)
+                                            {
+                                                <span class="otelliste-card-discount-pill">-%@hotel.DiscountPercent</span>
+                                            }
+                                            @if (hotel.HasFreeCancellation)
+                                            {
+                                                <span class="otelliste-card-cancel-badge"><i class="fas fa-check-circle" aria-hidden="true"></i> Ücretsiz iptal</span>
+                                            }
+                                        </div>
                                     }
                                 </div>
                                 <h3 class="otelliste-card-title">
@@ -323,19 +348,28 @@
                                 <p class="otelliste-card-location">
                                     <i class="fas fa-map-marker-alt" aria-hidden="true"></i> @locationText
                                 </p>
-                                @if (Model.ShowLoyaltyTouchpoints && hotel.EstimatedLoyaltyPoints is > 0)
-                                {
-                                    <p class="otelliste-card-loyalty otelliste-card-loyalty--body" data-loyalty-hook="listing-card">
-                                        <i class="fas fa-gift" aria-hidden="true"></i>
-                                        +@hotel.EstimatedLoyaltyPoints.Value puan kazanın
-                                    </p>
-                                }
                                 <div class="otelliste-card-offer">
-                                    @if (!string.IsNullOrWhiteSpace(hotel.ListingLeadRoomName))
+                                    @if (!string.IsNullOrWhiteSpace(hotel.ListingLeadRoomName) || showMaxRoomLine)
                                     {
-                                        <p class="otelliste-card-lead-room">
-                                            <i class="fas fa-bed" aria-hidden="true"></i> @hotel.ListingLeadRoomName
-                                        </p>
+                                        <div class="otelliste-card-room-prices">
+                                            @if (!string.IsNullOrWhiteSpace(hotel.ListingLeadRoomName))
+                                            {
+                                                <div class="otelliste-card-room-line">
+                                                    <span class="otelliste-card-room-name">@hotel.ListingLeadRoomName</span>
+                                                    @if (price > 0m)
+                                                    {
+                                                        <span class="otelliste-card-room-price">@($"{price:N0} ₺")</span>
+                                                    }
+                                                </div>
+                                            }
+                                            @if (showMaxRoomLine)
+                                            {
+                                                <div class="otelliste-card-room-line otelliste-card-room-line--max">
+                                                    <span class="otelliste-card-room-name">@hotel.ListingMaxRoomName</span>
+                                                    <span class="otelliste-card-room-price">@($"{hotel.ListingMaxRoomPrice!.Value:N0} ₺")</span>
+                                                </div>
+                                            }
+                                        </div>
                                     }
                                     <div class="otelliste-card-offer-row">
                                         <div class="otelliste-card-price otelliste-card-price--body">
@@ -438,7 +472,10 @@
                         <p>Filtreleri değiştirin veya sıfırlayın.</p>
                         <div class="otelliste-empty-actions">
                             <button type="button" class="otelliste-card-cta otelliste-filter-reset">Filtreleri Sıfırla</button>
-                            <a class="otelliste-map-link" href="@mapListingUrl">Haritada Ara</a>
+                            @if (showHotelListingMap)
+                            {
+                                <a class="otelliste-map-link" href="@mapListingUrl">Haritada Ara</a>
+                            }
                         </div>
                     </div>
                 }

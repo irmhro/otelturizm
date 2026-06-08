@@ -1,22 +1,43 @@
 @model otelturizmnew.Models.Oteller.HotelDetailConditionsViewModel
 @{
-    var hasContent = !string.IsNullOrWhiteSpace(Model.CancellationSummary)
-        || !string.IsNullOrWhiteSpace(Model.CancellationDetail)
-        || !string.IsNullOrWhiteSpace(Model.SmokingPolicy)
-        || !string.IsNullOrWhiteSpace(Model.PetPolicy)
-        || !string.IsNullOrWhiteSpace(Model.ChildPolicy)
-        || Model.HasFreeCancellation
-        || Model.PrepaymentRequired;
+    var policyItems = new List<(string Icon, string Title, string Text)>();
 
-    string JoinPolicyText(string? primary, string? secondary)
+    if (Model.HasFreeCancellation || !string.IsNullOrWhiteSpace(Model.CancellationSummary))
     {
-        var parts = new[] { primary?.Trim(), secondary?.Trim() }
+        var cancelParts = new[] { Model.CancellationSummary?.Trim(), Model.CancellationDetail?.Trim() }
             .Where(x => !string.IsNullOrWhiteSpace(x))
             .ToList();
-        return parts.Count == 0 ? string.Empty : string.Join(" ", parts);
+        var cancelText = cancelParts.Count == 0
+            ? "Ücretsiz iptal seçeneği mevcut."
+            : string.Join(" ", cancelParts);
+        policyItems.Add(("fa-calendar-check", "İptal politikası", cancelText));
+    }
+
+    if (!string.IsNullOrWhiteSpace(Model.SmokingPolicy))
+    {
+        policyItems.Add(("fa-smoking-ban", "Sigara politikası", Model.SmokingPolicy.Trim()));
+    }
+
+    if (!string.IsNullOrWhiteSpace(Model.PetPolicy))
+    {
+        policyItems.Add(("fa-paw", "Evcil hayvan", Model.PetPolicy.Trim()));
+    }
+
+    if (!string.IsNullOrWhiteSpace(Model.ChildPolicy))
+    {
+        policyItems.Add(("fa-child", "Çocuk politikası", Model.ChildPolicy.Trim()));
+    }
+
+    if (Model.PrepaymentRequired)
+    {
+        policyItems.Add(("fa-credit-card", "Ön ödeme", $"Rezervasyon sırasında {(Model.PrepaymentPercent > 0m ? $"%{Model.PrepaymentPercent:N0}" : "ön")} ödeme gerekebilir."));
+    }
+    else if (Model.CardPaymentAccepted)
+    {
+        policyItems.Add(("fa-wallet", "Ödeme", "Kredi kartı ile online ödeme kabul edilir."));
     }
 }
-@if (hasContent)
+@if (policyItems.Count > 0)
 {
     <article class="content-card od-section od-section--policies" id="hotelPoliciesSection">
         <div class="section-head tabler-section-head od-section__head">
@@ -27,56 +48,21 @@
                 </div>
             </div>
         </div>
-        <ul class="od-policy-list">
-            @if (Model.HasFreeCancellation || !string.IsNullOrWhiteSpace(Model.CancellationSummary))
-            {
-                var cancelText = JoinPolicyText(
-                    string.IsNullOrWhiteSpace(Model.CancellationSummary) ? "Ücretsiz iptal seçeneği mevcut." : Model.CancellationSummary,
-                    Model.CancellationDetail);
-                <li class="od-policy-item">
-                    <span class="od-policy-icon" aria-hidden="true"><i class="fas fa-calendar-check"></i></span>
-                    <strong class="od-policy-title">İptal politikası</strong>
-                    <span class="od-policy-text">@cancelText</span>
-                </li>
-            }
-            @if (!string.IsNullOrWhiteSpace(Model.SmokingPolicy))
+        <ul class="od-policy-list od-policy-list--accordion">
+            @foreach (var policy in policyItems.Take(6))
             {
                 <li class="od-policy-item">
-                    <span class="od-policy-icon" aria-hidden="true"><i class="fas fa-smoking-ban"></i></span>
-                    <strong class="od-policy-title">Sigara politikası</strong>
-                    <span class="od-policy-text">@Model.SmokingPolicy</span>
-                </li>
-            }
-            @if (!string.IsNullOrWhiteSpace(Model.PetPolicy))
-            {
-                <li class="od-policy-item">
-                    <span class="od-policy-icon" aria-hidden="true"><i class="fas fa-paw"></i></span>
-                    <strong class="od-policy-title">Evcil hayvan</strong>
-                    <span class="od-policy-text">@Model.PetPolicy</span>
-                </li>
-            }
-            @if (!string.IsNullOrWhiteSpace(Model.ChildPolicy))
-            {
-                <li class="od-policy-item">
-                    <span class="od-policy-icon" aria-hidden="true"><i class="fas fa-child"></i></span>
-                    <strong class="od-policy-title">Çocuk politikası</strong>
-                    <span class="od-policy-text">@Model.ChildPolicy</span>
-                </li>
-            }
-            @if (Model.PrepaymentRequired)
-            {
-                <li class="od-policy-item">
-                    <span class="od-policy-icon" aria-hidden="true"><i class="fas fa-credit-card"></i></span>
-                    <strong class="od-policy-title">Ön ödeme</strong>
-                    <span class="od-policy-text">Rezervasyon sırasında @(Model.PrepaymentPercent > 0m ? $"%{Model.PrepaymentPercent:N0}" : "ön") ödeme gerekebilir.</span>
-                </li>
-            }
-            else if (Model.CardPaymentAccepted)
-            {
-                <li class="od-policy-item">
-                    <span class="od-policy-icon" aria-hidden="true"><i class="fas fa-wallet"></i></span>
-                    <strong class="od-policy-title">Ödeme</strong>
-                    <span class="od-policy-text">Kredi kartı ile online ödeme kabul edilir.</span>
+                    <details class="od-policy-accordion">
+                        <summary class="od-policy-accordion__summary">
+                            <span class="od-policy-icon" aria-hidden="true"><i class="fas @policy.Icon"></i></span>
+                            <span class="od-policy-accordion__copy">
+                                <strong class="od-policy-title">@policy.Title</strong>
+                                <span class="od-policy-text">@policy.Text</span>
+                            </span>
+                            <i class="fas fa-chevron-down od-policy-accordion__chevron" aria-hidden="true"></i>
+                        </summary>
+                        <div class="od-policy-detail">@policy.Text</div>
+                    </details>
                 </li>
             }
         </ul>

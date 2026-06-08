@@ -11,6 +11,14 @@
     color: #f8f6f2;
 }
 
+/* anasayfa_masaustu.css .anasayfa-page main { background: var(--bg-warm) } çakışmasını kır */
+.deneyimler-page.anasayfa-page,
+.deneyimler-page.anasayfa-page main.public-premium-main,
+.deneyimler-page .public-premium-main {
+    background: #0f0e0d;
+    color: #f8f6f2;
+}
+
 .deneyimler-page .public-premium-main {
     padding: 0;
     overflow-x: clip;
@@ -19,6 +27,7 @@
 .dxp-page {
     position: relative;
     isolation: isolate;
+    overflow-x: clip;
     padding-bottom: calc(48px + env(safe-area-inset-bottom, 0px));
     color: #f8f6f2;
     font-family: 'Plus Jakarta Sans', var(--font-main, system-ui, sans-serif);
@@ -190,6 +199,8 @@
 .dxp-hero__mosaic {
     position: relative;
     min-height: 320px;
+    overflow: hidden;
+    border-radius: 20px;
 }
 
 .dxp-mosaic-card {
@@ -265,15 +276,17 @@
 /* ——— Category nav ——— */
 .dxp-category-nav {
     position: sticky;
-    top: calc(var(--home-header-sticky-h, 99px) - 2px);
+    top: calc(var(--home-header-sticky-h, 92px) - 2px);
     z-index: 20;
     display: flex;
     flex-wrap: nowrap;
     gap: 8px;
     overflow-x: auto;
+    overscroll-behavior-x: contain;
     margin: 0 0 24px;
     padding: 12px 0 8px;
     scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
     background: linear-gradient(180deg, rgba(15, 14, 13, 0.98) 70%, rgba(15, 14, 13, 0) 100%);
 }
 
@@ -679,4 +692,16 @@
     display: flex;
     flex-wrap: wrap;
     gap: 10px;
+}
+
+/* Dar masaüstü — hero iki sütun sıkışmasını önle */
+@media (max-width: 1100px) and (min-width: 901px) {
+    .dxp-hero__grid {
+        grid-template-columns: 1fr;
+    }
+
+    .dxp-hero__mosaic {
+        max-width: 520px;
+        margin-inline: auto;
+    }
 }

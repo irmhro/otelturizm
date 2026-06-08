@@ -8,6 +8,8 @@
     const grid = document.getElementById('otellisteHotelGrid');
     const mobileBar = document.getElementById('otellisteMobileBar');
     const filterCountEl = document.getElementById('otellisteActiveFilterCount');
+    const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const galleryIntervalMs = 1500;
 
     /* Sticky bar — scroll-down compact mod */
     if (mobileBar) {
@@ -79,7 +81,20 @@
         return;
     }
 
-    /* Kart galeri swipe */
+    const setGalleryImage = (img, url, animate) => {
+        if (!animate || prefersReducedMotion) {
+            img.src = url;
+            return;
+        }
+
+        img.classList.add('is-gallery-fading');
+        window.setTimeout(() => {
+            img.src = url;
+            img.classList.remove('is-gallery-fading');
+        }, 180);
+    };
+
+    /* Kart galeri — otomatik geçiş + swipe */
     grid.querySelectorAll('.otelliste-hotel-card').forEach((card) => {
         const raw = card.getAttribute('data-gallery');
         if (!raw) {
@@ -105,6 +120,24 @@
         let currentIdx = 0;
         let startX = 0;
         let tracking = false;
+        let timerId = null;
+
+        const advance = (step = 1, animate = true) => {
+            currentIdx = (currentIdx + step + images.length) % images.length;
+            setGalleryImage(img, images[currentIdx], animate);
+        };
+
+        const restartAuto = () => {
+            if (prefersReducedMotion) {
+                return;
+            }
+            if (timerId) {
+                window.clearInterval(timerId);
+            }
+            timerId = window.setInterval(() => advance(1, true), galleryIntervalMs);
+        };
+
+        restartAuto();
 
         card.addEventListener('touchstart', (event) => {
             if (!event.touches || event.touches.length !== 1) {
@@ -112,28 +145,30 @@
             }
             startX = event.touches[0].clientX;
             tracking = true;
+            if (timerId) {
+                window.clearInterval(timerId);
+                timerId = null;
+            }
         }, { passive: true });
 
         card.addEventListener('touchend', (event) => {
             if (!tracking || !event.changedTouches || event.changedTouches.length !== 1) {
                 tracking = false;
+                restartAuto();
                 return;
             }
 
             const deltaX = event.changedTouches[0].clientX - startX;
             tracking = false;
-            if (Math.abs(deltaX) < 36) {
-                return;
+            if (Math.abs(deltaX) >= 36) {
+                advance(deltaX < 0 ? 1 : -1, true);
             }
-
-            currentIdx = deltaX < 0
-                ? (currentIdx + 1) % images.length
-                : (currentIdx - 1 + images.length) % images.length;
-            img.src = images[currentIdx];
+            restartAuto();
         }, { passive: true });
 
         card.addEventListener('touchcancel', () => {
             tracking = false;
+            restartAuto();
         }, { passive: true });
     });
 })();

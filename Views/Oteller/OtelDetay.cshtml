@@ -464,55 +464,46 @@
                 }
             </div>
             <div class="gallery-mobile-overlay">
-                <div class="gallery-mobile-overlay-top">
-                    <div class="gallery-mobile-title-row">
-                        <div class="gallery-mobile-title-block">
-                            <h1 class="gallery-mobile-hotel-name">@Model.Name</h1>
-                            <div class="gallery-mobile-footer-meta gallery-mobile-overlay-meta">
-                                @if (Model.StarCount.HasValue && Model.StarCount.Value > 0)
-                                {
-                                    <span class="gallery-mobile-type-chip gallery-mobile-type-chip--stars" aria-label="@($"{Model.StarCount.Value} yıldızlı otel")">
-                                        @for (var starIndex = 0; starIndex < Model.StarCount.Value; starIndex++)
-                                        {
-                                            <i class="fas fa-star" aria-hidden="true"></i>
-                                        }
-                                        <span>@SharedLocalizer["Detail.QuickFacts.StarHotel", Model.StarCount.Value].Value</span>
-                                    </span>
-                                }
-                                <span class="gallery-mobile-type-chip">
-                                    <i class="fas fa-hotel" aria-hidden="true"></i>
-                                    <span>@SharedLocalizer["Detail.QuickFacts.Hotel"].Value</span>
-                                </span>
-                            </div>
-                            <p class="gallery-mobile-location" role="text">
-                                <i class="fas fa-location-dot" aria-hidden="true"></i>
-                                <span>@headerLocationText</span>
-                            </p>
-                        </div>
-                        <div class="rating-summary detail-rating-chip gallery-mobile-rating"
-                             data-rating-jump
-                             role="button"
-                             tabindex="0"
-                             aria-label="@SharedLocalizer["Detail.Reviews.GoTo"].Value">
-                            <div class="rating-big">
-                                <span class="rating-number">@(Model.Rating > 0 ? Model.Rating.ToString("0.0") : "0.0")</span>
-                                <span class="rating-max">/10</span>
-                            </div>
-                            <div class="rating-text">
-                                @if (Model.ReviewCount <= 0)
-                                {
-                                    <strong>@SharedLocalizer["Detail.Rating.Pending"].Value</strong>
-                                    <span>@SharedLocalizer["Detail.Rating.NoReviews"].Value</span>
-                                }
-                                else
-                                {
-                                    <strong>@Model.RatingText</strong>
-                                    <span>@SharedLocalizer["Detail.Review.VerifiedCount", Model.ReviewCount].Value</span>
-                                }
-                            </div>
-                        </div>
+                @if (Model.StarCount.HasValue && Model.StarCount.Value > 0)
+                {
+                    <div class="gallery-mobile-stars-corner" aria-label="@($"{Model.StarCount.Value} yıldızlı otel")">
+                        @for (var starIndex = 0; starIndex < Model.StarCount.Value; starIndex++)
+                        {
+                            <i class="fas fa-star" aria-hidden="true"></i>
+                        }
+                    </div>
+                }
+                <div class="gallery-mobile-overlay-main">
+                    <h1 class="gallery-mobile-hotel-name">@Model.Name</h1>
+                    <p class="gallery-mobile-location" role="text">
+                        <i class="fas fa-location-dot" aria-hidden="true"></i>
+                        <span>@headerLocationText</span>
+                    </p>
+                    <div class="gallery-mobile-hero-meta" aria-label="Otel bilgileri">
+                        @if (Model.HasFreeCancellation)
+                        {
+                            <span class="gallery-mobile-meta-chip is-benefit"><i class="fas fa-check-circle" aria-hidden="true"></i> Ücretsiz iptal</span>
+                        }
+                        <span class="gallery-mobile-meta-chip"><i class="fas fa-door-open" aria-hidden="true"></i> Giriş @checkInDisplay / Çıkış @checkOutDisplay</span>
                     </div>
                 </div>
+                <button type="button"
+                        class="gallery-mobile-rating gallery-mobile-rating--compact"
+                        data-rating-jump
+                        aria-label="@SharedLocalizer["Detail.Reviews.GoTo"].Value">
+                    @if (Model.ReviewCount <= 0)
+                    {
+                        <span class="gallery-mobile-rating-score">@(Model.Rating > 0 ? Model.Rating.ToString("0.0").Replace('.', ',') : "0,0")</span>
+                        <span class="gallery-mobile-rating-sep">/10</span>
+                        <strong class="gallery-mobile-rating-label">@SharedLocalizer["Detail.Rating.Pending"].Value</strong>
+                    }
+                    else
+                    {
+                        <span class="gallery-mobile-rating-score">@Model.Rating.ToString("0.0").Replace('.', ',')</span>
+                        <span class="gallery-mobile-rating-sep">/10</span>
+                        <strong class="gallery-mobile-rating-label">@Model.RatingText</strong>
+                    }
+                </button>
                 <button type="button"
                         class="gallery-mobile-all-photos"
                         data-gallery-index="0"
@@ -549,6 +540,41 @@
                 </div>
             </div>
         }
+    </section>
+}
+
+@if (Model.Weather is not null && Model.Weather.Days.Count > 0)
+{
+    <section class="detail-weather-topbar" aria-label="Hava durumu özeti">
+        <button type="button"
+                class="detail-weather-topbar__trigger @weatherThemeClass"
+                id="weatherTopbarOpen"
+                data-has-weather="true"
+                aria-haspopup="dialog"
+                aria-controls="weatherPopup">
+            <span class="detail-weather-topbar__location">
+                <i class="fas fa-location-dot" aria-hidden="true"></i>
+                <strong>@weatherAreaLabel</strong>
+            </span>
+            <span class="detail-weather-topbar__cards">
+                @foreach (var day in Model.Weather.Days.Take(3))
+                {
+                    var dayTone = GetWeatherDayTone(day.ConditionText);
+                    var temps = SplitWeatherTemperature(day.TemperatureText);
+                    <span class="detail-weather-topbar__card @dayTone">
+                        <em class="detail-weather-topbar__period">@day.PeriodLabel</em>
+                        <i class="fas @day.IconClass" aria-hidden="true"></i>
+                        <span class="detail-weather-topbar__temp">
+                            <strong>@temps.High</strong>
+                            @if (!string.IsNullOrWhiteSpace(temps.Low))
+                            {
+                                <small>@temps.Low</small>
+                            }
+                        </span>
+                    </span>
+                }
+            </span>
+        </button>
     </section>
 }
 
@@ -617,7 +643,7 @@
         </div>
     </div>
     </div>
-    <div class="header-right-stack">
+    <div class="header-right-stack header-right-stack--desktop-only">
         <div class="header-top-metrics">
             <div class="detail-utility-row">
                 <button type="button"
@@ -653,45 +679,13 @@
                         </span>
                         <span class="weather-inline-badge">3 günlük</span>
                     </span>
-                    <span class="weather-trigger-mobile">
-                        <span class="weather-mobile-head">
-                            <i class="fas fa-location-dot" aria-hidden="true"></i>
-                            <strong>@weatherAreaLabel</strong>
-                            <span class="weather-mobile-kicker">3 günlük</span>
-                        </span>
-                        @if (Model.Weather is not null && Model.Weather.Days.Count > 0)
-                        {
-                            <span class="weather-mobile-days">
-                                @foreach (var day in Model.Weather.Days.Take(3))
-                                {
-                                    var dayTone = GetWeatherDayTone(day.ConditionText);
-                                    var temps = SplitWeatherTemperature(day.TemperatureText);
-                                    <span class="weather-mobile-day @dayTone">
-                        <span class="weather-mobile-day-period">@day.PeriodLabel</span>
-                                        <i class="fas @day.IconClass" aria-hidden="true"></i>
-                                        <span class="weather-mobile-day-temp">
-                                            <em>@temps.High</em>
-                                            @if (!string.IsNullOrWhiteSpace(temps.Low))
-                                            {
-                                                <small>@temps.Low</small>
-                                            }
-                                        </span>
-                                    </span>
-                                }
-                            </span>
-                        }
-                        else
-                        {
-                            <span class="weather-mobile-fallback">@Model.District, @Model.City • Tahmin yüklenemedi</span>
-                        }
-                    </span>
                 </button>
             </div>
         </div>
     </div>
 </section>
 
-<section class="od-quick-facts detail-quick-facts" aria-label="@SharedLocalizer["Detail.QuickFacts.Aria"].Value">
+<section class="od-quick-facts detail-quick-facts detail-quick-facts--desktop-only" aria-label="@SharedLocalizer["Detail.QuickFacts.Aria"].Value">
     <div class="od-quick-facts__chips">
         @if (Model.StarCount.HasValue && Model.StarCount.Value > 0)
         {
@@ -700,10 +694,6 @@
                 @SharedLocalizer["Detail.QuickFacts.StarHotel", Model.StarCount.Value].Value
             </span>
         }
-        <span class="od-chip od-chip--property">
-            <i class="fas fa-hotel" aria-hidden="true"></i>
-            @SharedLocalizer["Detail.QuickFacts.Hotel"].Value
-        </span>
         @if (Model.HasFreeCancellation)
         {
             <span class="od-chip od-chip--benefit">
@@ -711,6 +701,10 @@
                 Ücretsiz iptal
             </span>
         }
+        <span class="od-chip od-chip--property">
+            <i class="fas fa-door-open" aria-hidden="true"></i>
+            Giriş @checkInDisplay / Çıkış @checkOutDisplay
+        </span>
     </div>
 </section>
 
@@ -912,17 +906,18 @@
             </div>
             @if (amenityIconStrip.Count > 0)
             {
-                <div class="od-amenities__mobile-toolbar">
-                    <div class="od-amenities__icon-row" role="list" aria-label="@SharedLocalizer["Detail.Amenities.Title"].Value">
-                        @foreach (var item in amenityIconStrip)
+                <div class="od-amenities__mobile-grid-wrap">
+                    <div class="od-amenities__mobile-grid" role="list" aria-label="@SharedLocalizer["Detail.Amenities.Title"].Value">
+                        @foreach (var item in featuredAmenities.Take(4))
                         {
                             <button type="button"
-                                    class="od-amenity-icon-tile"
+                                    class="od-amenity-grid-cell"
                                     role="listitem"
                                     data-open-amenities
                                     aria-label="@item.Name"
                                     title="@item.Name">
-                                <span class="od-amenity-icon-tile__glyph" aria-hidden="true"><i class="fas @item.IconClass"></i></span>
+                                <span class="od-amenity-grid-cell__icon" aria-hidden="true"><i class="fas @item.IconClass"></i></span>
+                                <span class="od-amenity-grid-cell__label">@item.Name</span>
                             </button>
                         }
                     </div>
@@ -1043,47 +1038,47 @@
                         <div class="room-card-main od-room-card__body">
                             <div class="room-card-media">
                                 <div class="room-card-cover">
-                                    <button type="button"
-                                            class="room-gallery-trigger"
-                                            data-room-name="@room.Name"
-                                            data-room-id="@room.RoomTypeId"
-                                            data-room-gallery-start="0"
-                                            aria-label="@room.Name galerisi">
-                                        <img src="@roomCoverImageResolved"
-                                             alt="@room.Name"
-                                             loading="lazy"
-                                             decoding="async"
-                                             onerror="this.onerror=null;this.src='@hotelImagePlaceholder';" />
+                                    <div class="room-carousel"
+                                         data-room-carousel
+                                         data-room-id="@room.RoomTypeId"
+                                         data-room-name="@room.Name"
+                                         aria-label="@room.Name galerisi">
+                                        <div class="room-carousel-track">
+                                            @for (var imageIndex = 0; imageIndex < roomGalleryResolved.Count; imageIndex++)
+                                            {
+                                                <div class="room-carousel-slide" data-room-slide-index="@imageIndex">
+                                                    <img src="@roomGalleryResolved[imageIndex]"
+                                                         alt="@room.Name görsel @(imageIndex + 1)"
+                                                         loading="@(imageIndex == 0 ? "eager" : "lazy")"
+                                                         decoding="async"
+                                                         onerror="this.onerror=null;this.src='@hotelImagePlaceholder';" />
+                                                </div>
+                                            }
+                                        </div>
+                                        <span class="room-carousel-name">@room.Name</span>
                                         @if (roomGalleryResolved.Count > 1)
                                         {
-                                            <span class="room-gallery-count">
+                                            <span class="room-gallery-count room-carousel-count">
                                                 <i class="fas fa-images" aria-hidden="true"></i>
                                                 @string.Format(i18nRoomGalleryCount, roomGalleryResolved.Count)
                                             </span>
+                                            <div class="room-carousel-dots" aria-hidden="true">
+                                                @for (var dotIndex = 0; dotIndex < roomGalleryResolved.Count; dotIndex++)
+                                                {
+                                                    <span class="room-carousel-dot @(dotIndex == 0 ? "active" : string.Empty)" data-room-dot="@dotIndex"></span>
+                                                }
+                                            </div>
                                         }
-                                    </button>
-                                </div>
-                                @if (roomGalleryResolved.Count > 1)
-                                {
-                                    <div class="room-thumb-strip @(roomGalleryResolved.Count > 5 ? "has-many-thumbs" : string.Empty)" aria-label="@room.Name görselleri">
-                                        @for (var imageIndex = 0; imageIndex < Math.Min(roomGalleryResolved.Count, 6); imageIndex++)
-                                        {
-                                            <button type="button"
-                                                    class="room-thumb-item @(imageIndex == 0 ? "active" : string.Empty)"
-                                                    data-room-name="@room.Name"
-                                                    data-room-id="@room.RoomTypeId"
-                                                    data-thumb-index="@imageIndex"
-                                                    aria-label="@room.Name görsel @(imageIndex + 1)"
-                                                    @(imageIndex == 0 ? "aria-current=\"true\"" : null)>
-                                                <img src="@roomGalleryResolved[imageIndex]"
-                                                     alt="@room.Name görsel @(imageIndex + 1)"
-                                                     loading="lazy"
-                                                     decoding="async"
-                                                     onerror="this.onerror=null;this.src='@hotelImagePlaceholder';" />
-                                            </button>
-                                        }
+                                        <button type="button"
+                                                class="room-gallery-trigger room-carousel-open"
+                                                data-room-name="@room.Name"
+                                                data-room-id="@room.RoomTypeId"
+                                                data-room-gallery-start="0"
+                                                hidden
+                                                aria-hidden="true"
+                                                tabindex="-1"></button>
                                     </div>
-                                }
+                                </div>
                             </div>
                             <div class="room-card-copy od-room-card__content">
                                 <h3 class="od-room-card__title">@room.Name</h3>
@@ -1841,6 +1836,10 @@
         <button type="button" class="room-detail-modal-close-text" data-close-modal="roomDetailModal" aria-label="Kapat">Kapat</button>
     </div>
     <div class="room-detail-modal-body">
+        <div class="room-detail-modal-gallery-pro" id="roomDetailModalGallery" hidden>
+            <div class="room-detail-gallery-track" id="roomDetailModalGalleryTrack" aria-label="Oda ve otel görselleri"></div>
+            <div class="room-detail-gallery-dots" id="roomDetailModalGalleryDots" aria-hidden="true"></div>
+        </div>
         <div class="room-detail-modal-summary">
             <div class="room-detail-modal-copy">
                 <strong id="roomDetailModalRoomName">Seçilen oda</strong>
@@ -1850,11 +1849,11 @@
             <div class="room-detail-modal-meta">
                 <span class="room-detail-modal-badge" id="roomDetailModalGalleryBadge">0 görsel</span>
                 <span class="room-detail-modal-badge" id="roomDetailModalFeatureBadge">0 özellik</span>
-                <button type="button" class="room-detail-modal-gallery-open" id="roomDetailModalGalleryOpen">
-                    <i class="fas fa-images"></i>
-                    Slaytı Aç
-                </button>
             </div>
+        </div>
+        <div class="room-detail-modal-location" id="roomDetailModalLocation">
+            <span class="room-detail-modal-location-label">Konum @locationText</span>
+            <a href="#detailMapSection" class="room-detail-modal-map-link" data-close-modal="roomDetailModal">Haritada aç</a>
         </div>
         <div class="room-detail-modal-stats" id="roomDetailModalStats">
             <div class="room-detail-modal-stat">
@@ -1875,6 +1874,7 @@
                     <strong class="room-detail-modal-price-current" id="roomDetailModalPrice">-</strong>
                     <small class="room-detail-modal-price-note">Vergiler dahil</small>
                 </div>
+                <div class="room-detail-nightly-breakdown" id="roomDetailModalNightly" aria-label="Gecelik fiyat dökümü"></div>
             </div>
         </div>
         <div class="room-detail-modal-note" id="roomDetailModalCancellation">Koşullar rezervasyon adımında yeniden doğrulanır.</div>

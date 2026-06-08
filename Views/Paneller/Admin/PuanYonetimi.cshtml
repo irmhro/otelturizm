@@ -1,0 +1,212 @@
+@model otelturizmnew.Models.Paneller.Admin.AdminPuanYonetimiPageViewModel
+@{
+    Layout = "~/Views/Paneller/Admin/_AdminPanelLayout.cshtml";
+    ViewData["AdminShell"] = Model.Shell;
+    ViewData["PageCssPath"] = "admin_panel_section_masaustu";
+    var ruleForm = Model.RuleForm;
+    var adjustForm = Model.AdjustForm;
+    var isEdit = ruleForm.Id is > 0;
+    var activeTab = Model.ActiveTab;
+}
+
+<section class="admin-section-card">
+    <div class="admin-section-head">
+        <div>
+            <p class="mini-caption">KULLANICI & CRM</p>
+            <h2>Puan Yönetimi</h2>
+            <span><strong>PUAN_AYAR</strong> ve <strong>PUAN_KULLANICI</strong> — otel bazlı kazanım ve indirim kuralları.</span>
+        </div>
+    </div>
+
+    @if (!Model.TablesReady)
+    {
+        <div class="alert alert-warning">PUAN tabloları bulunamadı. <code>20260609_sqlserver_puan_ayar_kullanici.sql</code> migration dosyasını uygulayın.</div>
+    }
+    else
+    {
+        <ul class="nav nav-tabs mb-3">
+            <li class="nav-item">
+                <a class="nav-link @(activeTab == "kazanim" ? "active" : "")" href="/admin/puan-yonetimi?tab=kazanim">Kazanım Kuralları</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link @(activeTab == "indirim" ? "active" : "")" href="/admin/puan-yonetimi?tab=indirim">İndirim Kuralları</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link @(activeTab == "kullanici" ? "active" : "")" href="/admin/puan-yonetimi?tab=kullanici">Kullanıcı Puan Düzenle</a>
+            </li>
+        </ul>
+
+        @if (activeTab == "kazanim" || activeTab == "indirim")
+        {
+            var rows = activeTab == "indirim" ? Model.IndirimRules : Model.KazanimRules;
+            var tip = activeTab == "indirim" ? "INDIRIM" : "KAZANIM";
+            <div class="admin-table-wrap">
+                <table class="admin-table">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Aralık</th>
+                            <th>Değer</th>
+                            <th>Açıklama</th>
+                            <th>Sıra</th>
+                            <th>Aktif</th>
+                            <th class="text-end">İşlem</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                    @if (rows.Count == 0)
+                    {
+                        <tr><td colspan="7">Kayıt yok. Aşağıdaki formdan kural ekleyin veya seed migration çalıştırın.</td></tr>
+                    }
+                    else
+                    {
+                        foreach (var row in rows)
+                        {
+                            <tr>
+                                <td>@row.Id</td>
+                                <td>@row.RangeText</td>
+                                <td><strong>@row.ValueText</strong></td>
+                                <td class="small">@(string.IsNullOrWhiteSpace(row.Aciklama) ? "—" : row.Aciklama)</td>
+                                <td>@row.SiraNo</td>
+                                <td>@(row.AktifMi ? Html.Raw("<span class=\"badge bg-success\">Aktif</span>") : Html.Raw("<span class=\"badge bg-secondary\">Pasif</span>"))</td>
+                                <td class="text-end">
+                                    <a class="btn btn-outline-primary btn-sm" href="/admin/puan-yonetimi?tab=@activeTab&editRuleId=@row.Id">Düzenle</a>
+                                    <form method="post" action="/admin/puan-yonetimi/kural-sil" class="d-inline" onsubmit="return confirm('Bu kural silinsin mi?');">
+                                        @Html.AntiForgeryToken()
+                                        <input type="hidden" name="Id" value="@row.Id" />
+                                        <input type="hidden" name="Tab" value="@activeTab" />
+                                        <button type="submit" class="btn btn-outline-danger btn-sm">Sil</button>
+                                    </form>
+                                </td>
+                            </tr>
+                        }
+                    }
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="admin-form-card mt-4">
+                <h3>@(isEdit ? "Kural Düzenle" : "Yeni Kural")</h3>
+                <form method="post" action="/admin/puan-yonetimi/kural-kaydet">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" name="Id" value="@(ruleForm.Id ?? 0)" />
+                    <input type="hidden" name="AyarTipi" value="@(string.IsNullOrWhiteSpace(ruleForm.AyarTipi) ? tip : ruleForm.AyarTipi)" />
+                    <input type="hidden" name="Tab" value="@activeTab" />
+                    <div class="row g-3">
+                        <div class="col-md-3">
+                            <label class="form-label">Min Değer</label>
+                            <input type="number" step="0.01" name="MinDeger" class="form-control" value="@ruleForm.MinDeger" required />
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label">Max Değer (boş = sınırsız)</label>
+                            <input type="number" step="0.01" name="MaxDeger" class="form-control" value="@ruleForm.MaxDeger" />
+                        </div>
+                        @if (activeTab == "kazanim")
+                        {
+                            <div class="col-md-2">
+                                <label class="form-label">Puan</label>
+                                <input type="number" name="PuanDegeri" class="form-control" value="@ruleForm.PuanDegeri" />
+                            </div>
+                        }
+                        else
+                        {
+                            <div class="col-md-2">
+                                <label class="form-label">İndirim %</label>
+                                <input type="number" step="0.01" name="IndirimYuzde" class="form-control" value="@ruleForm.IndirimYuzde" />
+                            </div>
+                        }
+                        <div class="col-md-2">
+                            <label class="form-label">Sıra</label>
+                            <input type="number" name="SiraNo" class="form-control" value="@ruleForm.SiraNo" />
+                        </div>
+                        <div class="col-md-2 d-flex align-items-end">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" name="AktifMi" value="true" @(ruleForm.AktifMi ? "checked" : "") />
+                                <label class="form-check-label">Aktif</label>
+                            </div>
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label">Açıklama</label>
+                            <input type="text" name="Aciklama" class="form-control" value="@ruleForm.Aciklama" maxlength="300" />
+                        </div>
+                        <div class="col-12">
+                            <button type="submit" class="btn btn-primary">@(isEdit ? "Güncelle" : "Ekle")</button>
+                            @if (isEdit)
+                            {
+                                <a class="btn btn-outline-secondary" href="/admin/puan-yonetimi?tab=@activeTab">İptal</a>
+                            }
+                        </div>
+                    </div>
+                </form>
+            </div>
+        }
+        else
+        {
+            <div class="admin-form-card">
+                <h3>Kullanıcı Puan Düzenle</h3>
+                <form method="get" action="/admin/puan-yonetimi" class="row g-3 mb-4">
+                    <input type="hidden" name="tab" value="kullanici" />
+                    <div class="col-md-4">
+                        <label class="form-label">Kullanıcı ID</label>
+                        <input type="number" name="filterUserId" class="form-control" value="@(adjustForm.UserId > 0 ? adjustForm.UserId : null)" required />
+                    </div>
+                    <div class="col-md-2 d-flex align-items-end">
+                        <button type="submit" class="btn btn-outline-primary">Bakiyeleri Getir</button>
+                    </div>
+                </form>
+
+                @if (Model.UserBalances.Count > 0)
+                {
+                    <div class="admin-table-wrap mb-4">
+                        <table class="admin-table">
+                            <thead>
+                                <tr>
+                                    <th>Otel</th>
+                                    <th>Kullanılabilir</th>
+                                    <th>Toplam Kazanılan</th>
+                                    <th>Kullanılan</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                            @foreach (var balance in Model.UserBalances)
+                            {
+                                <tr>
+                                    <td><strong>@balance.HotelName</strong> <span class="text-muted small">(#@balance.HotelId)</span></td>
+                                    <td>@balance.AvailablePoints</td>
+                                    <td>@balance.TotalEarned</td>
+                                    <td>@balance.UsedPoints</td>
+                                </tr>
+                            }
+                            </tbody>
+                        </table>
+                    </div>
+                }
+
+                <form method="post" action="/admin/puan-yonetimi/kullanici-duzenle">
+                    @Html.AntiForgeryToken()
+                    <div class="row g-3">
+                        <div class="col-md-3">
+                            <label class="form-label">Kullanıcı ID</label>
+                            <input type="number" name="UserId" class="form-control" value="@adjustForm.UserId" required />
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label">Otel ID</label>
+                            <input type="number" name="HotelId" class="form-control" value="@adjustForm.HotelId" required />
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label">Puan Değişimi (+ / −)</label>
+                            <input type="number" name="PointDelta" class="form-control" value="@adjustForm.PointDelta" required />
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label">Açıklama</label>
+                            <input type="text" name="Reason" class="form-control" value="@adjustForm.Reason" maxlength="500" required />
+                        </div>
+                        <div class="col-12">
+                            <button type="submit" class="btn btn-primary">Puanı Uygula</button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        }
+    }
+</section>

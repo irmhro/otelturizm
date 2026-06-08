@@ -14,7 +14,7 @@
     var facilityOpen = IsPath("/panel/partner/otel", "/panel/partner/tesis", "/panel/partner/oda", "/panel/partner/fotograflar", "/panel/partner/basvuru-ve-evraklar");
     var companyOpen = IsPath("/panel/partner/firma-fiyatlari", "/panel/partner/firmalar");
     var financeOpen = IsPath("/panel/partner/finans", "/panel/partner/odeme", "/panel/partner/komisyon");
-    var growthOpen = IsPath("/panel/partner/pazarlama", "/panel/partner/performans", "/panel/partner/aboneliklerim", "/panel/partner/kampanyalar", "/panel/partner/platform-paketleri");
+    var growthOpen = IsPath("/panel/partner/pazarlama", "/panel/partner/performans", "/panel/partner/aboneliklerim", "/panel/partner/kampanyalar", "/panel/partner/platform-paketleri", "/panel/partner/dagitilan-puanlar");
     var accountOpen = IsPath("/panel/partner/guvenlik", "/panel/partner/tercihler", "/panel/partner/724-destek", "/panel/partner/hesap-bilgileri", "/panel/partner/bildirim-tercihleri");
     var hotelName = string.IsNullOrWhiteSpace(Model.SelectedHotelName) ? "Seçili tesis yok" : Model.SelectedHotelName;
 }
@@ -127,6 +127,7 @@
                 <a class="@ActivePath("/panel/partner/performans")" href="@PartnerUrl("/panel/partner/performans")">Performans & Rakipler</a>
                 <a class="@ActivePath("/panel/partner/pazarlama/konum-icgoruleri")" href="@PartnerUrl("/panel/partner/pazarlama/konum-icgoruleri")">Konum İçgörüleri</a>
                 <a class="@ActivePath("/panel/partner/pazarlama/favori-misafirler")" href="@PartnerUrl("/panel/partner/pazarlama/favori-misafirler")">Favori Misafirler</a>
+                <a class="@ActivePath("/panel/partner/dagitilan-puanlar")" href="@PartnerUrl("/panel/partner/dagitilan-puanlar")">Dağıtılan Puanlar</a>
                 <a class="@ActivePath("/panel/partner/pazarlama/etkinlikler")" href="@PartnerUrl("/panel/partner/pazarlama/etkinlikler")">Etkinlik Yönetimi</a>
             </div>
         </div>

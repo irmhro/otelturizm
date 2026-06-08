@@ -23,6 +23,7 @@ public class UserPanelService : IUserPanelService
     private readonly IEmailQueueService _emailQueueService;
     private readonly IHotelPricingReadService _hotelPricingReadService;
     private readonly ISecureFileService _secureFileService;
+    private readonly IHotelPointsService _hotelPointsService;
     private readonly string _publicBaseUrl;
 
     public UserPanelService(
@@ -31,7 +32,8 @@ public class UserPanelService : IUserPanelService
         IAddressLookupService addressLookupService,
         IEmailQueueService emailQueueService,
         IHotelPricingReadService hotelPricingReadService,
-        ISecureFileService secureFileService)
+        ISecureFileService secureFileService,
+        IHotelPointsService hotelPointsService)
     {
         _connectionString = configuration.GetConnectionString("DefaultConnection")
             ?? throw new InvalidOperationException("DefaultConnection tanimli degil.");
@@ -40,6 +42,7 @@ public class UserPanelService : IUserPanelService
         _emailQueueService = emailQueueService;
         _hotelPricingReadService = hotelPricingReadService;
         _secureFileService = secureFileService;
+        _hotelPointsService = hotelPointsService;
         _publicBaseUrl = (configuration["App:PublicBaseUrl"] ?? "https://localhost:7223").TrimEnd('/');
     }
 
@@ -2376,6 +2379,27 @@ INNER JOIN agg ON agg.[OTEL_ID] = o.id;";
             ? budgetValue
             : null;
         model.TravelPlanForm.DestinationCity = model.PassportCities.FirstOrDefault(static item => !item.IsVisited)?.CityName ?? string.Empty;
+
+        var hotelBalances = await _hotelPointsService.GetUserHotelBalancesAsync(userId, cancellationToken);
+        model.HotelPointBalances = hotelBalances.Select(static balance => new UserHotelPointsBalanceViewModel
+        {
+            HotelId = balance.HotelId,
+            HotelName = balance.HotelName,
+            HotelCity = balance.HotelCity,
+            TotalEarned = balance.TotalEarned,
+            AvailablePoints = balance.AvailablePoints,
+            UsedPoints = balance.UsedPoints,
+            DiscountPercent = balance.DiscountPercent,
+            LastEarnedText = balance.LastEarnedText,
+            RecentMovements = balance.RecentMovements.Select(static movement => new UserHotelPointMovementViewModel
+            {
+                DateText = movement.DateText,
+                Title = movement.Title,
+                Description = movement.Description,
+                PointChange = movement.PointChange,
+                PointChangeText = movement.PointChangeText
+            }).ToList()
+        }).ToList();
 
         return model;
     }

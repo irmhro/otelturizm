@@ -76,7 +76,8 @@ public static class AdminNavigationCatalog
             new("Campaigns", "Kampanyalar", "admin.hotels", "campaigns", ["Campaigns"], null, ["KAMPANYALAR", "KAMPANYA_OTELLER"]),
             new("Reviews", "Değerlendirmeler", "admin.reviews", "reviews", ["Reviews"], "PendingReviews", ["YORUMLAR", "YORUM_KALDIRMA_TALEPLERI"]),
             new("ListingSubscriptions", "Liste Abonelikleri", "admin.listing_subscriptions", "otel-liste-abonelikleri", ["ListingSubscriptions"], null, ["OTEL_LISTE_ABONELIKLERI"]),
-            new("HotelCoordinateChanges", "Koordinat Değişimleri", "admin.hotel_coord_changes", "hotel-coordinate-changes", ["HotelCoordinateChanges"], null, ["OTEL_KOORDINAT_DEGISIM_LOGLARI"])
+            new("HotelCoordinateChanges", "Koordinat Değişimleri", "admin.hotel_coord_changes", "hotel-coordinate-changes", ["HotelCoordinateChanges"], null, ["OTEL_KOORDINAT_DEGISIM_LOGLARI"]),
+            new("OzelGunler", "Özel Günler", "admin.ozel_gunler", "ozel-gunler", ["OzelGunler"], null, ["OZEL_GUNLER"])
         ]),
         new("Yardım & SSS", "Destek İçerikleri", "fa-circle-question", "ic-set",
         [
@@ -145,6 +146,7 @@ public static class AdminNavigationCatalog
             new("AdminRbacRoles", "Admin Panel Rolleri", "admin.roles", "admin-rbac-roles", ["AdminRbacRoles"], null, ["ADMIN_ROLLER", "ADMIN_YETKILER", "ADMIN_ROL_YETKILER", "ADMIN_KULLANICI_ROLLER"]),
             new("DevelopmentRequests", "Geliştirme Talepleri", "admin.development_requests", null, ["DevelopmentRequests"], null, ["GELISTIRME_TALEPLERI", "DEVELOPER_BILDIRIMLERI"]),
             new("SadakatSeviyeleri", "Sadakat Seviyeleri", "admin.users", "sadakat-seviyeleri", ["SadakatSeviyeleri"], null, ["SADAKAT_SEVIYELERI", "SADAKAT_ODULLERI", "KULLANICI_SADAKAT_HESAPLARI", "KULLANICI_PUAN_HAREKETLERI"]),
+            new("PuanYonetimi", "Puan Yönetimi", "admin.puan_yonetimi", "puan-yonetimi", ["PuanYonetimi"], null, ["PUAN_AYAR", "PUAN_KULLANICI"]),
             new("KullaniciFavoriler", "Favoriler & Alarmlar", "admin.users", "kullanici-favoriler", ["KullaniciFavoriler"], null, ["KULLANICI_FAVORI_OTELLER", "KULLANICI_FAVORI_FIYAT_ALARMLARI", "KULLANICI_FAVORI_FIYAT_ALARM_ISLERI"]),
             new("SeyahatPlanlari", "Seyahat Planları", "admin.users", "seyahat-planlari", ["SeyahatPlanlari"], null, ["KULLANICI_SEYAHAT_PLANLARI", "KULLANICI_SEYAHAT_PLAN_OTEL_SECIMLERI", "KULLANICI_BUTCE_PLANLARI"])
         ]),
@@ -157,9 +159,13 @@ public static class AdminNavigationCatalog
             new("MesajMerkezi", "Mesaj Merkezi", "admin.notifications", "mesaj-merkezi", ["MesajMerkezi"], null, ["MESAJ_KONUSMALARI", "MESAJLAR", "MESAJ_DOSYALARI", "DIS_KUTU_MESAJLARI"]),
             new("Notifications", "Bildirimler", "admin.notifications", "notifications", ["Notifications"], "UnreadNotifications", ["SISTEM_ICI_BILDIRIMLER", "BILDIRIM_LOGLARI", "KULLANICI_BILDIRIM_TERCIHLERI", "KULLANICI_BILDIRIM_CIHAZLARI", "PANEL_HEADER_BILDIRI_OKUMALARI"])
         ]),
+        new("Anasayfa Yapılandırma", "Vitrin & Bölümler", "fa-house-chimney", "ic-set",
+        [
+            new("AnasayfaOteller", "Aktif Oteller", "admin.homepage_hotels", "anasayfa-oteller", ["AnasayfaOteller"], null, ["ANASAYFA_OTEL_BOLUMLERI", "ANASAYFA_OTEL_KAYITLARI"])
+        ]),
         new("Sistem Konfigürasyonu", "Ayarlar & İçerik", "fa-sliders", "ic-set",
         [
-            new("Settings", "Genel Ayarlar", "admin.settings", "settings", ["Settings"], null, ["TEMA_PANEL", "OZEL_GUNLER"]),
+            new("Settings", "Genel Ayarlar", "admin.settings", "settings", ["Settings"], null, ["TEMA_PANEL"]),
             new("SettingsMonitor", "Ayar Monitörü", "admin.settings_monitor", null, ["SettingsMonitor"], null, ["SISTEM_DIYAGRAMLARI"]),
             new("Security", "Güvenlik Politikaları", "admin.security", "security", ["Security"], null, []),
             new("Sitemap", "Sitemap XML", "admin.sitemap", null, ["Sitemap"], null, []),
@@ -190,7 +196,7 @@ public static class AdminNavigationCatalog
             @"SELECT TOP (80) [ICERIK_TURU], [BASLIK], [SEO_SLUG], CASE WHEN [ONE_CIKAN_MI]=1 THEN N'Evet' ELSE N'Hayır' END, CASE WHEN [AKTIF_MI]=1 THEN N'Aktif' ELSE N'Pasif' END, CAST([SIRALAMA] AS nvarchar(10)) FROM [dbo].[YARDIM_MERKEZI_ICERIKLER] ORDER BY [SIRALAMA], id DESC;");
 
         yield return Meta("yardim-kategori-detay", "Yardım Kategori Detayları", "YARDIM_MERKEZI_KATEGORI_DETAYLARI tablosu.", ["Kategori ID", "Hero Başlık", "Aktif", "Güncelleme"], "Detay kaydı bulunamadı.", "admin.support_articles",
-            @"SELECT TOP (80) CAST([DESTEK_KATEGORI_ID] AS nvarchar(20)), COALESCE([HERO_BASLIK],'-'), CASE WHEN [AKTIF_MI]=1 THEN N'Aktif' ELSE N'Pasif' END, FORMAT(COALESCE([GUNCELLENME_TARIHI],[OLUSTURULMA_TARIHI]), 'dd.MM.yyyy', 'tr-TR') FROM [dbo].[YARDIM_MERKEZI_KATEGORI_DETAYLARI] ORDER BY id DESC;");
+            @"SELECT TOP (80) CAST([DESTEK_KATEGORI_ID] AS nvarchar(20)), COALESCE([HERO_BASLIK],'-'), CASE WHEN [AKTIF_MI]=1 THEN N'Aktif' ELSE N'Pasif' END, FORMAT([GUNCELLENME_TARIHI], 'dd.MM.yyyy', 'tr-TR') FROM [dbo].[YARDIM_MERKEZI_KATEGORI_DETAYLARI] ORDER BY id DESC;");
 
         yield return Meta("yardim-kategori-sss", "Yardım Kategori SSS", "YARDIM_MERKEZI_KATEGORI_SSS tablosu.", ["Kategori ID", "Soru", "Aktif", "Sıra"], "Kayıt bulunamadı.", "admin.support_articles",
             @"SELECT TOP (80) CAST([DESTEK_KATEGORI_ID] AS nvarchar(20)), LEFT([SORU], 120), CASE WHEN [AKTIF_MI]=1 THEN N'Aktif' ELSE N'Pasif' END, CAST([SIRALAMA] AS nvarchar(10)) FROM [dbo].[YARDIM_MERKEZI_KATEGORI_SSS] ORDER BY [SIRALAMA], id DESC;");
@@ -220,7 +226,7 @@ public static class AdminNavigationCatalog
             @"SELECT TOP (80) CAST([OTEL_ID] AS nvarchar(20)), [ODA_ADI], CAST(COALESCE([MAKSIMUM_KISI],0) AS nvarchar(10)), CASE WHEN [AKTIF_MI]=1 THEN N'Aktif' ELSE N'Pasif' END, FORMAT(COALESCE([GUNCELLENME_TARIHI],[OLUSTURULMA_TARIHI]), 'dd.MM.yyyy', 'tr-TR') FROM [dbo].[ODA_TIPLERI] ORDER BY id DESC;");
 
         yield return Meta("otel-gorselleri", "Otel Görselleri", "OTEL_GORSELLERI tablosu.", ["Otel ID", "Tür", "Sıra", "Kapak", "Yol"], "Görsel bulunamadı.", "admin.hotels",
-            @"SELECT TOP (80) CAST([OTEL_ID] AS nvarchar(20)), COALESCE([FOTO_TURU],'-'), CAST(COALESCE([SIRALAMA],0) AS nvarchar(10)), CASE WHEN [KAPAK_FOTOGRAFI]=1 THEN N'Evet' ELSE N'Hayır' END, LEFT(COALESCE([DOSYA_YOLU],'-'), 80) FROM [dbo].[OTEL_GORSELLERI] ORDER BY id DESC;");
+            @"SELECT TOP (80) CAST([OTEL_ID] AS nvarchar(20)), COALESCE([GORSEL_TURU],'-'), CAST(COALESCE([SIRALAMA],0) AS nvarchar(10)), CASE WHEN [KAPAK_FOTOGRAFI_MI]=1 THEN N'Evet' ELSE N'Hayır' END, LEFT(COALESCE([GORSEL_URL],'-'), 80) FROM [dbo].[OTEL_GORSELLERI] ORDER BY id DESC;");
 
         yield return Meta("oda-gorselleri", "Oda Görselleri", "ODA_GORSELLERI tablosu.", ["Oda Tip ID", "Sıra", "Kapak", "Yol"], "Görsel bulunamadı.", "admin.hotels",
             @"SELECT TOP (80) CAST([ODA_TIP_ID] AS nvarchar(20)), CAST(COALESCE([SIRALAMA],0) AS nvarchar(10)), CASE WHEN [KAPAK_FOTOGRAFI]=1 THEN N'Evet' ELSE N'Hayır' END, LEFT(COALESCE([DOSYA_YOLU],'-'), 80) FROM [dbo].[ODA_GORSELLERI] ORDER BY id DESC;");

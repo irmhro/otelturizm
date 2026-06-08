@@ -1,0 +1,309 @@
+@model otelturizmnew.Models.Paneller.Admin.AdminHomepageHotelsPageViewModel
+@{
+    Layout = "~/Views/Paneller/Admin/_AdminPanelLayout.cshtml";
+    ViewData["AdminShell"] = Model.Shell;
+    var activeSectionId = Model.ActiveSectionId ?? Model.Sections.FirstOrDefault()?.Id;
+    var activeSection = Model.Sections.FirstOrDefault(x => x.Id == activeSectionId);
+}
+
+<section class="admin-section-card">
+    <div class="admin-section-head">
+        <div>
+            <p class="mini-caption">ANASAYFA YAPILANDIRMA</p>
+            <h2>Aktif Oteller</h2>
+            <span>Anasayfadaki <strong>Seçilen Özel Rotalar</strong> ve özel alt bölümleri (ör. İstanbul Gösteriler) buradan yönetin.</span>
+        </div>
+    </div>
+</section>
+
+<div class="hp-hotels-layout">
+    <aside class="hp-hotels-sidebar admin-section-card">
+        <div class="admin-section-head">
+            <div>
+                <p class="mini-caption">BÖLÜMLER</p>
+                <h3>Vitrin Bölümleri</h3>
+            </div>
+        </div>
+        <div class="hp-section-list">
+            @foreach (var hpSection in Model.Sections)
+            {
+                var isActive = hpSection.Id == activeSectionId;
+                <a class="hp-section-item @(isActive ? "is-active" : "")" href="/admin/anasayfa-oteller?sectionId=@hpSection.Id">
+                    <div>
+                        <strong>@hpSection.Title</strong>
+                        @if (!string.IsNullOrWhiteSpace(hpSection.Subtitle))
+                        {
+                            <span class="text-muted small d-block">@hpSection.Subtitle</span>
+                        }
+                        <span class="hp-section-meta">
+                            @(hpSection.IsSystemSection ? "Sistem bölümü" : "Özel bölüm") · @hpSection.Hotels.Count otel
+                        </span>
+                    </div>
+                    @if (!hpSection.IsActive)
+                    {
+                        <span class="badge bg-secondary">Pasif</span>
+                    }
+                </a>
+            }
+        </div>
+        <button type="button" class="btn btn-outline-primary btn-sm w-100 mt-3" data-bs-toggle="collapse" data-bs-target="#newSectionForm">
+            + Yeni Bölüm Ekle
+        </button>
+        <div id="newSectionForm" class="collapse mt-3">
+            <form method="post" action="/admin/anasayfa-oteller/bolum-ekle" class="admin-form-grid">
+                @Html.AntiForgeryToken()
+                <label>
+                    <span>Başlık</span>
+                    <input type="text" name="Title" placeholder="Örn. İstanbul Gösteriler" required maxlength="200" />
+                </label>
+                <label>
+                    <span>Alt başlık (opsiyonel)</span>
+                    <input type="text" name="Subtitle" placeholder="Kısa açıklama" maxlength="300" />
+                </label>
+                <label>
+                    <span>Sıralama</span>
+                    <input type="number" name="SortOrder" value="100" min="1" />
+                </label>
+                <label class="checkbox-inline">
+                    <input type="checkbox" name="IsActive" value="true" checked />
+                    <span>Aktif</span>
+                </label>
+                <button type="submit" class="btn btn-primary btn-sm">Bölüm Oluştur</button>
+            </form>
+        </div>
+    </aside>
+
+    <div class="hp-hotels-main">
+        @if (activeSection is null)
+        {
+            <section class="admin-section-card">
+                <p class="text-muted mb-0">Henüz bölüm tanımlı değil. Migration uygulandıktan sonra varsayılan <em>Seçilen Özel Rotalar</em> bölümü görünür.</p>
+            </section>
+        }
+        else
+        {
+            <section class="admin-section-card">
+                <div class="admin-section-head">
+                    <div>
+                        <p class="mini-caption">@(activeSection.IsSystemSection ? "ANA VİTRİN" : "ÖZEL BÖLÜM")</p>
+                        <h3>@activeSection.Title</h3>
+                        @if (!string.IsNullOrWhiteSpace(activeSection.Subtitle))
+                        {
+                            <span>@activeSection.Subtitle</span>
+                        }
+                    </div>
+                </div>
+
+                <form method="post" action="/admin/anasayfa-oteller/bolum-guncelle" class="admin-form-grid hp-section-edit-form">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" name="Id" value="@activeSection.Id" />
+                    <label>
+                        <span>Başlık</span>
+                        <input type="text" name="Title" value="@activeSection.Title" required maxlength="200" />
+                    </label>
+                    <label>
+                        <span>Alt başlık</span>
+                        <input type="text" name="Subtitle" value="@activeSection.Subtitle" maxlength="300" />
+                    </label>
+                    <label>
+                        <span>Sıralama</span>
+                        <input type="number" name="SortOrder" value="@activeSection.SortOrder" min="1" />
+                    </label>
+                    <label class="checkbox-inline">
+                        <input type="checkbox" name="IsActive" value="true" @(activeSection.IsActive ? "checked" : "") />
+                        <span>Aktif</span>
+                    </label>
+                    <button type="submit" class="btn btn-primary btn-sm">Bölümü Kaydet</button>
+                </form>
+                @if (!activeSection.IsSystemSection)
+                {
+                    <form method="post" action="/admin/anasayfa-oteller/bolum-sil" class="mt-2" onsubmit="return confirm('Bu bölüm ve içindeki oteller silinecek. Emin misiniz?');">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" name="sectionId" value="@activeSection.Id" />
+                        <button type="submit" class="btn btn-outline-danger btn-sm">Bölümü Sil</button>
+                    </form>
+                }
+            </section>
+
+            <section class="admin-section-card">
+                <div class="admin-section-head">
+                    <div>
+                        <p class="mini-caption">OTEL EKLE</p>
+                        <h3>Yayındaki otellerden seç</h3>
+                        <span>İl, ilçe, mahalle veya otel adı ile arayın.</span>
+                    </div>
+                </div>
+                <div class="hp-hotel-search" data-section-id="@activeSection.Id">
+                    <input type="search" class="form-control" id="hpHotelSearchInput" placeholder="Otel ara: İstanbul, Beyoğlu, otel adı..." autocomplete="off" />
+                    <div id="hpHotelSearchResults" class="hp-search-results" hidden></div>
+                </div>
+            </section>
+
+            <section class="admin-section-card">
+                <div class="admin-section-head">
+                    <div>
+                        <p class="mini-caption">SEÇİLİ OTELLER</p>
+                        <h3>Bölüm otel listesi (@activeSection.Hotels.Count)</h3>
+                        <span>Sıralama anasayfada yukarıdan aşağıya uygulanır.</span>
+                    </div>
+                </div>
+                <div class="admin-table-wrap">
+                    @if (activeSection.Hotels.Count == 0)
+                    {
+                        <p class="text-muted mb-0">Bu bölümde henüz otel yok. Yukarıdan arama ile ekleyin.</p>
+                    }
+                    else
+                    {
+                        <table class="admin-table hp-hotel-table">
+                            <thead>
+                            <tr>
+                                <th>#</th>
+                                <th>Otel</th>
+                                <th>İl</th>
+                                <th>İlçe</th>
+                                <th>Mahalle</th>
+                                <th>Durum</th>
+                                <th class="text-end">İşlem</th>
+                            </tr>
+                            </thead>
+                            <tbody>
+                            @{
+                                var rowIndex = 1;
+                            }
+                            @foreach (var hotel in activeSection.Hotels)
+                            {
+                                <tr>
+                                    <td>@rowIndex</td>
+                                    <td><strong>@hotel.HotelName</strong><div class="text-muted small">#@hotel.HotelId</div></td>
+                                    <td>@hotel.City</td>
+                                    <td>@hotel.District</td>
+                                    <td>@(string.IsNullOrWhiteSpace(hotel.Neighborhood) ? "-" : hotel.Neighborhood)</td>
+                                    <td>
+                                        <span class="badge @(hotel.PublishStatus == "Yayında" ? "bg-success" : "bg-warning")">@hotel.PublishStatus</span>
+                                        <span class="badge bg-light text-dark">@hotel.ApprovalStatus</span>
+                                    </td>
+                                    <td class="text-end hp-row-actions">
+                                        <form method="post" action="/admin/anasayfa-oteller/otel-tasi" class="d-inline">
+                                            @Html.AntiForgeryToken()
+                                            <input type="hidden" name="EntryId" value="@hotel.EntryId" />
+                                            <input type="hidden" name="SectionId" value="@activeSection.Id" />
+                                            <input type="hidden" name="Direction" value="up" />
+                                            <button type="submit" class="btn btn-outline-secondary btn-sm" title="Yukarı">↑</button>
+                                        </form>
+                                        <form method="post" action="/admin/anasayfa-oteller/otel-tasi" class="d-inline">
+                                            @Html.AntiForgeryToken()
+                                            <input type="hidden" name="EntryId" value="@hotel.EntryId" />
+                                            <input type="hidden" name="SectionId" value="@activeSection.Id" />
+                                            <input type="hidden" name="Direction" value="down" />
+                                            <button type="submit" class="btn btn-outline-secondary btn-sm" title="Aşağı">↓</button>
+                                        </form>
+                                        <form method="post" action="/admin/anasayfa-oteller/otel-kaldir" class="d-inline" onsubmit="return confirm('Otel bu bölümden kaldırılsın mı?');">
+                                            @Html.AntiForgeryToken()
+                                            <input type="hidden" name="EntryId" value="@hotel.EntryId" />
+                                            <input type="hidden" name="SectionId" value="@activeSection.Id" />
+                                            <button type="submit" class="btn btn-outline-danger btn-sm">Kaldır</button>
+                                        </form>
+                                    </td>
+                                </tr>
+                                rowIndex++;
+                            }
+                            </tbody>
+                        </table>
+                    }
+                </div>
+            </section>
+        }
+    </div>
+</div>
+
+<style>
+    .hp-hotels-layout { display: grid; grid-template-columns: 280px 1fr; gap: 1rem; margin-top: 1rem; }
+    .hp-section-list { display: flex; flex-direction: column; gap: .5rem; }
+    .hp-section-item { display: flex; justify-content: space-between; align-items: flex-start; gap: .5rem; padding: .75rem; border: 1px solid rgba(0,0,0,.08); border-radius: .5rem; text-decoration: none; color: inherit; background: #fff; }
+    .hp-section-item.is-active { border-color: #0d6efd; box-shadow: 0 0 0 1px rgba(13,110,253,.25); }
+    .hp-section-meta { display: block; font-size: .75rem; color: #6c757d; margin-top: .25rem; }
+    .hp-hotel-search { position: relative; }
+    .hp-search-results { position: absolute; z-index: 20; left: 0; right: 0; top: calc(100% + .25rem); background: #fff; border: 1px solid rgba(0,0,0,.12); border-radius: .5rem; max-height: 320px; overflow: auto; box-shadow: 0 8px 24px rgba(0,0,0,.08); }
+    .hp-search-item { display: flex; justify-content: space-between; align-items: center; gap: .75rem; padding: .65rem .85rem; border-bottom: 1px solid rgba(0,0,0,.06); }
+    .hp-search-item:last-child { border-bottom: 0; }
+    .hp-section-edit-form { margin-top: 1rem; }
+    .hp-section-actions { display: flex; gap: .5rem; align-items: center; flex-wrap: wrap; }
+    .hp-row-actions form { margin-left: .15rem; }
+    @@media (max-width: 992px) { .hp-hotels-layout { grid-template-columns: 1fr; } }
+</style>
+
+<script>
+    (function () {
+        const root = document.querySelector('.hp-hotel-search');
+        if (!root) return;
+        const sectionId = root.getAttribute('data-section-id');
+        const input = document.getElementById('hpHotelSearchInput');
+        const results = document.getElementById('hpHotelSearchResults');
+        let timer = null;
+
+        function hideResults() {
+            results.hidden = true;
+            results.innerHTML = '';
+        }
+
+        function renderItems(items) {
+            if (!items || items.length === 0) {
+                results.innerHTML = '<div class="hp-search-item text-muted">Sonuç bulunamadı</div>';
+                results.hidden = false;
+                return;
+            }
+
+            results.innerHTML = items.map(item => `
+                <div class="hp-search-item">
+                    <div>
+                        <strong>${escapeHtml(item.hotelName)}</strong>
+                        <div class="text-muted small">${escapeHtml(item.locationLabel)}</div>
+                    </div>
+                    <form method="post" action="/admin/anasayfa-oteller/otel-ekle">
+                        <input type="hidden" name="__RequestVerificationToken" value="${getAntiForgeryToken()}" />
+                        <input type="hidden" name="SectionId" value="${sectionId}" />
+                        <input type="hidden" name="HotelId" value="${item.hotelId}" />
+                        <button type="submit" class="btn btn-primary btn-sm">Ekle</button>
+                    </form>
+                </div>`).join('');
+            results.hidden = false;
+        }
+
+        function escapeHtml(value) {
+            return String(value ?? '').replace(/[&<>"']/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
+        }
+
+        function getAntiForgeryToken() {
+            const tokenInput = document.querySelector('input[name="__RequestVerificationToken"]');
+            return tokenInput ? tokenInput.value : '';
+        }
+
+        async function searchHotels(query) {
+            const url = `/admin/anasayfa-oteller/otel-ara?q=${encodeURIComponent(query)}&limit=20`;
+            const response = await fetch(url, { headers: { 'Accept': 'application/json' } });
+            if (!response.ok) return [];
+            return response.json();
+        }
+
+        input.addEventListener('input', function () {
+            clearTimeout(timer);
+            const q = input.value.trim();
+            if (q.length < 2) {
+                hideResults();
+                return;
+            }
+            timer = setTimeout(async () => {
+                try {
+                    const items = await searchHotels(q);
+                    renderItems(items);
+                } catch {
+                    hideResults();
+                }
+            }, 250);
+        });
+
+        document.addEventListener('click', function (event) {
+            if (!root.contains(event.target)) hideResults();
+        });
+    })();
+</script>

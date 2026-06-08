@@ -187,6 +187,8 @@ builder.Services.AddScoped<IAdminHotelManagementService, AdminHotelManagementSer
 builder.Services.AddScoped<IHotelCompletenessService, HotelCompletenessService>();
 builder.Services.AddScoped<IAdminHomepageHotelsService, AdminHomepageHotelsService>();
 builder.Services.AddScoped<IAdminOzelGunlerService, AdminOzelGunlerService>();
+builder.Services.AddScoped<IAdminPuanYonetimiService, AdminPuanYonetimiService>();
+builder.Services.AddScoped<IHotelPointsService, HotelPointsService>();
 builder.Services.AddScoped<IAdminLocationService, AdminLocationService>();
 builder.Services.AddScoped<IAdminLocationService, AdminLocationService>();
 builder.Services.AddScoped<ICampaignService, CampaignService>();
@@ -200,6 +202,7 @@ builder.Services.AddScoped<IFirmaService, FirmaService>();
 builder.Services.AddScoped<IHotelService, HotelService>();
 builder.Services.AddScoped<IHotelPricingReadService, HotelPricingReadService>();
 builder.Services.AddScoped<IHeaderBildiriService, HeaderBildiriService>();
+builder.Services.AddScoped<IUtilityPulseService, UtilityPulseService>();
 builder.Services.AddScoped<IOzelGunService, OzelGunService>();
 builder.Services.AddScoped<IFavoritePriceAlertService, FavoritePriceAlertService>();
 builder.Services.AddScoped<IPhoneVerificationService, PhoneVerificationService>();

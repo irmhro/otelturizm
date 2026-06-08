@@ -61,6 +61,13 @@ public sealed class OzelGunService : IOzelGunService
         return model;
     }
 
+    public void InvalidateCache()
+    {
+        _cache.Remove(AllRowsCacheKey);
+        var localToday = DateOnly.FromDateTime(_timeZoneService.ToLocal(DateTime.UtcNow));
+        _cache.Remove($"ozel-gun:today:{localToday:yyyy-MM-dd}");
+    }
+
     private async Task<IReadOnlyList<OzelGunRow>> GetActiveRowsAsync(CancellationToken cancellationToken)
     {
         if (_cache.TryGetValue(AllRowsCacheKey, out IReadOnlyList<OzelGunRow>? cachedRows) && cachedRows is not null)
