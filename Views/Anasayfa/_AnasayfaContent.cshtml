@@ -25,6 +25,40 @@
     };
     var heroHeadline = heroHeadlines[Random.Shared.Next(heroHeadlines.Length)];
     var heroWords = heroHeadline.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+    string heroLine1Text;
+    string heroLine2Text;
+    if (heroHeadline.Contains(',', StringComparison.Ordinal))
+    {
+        var commaIndex = heroHeadline.IndexOf(',', StringComparison.Ordinal);
+        heroLine1Text = heroHeadline[..(commaIndex + 1)].Trim();
+        heroLine2Text = heroHeadline[(commaIndex + 1)..].Trim();
+    }
+    else
+    {
+        var heroSplitAt = 1;
+        if (heroWords.Length > 1)
+        {
+            var bestScore = double.MaxValue;
+            for (var k = 1; k < heroWords.Length; k++)
+            {
+                var line1Len = string.Join(" ", heroWords.Take(k)).Length;
+                var line2Len = string.Join(" ", heroWords.Skip(k)).Length;
+                var score = Math.Max(line1Len, line2Len) * 2 + Math.Abs(line1Len - line2Len);
+                if (score < bestScore)
+                {
+                    bestScore = score;
+                    heroSplitAt = k;
+                }
+            }
+        }
+
+        heroLine1Text = string.Join(" ", heroWords.Take(heroSplitAt));
+        heroLine2Text = string.Join(" ", heroWords.Skip(heroSplitAt));
+    }
+
+    var heroLine1Words = heroLine1Text.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+    var heroLine2Words = heroLine2Text.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+    string HeroWordTone(int index) => $"hero-title-word--tone-{index % 5}";
     var destinationFallbackImages = new[]
     {
         "https://images.unsplash.com/photo-1566073771259-6a8506099945?w=100&auto=format&fit=crop&q=80",
@@ -38,25 +72,6 @@
         .Where(d => d.HotelCount > 0 && !string.IsNullOrWhiteSpace(d.City))
         .Take(6)
         .ToList();
-    var heroSplitAt = 1;
-    if (heroWords.Length > 1)
-    {
-        var bestScore = double.MaxValue;
-        for (var k = 1; k < heroWords.Length; k++)
-        {
-            var line1Len = string.Join(" ", heroWords.Take(k)).Length;
-            var line2Len = string.Join(" ", heroWords.Skip(k)).Length;
-            var score = Math.Max(line1Len, line2Len) * 2 + Math.Abs(line1Len - line2Len);
-            if (score < bestScore)
-            {
-                bestScore = score;
-                heroSplitAt = k;
-            }
-        }
-    }
-    var heroLine1 = heroWords.Take(heroSplitAt).ToArray();
-    var heroLine2 = heroWords.Skip(heroSplitAt).ToArray();
-    string HeroWordTone(int index) => $"hero-title-word--tone-{index % 5}";
 }
 
 <main>
@@ -73,18 +88,18 @@
                 <div class="hero-headline-pro">
                     @await Component.InvokeAsync("LogoOzelGun")
                     <h1 class="hero-title hero-title-pro hero-title-pro--headline" aria-label="@heroHeadline">
-                        <span class="hero-title-row hero-title-row--spread" aria-hidden="false">
-                            @for (var i = 0; i < heroLine1.Length; i++)
+                        <span class="hero-title-row hero-title-row--spread hero-title-row--line" aria-hidden="false">
+                            @for (var i = 0; i < heroLine1Words.Length; i++)
                             {
-                                <span class="hero-title-word @HeroWordTone(i)">@heroLine1[i]</span>
+                                <span class="hero-title-word @HeroWordTone(i)">@heroLine1Words[i]</span>
                             }
                         </span>
-                        @if (heroLine2.Length > 0)
+                        @if (heroLine2Words.Length > 0)
                         {
-                            <span class="hero-title-row hero-title-row--spread">
-                                @for (var i = 0; i < heroLine2.Length; i++)
+                            <span class="hero-title-row hero-title-row--spread hero-title-row--line">
+                                @for (var i = 0; i < heroLine2Words.Length; i++)
                                 {
-                                    <span class="hero-title-word @HeroWordTone(i + heroLine1.Length)">@heroLine2[i]</span>
+                                    <span class="hero-title-word @HeroWordTone(i + heroLine1Words.Length)">@heroLine2Words[i]</span>
                                 }
                             </span>
                         }

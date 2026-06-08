@@ -58,8 +58,8 @@
     var currentCurrencyLabel = currentCurrency switch
     {
         "USD" => "$",
-        "EUR" => "€",
-        _ => "₺"
+        "EUR" => "EUR",
+        _ => "TL"
     };
 
     string BuildPrefLangUrl(string langCode)
@@ -101,9 +101,9 @@
 
     var prefCurrencies = new (string Code, string Label, string Title)[]
     {
-        ("TRY", "₺", "TRY (₺)"),
+        ("TRY", "TL", "TRY (TL)"),
         ("USD", "$", "USD ($)"),
-        ("EUR", "€", "EUR (€)")
+        ("EUR", "EUR", "EUR")
     };
 }
 <div class="home-header-shell" data-current-lang="@currentLang" data-current-currency="@currentCurrency">

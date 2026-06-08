@@ -1643,14 +1643,14 @@ a.eco-pill:hover {
 }
 
 .hero-headline-pro {
-    max-width: min(780px, 92vw);
+    max-width: min(720px, 92vw);
     width: 100%;
-    margin: 0 auto 20px;
+    margin: 0 auto 16px;
     text-align: center;
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 12px;
+    gap: 10px;
     background: none;
     border: none;
     box-shadow: none;
@@ -1773,15 +1773,25 @@ a.eco-pill:hover {
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: clamp(6px, 0.8vw, 12px);
+    gap: clamp(4px, 0.6vw, 8px);
     width: 100%;
-    max-width: min(780px, 92vw);
+    max-width: min(720px, 92vw);
     margin: 0 auto;
-    font-size: clamp(34px, 4.2vw, 58px);
-    line-height: 1.08;
-    letter-spacing: -0.03em;
+    font-size: clamp(32px, 3.6vw, 56px);
+    line-height: 1.1;
+    letter-spacing: -0.028em;
     text-align: center;
     text-wrap: balance;
+}
+
+.hero-title-row--line {
+    flex-wrap: nowrap;
+    max-width: 100%;
+    overflow: hidden;
+}
+
+.hero-title-row--line .hero-title-word {
+    white-space: nowrap;
 }
 
 .hero-title-row--spread {
@@ -1790,9 +1800,9 @@ a.eco-pill:hover {
     align-items: baseline;
     justify-content: center;
     width: 100%;
-    max-width: min(780px, 92vw);
+    max-width: min(720px, 92vw);
     margin-inline: auto;
-    gap: clamp(0.18em, 1.6vw, 0.42em);
+    gap: clamp(0.16em, 1.2vw, 0.34em);
 }
 
 .hero-title-row--spread .hero-title-word {
@@ -2488,37 +2498,41 @@ a.eco-pill:hover {
 
     .hero-title.hero-title-pro {
         width: 100%;
-        max-width: min(780px, 92vw);
-        font-size: clamp(38px, 4.2vw, 58px);
-        line-height: 1.08;
-        gap: clamp(6px, 0.8vw, 12px);
+        max-width: min(720px, 92vw);
+        font-size: clamp(36px, 3.6vw, 56px);
+        line-height: 1.1;
+        gap: clamp(4px, 0.6vw, 8px);
     }
 
     .hero-title-row {
         width: 100%;
-        max-width: min(420px, 92vw);
+        max-width: min(720px, 92vw);
         margin-inline: auto;
-        flex-wrap: wrap;
+        flex-wrap: nowrap;
         justify-content: center;
-        gap: clamp(0.18em, 1.6vw, 0.42em);
+        gap: clamp(0.16em, 1.2vw, 0.34em);
         text-align: center;
     }
 
     .hero-title-row .hero-title-word {
-        white-space: normal;
+        white-space: nowrap;
     }
 
     .hero-title-pro--headline .hero-title-row--spread {
         justify-content: center;
         width: 100%;
-        max-width: min(780px, 92vw);
-        gap: clamp(0.18em, 1.6vw, 0.42em);
+        max-width: min(720px, 92vw);
+        gap: clamp(0.16em, 1.2vw, 0.34em);
         margin-inline: auto;
+    }
+
+    .hero-title-pro--headline .hero-title-row--line {
+        flex-wrap: nowrap;
     }
 
     .hero-title-pro--headline .hero-title-row--spread .hero-title-word {
         flex: 0 1 auto;
-        white-space: normal;
+        white-space: nowrap;
     }
 
     .hero-section .search-engine-shell,

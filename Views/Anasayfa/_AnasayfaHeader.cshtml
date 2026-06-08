@@ -515,7 +515,7 @@
                         const toggleBadge = btn.querySelector('.currency-badge');
                         if(toggleBadge){
                             toggleBadge.className = 'currency-badge ' + (value === 'TRY' ? 'try' : value === 'EUR' ? 'eur' : 'usd');
-                            toggleBadge.textContent = value === 'TRY' ? '₺' : value === 'EUR' ? '€' : '$';
+                            toggleBadge.textContent = value === 'TRY' ? 'TL' : value === 'EUR' ? 'EUR' : '$';
                         }
                     }
 

@@ -602,44 +602,48 @@
 
     .hero-title.hero-title-pro--headline {
         width: 100%;
-        max-width: min(420px, 92vw);
+        max-width: min(400px, 92vw);
         margin-inline: auto;
-        font-size: clamp(22px, 6.4vw, 34px);
-        line-height: 1.16;
-        gap: clamp(4px, 1vw, 6px);
+        font-size: clamp(20px, 6vw, 32px);
+        line-height: 1.14;
+        gap: clamp(3px, 0.8vw, 5px);
         text-align: center;
         align-items: center;
     }
 
     .hero-title-pro--headline .hero-title-row--spread {
         justify-content: center;
-        flex-wrap: wrap;
-        gap: clamp(0.18em, 1.6vw, 0.42em);
+        flex-wrap: nowrap;
+        gap: clamp(0.14em, 1vw, 0.28em);
         width: 100%;
-        max-width: min(420px, 92vw);
+        max-width: min(400px, 92vw);
         margin-inline: auto;
+    }
+
+    .hero-title-pro--headline .hero-title-row--line {
+        flex-wrap: nowrap;
     }
 
     .hero-title-pro--headline .hero-title-row--spread .hero-title-word {
         flex: 0 1 auto;
-        white-space: normal;
+        white-space: nowrap;
     }
 
     .hero-title-row {
         display: flex;
-        flex-wrap: wrap;
+        flex-wrap: nowrap;
         align-items: baseline;
         justify-content: center;
-        gap: clamp(0.18em, 1.6vw, 0.42em);
+        gap: clamp(0.14em, 1vw, 0.28em);
         width: 100%;
-        max-width: min(420px, 92vw);
+        max-width: min(400px, 92vw);
         margin-inline: auto;
-        white-space: normal;
+        white-space: nowrap;
         text-align: center;
     }
 
     .hero-title-row .hero-title-word {
-        white-space: normal;
+        white-space: nowrap;
     }
 
     .hero-title-row--impact {
@@ -955,22 +959,22 @@
         width: 100%;
         max-width: min(360px, 90vw);
         margin-inline: auto;
-        font-size: clamp(20px, 6vw, 28px);
-        line-height: 1.18;
-        gap: 4px;
+        font-size: clamp(18px, 5.6vw, 26px);
+        line-height: 1.16;
+        gap: 3px;
         letter-spacing: -0.024em;
         text-align: center;
     }
 
     .hero-title-pro--headline .hero-title-row--spread {
         justify-content: center;
-        flex-wrap: wrap;
-        gap: clamp(0.16em, 1.4vw, 0.36em);
+        flex-wrap: nowrap;
+        gap: clamp(0.12em, 0.9vw, 0.22em);
         max-width: min(360px, 90vw);
     }
 
     .hero-title-pro--headline .hero-title-row--spread .hero-title-word {
-        white-space: normal;
+        white-space: nowrap;
     }
 
     .search-pro-row-trip {
