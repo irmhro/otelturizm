@@ -127,9 +127,7 @@
             <link rel="alternate" hreflang="@alt.Hreflang" href="@alt.Href" />
         }
     }
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+    <partial name="~/Views/Shared/_VendorPlusJakartaFont.cshtml" />
     <link rel="stylesheet" href="~/assets/vendor/fontawesome/css/all.min.css" asp-append-version="true" />
     @if (developmentGateEnabled)
     {
@@ -156,7 +154,7 @@
     }
     @if (includePureVisualSlider)
     {
-        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.css" crossorigin="anonymous" />
+        <link rel="stylesheet" href="~/assets/vendor/swiper/swiper-bundle.min.css" asp-append-version="true" />
         <link rel="stylesheet" href="~/assets/css/pure-visual-slider.css" asp-append-version="true" />
     }
     @if (ViewData["IncludeAnasayfaStyles"] as bool? == true)
@@ -211,11 +209,9 @@
     }
     @if (includePureVisualSlider)
     {
-        <script src="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.js" crossorigin="anonymous"></script>
+        <script src="~/assets/vendor/swiper/swiper-bundle.min.js" asp-append-version="true"></script>
         <script src="~/assets/js/pure-visual-slider.js" asp-append-version="true"></script>
     }
-    <script src="~/assets/js/rum-webvitals.js" asp-append-version="true"></script>
-    <script src="~/assets/js/client-error-reporter.js" asp-append-version="true"></script>
     <script src="~/assets/js/home-drawer-prefs.js" asp-append-version="true" defer></script>
     <script src="~/assets/js/home-header-prefs.js" asp-append-version="true" defer></script>
     <script src="~/assets/js/route-picker-modal.js" asp-append-version="true" defer></script>

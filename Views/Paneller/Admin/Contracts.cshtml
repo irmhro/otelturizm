@@ -206,14 +206,9 @@
     </div>
 </div>
 
-<script src="https://cdn.tiny.cloud/1/o9w4naih7qg838zfei6axzcr4nyym355lre77koflwma4pdi/tinymce/8/tinymce.min.js" referrerpolicy="origin" crossorigin="anonymous"></script>
+<script src="~/assets/vendor/tinymce/tinymce.min.js" asp-append-version="true"></script>
 <script nonce="@nonce">
     (() => {
-        const mergeTags = [
-            { value: 'First.Name', title: 'First Name' },
-            { value: 'Email', title: 'Email' }
-        ];
-
         function initEditor(selector, height) {
             if (!window.tinymce) return;
             const target = document.querySelector(selector);
@@ -225,16 +220,17 @@
             tinymce.init({
                 selector,
                 height,
+                base_url: '/assets/vendor/tinymce',
+                suffix: '.min',
                 promotion: false,
                 branding: false,
                 menubar: 'file edit view insert format tools table help',
                 plugins: [
                     'anchor', 'autolink', 'charmap', 'codesample', 'emoticons', 'link', 'lists', 'media', 'searchreplace', 'table', 'visualblocks', 'wordcount',
-                    'checklist', 'mediaembed', 'casechange', 'formatpainter', 'pageembed', 'a11ychecker', 'tinymcespellchecker', 'permanentpen', 'powerpaste', 'advtable', 'advcode', 'advtemplate', 'tableofcontents', 'footnotes', 'mergetags', 'autocorrect', 'typography', 'inlinecss', 'markdown', 'importword', 'exportword', 'exportpdf'
+                    'code', 'fullscreen', 'help', 'image', 'preview'
                 ],
-                toolbar: 'undo redo | blocks fontfamily fontsize | bold italic underline strikethrough | link media table mergetags | align lineheight | checklist numlist bullist indent outdent | emoticons charmap | removeformat | advcode visualblocks',
+                toolbar: 'undo redo | blocks | bold italic underline strikethrough | link media table | align lineheight | numlist bullist indent outdent | emoticons charmap | removeformat | code preview',
                 quickbars_selection_toolbar: 'bold italic | quicklink blockquote',
-                mergetags_list: mergeTags,
                 content_style: 'body{font-family:Inter,Arial,Helvetica,sans-serif;font-size:14px;line-height:1.7;color:#0f172a;} h1,h2,h3{letter-spacing:-.01em;color:#0f172a;} table{border-collapse:collapse;width:100%;} table td,table th{border:1px solid #cbd5e1;padding:8px;}',
                 setup(editor) {
                     editor.on('init', () => editor.getContainer()?.classList.add('contract-editor-ready'));

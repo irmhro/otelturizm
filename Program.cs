@@ -893,29 +893,38 @@ app.Use(async (context, next) =>
                 "{\"group\":\"csp-endpoint\",\"max_age\":86400,\"endpoints\":[{\"url\":\"" + reportUrl + "\"}]}";
         }
 
-        // p75/p76: Enforce modunda script-src unsafe-inline yok; nonce/self ile çalışır.
+        // Üçüncü taraf script/connect (Cloudflare Web Analytics beacon vb.) kapalı — sadece same-origin.
         context.Response.Headers["Content-Security-Policy"] = cspEnforce
-            ? "default-src 'self' https: data: blob:; " +
-              $"script-src 'self' 'nonce-{nonce}' https:; " +
-              "style-src 'self' 'unsafe-inline' https:; " +
+            ? "default-src 'self' data: blob:; " +
+              $"script-src 'self' 'nonce-{nonce}'; " +
+              "style-src 'self' 'unsafe-inline'; " +
               "img-src 'self' data: blob: https:; " +
-              "font-src 'self' data: https:; " +
-              "connect-src 'self' https: wss:; " +
+              "font-src 'self' data:; " +
+              "connect-src 'self' wss:; " +
+              "frame-src 'self' https://www.youtube.com https://www.youtube-nocookie.com; " +
               "frame-ancestors 'self'; base-uri 'self'; form-action 'self';" +
               cspReportDirectives
-            : "default-src 'self' https: data: blob:; script-src 'self' 'unsafe-inline' https:; style-src 'self' 'unsafe-inline' https:; img-src 'self' data: blob: https:; font-src 'self' data: https:; connect-src 'self' https: wss:; frame-ancestors 'self'; base-uri 'self'; form-action 'self';" +
+            : "default-src 'self' data: blob:; " +
+              $"script-src 'self' 'unsafe-inline' 'nonce-{nonce}'; " +
+              "style-src 'self' 'unsafe-inline'; " +
+              "img-src 'self' data: blob: https:; " +
+              "font-src 'self' data:; " +
+              "connect-src 'self' wss:; " +
+              "frame-src 'self' https://www.youtube.com https://www.youtube-nocookie.com; " +
+              "frame-ancestors 'self'; base-uri 'self'; form-action 'self';" +
               cspReportDirectives;
 
         // Kademeli geçiş: önce Report-Only strict CSP ile nonce coverage ölçülür.
         if (!cspEnforce)
         {
             context.Response.Headers["Content-Security-Policy-Report-Only"] =
-                "default-src 'self' https: data: blob:; " +
-                $"script-src 'self' 'nonce-{nonce}' https:; " +
-                "style-src 'self' 'unsafe-inline' https:; " +
+                "default-src 'self' data: blob:; " +
+                $"script-src 'self' 'nonce-{nonce}'; " +
+                "style-src 'self' 'unsafe-inline'; " +
                 "img-src 'self' data: blob: https:; " +
-                "font-src 'self' data: https:; " +
-                "connect-src 'self' https: wss:; " +
+                "font-src 'self' data:; " +
+                "connect-src 'self' wss:; " +
+                "frame-src 'self' https://www.youtube.com https://www.youtube-nocookie.com; " +
                 "frame-ancestors 'self'; base-uri 'self'; form-action 'self';" +
                 cspReportDirectives;
         }

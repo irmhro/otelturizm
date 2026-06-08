@@ -118,14 +118,33 @@
 
     function setRoomSelection(roomId) {
         const nodes = roomNodes();
-        const item = nodes.length === 0 ? ensureFirstRoom() : addRoomItem({ roomTypeId: roomId, roomCount: 1 });
+        let item;
+        if (nodes.length === 0) {
+            item = ensureFirstRoom();
+        } else {
+            item = nodes.find(node => node.classList.contains('is-active')) || nodes[0];
+        }
         const select = item?.querySelector('[data-field="roomType"]');
         if (select instanceof HTMLSelectElement && roomId) {
             select.value = String(roomId);
         }
+        if (item) {
+            normalizeDates(item);
+        }
         syncHiddenFields();
         renumberRooms();
         updateRoomButtons(roomId);
+
+        const option = select?.selectedOptions?.[0];
+        const roomName = option?.dataset?.roomName || option?.textContent?.trim() || '';
+        const roomNameEl = document.getElementById('mobileBookingRoomName');
+        if (roomNameEl && roomName) {
+            roomNameEl.textContent = roomName;
+        }
+
+        document.dispatchEvent(new CustomEvent('otelturizm:room-selection-applied', {
+            detail: { roomTypeId: roomId, roomName: roomName }
+        }));
         openBookingArea();
     }
 
@@ -406,15 +425,6 @@
 
     document.addEventListener('click', function (event) {
         const target = event.target instanceof HTMLElement ? event.target : null;
-        const selectBtn = target?.closest?.('.select-room-btn');
-        if (selectBtn && !selectBtn.hasAttribute('disabled')) {
-            event.preventDefault();
-            event.stopImmediatePropagation();
-            const roomId = parseInt(selectBtn.getAttribute('data-room-id') || '0', 10) || 0;
-            if (roomId > 0) setRoomSelection(roomId);
-            return;
-        }
-
         const quantityBtn = target?.closest?.('[data-room-quantity-action]');
         if (quantityBtn) {
             event.preventDefault();

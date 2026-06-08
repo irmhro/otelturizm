@@ -139,7 +139,7 @@
     <link rel="stylesheet" href="~/assets/css/footer_mobil.css" asp-append-version="true" media="(max-width: 900px)" />
     <link rel="stylesheet" href="~/assets/css/route-picker-modal.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/assets/css/route-picker-modal.mobile.css" asp-append-version="true" media="(max-width: 900px)" />
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.css" crossorigin="anonymous" />
+    <link rel="stylesheet" href="~/assets/vendor/swiper/swiper-bundle.min.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/assets/css/pure-visual-slider.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/assets/css/yanbar.css" asp-append-version="true" />
     @if (developmentGateEnabled)
@@ -264,13 +264,10 @@
 {
     <script src="~/assets/js/layout/development-gate.js" asp-append-version="true"></script>
 }
-<script src="~/assets/js/rum-webvitals.js" asp-append-version="true"></script>
-<script src="~/assets/js/client-error-reporter.js" asp-append-version="true"></script>
-<script src="~/assets/js/growth-analytics.js" asp-append-version="true"></script>
 <script src="~/assets/js/route-picker-modal.js" asp-append-version="true"></script>
 <script src="~/assets/js/home-drawer-prefs.js" asp-append-version="true" defer></script>
 <script src="~/assets/js/home-header-prefs.js" asp-append-version="true" defer></script>
-<script src="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.js" crossorigin="anonymous"></script>
+<script src="~/assets/vendor/swiper/swiper-bundle.min.js" asp-append-version="true"></script>
 <script src="~/assets/js/pure-visual-slider.js" asp-append-version="true"></script>
 @await RenderSectionAsync("Scripts", required: false)
 </body>

@@ -2358,6 +2358,130 @@
         margin-bottom: 10px;
     }
 
+    .oteldetay-page .multi-room-title {
+        font-size: 13px;
+        font-weight: 800;
+        color: var(--od-dark, #1A1919);
+    }
+
+    .oteldetay-page .booking-form {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+    }
+
+    .oteldetay-page .booking-form .guest-row {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) auto;
+        align-items: center;
+        gap: 10px;
+        padding: 10px 12px;
+        border: 1px solid var(--od-border, #EBE9E4);
+        border-radius: 12px;
+        background: #fff;
+        min-height: 0;
+    }
+
+    .oteldetay-page .booking-form .guest-row > span {
+        font-size: 13px;
+        font-weight: 700;
+        color: var(--od-dark, #1A1919);
+    }
+
+    .oteldetay-page .booking-advanced-fields {
+        border: 1px solid var(--od-border, #EBE9E4);
+        border-radius: 14px;
+        padding: 12px;
+        background: var(--od-bg, #FCFBF9);
+    }
+
+    .oteldetay-page .booking-advanced-heading {
+        margin-bottom: 10px;
+    }
+
+    .oteldetay-page .booking-advanced-heading strong {
+        display: block;
+        font-size: 13px;
+        font-weight: 800;
+        color: var(--od-dark, #1A1919);
+    }
+
+    .oteldetay-page .booking-advanced-heading span {
+        display: block;
+        margin-top: 4px;
+        font-size: 11px;
+        line-height: 1.45;
+        color: var(--od-muted, #6E6E77);
+    }
+
+    .oteldetay-page > #reservationConfirmModal.detail-confirm-modal .detail-confirm-modal__inner {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+        min-height: 0;
+    }
+
+    .oteldetay-page > #reservationConfirmModal .detail-confirm-modal__head {
+        align-items: flex-start;
+        gap: 10px;
+    }
+
+    .oteldetay-page > #reservationConfirmModal .detail-confirm-modal__lead {
+        margin: 0;
+        font-size: 12px;
+        line-height: 1.45;
+        color: var(--od-muted, #6E6E77);
+    }
+
+    .oteldetay-page > #reservationConfirmModal .reservation-confirm-stack {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        max-height: min(42vh, 320px);
+        overflow-y: auto;
+        -webkit-overflow-scrolling: touch;
+        padding-right: 2px;
+    }
+
+    .oteldetay-page > #reservationConfirmModal .reservation-confirm-card {
+        display: grid;
+        grid-template-columns: 36px minmax(0, 1fr);
+        gap: 10px;
+        padding: 10px;
+        border: 1px solid var(--od-border, #EBE9E4);
+        border-radius: 12px;
+        background: #fff;
+    }
+
+    .oteldetay-page > #reservationConfirmModal .detail-confirm-modal__footer {
+        margin-top: auto;
+        padding-top: 8px;
+        border-top: 1px solid var(--od-border, #EBE9E4);
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+    }
+
+    .oteldetay-page > #reservationConfirmModal .detail-confirm-modal__total {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
+    }
+
+    .oteldetay-page > #reservationConfirmModal .detail-confirm-modal__actions {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 8px;
+    }
+
+    .oteldetay-page > #reservationConfirmModal .detail-confirm-modal__actions .detail-modal-primary,
+    .oteldetay-page > #reservationConfirmModal .detail-confirm-modal__actions .detail-modal-secondary {
+        width: 100%;
+        min-height: 44px;
+        justify-content: center;
+    }
+
     .oteldetay-page .multi-room-item-head {
         align-items: flex-start;
     }
