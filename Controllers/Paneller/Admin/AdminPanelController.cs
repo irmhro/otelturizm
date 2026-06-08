@@ -1550,7 +1550,7 @@ public class AdminPanelController : Controller
 
     [HttpPost("oteller/pasife-al")]
     [ValidateAntiForgeryToken]
-    public async Task<IActionResult> DeactivateHotel(long hotelId, [FromForm] string? returnUrl, CancellationToken cancellationToken)
+    public async Task<IActionResult> DeactivateHotel([FromForm] long hotelId, [FromForm] string? returnUrl, CancellationToken cancellationToken)
     {
         if (!CanAccessAdminPanel())
         {
@@ -1564,7 +1564,13 @@ public class AdminPanelController : Controller
         if (!CanPerformCriticalAdminActions())
         {
             TempData["AdminHotelError"] = "Bu islem yalnizca admin yetkisi ile yapilabilir.";
-            return RedirectToAction(nameof(HotelDetail), new { id = hotelId });
+            return RedirectAfterHotelAction(hotelId, returnUrl);
+        }
+
+        if (hotelId <= 0)
+        {
+            TempData["AdminHotelError"] = "Gecersiz otel secimi.";
+            return RedirectAfterHotelAction(hotelId, returnUrl);
         }
 
         var result = await _adminHotelManagementService.DeactivateHotelAsync(hotelId, GetUserId(), cancellationToken);
@@ -1581,14 +1587,12 @@ public class AdminPanelController : Controller
                 HttpContext.Connection.RemoteIpAddress?.ToString(),
                 cancellationToken);
         }
-        return !string.IsNullOrWhiteSpace(returnUrl) && Url.IsLocalUrl(returnUrl)
-            ? LocalRedirect(returnUrl)
-            : RedirectToAction(nameof(HotelDetail), new { id = hotelId });
+        return RedirectAfterHotelAction(hotelId, returnUrl);
     }
 
     [HttpPost("oteller/aktive-et")]
     [ValidateAntiForgeryToken]
-    public async Task<IActionResult> ActivateHotel(long hotelId, [FromForm] string? returnUrl, CancellationToken cancellationToken)
+    public async Task<IActionResult> ActivateHotel([FromForm] long hotelId, [FromForm] string? returnUrl, CancellationToken cancellationToken)
     {
         if (!CanAccessAdminPanel())
         {
@@ -1602,7 +1606,13 @@ public class AdminPanelController : Controller
         if (!CanPerformCriticalAdminActions())
         {
             TempData["AdminHotelError"] = "Bu islem yalnizca admin yetkisi ile yapilabilir.";
-            return RedirectToAction(nameof(HotelDetail), new { id = hotelId });
+            return RedirectAfterHotelAction(hotelId, returnUrl);
+        }
+
+        if (hotelId <= 0)
+        {
+            TempData["AdminHotelError"] = "Gecersiz otel secimi.";
+            return RedirectAfterHotelAction(hotelId, returnUrl);
         }
 
         var result = await _adminHotelManagementService.ActivateHotelAsync(hotelId, GetUserId(), cancellationToken);
@@ -1619,9 +1629,7 @@ public class AdminPanelController : Controller
                 HttpContext.Connection.RemoteIpAddress?.ToString(),
                 cancellationToken);
         }
-        return !string.IsNullOrWhiteSpace(returnUrl) && Url.IsLocalUrl(returnUrl)
-            ? LocalRedirect(returnUrl)
-            : RedirectToAction(nameof(HotelDetail), new { id = hotelId });
+        return RedirectAfterHotelAction(hotelId, returnUrl);
     }
 
     [HttpPost("oteller/toplu-yayin")]
@@ -3467,6 +3475,21 @@ public class AdminPanelController : Controller
             || string.Equals(userRole, "superadmin", StringComparison.OrdinalIgnoreCase)
             || User.IsInRole("admin")
             || User.IsInRole("superadmin");
+    }
+
+    private IActionResult RedirectAfterHotelAction(long hotelId, string? returnUrl)
+    {
+        if (!string.IsNullOrWhiteSpace(returnUrl) && Url.IsLocalUrl(returnUrl))
+        {
+            return LocalRedirect(returnUrl);
+        }
+
+        if (hotelId > 0)
+        {
+            return RedirectToAction(nameof(HotelDetail), new { id = hotelId });
+        }
+
+        return RedirectToAction(nameof(Hotels));
     }
 
     private string GetFullName()

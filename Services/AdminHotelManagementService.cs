@@ -199,6 +199,153 @@ public class AdminHotelManagementService : IAdminHotelManagementService
         return model;
     }
 
+    public async Task<AdminHotelManagementPageViewModel> GetNewHotelFormPageAsync(string fullName, string email, string userRole, CancellationToken cancellationToken = default)
+    {
+        await using var connection = new SqlConnection(_connectionString);
+        await connection.OpenAsync(cancellationToken);
+        var shell = await BuildShellAsync(connection, "Yeni Otel Oluştur", "Zorunlu otel alanlarını doldurup kayıt oluşturun; detay, oda ve görseller sonraki adımda eklenir.", fullName, email, userRole, cancellationToken);
+        var defaultPartnerId = await ResolveDefaultPartnerIdAsync(connection, cancellationToken);
+
+        return new AdminHotelManagementPageViewModel
+        {
+            Shell = shell,
+            HotelForm = new AdminHotelEditForm
+            {
+                HotelId = 0,
+                HotelCode = $"ADM-{DateTime.UtcNow:yyyyMMddHHmmss}",
+                PartnerId = defaultPartnerId,
+                HotelType = "Otel",
+                Country = "Türkiye",
+                City = "İstanbul",
+                District = "Beyoğlu",
+                TotalRoomCount = 1,
+                DefaultCommissionRate = 15m,
+                PaymentTerm = "Çıkış Günü",
+                PaymentMethod = "Havale/EFT",
+                InvoiceType = "Otel Keser",
+                PublishStatus = "Taslak",
+                ApprovalStatus = "Beklemede",
+                Phone1 = "0000000000",
+                ContactEmail = "otel@otelturizm.com",
+                Address = "Adres bilgisi girilmeli"
+            },
+            RoomForm = new AdminRoomEditForm(),
+            HotelPhotoUploadForm = new AdminHotelPhotoUploadForm(),
+            HotelPhotoEditForm = new AdminHotelPhotoEditForm()
+        };
+    }
+
+    public async Task<(bool Success, string Message, long? HotelId)> CreateHotelAsync(long adminUserId, AdminHotelEditForm request, CancellationToken cancellationToken = default)
+    {
+        if (string.IsNullOrWhiteSpace(request.HotelName) || string.IsNullOrWhiteSpace(request.HotelCode))
+        {
+            return (false, "Otel kodu ve otel adı zorunludur.", null);
+        }
+
+        if (string.IsNullOrWhiteSpace(request.City) || string.IsNullOrWhiteSpace(request.District))
+        {
+            return (false, "İl ve ilçe zorunludur.", null);
+        }
+
+        await using var connection = new SqlConnection(_connectionString);
+        await connection.OpenAsync(cancellationToken);
+
+        var partnerId = request.PartnerId > 0 ? request.PartnerId : await ResolveDefaultPartnerIdAsync(connection, cancellationToken);
+        if (partnerId <= 0)
+        {
+            return (false, "Otel oluşturmak için en az bir partner kaydı gerekir.", null);
+        }
+
+        const string insertSql = @"
+            INSERT INTO [dbo].[OTELLER]
+            (
+                [OTEL_KODU], [PARTNER_ID], [KULLANICI_ID], [OTEL_ADI], [OTEL_TURU], [YILDIZ_SAYISI],
+                ulke, [SEHIR], ilce, [MAHALLE], [TAM_ADRES], [POSTA_KODU], [ENLEM], [BOYLAM],
+                [TELEFON_1], [TELEFON_2], faks, [EPOSTA], [WEB_SITESI],
+                [TOPLAM_ODA_SAYISI], [VARSAYILAN_KOMISYON_ORANI], [ODEME_VADESI], [ODEME_YONTEMI], [FATURA_KESIM_TURU],
+                [YAYIN_DURUMU], [ONAY_DURUMU], [ONAYLAYAN_ADMIN_ID], [ONAY_TARIHI],
+                [OLUSTURULMA_TARIHI], [GUNCELLENME_TARIHI]
+            )
+            OUTPUT INSERTED.id
+            VALUES
+            (
+                @hotelCode, @partnerId, @userId, @hotelName, @hotelType, @starCount,
+                @country, @city, @district, @neighborhood, @address, @postalCode, @latitude, @longitude,
+                @phone1, @phone2, @fax, @contactEmail, @website,
+                @totalRoomCount, @defaultCommissionRate, @paymentTerm, @paymentMethod, @invoiceType,
+                @publishStatus, @approvalStatus, @adminUserId, CASE WHEN @approvalStatus = N'Onaylandı' THEN SYSUTCDATETIME() ELSE NULL END,
+                SYSUTCDATETIME(), SYSUTCDATETIME()
+            );";
+
+        await using var command = new SqlCommand(insertSql, connection);
+        command.Parameters.AddWithValue("@hotelCode", request.HotelCode.Trim());
+        command.Parameters.AddWithValue("@partnerId", partnerId);
+        command.Parameters.AddWithValue("@userId", request.UserId.HasValue ? request.UserId.Value : DBNull.Value);
+        command.Parameters.AddWithValue("@hotelName", request.HotelName.Trim());
+        command.Parameters.AddWithValue("@hotelType", string.IsNullOrWhiteSpace(request.HotelType) ? "Otel" : request.HotelType);
+        command.Parameters.AddWithValue("@starCount", request.StarCount.HasValue ? request.StarCount.Value : DBNull.Value);
+        command.Parameters.AddWithValue("@country", string.IsNullOrWhiteSpace(request.Country) ? "Türkiye" : request.Country);
+        command.Parameters.AddWithValue("@city", request.City.Trim());
+        command.Parameters.AddWithValue("@district", request.District.Trim());
+        command.Parameters.AddWithValue("@neighborhood", DbValue(request.Neighborhood));
+        command.Parameters.AddWithValue("@address", string.IsNullOrWhiteSpace(request.Address) ? request.City : request.Address);
+        command.Parameters.AddWithValue("@postalCode", DbValue(request.PostalCode));
+        command.Parameters.AddWithValue("@latitude", request.Latitude.HasValue ? request.Latitude.Value : DBNull.Value);
+        command.Parameters.AddWithValue("@longitude", request.Longitude.HasValue ? request.Longitude.Value : DBNull.Value);
+        command.Parameters.AddWithValue("@phone1", string.IsNullOrWhiteSpace(request.Phone1) ? "0000000000" : request.Phone1);
+        command.Parameters.AddWithValue("@phone2", DbValue(request.Phone2));
+        command.Parameters.AddWithValue("@fax", DbValue(request.Fax));
+        command.Parameters.AddWithValue("@contactEmail", string.IsNullOrWhiteSpace(request.ContactEmail) ? "otel@otelturizm.com" : request.ContactEmail);
+        command.Parameters.AddWithValue("@website", DbValue(request.Website));
+        command.Parameters.AddWithValue("@totalRoomCount", request.TotalRoomCount <= 0 ? 1 : request.TotalRoomCount);
+        command.Parameters.AddWithValue("@defaultCommissionRate", request.DefaultCommissionRate <= 0 ? 15m : request.DefaultCommissionRate);
+        command.Parameters.AddWithValue("@paymentTerm", string.IsNullOrWhiteSpace(request.PaymentTerm) ? "Çıkış Günü" : request.PaymentTerm);
+        command.Parameters.AddWithValue("@paymentMethod", string.IsNullOrWhiteSpace(request.PaymentMethod) ? "Havale/EFT" : request.PaymentMethod);
+        command.Parameters.AddWithValue("@invoiceType", string.IsNullOrWhiteSpace(request.InvoiceType) ? "Otel Keser" : request.InvoiceType);
+        command.Parameters.AddWithValue("@publishStatus", string.IsNullOrWhiteSpace(request.PublishStatus) ? "Taslak" : request.PublishStatus);
+        command.Parameters.AddWithValue("@approvalStatus", string.IsNullOrWhiteSpace(request.ApprovalStatus) ? "Beklemede" : request.ApprovalStatus);
+        command.Parameters.AddWithValue("@adminUserId", adminUserId);
+
+        var newId = Convert.ToInt64(await command.ExecuteScalarAsync(cancellationToken), CultureInfo.InvariantCulture);
+        return (true, "Yeni otel kaydı oluşturuldu.", newId);
+    }
+
+    public async Task<(bool Success, string Message)> DeleteHotelAsync(long hotelId, long adminUserId, CancellationToken cancellationToken = default)
+    {
+        if (hotelId <= 0)
+        {
+            return (false, "Geçersiz otel seçimi.");
+        }
+
+        await using var connection = new SqlConnection(_connectionString);
+        await connection.OpenAsync(cancellationToken);
+        await EnsureHotelExistsAsync(connection, hotelId, cancellationToken);
+
+        const string sql = @"
+            UPDATE [dbo].[OTELLER]
+            SET [YAYIN_DURUMU] = N'Kapatıldı',
+                [ONAY_DURUMU] = N'Silindi',
+                [ONAYLAYAN_ADMIN_ID] = @adminUserId,
+                [GUNCELLENME_TARIHI] = SYSUTCDATETIME()
+            WHERE id = @hotelId;";
+
+        await using var command = new SqlCommand(sql, connection);
+        command.Parameters.AddWithValue("@hotelId", hotelId);
+        command.Parameters.AddWithValue("@adminUserId", adminUserId);
+        var affectedRows = await command.ExecuteNonQueryAsync(cancellationToken);
+        return affectedRows > 0
+            ? (true, "Otel kaydı silindi (yayın kapatıldı, onay durumu Silindi).")
+            : (false, "Otel silinemedi.");
+    }
+
+    private static async Task<long> ResolveDefaultPartnerIdAsync(SqlConnection connection, CancellationToken cancellationToken)
+    {
+        const string sql = @"SELECT TOP (1) id FROM [dbo].[PARTNER_DETAYLARI] WHERE [ONAY_DURUMU] IN (N'Onaylandi', N'Onaylandı') ORDER BY id;";
+        await using var command = new SqlCommand(sql, connection);
+        var result = await command.ExecuteScalarAsync(cancellationToken);
+        return result is null or DBNull ? 0 : Convert.ToInt64(result, CultureInfo.InvariantCulture);
+    }
+
     public async Task<(bool Success, string Message)> SaveHotelAsync(long adminUserId, AdminHotelEditForm request, CancellationToken cancellationToken = default)
     {
         if (string.IsNullOrWhiteSpace(request.HotelName) || string.IsNullOrWhiteSpace(request.HotelCode))
@@ -535,7 +682,7 @@ public class AdminHotelManagementService : IAdminHotelManagementService
             command.Parameters.AddWithValue("@adminUserId", adminUserId);
             var affectedRows = await command.ExecuteNonQueryAsync(cancellationToken);
             return affectedRows > 0
-                ? (true, "Otel pasif duruma alindi.")
+                ? (true, "Otel yayini kapatildi.")
                 : (false, "Otel bulunamadi veya guncellenemedi.");
         }
 
@@ -545,11 +692,22 @@ public class AdminHotelManagementService : IAdminHotelManagementService
             await connection.OpenAsync(cancellationToken);
             await EnsureHotelExistsAsync(connection, hotelId, cancellationToken);
 
+            string approvalStatus;
+            await using (var readCommand = new SqlCommand("SELECT TOP (1) [ONAY_DURUMU] FROM [dbo].[OTELLER] WHERE id = @hotelId;", connection))
+            {
+                readCommand.Parameters.AddWithValue("@hotelId", hotelId);
+                var approvalValue = await readCommand.ExecuteScalarAsync(cancellationToken);
+                approvalStatus = approvalValue is null or DBNull ? string.Empty : Convert.ToString(approvalValue, CultureInfo.InvariantCulture) ?? string.Empty;
+            }
+
+            var isApproved = string.Equals(approvalStatus, "Onaylandı", StringComparison.OrdinalIgnoreCase)
+                || string.Equals(approvalStatus, "Onaylandi", StringComparison.OrdinalIgnoreCase);
+
             const string sql = @"
                 UPDATE [dbo].[OTELLER]
                 SET [YAYIN_DURUMU] = CASE
-                        WHEN [ONAY_DURUMU] IN ('Onaylandı', 'Onaylandi') THEN 'Yayında'
-                        ELSE 'Taslak'
+                        WHEN [ONAY_DURUMU] IN (N'Onaylandı', N'Onaylandi') THEN N'Yayında'
+                        ELSE N'Taslak'
                     END,
                     [ONAYLAYAN_ADMIN_ID] = @adminUserId,
                     [GUNCELLENME_TARIHI] = SYSUTCDATETIME()
@@ -558,9 +716,14 @@ public class AdminHotelManagementService : IAdminHotelManagementService
             command.Parameters.AddWithValue("@hotelId", hotelId);
             command.Parameters.AddWithValue("@adminUserId", adminUserId);
             var affectedRows = await command.ExecuteNonQueryAsync(cancellationToken);
-            return affectedRows > 0
-                ? (true, "Otel tekrar aktif duruma alindi.")
-                : (false, "Otel bulunamadi veya guncellenemedi.");
+            if (affectedRows <= 0)
+            {
+                return (false, "Otel bulunamadi veya guncellenemedi.");
+            }
+
+            return isApproved
+                ? (true, "Otel yayina alindi.")
+                : (true, "Otel taslak olarak isaretlendi. Tam yayin icin once onay durumunu Onaylandi yapin.");
         }
 
         public async Task<(bool Success, string Message, int UpdatedCount)> BulkUpdateHotelPublishStatusAsync(IReadOnlyList<long> hotelIds, bool publish, long adminUserId, CancellationToken cancellationToken = default)

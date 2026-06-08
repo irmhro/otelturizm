@@ -39,9 +39,31 @@
         flex: 0 0 38%;
     }
 
+    .admin-hotels-actions {
+        min-width: 0;
+    }
+
+    .admin-hotels-action-toolbar {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .admin-hotels-action-toolbar .admin-action-btn,
+    .admin-hotels-action-toolbar .admin-inline-post,
+    .admin-hotels-action-toolbar .admin-inline-post .admin-action-btn {
+        width: 100%;
+        min-height: 44px;
+        justify-content: center;
+    }
+
     .admin-hotels-table.admin-table--cards .admin-hotels-actions {
         flex-direction: column;
         align-items: stretch;
+    }
+
+    .admin-hotels-table.admin-table--cards .admin-hotels-actions::before {
+        flex: 0 0 auto;
+        width: 100%;
     }
 
     .admin-hotels-table.admin-table--cards .admin-hotels-actions .admin-action-btn,

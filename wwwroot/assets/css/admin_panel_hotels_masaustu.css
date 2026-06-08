@@ -448,9 +448,34 @@
 }
 
 .admin-hotels-actions {
+    min-width: 300px;
+    vertical-align: top;
+}
+
+.admin-hotels-actions-head {
+    text-align: right;
+    min-width: 300px;
+}
+
+.admin-hotels-action-toolbar {
     display: flex;
+    flex-wrap: wrap;
+    align-items: center;
     justify-content: flex-end;
     gap: 8px;
+    width: 100%;
+}
+
+.admin-hotels-action-toolbar .admin-inline-post {
+    display: inline-flex;
+    flex: 0 0 auto;
+    margin: 0;
+}
+
+.admin-hotels-action-toolbar .admin-action-btn {
+    min-height: 38px;
+    padding: 8px 12px;
+    font-size: 0.82rem;
     white-space: nowrap;
 }
 
@@ -842,7 +867,10 @@
 
     .admin-hotels-actions {
         justify-content: flex-start;
-        flex-wrap: wrap;
+    }
+
+    .admin-hotels-action-toolbar {
+        justify-content: flex-start;
     }
 
     .admin-form-grid .span-2,

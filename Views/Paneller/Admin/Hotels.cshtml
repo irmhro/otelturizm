@@ -16,6 +16,11 @@
     var pageSizes = new[] { 50, 100, 200 };
     var currentPath = Context.Request.Path.Value ?? "/admin/oteller";
     var returnUrl = $"{Context.Request.Path}{Context.Request.QueryString}";
+    var currentUserRole = User.FindFirst("otelturizm:user_role")?.Value ?? string.Empty;
+    var canManagePublish = string.Equals(currentUserRole, "admin", StringComparison.OrdinalIgnoreCase)
+        || string.Equals(currentUserRole, "superadmin", StringComparison.OrdinalIgnoreCase)
+        || User.IsInRole("admin")
+        || User.IsInRole("superadmin");
     static string Enc(string? value) => System.Net.WebUtility.UrlEncode(value ?? string.Empty);
     string PageUrl(int targetPage) => $"{currentPath}?q={Enc(Model.SearchTerm)}&city={Enc(Model.CityFilter)}&district={Enc(Model.DistrictFilter)}&neighborhood={Enc(Model.NeighborhoodFilter)}&publishStatus={Enc(Model.PublishStatusFilter)}&approvalStatus={Enc(Model.ApprovalStatusFilter)}&page={targetPage}&pageSize={Model.PageSize}";
 }
@@ -51,6 +56,9 @@
                 <p class="mini-caption">MERKEZI OTEL YONETIMI</p>
                 <h2>Oteller</h2>
                 <span>Otel kayıtları, yayın/onay durumları, oda ve görsel adetleri yatay tablo üzerinden yönetilir.</span>
+            </div>
+            <div class="admin-hotels-filter-actions">
+                <a class="admin-action-btn primary" href="/admin/oteller/yeni"><i class="fas fa-plus"></i> Yeni Otel</a>
             </div>
         </header>
 
@@ -165,7 +173,7 @@
                             <th>Yayın</th>
                             <th>Onay</th>
                             <th>Puan</th>
-                            <th>Aksiyon</th>
+                            <th class="admin-hotels-actions-head">Aksiyon</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -189,28 +197,39 @@
                                 <td data-label="Yayın"><span class="admin-chip @StatusTone(hotel.PublishStatus)">@hotel.PublishStatus</span></td>
                                 <td data-label="Onay"><span class="admin-chip @StatusTone(hotel.ApprovalStatus)">@hotel.ApprovalStatus</span></td>
                                 <td data-label="Puan"><span class="admin-hotel-score compact">@hotel.ScoreText</span></td>
-                                <td data-label="Aksiyon" class="admin-hotels-actions panel-form-ux-actions">
-                                    <a class="admin-action-btn primary panel-form-ux-edit" href="/admin/otel-detay/@hotel.HotelId">
-                                        <i class="fas fa-pen"></i> Düzenle
-                                    </a>
-                                    @if (hotel.IsPublished)
-                                    {
-                                        <form method="post" action="/admin/oteller/pasife-al" class="admin-inline-post panel-form-ux-delete panel-form-ux-toggle-form">
-                                            @Html.AntiForgeryToken()
-                                            <input type="hidden" name="hotelId" value="@hotel.HotelId" />
-                                            <input type="hidden" name="returnUrl" value="@returnUrl" />
-                                            <button type="submit" class="admin-action-btn danger panel-form-ux-delete-btn"><i class="fas fa-eye-slash"></i> Yayını Kapat</button>
-                                        </form>
-                                    }
-                                    else
-                                    {
-                                        <form method="post" action="/admin/oteller/aktive-et" class="admin-inline-post panel-form-ux-toggle-form">
-                                            @Html.AntiForgeryToken()
-                                            <input type="hidden" name="hotelId" value="@hotel.HotelId" />
-                                            <input type="hidden" name="returnUrl" value="@returnUrl" />
-                                            <button type="submit" class="admin-action-btn success panel-form-ux-edit"><i class="fas fa-broadcast-tower"></i> Yayına Al</button>
-                                        </form>
-                                    }
+                                <td data-label="Aksiyon" class="admin-hotels-actions">
+                                    <div class="admin-hotels-action-toolbar panel-form-ux-actions">
+                                        <a class="admin-action-btn primary panel-form-ux-edit" href="/admin/otel-detay/@hotel.HotelId">
+                                            <i class="fas fa-pen"></i> Düzenle
+                                        </a>
+                                        @if (canManagePublish)
+                                        {
+                                            <form method="post" action="/admin/oteller/sil" class="admin-inline-post panel-form-ux-delete" onsubmit="return confirm('Otel kaydı silinsin mi?');">
+                                                @Html.AntiForgeryToken()
+                                                <input type="hidden" name="hotelId" value="@hotel.HotelId" />
+                                                <input type="hidden" name="returnUrl" value="@returnUrl" />
+                                                <button type="submit" class="admin-action-btn danger panel-form-ux-delete-btn"><i class="fas fa-trash"></i> Sil</button>
+                                            </form>
+                                            @if (hotel.IsPublished)
+                                            {
+                                                <form method="post" action="/admin/oteller/pasife-al" class="admin-inline-post panel-form-ux-toggle-form" onsubmit="return confirm('Bu otelin yayini kapatilsin mi?');">
+                                                    @Html.AntiForgeryToken()
+                                                    <input type="hidden" name="hotelId" value="@hotel.HotelId" />
+                                                    <input type="hidden" name="returnUrl" value="@returnUrl" />
+                                                    <button type="submit" class="admin-action-btn danger panel-form-ux-delete-btn"><i class="fas fa-eye-slash"></i> Yayını Kapat</button>
+                                                </form>
+                                            }
+                                            else
+                                            {
+                                                <form method="post" action="/admin/oteller/aktive-et" class="admin-inline-post panel-form-ux-toggle-form" onsubmit="return confirm('Bu otel yayina alinsin mi?');">
+                                                    @Html.AntiForgeryToken()
+                                                    <input type="hidden" name="hotelId" value="@hotel.HotelId" />
+                                                    <input type="hidden" name="returnUrl" value="@returnUrl" />
+                                                    <button type="submit" class="admin-action-btn success panel-form-ux-edit"><i class="fas fa-broadcast-tower"></i> Yayına Al</button>
+                                                </form>
+                                            }
+                                        }
+                                    </div>
                                 </td>
                             </tr>
                         }
