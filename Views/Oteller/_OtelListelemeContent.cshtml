@@ -297,6 +297,23 @@
                                     aria-pressed="@(hotel.IsFavorite ? "true" : "false")">
                                 <i class="@(hotel.IsFavorite ? "fas" : "far") fa-heart" aria-hidden="true"></i>
                             </button>
+                            <div class="otelliste-card-media-actions">
+                                @if (Model.ShowLoyaltyTouchpoints && hotel.EstimatedLoyaltyPoints is > 0)
+                                {
+                                    <p class="otelliste-card-loyalty otelliste-card-loyalty--media" data-loyalty-hook="listing-card">
+                                        <i class="fas fa-gift" aria-hidden="true"></i>
+                                        +@hotel.EstimatedLoyaltyPoints.Value puan kazanın
+                                    </p>
+                                }
+                                @if (price > 0m)
+                                {
+                                    <a class="otelliste-card-cta otelliste-card-cta--media" href="@detailUrl">İncele</a>
+                                }
+                                else
+                                {
+                                    <a class="otelliste-card-cta otelliste-card-cta--media otelliste-card-cta--secondary" href="@detailUrl">Fiyat sor</a>
+                                }
+                            </div>
                             </div>
                             <div class="otelliste-card-body">
                                 <div class="otelliste-card-meta-row">

@@ -689,6 +689,27 @@
 .mystery-action-row .mystery-countdown {
     background: var(--flag-crimson);
     color: #fff;
+    flex-direction: column;
+    gap: 2px;
+    white-space: normal;
+    text-align: center;
+    line-height: 1.15;
+    min-width: 0;
+    overflow: hidden;
+}
+
+.mystery-countdown-label {
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+    opacity: 0.92;
+}
+
+.mystery-countdown-time {
+    font-size: 14px;
+    font-weight: 800;
+    font-variant-numeric: tabular-nums;
+    letter-spacing: 0.02em;
 }
 
 .mystery-action-row .btn-open-box {
@@ -1449,7 +1470,7 @@ a.eco-pill:hover {
     text-align: center;
     align-items: center;
     width: 100%;
-    max-width: min(var(--page-max-width, 1240px), calc(100% - var(--page-content-inset, 48px)));
+    max-width: none;
     margin-inline: auto;
 }
 
@@ -1747,27 +1768,28 @@ a.eco-pill:hover {
 .hero-title-pro--headline {
     display: flex;
     flex-direction: column;
-    align-items: center;
-    gap: 6px;
+    align-items: stretch;
+    gap: clamp(6px, 0.8vw, 12px);
     width: 100%;
-    max-width: min(780px, 92vw);
+    max-width: none;
     margin: 0 auto;
-    font-size: clamp(28px, 2.75vw, 42px);
-    line-height: 1.14;
-    letter-spacing: -0.028em;
+    font-size: clamp(34px, 4.2vw, 58px);
+    line-height: 1.08;
+    letter-spacing: -0.03em;
+    text-wrap: balance;
 }
 
 .hero-title-row--spread {
     display: flex;
-    flex-wrap: nowrap;
+    flex-wrap: wrap;
     align-items: baseline;
-    justify-content: center;
+    justify-content: space-between;
     width: 100%;
-    gap: 0.34em;
+    gap: clamp(0.28em, 1.6vw, 1.1em);
 }
 
 .hero-title-row--spread .hero-title-word {
-    flex: 0 0 auto;
+    flex: 0 1 auto;
     white-space: nowrap;
 }
 
@@ -2446,7 +2468,7 @@ a.eco-pill:hover {
 
     .hero-headline-pro {
         width: 100%;
-        max-width: min(var(--page-max-width, 1240px), calc(100% - var(--page-content-inset, 48px)));
+        max-width: none;
         margin: 0 auto 20px;
         gap: 14px;
     }
@@ -2458,18 +2480,18 @@ a.eco-pill:hover {
 
     .hero-title.hero-title-pro {
         width: 100%;
-        max-width: min(780px, 92vw);
-        font-size: clamp(32px, 2.75vw, 44px);
-        line-height: 1.12;
-        gap: 8px;
+        max-width: none;
+        font-size: clamp(38px, 4.2vw, 58px);
+        line-height: 1.08;
+        gap: clamp(6px, 0.8vw, 12px);
     }
 
     .hero-title-row {
         width: auto;
         max-width: 100%;
-        flex-wrap: nowrap;
-        justify-content: center;
-        gap: 0.34em;
+        flex-wrap: wrap;
+        justify-content: space-between;
+        gap: clamp(0.22em, 2.2vw, 0.65em);
     }
 
     .hero-title-row .hero-title-word {
@@ -2477,15 +2499,15 @@ a.eco-pill:hover {
     }
 
     .hero-title-pro--headline .hero-title-row--spread {
-        justify-content: center;
-        width: auto;
+        justify-content: space-between;
+        width: 100%;
         max-width: 100%;
-        gap: 0.36em;
-        margin-inline: auto;
+        gap: clamp(0.3em, 1.6vw, 1.1em);
+        margin-inline: 0;
     }
 
     .hero-title-pro--headline .hero-title-row--spread .hero-title-word {
-        flex: 0 0 auto;
+        flex: 0 1 auto;
     }
 
     .hero-section .search-engine-shell,

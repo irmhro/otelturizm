@@ -642,6 +642,10 @@
     display: none !important;
 }
 
+.otelliste-page .otelliste-card-media-actions {
+    display: none;
+}
+
 .otelliste-page .otelliste-card-media-wrap {
     position: relative;
     overflow: hidden;

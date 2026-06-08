@@ -90,11 +90,19 @@
         }
     };
 
+    const setCountdownIdle = () => {
+        countdownEl.textContent = '🎁 24 saat geçerli';
+    };
+
+    const setCountdownActive = (seconds) => {
+        countdownEl.innerHTML = `<span class="mystery-countdown-label">Kalan süre</span><span class="mystery-countdown-time">${formatTime(seconds)}</span>`;
+    };
+
     const updateCountdown = () => {
         if (remainingSeconds > 0) {
-            countdownEl.textContent = `⏱ Kalan süre: ${formatTime(remainingSeconds)} (24 saat geçerli)`;
+            setCountdownActive(remainingSeconds);
         } else {
-            countdownEl.textContent = '🎁 İndirim 24 saat geçerli';
+            setCountdownIdle();
         }
 
         if (remainingSeconds <= 0) {
