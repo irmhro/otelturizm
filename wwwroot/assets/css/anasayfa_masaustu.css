@@ -2488,7 +2488,7 @@ a.eco-pill:hover {
 
     .hero-title.hero-title-pro {
         width: 100%;
-        max-width: none;
+        max-width: min(780px, 92vw);
         font-size: clamp(38px, 4.2vw, 58px);
         line-height: 1.08;
         gap: clamp(6px, 0.8vw, 12px);
@@ -2511,7 +2511,7 @@ a.eco-pill:hover {
     .hero-title-pro--headline .hero-title-row--spread {
         justify-content: center;
         width: 100%;
-        max-width: min(420px, 92vw);
+        max-width: min(780px, 92vw);
         gap: clamp(0.18em, 1.6vw, 0.42em);
         margin-inline: auto;
     }
