@@ -1,0 +1,183 @@
+@model otelturizmnew.Models.Deneyimler.DeneyimlerPageViewModel
+
+<div class="dxp-page" data-dxp-page>
+    <div class="dxp-page__glow" aria-hidden="true"></div>
+
+    <section class="dxp-hero" aria-labelledby="dxp-hero-title">
+        <div class="dxp-shell dxp-hero__grid">
+            <div class="dxp-hero__copy">
+                <p class="dxp-hero__eyebrow"><i class="fas fa-star" aria-hidden="true"></i> @Model.HeroEyebrow</p>
+                <h1 id="dxp-hero-title" class="dxp-hero__title">@Model.HeroTitle</h1>
+                <p class="dxp-hero__lead">@Model.HeroLead</p>
+                <div class="dxp-hero__actions">
+                    <a href="#dxp-koleksiyon" class="dxp-btn dxp-btn--primary">Koleksiyonları keşfet <i class="fas fa-arrow-down" aria-hidden="true"></i></a>
+                    <a href="/oteller" class="dxp-btn dxp-btn--ghost">Otelleri listele</a>
+                </div>
+                <dl class="dxp-stats" aria-label="Deneyim özeti">
+                    @foreach (var stat in Model.Stats)
+                    {
+                        <div class="dxp-stat">
+                            <dt class="dxp-stat__value">@stat.Value</dt>
+                            <dd class="dxp-stat__label">@stat.Label</dd>
+                        </div>
+                    }
+                </dl>
+            </div>
+            <div class="dxp-hero__mosaic" aria-hidden="true">
+                @for (var i = 0; i < Math.Min(3, Model.Featured.Count); i++)
+                {
+                    var card = Model.Featured[i];
+                    <article class="dxp-mosaic-card dxp-mosaic-card--@(i + 1)" style="--dxp-accent:@card.Accent; --dxp-bg:@card.Gradient;">
+                        <span class="dxp-mosaic-card__stamp">@card.Stamp</span>
+                        <strong>@card.Title</strong>
+                        <small>@card.Location · @card.Duration</small>
+                    </article>
+                }
+            </div>
+        </div>
+    </section>
+
+    <div class="dxp-shell">
+        <nav class="dxp-category-nav" aria-label="Deneyim kategorileri" data-dxp-filter-nav>
+            @foreach (var cat in Model.Categories)
+            {
+                <button type="button"
+                        class="dxp-category-chip @(cat.Key == "all" ? "is-active" : string.Empty)"
+                        data-dxp-category="@cat.Key">
+                    @if (!string.IsNullOrWhiteSpace(cat.Emoji))
+                    {
+                        <span class="dxp-category-chip__emoji" aria-hidden="true">@cat.Emoji</span>
+                    }
+                    <span>@cat.Label</span>
+                </button>
+            }
+        </nav>
+
+        <section class="dxp-section" id="dxp-one-cikan" aria-labelledby="dxp-featured-title">
+            <div class="dxp-section__head">
+                <div>
+                    <p class="dxp-section__eyebrow">Öne çıkanlar</p>
+                    <h2 id="dxp-featured-title" class="dxp-section__title">Editörün seçtiği anlar</h2>
+                </div>
+                <span class="dxp-section__badge"><i class="fas fa-certificate" aria-hidden="true"></i> Pasaport damgası</span>
+            </div>
+            <div class="dxp-bento" data-dxp-grid>
+                @foreach (var card in Model.Featured)
+                {
+                    <article class="dxp-card dxp-card--featured @(card.IsWide ? "dxp-card--wide" : string.Empty)"
+                             data-dxp-category="@card.CategoryKey"
+                             style="--dxp-accent:@card.Accent; --dxp-bg:@card.Gradient;">
+                        <a class="dxp-card__link" href="@card.LinkUrl">
+                            <div class="dxp-card__visual">
+                                <span class="dxp-card__stamp">@card.Stamp</span>
+                                <span class="dxp-card__mood">@card.Mood</span>
+                            </div>
+                            <div class="dxp-card__body">
+                                <h3 class="dxp-card__title">@card.Title</h3>
+                                <p class="dxp-card__subtitle">@card.Subtitle</p>
+                                <div class="dxp-card__meta">
+                                    <span><i class="fas fa-location-dot" aria-hidden="true"></i> @card.Location</span>
+                                    <span><i class="fas fa-clock" aria-hidden="true"></i> @card.Duration</span>
+                                </div>
+                                <span class="dxp-card__cta">Rotayı gör <i class="fas fa-arrow-right" aria-hidden="true"></i></span>
+                            </div>
+                        </a>
+                    </article>
+                }
+            </div>
+        </section>
+
+        <section class="dxp-section dxp-section--stories" aria-labelledby="dxp-stories-title">
+            <div class="dxp-section__head">
+                <div>
+                    <p class="dxp-section__eyebrow">Misafir anları</p>
+                    <h2 id="dxp-stories-title" class="dxp-section__title">Kısa hikâyeler</h2>
+                </div>
+            </div>
+            <div class="dxp-stories-rail" tabindex="0" aria-label="Misafir hikâyeleri">
+                @foreach (var story in Model.Stories)
+                {
+                    <blockquote class="dxp-story" style="--dxp-accent:@story.Accent;">
+                        <p class="dxp-story__time">@story.Title</p>
+                        <p class="dxp-story__quote">“@story.Quote”</p>
+                        <footer class="dxp-story__foot">
+                            <strong>@story.Author</strong>
+                            <span>@story.Location</span>
+                        </footer>
+                    </blockquote>
+                }
+            </div>
+        </section>
+
+        <section class="dxp-section" id="dxp-koleksiyon" aria-labelledby="dxp-collection-title">
+            <div class="dxp-section__head">
+                <div>
+                    <p class="dxp-section__eyebrow">Koleksiyonlar</p>
+                    <h2 id="dxp-collection-title" class="dxp-section__title">Temaya göre rotalar</h2>
+                </div>
+            </div>
+            <div class="dxp-collection-grid" data-dxp-grid>
+                @foreach (var card in Model.Collections)
+                {
+                    <article class="dxp-card dxp-card--collection"
+                             data-dxp-category="@card.CategoryKey"
+                             style="--dxp-accent:@card.Accent; --dxp-bg:@card.Gradient;">
+                        <a class="dxp-card__link" href="@card.LinkUrl">
+                            <div class="dxp-card__visual">
+                                <span class="dxp-card__stamp dxp-card__stamp--mini">@card.Stamp</span>
+                            </div>
+                            <div class="dxp-card__body">
+                                <h3 class="dxp-card__title">@card.Title</h3>
+                                <p class="dxp-card__subtitle">@card.Subtitle</p>
+                                <div class="dxp-card__meta">
+                                    <span><i class="fas fa-location-dot" aria-hidden="true"></i> @card.Location</span>
+                                    <span><i class="fas fa-clock" aria-hidden="true"></i> @card.Duration</span>
+                                </div>
+                            </div>
+                        </a>
+                    </article>
+                }
+            </div>
+            <p class="dxp-empty" data-dxp-empty hidden>
+                <i class="fas fa-compass" aria-hidden="true"></i>
+                Bu kategoride henüz deneyim yok. Yakında yeni rotalar eklenecek.
+            </p>
+        </section>
+
+        <section class="dxp-section dxp-section--journey" aria-labelledby="dxp-journey-title">
+            <div class="dxp-journey">
+                <div class="dxp-journey__copy">
+                    <p class="dxp-section__eyebrow">Nasıl çalışır?</p>
+                    <h2 id="dxp-journey-title" class="dxp-section__title">3 adımda deneyim planı</h2>
+                    <p class="dxp-journey__lead">Rezervasyon akışınızı bozmadan, konaklamanızla uyumlu deneyim önerileri sunuyoruz. Detaylı içerikler ve partner rotaları yakında.</p>
+                </div>
+                <ol class="dxp-journey__steps">
+                    @foreach (var step in Model.JourneySteps)
+                    {
+                        <li class="dxp-journey-step">
+                            <span class="dxp-journey-step__icon" aria-hidden="true"><i class="fas @step.Icon"></i></span>
+                            <div>
+                                <span class="dxp-journey-step__num">@step.Step</span>
+                                <strong>@step.Title</strong>
+                                <p>@step.Text</p>
+                            </div>
+                        </li>
+                    }
+                </ol>
+            </div>
+        </section>
+
+        <aside class="dxp-cta" aria-label="Deneyim daveti">
+            <div class="dxp-cta__inner">
+                <div>
+                    <h2 class="dxp-cta__title">İlk rotanızı birlikte kuralım</h2>
+                    <p class="dxp-cta__text">Şimdilik otel aramasıyla başlayın; deneyim içerikleri ve canlı rotalar çok yakında burada olacak.</p>
+                </div>
+                <div class="dxp-cta__actions">
+                    <a href="/oteller" class="dxp-btn dxp-btn--light">Otelleri keşfet</a>
+                    <a href="/kampanyalar" class="dxp-btn dxp-btn--outline-light">Kampanyalar</a>
+                </div>
+            </div>
+        </aside>
+    </div>
+</div>

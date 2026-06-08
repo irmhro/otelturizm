@@ -4,7 +4,7 @@ public static class DawnSurprisePricing
 {
     public static bool TryApplyPercent(ref decimal totalAmount, ref decimal netRoomAmount, ref decimal vatAmount, ref decimal accommodationTaxAmount, ref decimal taxAmount, int percent)
     {
-        if (percent < 3 || percent > 10 || totalAmount <= 0m)
+        if (percent < 1 || percent > 6 || totalAmount <= 0m)
         {
             return false;
         }

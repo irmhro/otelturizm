@@ -3,52 +3,97 @@
     ViewData["Title"] = "Sıkça Sorulan Sorular";
 }
 
-<section class="faq-page">
-    <div class="faq-container">
-        <div class="page-header">
-            <h1>Sıkça Sorulan Sorular</h1>
-            <p>Aklınıza takılan her şey için cevaplar burada.</p>
-        </div>
-
-        <form method="get" action="/sss" class="faq-search">
-            <div class="search-wrapper">
-                @if (Model.ActiveCategorySlug != "tumu")
-                {
-                    <input type="hidden" name="kategori" value="@Model.ActiveCategorySlug" />
-                }
-                <input id="faq-search-input" type="text" name="ara" value="@Model.SearchTerm" placeholder="Sorunuzu yazın..." autocomplete="off" />
-                <button type="submit"><i class="fas fa-search"></i> Ara</button>
+<section class="ym-page sss-page" aria-labelledby="sss-heading">
+    <div class="ym-page__aurora" aria-hidden="true"></div>
+    <div class="ym-page__inner">
+        <header class="ym-hero sss-hero">
+            <div class="ym-hero__glass">
+                <p class="ym-hero__eyebrow"><i class="fas fa-circle-question me-2" aria-hidden="true"></i>Sıkça Sorulan Sorular</p>
+                <h1 id="sss-heading" class="ym-hero__title">Aklınıza takılan her şey için cevaplar</h1>
+                <p class="ym-hero__lead">Rezervasyon, iptal, ödeme ve hesap konularında en çok sorulan soruları burada bulabilirsiniz.</p>
+                <form method="get" action="/sss" class="ym-search sss-search" role="search" aria-label="SSS arama">
+                    @if (Model.ActiveCategorySlug != "tumu")
+                    {
+                        <input type="hidden" name="kategori" value="@Model.ActiveCategorySlug" />
+                    }
+                    <div class="ym-search__wrap">
+                        <span class="ym-search__icon" aria-hidden="true"><i class="fas fa-search"></i></span>
+                        <input id="faq-search-input"
+                               class="form-control ym-search__input"
+                               type="search"
+                               name="ara"
+                               value="@Model.SearchTerm"
+                               placeholder="Sorunuzu yazın..."
+                               autocomplete="off"
+                               enterkeyhint="search" />
+                    </div>
+                    <button type="submit" class="ym-btn ym-btn--light ym-search__btn">Ara</button>
+                </form>
             </div>
-        </form>
+        </header>
 
-        <div class="category-tabs">
+        <nav class="sss-category-grid" aria-label="SSS kategorileri">
             @foreach (var category in Model.Categories)
             {
-                <a href="@(category.Slug == "tumu" ? "/sss" : $"/sss?kategori={category.Slug}")" class="category-tab @(category.IsActive ? "active" : string.Empty)">@category.Name</a>
+                <a href="@(category.Slug == "tumu" ? "/sss" : $"/sss?kategori={category.Slug}")"
+                   class="sss-category-chip @(category.IsActive ? "is-active" : string.Empty)">
+                    @category.Name
+                </a>
             }
-        </div>
+        </nav>
 
-        @foreach (var faqSection in Model.Sections)
+        @if (Model.Sections.Count == 0)
         {
-            <div class="faq-section" id="@faqSection.Slug">
-                <h2 class="faq-section-title"><i class="fas @faqSection.IconClass"></i> @faqSection.Name</h2>
-                @foreach (var item in faqSection.Questions)
-                {
-                    <div class="faq-item" id="soru-@item.Id">
-                        <div class="faq-question">@item.Question <i class="fas fa-chevron-down"></i></div>
-                        <div class="faq-answer">@item.Answer</div>
-                    </div>
-                }
+            <div class="sss-empty">
+                <i class="fas fa-magnifying-glass" aria-hidden="true"></i>
+                <strong>Aramanızla eşleşen soru bulunamadı</strong>
+                <p>Farklı bir anahtar kelime deneyin veya tüm kategorilere göz atın.</p>
+                <a href="/sss" class="ym-btn ym-btn--ghost">Tüm soruları göster</a>
             </div>
+        }
+        else
+        {
+            @foreach (var faqSection in Model.Sections)
+            {
+                <section class="sss-faq-section" id="@faqSection.Slug" aria-labelledby="sss-section-@faqSection.Slug">
+                    <h2 class="ym-section-title sss-section-title" id="sss-section-@faqSection.Slug">
+                        <span class="ym-section-title__icon"><i class="fas @faqSection.IconClass" aria-hidden="true"></i></span>
+                        @faqSection.Name
+                    </h2>
+                    <div class="sss-faq-list">
+                        @foreach (var item in faqSection.Questions)
+                        {
+                            <article class="sss-faq-item" id="soru-@item.Id">
+                                <button type="button"
+                                        class="sss-faq-question"
+                                        aria-expanded="false"
+                                        aria-controls="sss-answer-@item.Id">
+                                    <span class="sss-faq-question__text">@item.Question</span>
+                                    <span class="sss-faq-question__icon" aria-hidden="true"><i class="fas fa-chevron-down"></i></span>
+                                </button>
+                                <div class="sss-faq-answer" id="sss-answer-@item.Id" hidden>
+                                    <div class="sss-faq-answer__body">@Html.Raw(item.Answer)</div>
+                                </div>
+                            </article>
+                        }
+                    </div>
+                </section>
+            }
         }
 
         @if (Model.CtaChannel is not null)
         {
-            <div class="contact-cta">
-                <h3>Aradığınız cevabı bulamadınız mı?</h3>
-                <p>@Model.CtaChannel.Description</p>
-                <a href="@Model.CtaChannel.Url" class="btn-white">@Model.CtaChannel.ButtonText <i class="fas fa-arrow-right"></i></a>
-            </div>
+            <aside class="ym-live-banner sss-cta">
+                <div class="ym-live-banner__glass sss-cta__glass">
+                    <div class="ym-live-banner__copy">
+                        <h3 class="ym-live-banner__title">Aradığınız cevabı bulamadınız mı?</h3>
+                        <p class="ym-live-banner__text">@Model.CtaChannel.Description</p>
+                    </div>
+                    <a href="@Model.CtaChannel.Url" class="ym-btn ym-btn--light ym-live-banner__cta">
+                        @Model.CtaChannel.ButtonText <i class="fas fa-arrow-right" aria-hidden="true"></i>
+                    </a>
+                </div>
+            </aside>
         }
     </div>
 </section>
@@ -58,9 +103,15 @@
         var nonce = Context.Items["CspNonce"] as string;
     }
     <script nonce="@nonce">
-        document.querySelectorAll('.faq-question').forEach(function (q) {
-            q.addEventListener('click', function () {
-                this.closest('.faq-item').classList.toggle('active');
+        document.querySelectorAll('.sss-faq-question').forEach(function (btn) {
+            btn.addEventListener('click', function () {
+                const item = btn.closest('.sss-faq-item');
+                const panel = item?.querySelector('.sss-faq-answer');
+                if (!item || !panel) return;
+
+                const isOpen = item.classList.toggle('is-open');
+                btn.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+                panel.hidden = !isOpen;
             });
         });
 

@@ -104,7 +104,7 @@
             openBtn.disabled = false;
             openBtn.textContent = 'Kutuyu Aç ve Uygula';
             if (copyEl) {
-                copyEl.textContent = 'Hesabınıza özel ek %3 ila %10 arasında rastgele ekstra indirim kazanın.';
+                copyEl.textContent = 'Hesabınıza özel ek %1 ila %6 arasında rastgele ekstra indirim kazanın.';
             }
             clearClientState();
             return;

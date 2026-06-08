@@ -1,1 +1,121 @@
 @import url("./sss.css");
+
+@media (max-width: 900px) {
+    .destek-page.anasayfa-page .sss-page {
+        --home-type-btn: 12px;
+        --home-type-card-title: 13px;
+        --home-type-card-meta: 11px;
+        --home-btn-min-height: 40px;
+        --home-btn-padding-y: 9px;
+        --home-btn-padding-x: 12px;
+        --home-btn-radius: 8px;
+    }
+
+    .sss-page {
+        --ym-type-btn: var(--home-type-btn, 12px);
+        --ym-type-card-title: var(--home-type-card-title, 13px);
+        --ym-type-card-meta: var(--home-type-card-meta, 11px);
+        --ym-btn-min-height: var(--home-btn-min-height, 40px);
+    }
+
+    .sss-page .ym-hero__glass {
+        padding: 1.15rem 1rem;
+        border-radius: var(--radius-md, 16px);
+    }
+
+    .sss-page .ym-hero__title {
+        font-size: 1.45rem;
+    }
+
+    .sss-page .ym-hero__lead {
+        font-size: 0.92rem;
+        margin-bottom: 1rem;
+    }
+
+    .sss-page .ym-search {
+        flex-direction: column;
+        align-items: stretch;
+        border-radius: var(--radius-md, 16px);
+        padding: 0.55rem;
+        gap: 0.55rem;
+    }
+
+    .sss-page .ym-search__wrap {
+        min-height: 44px;
+        border-radius: 12px;
+        background: rgba(255, 255, 255, 0.12);
+    }
+
+    .sss-page .ym-search__input {
+        min-height: 44px;
+        font-size: 0.95rem;
+    }
+
+    .sss-page .ym-search__btn {
+        width: 100%;
+        justify-content: center;
+    }
+
+    /* Kategoriler — mobil 2 sütun kart grid */
+    .sss-category-grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 10px;
+        justify-content: stretch;
+    }
+
+    .sss-category-chip {
+        width: 100%;
+        min-height: 44px;
+        padding: 0 10px;
+        font-size: var(--ym-type-btn);
+        text-align: center;
+        border-radius: 12px;
+    }
+
+    .sss-section-title {
+        font-size: 1.05rem;
+    }
+
+    .sss-faq-question {
+        padding: 0.85rem 0.9rem;
+        font-size: var(--ym-type-card-title);
+    }
+
+    .sss-faq-answer__body {
+        padding: 0 0.9rem 0.85rem;
+        font-size: var(--ym-type-card-meta);
+    }
+
+    .sss-page .sss-cta__glass {
+        flex-direction: column;
+        align-items: stretch;
+        text-align: center;
+    }
+
+    .sss-page .ym-live-banner__cta {
+        width: 100%;
+        justify-content: center;
+    }
+
+    .sss-empty {
+        padding: 1.35rem 1rem;
+    }
+
+    .sss-empty .ym-btn {
+        width: 100%;
+        max-width: 280px;
+    }
+}
+
+@media (max-width: 380px) {
+    .sss-category-grid {
+        gap: 8px;
+    }
+
+    .sss-category-chip {
+        min-height: 40px;
+        font-size: 11px;
+        padding: 0 8px;
+    }
+}

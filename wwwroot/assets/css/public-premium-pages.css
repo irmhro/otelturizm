@@ -15,6 +15,8 @@
 .firma-page,
 .kampanyalar-page,
 .sozlesme-page,
+.destek-page,
+.deneyimler-page,
 .otelliste-page-shell,
 .login-page {
     --page-max-width: 1240px;
@@ -48,7 +50,8 @@
 .kurumsal-page,
 .firma-page,
 .kampanyalar-page,
-.sozlesme-page {
+.sozlesme-page,
+.destek-page {
     font-family: 'Plus Jakarta Sans', sans-serif;
     color: #1A1919;
     background: #FCFBF9;
@@ -58,9 +61,20 @@
 .kurumsal-page .public-premium-main,
 .firma-page .public-premium-main,
 .kampanyalar-page .public-premium-main,
-.sozlesme-page .public-premium-main {
+.sozlesme-page .public-premium-main,
+.destek-page .public-premium-main {
     padding: 0 0 52px;
     overflow-x: clip;
+}
+
+.destek-page .ym-page__inner {
+    box-sizing: border-box;
+    max-width: none;
+    width: min(var(--page-max-width, 1240px), calc(100% - var(--page-content-inset, 48px)));
+    margin-left: auto;
+    margin-right: auto;
+    padding-left: var(--page-content-gutter, 24px);
+    padding-right: var(--page-content-gutter, 24px);
 }
 
 /* Kurumsal ana landing (/kurumsal) — detay: kurumsal.css */
@@ -144,6 +158,12 @@
 }
 
     .sozlesme-page .sozlesme-body.container {
+        padding-left: 16px;
+        padding-right: 16px;
+    }
+
+    .destek-page .ym-page__inner {
+        width: 100%;
         padding-left: 16px;
         padding-right: 16px;
     }

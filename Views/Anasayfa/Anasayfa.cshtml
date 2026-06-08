@@ -25,6 +25,7 @@
     var isDevelopmentUnlocked = !developmentGateEnabled
         || isLocalDevelopment
         || DevelopmentAccessService.TryGetAccessExpiration(Context, out var developmentAccessExpiresAt);
+    var showPopupMesaj = User.Identity?.IsAuthenticated != true;
 }
 <!DOCTYPE html>
 <html lang="tr">
@@ -66,6 +67,7 @@
     <link rel="stylesheet" href="~/assets/css/route-picker-modal.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/assets/css/route-picker-modal.mobile.css" asp-append-version="true" media="(max-width: 900px)" />
     <link rel="stylesheet" href="~/assets/css/dawn-surprise-box.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/assets/css/popupmesaj.css" asp-append-version="true" />
 </head>
 <body class="@(isDevelopmentUnlocked ? "development-unlocked anasayfa-page" : "development-locked anasayfa-page")">
     @if (developmentGateEnabled)
@@ -76,6 +78,10 @@
     <partial name="~/Views/Anasayfa/_AnasayfaContent.cshtml" model="Model" />
     <partial name="~/Views/Anasayfa/_AnasayfaPremiumFooter.cshtml" />
     <partial name="~/Views/Shared/_RoutePickerModal.cshtml" />
+    @if (showPopupMesaj)
+    {
+        <partial name="~/Views/Shared/_PopupMesaj.cshtml" />
+    }
     <partial name="~/Views/Shared/_FavoriteToggleScriptPartial.cshtml" />
     <script nonce="@nonce">
         (() => {
@@ -119,5 +125,9 @@
     <script src="~/assets/js/home-radar-live.js" asp-append-version="true"></script>
     <script src="~/assets/js/home-ai-route.js" asp-append-version="true"></script>
     <script src="~/assets/js/dawn-surprise-box.js" asp-append-version="true" defer></script>
+    @if (showPopupMesaj)
+    {
+        <script src="~/assets/js/popupmesaj.js" asp-append-version="true" defer></script>
+    }
 </body>
 </html>

@@ -450,6 +450,7 @@ public sealed class SitemapService : ISitemapService
             CreateStatic("/en/hotels/istanbul", "daily", 0.85m, now),
             CreateStatic("/de/hotels/istanbul", "daily", 0.85m, now),
             CreateStatic("/kampanyalar", "daily", 0.8m, now),
+            CreateStatic("/deneyimler", "weekly", 0.75m, now),
             CreateStatic("/kurumsal", "weekly", 0.7m, now),
             CreateStatic("/hakkimizda", "monthly", 0.6m, now),
             CreateStatic("/kariyer", "monthly", 0.55m, now),

@@ -52,6 +52,7 @@
     }
 
     var pageCssMobileResolved = ResolveMobileStylesheet(pageCssMobile);
+    var pageCssMobileMaxWidth = ViewData["PageCssMobileMaxWidth"] as string ?? "900px";
     var pageCssBaseMobileResolved = string.IsNullOrWhiteSpace(pageCssBase)
         ? string.Empty
         : ResolveMobileStylesheet(pageCssBase);
@@ -68,6 +69,13 @@
     var isDevelopmentUnlocked = !developmentGateEnabled
         || isLocalDevelopment
         || DevelopmentAccessService.TryGetAccessExpiration(Context, out _);
+    var requestPath = Context.Request.Path.Value ?? string.Empty;
+    var showPopupMesaj = User.Identity?.IsAuthenticated != true
+        && !requestPath.StartsWith("/kullanici-giris", StringComparison.OrdinalIgnoreCase)
+        && !requestPath.StartsWith("/partner-giris", StringComparison.OrdinalIgnoreCase)
+        && !requestPath.StartsWith("/firma-giris", StringComparison.OrdinalIgnoreCase)
+        && !requestPath.StartsWith("/panel", StringComparison.OrdinalIgnoreCase)
+        && (ViewData["SuppressPopupMesaj"] as bool? != true);
 }
 <!DOCTYPE html>
 <html lang="tr">
@@ -137,6 +145,7 @@
     <link rel="stylesheet" href="~/assets/css/otelturizm-design-system.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/assets/css/public-premium-pages.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/assets/css/public-premium-pages.mobile.css" asp-append-version="true" media="(max-width: 900px)" />
+    <link rel="stylesheet" href="~/assets/css/popupmesaj.css" asp-append-version="true" />
     @if (includeBootstrap)
     {
         <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
@@ -169,7 +178,7 @@
     }
     @if (!string.IsNullOrWhiteSpace(pageCssMobileResolved) && !string.Equals(pageCssMobileResolved, pageCss, StringComparison.OrdinalIgnoreCase))
     {
-        <link rel="stylesheet" href="~/assets/css/@(pageCssMobileResolved).css" asp-append-version="true" media="(max-width: 900px)" />
+        <link rel="stylesheet" href="~/assets/css/@(pageCssMobileResolved).css" asp-append-version="true" media="(max-width: @(pageCssMobileMaxWidth))" />
     }
     @RenderSection("HeadStyles", required: false)
 </head>
@@ -186,6 +195,10 @@
 
     <partial name="~/Views/Anasayfa/_AnasayfaPremiumFooter.cshtml" />
     <partial name="~/Views/Shared/_RoutePickerModal.cshtml" />
+    @if (showPopupMesaj)
+    {
+        <partial name="~/Views/Shared/_PopupMesaj.cshtml" />
+    }
     @if (includePureVisualSlider)
     {
         <partial name="~/Views/Shared/_PureVisualSliderModal.cshtml" />
@@ -206,6 +219,10 @@
     <script src="~/assets/js/home-drawer-prefs.js" asp-append-version="true" defer></script>
     <script src="~/assets/js/home-header-prefs.js" asp-append-version="true" defer></script>
     <script src="~/assets/js/route-picker-modal.js" asp-append-version="true" defer></script>
+    @if (showPopupMesaj)
+    {
+        <script src="~/assets/js/popupmesaj.js" asp-append-version="true" defer></script>
+    }
     <script nonce="@nonce">
         (() => {
             const btn = document.getElementById('homeMenuToggle');

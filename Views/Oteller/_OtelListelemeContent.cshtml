@@ -329,9 +329,9 @@
                                         <i class="fas fa-bed" aria-hidden="true"></i> @hotel.ListingLeadRoomName
                                     </p>
                                 }
-                                @if (Model.ShowLoyaltyTouchpoints && Model.LoyaltyUserSignedIn && hotel.EstimatedLoyaltyPoints is > 0)
+                                @if (Model.ShowLoyaltyTouchpoints && hotel.EstimatedLoyaltyPoints is > 0)
                                 {
-                                    <p class="otelliste-card-loyalty" data-loyalty-hook="listing-card">
+                                    <p class="otelliste-card-loyalty otelliste-card-loyalty--body" data-loyalty-hook="listing-card">
                                         <i class="fas fa-gift" aria-hidden="true"></i>
                                         +@hotel.EstimatedLoyaltyPoints.Value puan kazanın
                                     </p>
@@ -363,19 +363,35 @@
                                 }
                             </div>
                             <div class="otelliste-card-foot">
-                                <div class="otelliste-card-price">
-                                    @if (price > 0m)
+                                <div class="otelliste-card-foot-main">
+                                    @if (!string.IsNullOrWhiteSpace(hotel.ListingLeadRoomName))
                                     {
-                                        if (originalPrice > price)
-                                        {
-                                            <span class="otelliste-card-price-old">@($"{originalPrice:N0} ₺")</span>
-                                        }
-                                        @($"{price:N0} ₺")
-                                        <small>/ gece · vergi dahil</small>
+                                        <p class="otelliste-card-foot-room">
+                                            <i class="fas fa-bed" aria-hidden="true"></i>
+                                            <span>@hotel.ListingLeadRoomName</span>
+                                        </p>
                                     }
-                                    else
+                                    <div class="otelliste-card-price">
+                                        @if (price > 0m)
+                                        {
+                                            if (originalPrice > price)
+                                            {
+                                                <span class="otelliste-card-price-old">@($"{originalPrice:N0} ₺")</span>
+                                            }
+                                            <span class="otelliste-card-price-current">@($"{price:N0} ₺")</span>
+                                            <span class="otelliste-card-price-unit">/ gece · vergi dahil</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="otelliste-card-price-unit">Fiyat sor</span>
+                                        }
+                                    </div>
+                                    @if (Model.ShowLoyaltyTouchpoints && hotel.EstimatedLoyaltyPoints is > 0)
                                     {
-                                        <small>Fiyat sor</small>
+                                        <p class="otelliste-card-loyalty otelliste-card-loyalty--foot" data-loyalty-hook="listing-card">
+                                            <i class="fas fa-gift" aria-hidden="true"></i>
+                                            +@hotel.EstimatedLoyaltyPoints.Value puan kazanın
+                                        </p>
                                     }
                                 </div>
                                 @if (price > 0m)

@@ -90,7 +90,7 @@ public sealed class DawnSurpriseService : IDawnSurpriseService
 
         {
 
-            Percent = payload.Percent,
+            Percent = Math.Min(6, Math.Max(1, payload.Percent)),
 
             ExpiresAt = expiresAt
 
@@ -136,7 +136,7 @@ public sealed class DawnSurpriseService : IDawnSurpriseService
 
 
 
-        var percent = Random.Shared.Next(3, 11);
+        var percent = Random.Shared.Next(1, 7);
 
         var expiresAt = DateTimeOffset.UtcNow.Add(RewardLifetime);
 

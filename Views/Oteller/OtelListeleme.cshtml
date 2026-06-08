@@ -5,6 +5,7 @@
     ViewData["BodyClass"] = "otelliste-page-shell anasayfa-page";
     ViewData["PageCss"] = "otelliste_masaustu";
     ViewData["PageCssMobile"] = "otelliste_mobil";
+    ViewData["PageCssMobileMaxWidth"] = "1100px";
     ViewData["Title"] = string.IsNullOrWhiteSpace(Model.SearchLabel) ? "Oteller" : Model.SearchLabel;
     var baseUrl = (Context.RequestServices.GetService(typeof(IConfiguration)) as IConfiguration)?["App:PublicBaseUrl"]?.TrimEnd('/')
                   ?? "https://otelturizm.com";

@@ -1503,9 +1503,6 @@
                 <div class="multi-room" id="multiRoomRoot">
                     <div class="multi-room-head">
                         <span class="multi-room-title">Oda seçimi</span>
-                        <button type="button" class="multi-room-add" id="addRoomBtn">
-                            <i class="fas fa-plus"></i> Oda ekle
-                        </button>
                     </div>
                     <div class="multi-room-toast" id="multiRoomToast" role="status" aria-live="polite" hidden></div>
 
@@ -1697,13 +1694,21 @@
         <div class="mobile-booking-bar__row mobile-booking-bar__row--price">
             <div class="mobile-booking-price-main">
                 <div class="mobile-booking-price-labels">
+                    <span class="mobile-booking-room-name" id="mobileBookingRoomName">@selectedRoomSeed?.Name</span>
                     @if (initialInclusiveNightly > 0m)
                     {
-                        <span class="mobile-booking-from">@SharedLocalizer["Detail.Booking.FromNight"].Value</span>
+                        <span class="mobile-booking-from-line">
+                            <span class="mobile-booking-from">@SharedLocalizer["Detail.Booking.FromNight"].Value</span>
+                            <strong id="mobileBookingNightly" class="mobile-booking-nightly">₺@initialInclusiveNightly.ToString("N0")</strong>
+                        </span>
                     }
                     <span class="mobile-booking-label">@SharedLocalizer["Detail.Booking.Total"].Value</span>
                 </div>
-                <strong id="mobileBookingPrice" class="mobile-booking-total">@(initialTotal > 0m ? $"₺{initialTotal:N0}" : (Model.LowestRoomPrice > 0m ? $"₺{Model.GuestInclusiveNightlyFromStoredNet(Model.LowestRoomPrice):N0}" : "—"))</strong>
+                <div class="mobile-booking-total-wrap">
+                    <del class="mobile-booking-original" id="mobileBookingOriginal" hidden aria-hidden="true"></del>
+                    <strong id="mobileBookingPrice" class="mobile-booking-total">@(initialTotal > 0m ? $"₺{initialTotal:N0}" : (Model.LowestRoomPrice > 0m ? $"₺{Model.GuestInclusiveNightlyFromStoredNet(Model.LowestRoomPrice):N0}" : "—"))</strong>
+                    <span class="mobile-booking-dawn-pill" id="mobileBookingDawn" hidden></span>
+                </div>
             </div>
             <small class="mobile-booking-tax-note">@SharedLocalizer["Detail.Booking.TaxesNote"].Value</small>
         </div>
@@ -2202,7 +2207,6 @@
             const roomsJsonInput = document.getElementById('roomsJsonInput');
             const roomItemsRoot = document.getElementById('roomItems');
             const roomItemTemplate = document.getElementById('roomItemTemplate');
-            const addRoomBtn = document.getElementById('addRoomBtn');
             const roomTypeIdInput = document.getElementById('roomTypeIdInput');
             const checkInInput = document.getElementById('checkInDateInput');
             const checkOutInput = document.getElementById('checkOutDateInput');
@@ -2734,6 +2738,12 @@
                         if (select && roomId) {
                             select.value = roomId;
                         }
+                        const selectedName = select?.selectedOptions?.[0]?.dataset?.roomName
+                            || select?.selectedOptions?.[0]?.textContent?.trim()
+                            || '';
+                        if (selectedName) {
+                            updateMobileBookingSummary({ roomName: selectedName });
+                        }
                         setActiveRoomIndex(index);
                         syncRoomsJsonAndHiddenFields();
                         ensureGuestCapacity(true);
@@ -3117,35 +3127,6 @@
                 renumberRoomItems();
                 document.dispatchEvent(new CustomEvent('otelturizm:room-item-added', { detail: { item: appended } }));
             }
-
-            addRoomBtn?.addEventListener('click', function () {
-                const first = getRoomItemNodes()[0];
-                const firstData = first ? getRoomItemData(first) : null;
-                addRoomItem(firstData ? { roomTypeId: firstData.roomTypeId, checkIn: firstData.checkIn, checkOut: firstData.checkOut } : null);
-                syncRoomsJsonAndHiddenFields();
-                refreshPriceQuote();
-
-                const nodes = getRoomItemNodes();
-                const appended = nodes[nodes.length - 1];
-                if (!appended) {
-                    return;
-                }
-
-                showRoomAddedToast(nodes.length);
-                appended.classList.add('is-new-room');
-                window.setTimeout(function () {
-                    appended.classList.remove('is-new-room');
-                }, 2600);
-
-                appended.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-                const roomTypeSelect = appended.querySelector('[data-field="roomType"]');
-                if (roomTypeSelect) {
-                    window.setTimeout(function () {
-                        try { roomTypeSelect.focus(); } catch (_) { /* ignore */ }
-                    }, 280);
-                }
-            });
-
 
             function closeShareMenu() {
                 if (!shareMenu || !shareButton) {
@@ -3878,6 +3859,63 @@
                 return roomLines + buildTaxAndTotalRows(totals);
             }
 
+            function updateMobileBookingSummary(summary) {
+                const data = summary || {};
+                const roomNameEl = document.getElementById('mobileBookingRoomName');
+                const originalEl = document.getElementById('mobileBookingOriginal');
+                const dawnEl = document.getElementById('mobileBookingDawn');
+                const nightlyEl = document.getElementById('mobileBookingNightly');
+                const total = Number(data.totalAmount || 0);
+                const originalTotal = Number(data.originalTotalAmount || 0);
+                const dawnDiscount = Number(data.dawnSurpriseDiscountAmount || 0);
+                const dawnPercent = Number(data.dawnSurprisePercent || 0);
+                const roomName = (data.roomName || '').toString().trim();
+                const nightlyAmount = Number(data.nightlyAmount || 0);
+                const hasDawn = dawnDiscount > 0 && dawnPercent > 0 && originalTotal > total;
+
+                if (roomNameEl) {
+                    if (roomName) {
+                        roomNameEl.textContent = roomName;
+                        roomNameEl.hidden = false;
+                        roomNameEl.title = roomName;
+                    } else {
+                        roomNameEl.textContent = '';
+                        roomNameEl.hidden = true;
+                        roomNameEl.removeAttribute('title');
+                    }
+                }
+
+                if (mobileBookingPrice) {
+                    mobileBookingPrice.textContent = total > 0 ? formatMoney(total) : '—';
+                }
+
+                if (originalEl) {
+                    if (hasDawn) {
+                        originalEl.textContent = formatMoney(originalTotal);
+                        originalEl.hidden = false;
+                        originalEl.setAttribute('aria-hidden', 'false');
+                    } else {
+                        originalEl.textContent = '';
+                        originalEl.hidden = true;
+                        originalEl.setAttribute('aria-hidden', 'true');
+                    }
+                }
+
+                if (dawnEl) {
+                    if (hasDawn) {
+                        dawnEl.textContent = 'Şafak −%' + dawnPercent + ' · ' + formatMoney(dawnDiscount);
+                        dawnEl.hidden = false;
+                    } else {
+                        dawnEl.textContent = '';
+                        dawnEl.hidden = true;
+                    }
+                }
+
+                if (nightlyEl && nightlyAmount > 0) {
+                    nightlyEl.textContent = formatMoney(nightlyAmount);
+                }
+            }
+
             function syncRoomsJsonAndHiddenFields() {
                 const nodes = getRoomItemNodes();
                 const items = nodes.map(getRoomItemData);
@@ -3951,7 +3989,10 @@
                     vatAmount: 0,
                     accommodationTaxAmount: 0,
                     taxAmount: 0,
-                    totalAmount: 0
+                    totalAmount: 0,
+                    originalTotalAmount: 0,
+                    dawnSurprisePercent: 0,
+                    dawnSurpriseDiscountAmount: 0
                 };
 
                 const perRoom = [];
@@ -3986,6 +4027,11 @@
                         totals.accommodationTaxAmount += acc;
                         totals.taxAmount += tax;
                         totals.totalAmount += total;
+                        totals.originalTotalAmount += Number(quote.originalTotalAmount || quote.totalAmount || 0);
+                        totals.dawnSurpriseDiscountAmount += Number(quote.dawnSurpriseDiscountAmount || 0);
+                        if (Number(quote.dawnSurprisePercent || 0) > 0) {
+                            totals.dawnSurprisePercent = Number(quote.dawnSurprisePercent);
+                        }
 
                         perRoom.push({
                             roomName: item.roomName,
@@ -4046,7 +4092,6 @@
                 const unitEl = document.querySelector('.booking-price-unit');
                 bookingPrice.textContent = formatMoney(totals.totalAmount);
                 lastBookingTotalAmount = Number(totals.totalAmount || 0);
-                if (mobileBookingPrice) mobileBookingPrice.textContent = formatMoney(totals.totalAmount);
 
                 const firstItem = items[0];
                 const nightsForNightly = firstItem
@@ -4057,12 +4102,19 @@
                     ? Math.round(totals.totalAmount / nightsForNightly / roomsForNightly)
                     : 0;
                 const bookingNightlyFrom = document.getElementById('bookingNightlyFrom');
-                const mobileBookingNightly = document.getElementById('mobileBookingNightly');
                 if (nightlyAmount > 0) {
                     const nightlyText = formatMoney(nightlyAmount);
                     if (bookingNightlyFrom) bookingNightlyFrom.textContent = nightlyText;
-                    if (mobileBookingNightly) mobileBookingNightly.textContent = nightlyText;
                 }
+
+                updateMobileBookingSummary({
+                    roomName: firstItem?.roomName || '',
+                    totalAmount: totals.totalAmount,
+                    originalTotalAmount: totals.originalTotalAmount,
+                    dawnSurprisePercent: totals.dawnSurprisePercent,
+                    dawnSurpriseDiscountAmount: totals.dawnSurpriseDiscountAmount,
+                    nightlyAmount: nightlyAmount
+                });
 
                 breakdown.innerHTML = buildMultiRoomBreakdownHtml(perRoom, totals);
 

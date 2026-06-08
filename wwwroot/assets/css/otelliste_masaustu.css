@@ -943,12 +943,50 @@
     min-width: 0;
 }
 
+.otelliste-page .otelliste-card-foot-main {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 8px;
+    width: 100%;
+}
+
+.otelliste-page .otelliste-card-foot-room {
+    display: none;
+}
+
+.otelliste-page .otelliste-card-loyalty--foot {
+    display: none;
+}
+
+.otelliste-page .otelliste-card-loyalty--body {
+    display: inline-flex;
+}
+
 .otelliste-page .otelliste-card-price {
     font-size: 22px;
     font-weight: 900;
     color: var(--otl-dark);
     line-height: 1.1;
     letter-spacing: -0.02em;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 2px;
+}
+
+.otelliste-page .otelliste-card-price-current {
+    font: inherit;
+    color: inherit;
+    letter-spacing: inherit;
+}
+
+.otelliste-page .otelliste-card-price-unit {
+    display: block;
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--otl-muted);
+    line-height: 1.2;
 }
 
 .otelliste-page .otelliste-card-price-old {
@@ -1108,11 +1146,13 @@
     pointer-events: none;
 }
 
-/* Masaüstünde mobil-only gizle */
-.otelliste-page .otelliste-mobile-bar,
-.otelliste-page .otelliste-filter-drawer,
-.otelliste-page .otelliste-filter-overlay {
-    display: none;
+/* Masaüstünde mobil-only gizle (1100px altı mobil CSS devralır) */
+@media (min-width: 1101px) {
+    .otelliste-page .otelliste-mobile-bar,
+    .otelliste-page .otelliste-filter-drawer,
+    .otelliste-page .otelliste-filter-overlay {
+        display: none;
+    }
 }
 
 @media (max-width: 1100px) {

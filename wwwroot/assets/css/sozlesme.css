@@ -244,6 +244,30 @@
 
 
 
+.sozlesme-page .sozlesme-summary p {
+    margin: 0 0 0.55rem;
+}
+
+.sozlesme-page .sozlesme-summary p:last-child {
+    margin-bottom: 0;
+}
+
+.sozlesme-page .sozlesme-content .sozlesme-kvkk-lead {
+    margin: 0 0 1rem;
+    padding: 14px 16px;
+    border-radius: 12px;
+    border: 1px solid var(--border-light, #e2e8f0);
+    background: rgba(0, 59, 149, 0.04);
+}
+
+.sozlesme-page .sozlesme-content .sozlesme-kvkk-lead p {
+    margin: 0 0 0.45rem;
+}
+
+.sozlesme-page .sozlesme-content .sozlesme-kvkk-lead p:last-child {
+    margin-bottom: 0;
+}
+
 .sozlesme-page .sozlesme-content {
 
     color: #3d3c3a;

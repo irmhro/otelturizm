@@ -755,8 +755,6 @@ public class OtellerController : Controller
 
     private void ApplyListingLoyaltyTouchpoints(otelturizmnew.Models.Oteller.HotelListingPageViewModel model)
     {
-        model.LoyaltyUserSignedIn = GetCurrentUserId() > 0;
-        model.ShowLoyaltyTouchpoints = true;
         foreach (var hotel in model.Hotels)
         {
             var nightly = hotel.DiscountedPrice ?? hotel.StartingPrice;

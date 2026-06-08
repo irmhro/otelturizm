@@ -11,7 +11,9 @@ using otelturizmnew.Models.Oteller;
 using otelturizmnew.Models.Messages;
 using otelturizmnew.Models.Payments;
 using otelturizmnew.Models.Reservations;
+using otelturizmnew.Pricing;
 using otelturizmnew.Services.Abstractions;
+using otelturizmnew.Utils;
 
 namespace otelturizmnew.Services;
 
@@ -25,6 +27,7 @@ public class PublicReservationService : IPublicReservationService
     private readonly ISecureFileService _secureFileService;
     private readonly IWeatherService _weatherService;
     private readonly IDawnSurpriseService _dawnSurpriseService;
+    private readonly IUserLoyaltyPointsService _loyaltyPointsService;
     private readonly IHttpContextAccessor _httpContextAccessor;
     private readonly ILogger<PublicReservationService> _logger;
 
@@ -37,6 +40,7 @@ public class PublicReservationService : IPublicReservationService
         ISecureFileService secureFileService,
         IWeatherService weatherService,
         IDawnSurpriseService dawnSurpriseService,
+        IUserLoyaltyPointsService loyaltyPointsService,
         IHttpContextAccessor httpContextAccessor,
         ILogger<PublicReservationService> logger)
     {
@@ -49,6 +53,7 @@ public class PublicReservationService : IPublicReservationService
         _secureFileService = secureFileService;
         _weatherService = weatherService;
         _dawnSurpriseService = dawnSurpriseService;
+        _loyaltyPointsService = loyaltyPointsService;
         _httpContextAccessor = httpContextAccessor;
         _logger = logger;
     }
@@ -545,6 +550,22 @@ public class PublicReservationService : IPublicReservationService
             {
                 _dawnSurpriseService.Clear(httpContextAfterCommit);
             }
+            try
+            {
+                foreach (var reservationId in createdReservationIds)
+                {
+                    await _loyaltyPointsService.TryAwardReservationPointsAsync(
+                        authenticatedUserId,
+                        reservationId,
+                        LoyaltyPointsEstimator.ReservationPreviewPoints,
+                        cancellationToken);
+                }
+            }
+            catch (Exception loyaltyException)
+            {
+                _logger.LogWarning(loyaltyException, "Rezervasyon sadakat puani eklenemedi. UserId: {UserId}", authenticatedUserId);
+            }
+
             try
             {
                 await QueueReservationEmailsAsync(emailJobs, cancellationToken);

@@ -334,32 +334,96 @@ public class HotelService : IHotelService
         }
 
         var destinationSql = $"""
-            WITH ranked_destinations AS (
+            WITH published AS (
                 SELECT
-                    o.sehir,
-                    o.ilce,
-                    COUNT(*) OVER (PARTITION BY o.sehir, o.ilce) AS hotel_count,
-                    COALESCE(NULLIF(o.kapak_fotografi, ''), '') AS image_url,
-                    o.otel_adi AS lead_hotel,
-                    MAX(COALESCE(o.one_cikan_otel, 0)) OVER (PARTITION BY o.sehir, o.ilce) AS max_featured,
-                    MAX(COALESCE(o.ortalama_puan, 0)) OVER (PARTITION BY o.sehir, o.ilce) AS max_rating,
-                    ROW_NUMBER() OVER (
-                        PARTITION BY o.sehir, o.ilce
-                        ORDER BY COALESCE(o.one_cikan_otel, 0) DESC, COALESCE(o.ortalama_puan, 0) DESC, COALESCE(o.populerlik_sirasi, 0) DESC, o.id DESC
-                    ) AS rn
+                    o.id,
+                    LTRIM(RTRIM(o.sehir)) AS sehir,
+                    LTRIM(RTRIM(o.ilce)) AS ilce,
+                    LTRIM(RTRIM(o.otel_adi)) AS otel_adi,
+                    COALESCE(NULLIF(LTRIM(RTRIM(o.kapak_fotografi)), N''), N'') AS image_url,
+                    COALESCE(o.one_cikan_otel, 0) AS featured,
+                    COALESCE(o.ortalama_puan, 0) AS rating,
+                    COALESCE(o.populerlik_sirasi, 0) AS popularity
                 FROM oteller o
                 WHERE {PublishStatusSql}
                   AND {ApprovalStatusSql}
+                  AND NULLIF(LTRIM(RTRIM(o.sehir)), N'') IS NOT NULL
+            ),
+            city_totals AS (
+                SELECT sehir, COUNT(*) AS hotel_count
+                FROM published
+                GROUP BY sehir
+            ),
+            ranked_cities AS (
+                SELECT
+                    sehir,
+                    hotel_count,
+                    ROW_NUMBER() OVER (ORDER BY hotel_count DESC, sehir) AS city_rank
+                FROM city_totals
+            ),
+            top_cities AS (
+                SELECT sehir, hotel_count
+                FROM ranked_cities
+                WHERE city_rank <= 6
+            ),
+            district_rank AS (
+                SELECT
+                    p.sehir,
+                    p.ilce,
+                    COUNT(*) AS district_count,
+                    ROW_NUMBER() OVER (PARTITION BY p.sehir ORDER BY COUNT(*) DESC, p.ilce) AS rn
+                FROM published p
+                INNER JOIN top_cities tc ON tc.sehir = p.sehir
+                WHERE NULLIF(p.ilce, N'') IS NOT NULL
+                GROUP BY p.sehir, p.ilce
+            ),
+            top_districts AS (
+                SELECT
+                    dr.sehir,
+                    STRING_AGG(dr.ilce, N', ') WITHIN GROUP (ORDER BY dr.district_count DESC, dr.ilce) AS districts_text
+                FROM district_rank dr
+                WHERE dr.rn <= 3
+                GROUP BY dr.sehir
+            ),
+            hotel_rank AS (
+                SELECT
+                    p.sehir,
+                    p.id,
+                    p.otel_adi,
+                    p.image_url,
+                    ROW_NUMBER() OVER (
+                        PARTITION BY p.sehir
+                        ORDER BY p.featured DESC, p.rating DESC, p.popularity DESC, p.id DESC
+                    ) AS rn
+                FROM published p
+                INNER JOIN top_cities tc ON tc.sehir = p.sehir
+            ),
+            lead_hotel AS (
+                SELECT sehir, id AS lead_hotel_id, otel_adi AS lead_hotel, image_url
+                FROM hotel_rank
+                WHERE rn = 1
+            ),
+            top_hotel_names AS (
+                SELECT
+                    hr.sehir,
+                    STRING_AGG(hr.otel_adi, N', ') WITHIN GROUP (ORDER BY hr.rn) AS hotels_text
+                FROM hotel_rank hr
+                WHERE hr.rn <= 2
+                GROUP BY hr.sehir
             )
-            SELECT TOP (6)
-                sehir,
-                ilce,
-                hotel_count,
-                lead_hotel,
-                image_url
-            FROM ranked_destinations
-            WHERE rn = 1
-            ORDER BY hotel_count DESC, max_featured DESC, max_rating DESC;
+            SELECT
+                tc.sehir,
+                tc.hotel_count,
+                COALESCE(td.districts_text, N'') AS top_districts,
+                COALESCE(thn.hotels_text, N'') AS top_hotels,
+                lh.lead_hotel_id,
+                COALESCE(lh.lead_hotel, N'') AS lead_hotel,
+                COALESCE(lh.image_url, N'') AS image_url
+            FROM top_cities tc
+            LEFT JOIN top_districts td ON td.sehir = tc.sehir
+            LEFT JOIN top_hotel_names thn ON thn.sehir = tc.sehir
+            LEFT JOIN lead_hotel lh ON lh.sehir = tc.sehir
+            ORDER BY tc.hotel_count DESC, tc.sehir;
             """;
 
         {
@@ -368,25 +432,40 @@ public class HotelService : IHotelService
             while (await destinationReader.ReadAsync(cancellationToken))
             {
                 var city = destinationReader.GetString(destinationReader.GetOrdinal("sehir"));
-                var district = destinationReader.GetString(destinationReader.GetOrdinal("ilce"));
                 var hotelCount = Convert.ToInt32(destinationReader.GetValue(destinationReader.GetOrdinal("hotel_count")), CultureInfo.InvariantCulture);
+                var topDistricts = destinationReader.IsDBNull(destinationReader.GetOrdinal("top_districts"))
+                    ? string.Empty
+                    : destinationReader.GetString(destinationReader.GetOrdinal("top_districts"));
+                var topHotels = destinationReader.IsDBNull(destinationReader.GetOrdinal("top_hotels"))
+                    ? string.Empty
+                    : destinationReader.GetString(destinationReader.GetOrdinal("top_hotels"));
                 var leadHotel = destinationReader.IsDBNull(destinationReader.GetOrdinal("lead_hotel"))
                     ? string.Empty
                     : destinationReader.GetString(destinationReader.GetOrdinal("lead_hotel"));
                 var imageUrl = destinationReader.IsDBNull(destinationReader.GetOrdinal("image_url"))
                     ? string.Empty
                     : destinationReader.GetString(destinationReader.GetOrdinal("image_url"));
+                var leadHotelIdOrd = destinationReader.GetOrdinal("lead_hotel_id");
+                long leadHotelId = 0;
+                if (!destinationReader.IsDBNull(leadHotelIdOrd))
+                {
+                    leadHotelId = destinationReader.GetInt64(leadHotelIdOrd);
+                }
+
+                var primaryDistrict = topDistricts
+                    .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+                    .FirstOrDefault() ?? string.Empty;
 
                 destinations.Add(new HomeDestinationCardViewModel
                 {
                     City = city,
-                    District = district,
+                    District = primaryDistrict,
                     HotelCount = hotelCount,
-                    LeadText = string.IsNullOrWhiteSpace(leadHotel)
-                        ? $"{district} bolgesinde secili oteller"
-                        : $"{leadHotel} ve benzeri tesisler",
-                    ImageUrl = NormalizeImageUrl(imageUrl),
-                    ListingUrl = $"/oteller/{NormalizeRouteSegment(city)}"
+                    LeadText = BuildHomeDestinationLeadText(topDistricts, topHotels, leadHotel, hotelCount),
+                    ImageUrl = leadHotelId > 0
+                        ? NormalizeHotelImageUrl(leadHotelId, imageUrl)
+                        : NormalizeImageUrl(imageUrl),
+                    ListingUrl = $"/oteller?q={Uri.EscapeDataString(city)}"
                 });
             }
         }
@@ -3686,6 +3765,37 @@ public class HotelService : IHotelService
             }
         }
         return result;
+    }
+
+    private static string BuildHomeDestinationLeadText(string topDistricts, string topHotels, string leadHotel, int hotelCount)
+    {
+        var parts = new List<string>();
+        if (!string.IsNullOrWhiteSpace(topDistricts))
+        {
+            parts.Add(topDistricts.Trim());
+        }
+
+        var hotelHint = !string.IsNullOrWhiteSpace(topHotels)
+            ? topHotels.Trim()
+            : leadHotel.Trim();
+        if (!string.IsNullOrWhiteSpace(hotelHint))
+        {
+            if (hotelCount <= 2)
+            {
+                parts.Add(hotelHint);
+            }
+            else
+            {
+                var firstHotel = hotelHint
+                    .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+                    .FirstOrDefault() ?? hotelHint;
+                parts.Add($"{firstHotel} ve benzeri");
+            }
+        }
+
+        return parts.Count > 0
+            ? string.Join(" · ", parts)
+            : "Popüler otelleri keşfedin";
     }
 
     private static string BuildSlug(string name, string hotelCode)

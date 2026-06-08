@@ -79,6 +79,7 @@ public class DestekController : Controller
     public async Task<IActionResult> Sss(string? kategori, string? ara, CancellationToken cancellationToken)
     {
         ViewData["Title"] = "Sıkça Sorulan Sorular";
+        ViewData["PageCssBase"] = "yardim-merkezi";
         ViewData["PageCss"] = "sss";
         var model = await _supportService.GetFaqPageAsync(kategori, ara, cancellationToken);
         return View("~/Views/Destek/Sss.cshtml", model);

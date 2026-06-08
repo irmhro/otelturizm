@@ -2404,6 +2404,64 @@
         flex-direction: column;
         gap: 2px;
         min-width: 0;
+        flex: 1;
+    }
+
+    .oteldetay-page .mobile-booking-room-name {
+        font-size: 10px;
+        font-weight: 800;
+        color: var(--od-dark, #1A1919);
+        line-height: 1.25;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        max-width: 100%;
+    }
+
+    .oteldetay-page .mobile-booking-from-line {
+        display: inline-flex;
+        align-items: baseline;
+        gap: 4px;
+        flex-wrap: wrap;
+    }
+
+    .oteldetay-page .mobile-booking-nightly {
+        font-size: 11px;
+        font-weight: 800;
+        color: var(--od-crimson, #E30A17);
+        line-height: 1.1;
+    }
+
+    .oteldetay-page .mobile-booking-total-wrap {
+        display: flex;
+        flex-direction: column;
+        align-items: flex-end;
+        gap: 2px;
+        flex-shrink: 0;
+    }
+
+    .oteldetay-page .mobile-booking-original {
+        font-size: 11px;
+        font-weight: 700;
+        color: var(--od-muted, #6E6E77);
+        text-decoration: line-through;
+        line-height: 1;
+    }
+
+    .oteldetay-page .mobile-booking-dawn-pill {
+        font-size: 9px;
+        font-weight: 800;
+        line-height: 1.2;
+        color: #92400e;
+        background: #fef3c7;
+        border-radius: 999px;
+        padding: 2px 7px;
+        white-space: nowrap;
+    }
+
+    .oteldetay-page .multi-room-add,
+    .oteldetay-page #addRoomBtn {
+        display: none !important;
     }
 
     .oteldetay-page .mobile-booking-from {

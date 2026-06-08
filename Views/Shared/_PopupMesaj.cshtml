@@ -1,0 +1,25 @@
+@{
+    var registerUrl = "/kullanici-giris?sekme=kayit";
+}
+
+<div class="popupmesaj" id="popupMesaj" hidden aria-hidden="true">
+    <div class="popupmesaj__backdrop" data-popupmesaj-close tabindex="-1"></div>
+    <div class="popupmesaj__dialog" role="dialog" aria-modal="true" aria-labelledby="popupMesajTitle">
+        <button type="button" class="popupmesaj__close" data-popupmesaj-close aria-label="Kapat">
+            <i class="fas fa-times" aria-hidden="true"></i>
+        </button>
+        <h2 id="popupMesajTitle" class="popupmesaj__sr-only">Şanslı Şafak Sürpriz Kutusu — üyelik teşviki</h2>
+        <a href="@registerUrl" class="popupmesaj__visual" data-popupmesaj-register>
+            <img src="~/assets/img/promo/safak-kayit-popup.png"
+                 alt="Şanslı Şafak Sürpriz Kutusu aktif. İlk üyeliğinizde tüm otellerde ekstra %5 indirim."
+                 width="960"
+                 height="540"
+                 loading="eager"
+                 decoding="async" />
+        </a>
+        <div class="popupmesaj__actions">
+            <a href="@registerUrl" class="popupmesaj__cta" data-popupmesaj-register>Hemen üye ol</a>
+            <button type="button" class="popupmesaj__dismiss" data-popupmesaj-close>Bugün tekrar gösterme</button>
+        </div>
+    </div>
+</div>

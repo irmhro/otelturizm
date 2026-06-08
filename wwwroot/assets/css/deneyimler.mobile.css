@@ -1,0 +1,111 @@
+@import url("./deneyimler.css");
+
+@media (max-width: 900px) {
+    .deneyimler-page {
+        --home-type-btn: 12px;
+        --home-btn-min-height: 40px;
+        --page-content-inset: 32px;
+    }
+
+    .dxp-shell {
+        padding-left: 16px;
+        padding-right: 16px;
+    }
+
+    .dxp-hero__grid {
+        grid-template-columns: 1fr;
+    }
+
+    .dxp-hero__mosaic {
+        min-height: 240px;
+        margin-top: 4px;
+    }
+
+    .dxp-mosaic-card--1 {
+        inset: 0 22% 22% 0;
+    }
+
+    .dxp-mosaic-card--2 {
+        inset: 8% 0 12% 38%;
+    }
+
+    .dxp-mosaic-card--3 {
+        width: 58%;
+        min-height: 96px;
+    }
+
+    .dxp-hero__actions {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .dxp-hero__actions .dxp-btn {
+        width: 100%;
+    }
+
+    .dxp-stats {
+        gap: 12px 18px;
+    }
+
+    .dxp-category-nav {
+        top: calc(var(--home-header-sticky-h, 88px) - 1px);
+        margin-left: -16px;
+        margin-right: -16px;
+        padding-left: 16px;
+        padding-right: 16px;
+    }
+
+    .dxp-bento {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .dxp-card--featured,
+    .dxp-card--featured.dxp-card--wide {
+        grid-column: span 2;
+    }
+
+    .dxp-collection-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 10px;
+    }
+
+    .dxp-journey {
+        grid-template-columns: 1fr;
+        padding: 16px;
+    }
+
+    .dxp-cta__inner {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .dxp-cta__actions {
+        flex-direction: column;
+    }
+
+    .dxp-cta__actions .dxp-btn {
+        width: 100%;
+    }
+
+    .dxp-section__badge {
+        display: none;
+    }
+}
+
+@media (max-width: 480px) {
+    .dxp-bento,
+    .dxp-collection-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .dxp-card--featured,
+    .dxp-card--featured.dxp-card--wide {
+        grid-column: span 1;
+    }
+
+    .dxp-category-chip {
+        min-height: 36px;
+        padding: 0 11px;
+        font-size: 11px;
+    }
+}
