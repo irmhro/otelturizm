@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Http;
+using otelturizmnew.Models;
 
 namespace otelturizmnew.Models.Paneller.Partner;
 
@@ -86,6 +87,7 @@ public class PartnerDashboardViewModel
     public bool PenaltyActive { get; set; }
     public string? PenaltyEndText { get; set; }
     public PartnerDashboardAssistantViewModel Assistants { get; set; } = new();
+    public PartnerHotelCompletenessViewModel? HotelCompleteness { get; set; }
 }
 
 public class PartnerDashboardAssistantViewModel

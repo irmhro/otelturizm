@@ -21,13 +21,15 @@ public class AdminHotelManagementService : IAdminHotelManagementService
     private readonly IImageStorageService _imageStorageService;
     private readonly IAdminRbacService _adminRbacService;
     private readonly IHttpContextAccessor _httpContextAccessor;
+    private readonly IHotelCompletenessService _hotelCompletenessService;
 
     public AdminHotelManagementService(
         IConfiguration configuration,
         IWebHostEnvironment environment,
         IImageStorageService imageStorageService,
         IAdminRbacService adminRbacService,
-        IHttpContextAccessor httpContextAccessor)
+        IHttpContextAccessor httpContextAccessor,
+        IHotelCompletenessService hotelCompletenessService)
     {
         _connectionString = configuration.GetConnectionString("DefaultConnection")
             ?? throw new InvalidOperationException("DefaultConnection tanimli degil.");
@@ -35,6 +37,7 @@ public class AdminHotelManagementService : IAdminHotelManagementService
         _imageStorageService = imageStorageService;
         _adminRbacService = adminRbacService;
         _httpContextAccessor = httpContextAccessor;
+        _hotelCompletenessService = hotelCompletenessService;
     }
 
     public async Task<AdminHotelsPageViewModel> GetHotelsPageAsync(string fullName, string email, string userRole, string? searchTerm = null, string? city = null, string? district = null, string? neighborhood = null, string? publishStatus = null, string? approvalStatus = null, int page = 1, int pageSize = 50, CancellationToken cancellationToken = default)
@@ -166,7 +169,7 @@ public class AdminHotelManagementService : IAdminHotelManagementService
         };
 
         model.SummaryCards.AddRange(await LoadHotelManagementCardsAsync(connection, hotelId, cancellationToken));
-        model.MissingFields.AddRange(BuildHotelMissingFieldWarnings(model.HotelForm, model.Rooms.Count, model.HotelPhotos.Count));
+        ApplyCompleteness(model, model.HotelForm, model.Rooms.Count, model.HotelPhotos.Count);
         model.Amenities.AddRange(await LoadHotelAmenitiesAsync(connection, hotelId, cancellationToken));
         model.PriceRows.AddRange(await LoadHotelPriceRowsAsync(connection, hotelId, cancellationToken));
         model.Documents.AddRange(await LoadHotelPartnerDocumentsAsync(connection, model.HotelForm.PartnerId, cancellationToken));
@@ -1225,33 +1228,42 @@ public class AdminHotelManagementService : IAdminHotelManagementService
             || string.Equals(normalized, "Yayında", StringComparison.OrdinalIgnoreCase);
     }
 
-    private static List<AdminHotelMissingFieldViewModel> BuildHotelMissingFieldWarnings(AdminHotelEditForm form, int roomCount, int hotelPhotoCount)
+    private void ApplyCompleteness(AdminHotelManagementPageViewModel model, AdminHotelEditForm form, int roomCount, int hotelPhotoCount)
     {
-        var warnings = new List<AdminHotelMissingFieldViewModel>();
-        void AddIf(bool condition, string label, string severity = "warning")
+        var snapshot = _hotelCompletenessService.Evaluate(form, roomCount, hotelPhotoCount);
+        model.CompletenessScore = snapshot.Score;
+        model.CompletenessTotalRules = snapshot.TotalRules;
+        model.CompletenessCompletedRules = snapshot.CompletedRules;
+        model.CompletenessCriticalMissingCount = snapshot.CriticalMissingCount;
+        model.CompletenessRules = snapshot.Rules.Select(rule => new AdminHotelCompletenessRuleViewModel
         {
-            if (condition)
-            {
-                warnings.Add(new AdminHotelMissingFieldViewModel { FieldLabel = label, Severity = severity });
-            }
+            FieldKey = rule.FieldKey,
+            FieldLabel = rule.FieldLabel,
+            Severity = rule.Severity,
+            TabTarget = rule.AdminTabTarget,
+            PartnerFixUrl = BuildPartnerFixUrl(form.HotelId, rule.PartnerFixPath),
+            IsMissing = rule.IsMissing
+        }).ToList();
+        model.MissingFields = snapshot.MissingRules.Select(rule => new AdminHotelMissingFieldViewModel
+        {
+            FieldKey = rule.FieldKey,
+            FieldLabel = rule.FieldLabel,
+            Severity = rule.Severity,
+            TabTarget = rule.AdminTabTarget,
+            PartnerFixUrl = BuildPartnerFixUrl(form.HotelId, rule.PartnerFixPath),
+            IsComplete = false
+        }).ToList();
+    }
+
+    private static string? BuildPartnerFixUrl(long hotelId, string partnerPath)
+    {
+        if (hotelId <= 0 || string.IsNullOrWhiteSpace(partnerPath))
+        {
+            return null;
         }
 
-        AddIf(string.IsNullOrWhiteSpace(form.HotelName), "Otel adi", "critical");
-        AddIf(string.IsNullOrWhiteSpace(form.HotelCode), "Otel kodu", "critical");
-        AddIf(string.IsNullOrWhiteSpace(form.City), "Sehir", "critical");
-        AddIf(string.IsNullOrWhiteSpace(form.District), "Ilce", "critical");
-        AddIf(string.IsNullOrWhiteSpace(form.Address), "Tam adres", "critical");
-        AddIf(string.IsNullOrWhiteSpace(form.Phone1), "Telefon", "critical");
-        AddIf(string.IsNullOrWhiteSpace(form.ContactEmail), "E-posta", "critical");
-        AddIf(!form.Latitude.HasValue || !form.Longitude.HasValue, "Koordinat (enlem/boylam)", "warning");
-        AddIf(string.IsNullOrWhiteSpace(form.ShortDescription) && string.IsNullOrWhiteSpace(form.Description), "Aciklama", "warning");
-        AddIf(string.IsNullOrWhiteSpace(form.CoverPhotoPath) && hotelPhotoCount == 0, "Kapak / otel gorseli", "warning");
-        AddIf(roomCount == 0, "En az bir oda tipi", "critical");
-        AddIf(!string.Equals(form.ApprovalStatus, "Onaylandı", StringComparison.OrdinalIgnoreCase)
-            && !string.Equals(form.ApprovalStatus, "Onaylandi", StringComparison.OrdinalIgnoreCase), "Onay durumu (Onaylandi degil)", "warning");
-        AddIf(string.IsNullOrWhiteSpace(form.TourismDocumentNo), "Turizm belge no", "warning");
-
-        return warnings;
+        var separator = partnerPath.Contains('?', StringComparison.Ordinal) ? "&" : "?";
+        return $"{partnerPath}{separator}otelId={hotelId}";
     }
 
     private static async Task<List<AdminHotelAmenityViewModel>> LoadHotelAmenitiesAsync(SqlConnection connection, long hotelId, CancellationToken cancellationToken)

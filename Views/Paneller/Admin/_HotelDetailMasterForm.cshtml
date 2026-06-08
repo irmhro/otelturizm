@@ -1,0 +1,122 @@
+@model otelturizmnew.Models.Paneller.Admin.AdminHotelEditForm
+@{
+    var hotelTypes = ViewBag.HotelTypes as string[] ?? Array.Empty<string>();
+    var tourismTypes = ViewBag.TourismTypes as string[] ?? Array.Empty<string>();
+    var publishStatuses = ViewBag.PublishStatuses as string[] ?? Array.Empty<string>();
+    var approvalStatuses = ViewBag.ApprovalStatuses as string[] ?? Array.Empty<string>();
+    var commissionTypes = ViewBag.CommissionTypes as string[] ?? Array.Empty<string>();
+    var calcTypes = ViewBag.CalcTypes as string[] ?? Array.Empty<string>();
+    var paymentTerms = ViewBag.PaymentTerms as string[] ?? Array.Empty<string>();
+    var paymentMethods = ViewBag.PaymentMethods as string[] ?? Array.Empty<string>();
+    var invoiceTypes = ViewBag.InvoiceTypes as string[] ?? Array.Empty<string>();
+    var hotelSaveAction = Model.HotelId <= 0 ? "/admin/oteller/olustur" : "/admin/oteller/kaydet";
+}
+
+<form method="post" action="@hotelSaveAction" id="hotel-master-form" class="admin-hotel-master-form">
+    @Html.AntiForgeryToken()
+    <input type="hidden" name="HotelId" value="@Model.HotelId" />
+
+    <article class="admin-section-card admin-detail-main-card admin-anchor-target ot-card admin-tab-panel" id="tab-genel">
+        <div class="admin-section-head">
+            <div>
+                <p class="mini-caption">OTELLER · GENEL</p>
+                <h2>Temel kayıt ve iletişim</h2>
+                <p>Otel kimliği, iletişim kanalları ve açıklama metinleri.</p>
+            </div>
+        </div>
+        <div class="admin-form-grid">
+            <label><span>Otel kodu</span><input type="text" name="HotelCode" value="@Model.HotelCode" /></label>
+            <label><span>Partner ID</span><input type="number" name="PartnerId" value="@Model.PartnerId" /></label>
+            <label><span>User ID</span><input type="number" name="UserId" value="@Model.UserId" /></label>
+            <label class="span-2"><span>Otel adı</span><input type="text" name="HotelName" value="@Model.HotelName" /></label>
+            <label><span>Otel türü</span><select name="HotelType">@foreach (var item in hotelTypes){<option value="@item" selected="@(Model.HotelType == item)">@item</option>}</select></label>
+            <label><span>Yıldız</span><input type="number" name="StarCount" value="@Model.StarCount" min="0" max="7" /></label>
+            <label><span>Telefon 1</span><input type="text" name="Phone1" value="@Model.Phone1" /></label>
+            <label><span>Telefon 2</span><input type="text" name="Phone2" value="@Model.Phone2" /></label>
+            <label><span>Faks</span><input type="text" name="Fax" value="@Model.Fax" /></label>
+            <label><span>E-posta</span><input type="email" name="ContactEmail" value="@Model.ContactEmail" /></label>
+            <label><span>Web sitesi</span><input type="text" name="Website" value="@Model.Website" /></label>
+            <label><span>Rezervasyon telefonu</span><input type="text" name="ReservationPhone" value="@Model.ReservationPhone" /></label>
+            <label><span>Satış kontak adı</span><input type="text" name="SalesContactName" value="@Model.SalesContactName" /></label>
+            <label><span>Satış kontak telefonu</span><input type="text" name="SalesContactPhone" value="@Model.SalesContactPhone" /></label>
+            <label><span>Satış kontak e-posta</span><input type="email" name="SalesContactEmail" value="@Model.SalesContactEmail" /></label>
+            <label class="span-3"><span>Satış notları</span><textarea name="SalesNotes">@Model.SalesNotes</textarea></label>
+            <label><span>Toplam oda sayısı</span><input type="number" name="TotalRoomCount" value="@Model.TotalRoomCount" /></label>
+            <label><span>Yatak kapasitesi</span><input type="number" name="TotalBedCapacity" value="@Model.TotalBedCapacity" /></label>
+            <label><span>Kat sayısı</span><input type="number" name="FloorCount" value="@Model.FloorCount" /></label>
+            <label class="checkbox"><input type="checkbox" name="ElevatorAvailable" value="true" checked="@Model.ElevatorAvailable" /><span>Asansör var</span></label>
+            <label><span>Asansör sayısı</span><input type="number" name="ElevatorCount" value="@Model.ElevatorCount" /></label>
+            <label><span>Konuşulan diller</span><input type="text" name="SpokenLanguages" value="@Model.SpokenLanguages" /></label>
+            <label class="span-3"><span>Kısa açıklama</span><textarea name="ShortDescription">@Model.ShortDescription</textarea></label>
+            <label class="span-3"><span>Uzun açıklama</span><textarea name="Description">@Model.Description</textarea></label>
+        </div>
+    </article>
+
+    <article class="admin-section-card admin-anchor-target ot-card admin-tab-panel" id="tab-konum" hidden>
+        <div class="admin-section-head">
+            <div>
+                <p class="mini-caption">OTELLER · KONUM</p>
+                <h2>Adres ve koordinatlar</h2>
+                <p>Harita, adres hiyerarşisi ve giriş/çıkış saatleri.</p>
+            </div>
+        </div>
+        <div class="admin-form-grid">
+            <label><span>Ülke</span><input type="text" name="Country" value="@Model.Country" /></label>
+            <label><span>Şehir</span><input type="text" name="City" value="@Model.City" /></label>
+            <label><span>İlçe</span><input type="text" name="District" value="@Model.District" /></label>
+            <label><span>Mahalle</span><input type="text" name="Neighborhood" value="@Model.Neighborhood" /></label>
+            <label><span>Posta kodu</span><input type="text" name="PostalCode" value="@Model.PostalCode" /></label>
+            <label><span>Enlem</span><input type="number" step="0.00000001" name="Latitude" value="@Model.Latitude" /></label>
+            <label><span>Boylam</span><input type="number" step="0.00000001" name="Longitude" value="@Model.Longitude" /></label>
+            <label class="span-3"><span>Tam adres</span><textarea name="Address">@Model.Address</textarea></label>
+            <label class="span-3"><span>Konum açıklaması</span><textarea name="LocationDescription">@Model.LocationDescription</textarea></label>
+            <label><span>Check-in</span><input type="text" name="CheckInTime" value="@Model.CheckInTime" placeholder="14:00" /></label>
+            <label><span>Check-out</span><input type="text" name="CheckOutTime" value="@Model.CheckOutTime" placeholder="12:00" /></label>
+            <label class="checkbox"><input type="checkbox" name="LateCheckoutAvailable" value="true" checked="@Model.LateCheckoutAvailable" /><span>Geç çıkış açık</span></label>
+            <label><span>Geç çıkış ücreti</span><input type="number" step="0.01" name="LateCheckoutFee" value="@Model.LateCheckoutFee" /></label>
+            <label class="checkbox"><input type="checkbox" name="EarlyCheckInAvailable" value="true" checked="@Model.EarlyCheckInAvailable" /><span>Erken giriş açık</span></label>
+            <label><span>Erken giriş ücreti</span><input type="number" step="0.01" name="EarlyCheckInFee" value="@Model.EarlyCheckInFee" /></label>
+        </div>
+    </article>
+
+    <article class="admin-section-card admin-anchor-target ot-card admin-tab-panel" id="tab-onay" hidden>
+        <div class="admin-section-head">
+            <div>
+                <p class="mini-caption">OTELLER · ONAY & YAYIN</p>
+                <h2>Yayın, onay ve vitrin</h2>
+            </div>
+        </div>
+        <div class="admin-form-grid">
+            <label><span>Belge no</span><input type="text" name="TourismDocumentNo" value="@Model.TourismDocumentNo" /></label>
+            <label><span>Belge türü</span><select name="TourismDocumentType"><option value="">Seçiniz</option>@foreach (var item in tourismTypes){<option value="@item" selected="@(Model.TourismDocumentType == item)">@item</option>}</select></label>
+            <label><span>Yayın durumu</span><select name="PublishStatus">@foreach (var item in publishStatuses){<option value="@item" selected="@(Model.PublishStatus == item)">@item</option>}</select></label>
+            <label><span>Onay durumu</span><select name="ApprovalStatus">@foreach (var item in approvalStatuses){<option value="@item" selected="@(Model.ApprovalStatus == item)">@item</option>}</select></label>
+            <label><span>Popülerlik</span><input type="number" name="PopularityOrder" value="@Model.PopularityOrder" /></label>
+            <label class="checkbox"><input type="checkbox" name="IsFeatured" value="true" checked="@Model.IsFeatured" /><span>Öne çıkan</span></label>
+            <label class="checkbox"><input type="checkbox" name="IsRecommended" value="true" checked="@Model.IsRecommended" /><span>Tavsiye edilen</span></label>
+            <label class="span-2"><span>Kapak fotoğraf yolu</span><input type="text" name="CoverPhotoPath" value="@Model.CoverPhotoPath" /></label>
+            <label><span>Video URL</span><input type="text" name="VideoUrl" value="@Model.VideoUrl" /></label>
+            <label><span>Sanal tur URL</span><input type="text" name="VirtualTourUrl" value="@Model.VirtualTourUrl" /></label>
+            <label><span>Komisyon türü</span><select name="CommissionType">@foreach (var item in commissionTypes){<option value="@item" selected="@(Model.CommissionType == item)">@item</option>}</select></label>
+            <label><span>Varsayılan komisyon</span><input type="number" step="0.01" name="DefaultCommissionRate" value="@Model.DefaultCommissionRate" /></label>
+            <label><span>Komisyon hesaplama</span><select name="CommissionCalculationType">@foreach (var item in calcTypes){<option value="@item" selected="@(Model.CommissionCalculationType == item)">@item</option>}</select></label>
+            <label><span>Ödeme vadesi</span><select name="PaymentTerm">@foreach (var item in paymentTerms){<option value="@item" selected="@(Model.PaymentTerm == item)">@item</option>}</select></label>
+            <label><span>Ödeme yöntemi</span><select name="PaymentMethod">@foreach (var item in paymentMethods){<option value="@item" selected="@(Model.PaymentMethod == item)">@item</option>}</select></label>
+            <label><span>Fatura kesim</span><select name="InvoiceType">@foreach (var item in invoiceTypes){<option value="@item" selected="@(Model.InvoiceType == item)">@item</option>}</select></label>
+            <label><span>Depozito</span><input type="number" step="0.01" name="DepositAmount" value="@Model.DepositAmount" /></label>
+            <label><span>Depozito iade günü</span><input type="number" name="DepositReturnDays" value="@Model.DepositReturnDays" /></label>
+            <label><span>Min gece</span><input type="number" name="MinStay" value="@Model.MinStay" /></label>
+            <label><span>Max gece</span><input type="number" name="MaxStay" value="@Model.MaxStay" /></label>
+            <label><span>Ort. puan</span><input type="number" step="0.01" name="AverageScore" value="@Model.AverageScore" /></label>
+            <label><span>Yorum sayısı</span><input type="number" name="TotalReviewCount" value="@Model.TotalReviewCount" /></label>
+            <label><span>Temizlik</span><input type="number" step="0.01" name="CleanlinessScore" value="@Model.CleanlinessScore" /></label>
+            <label><span>Konfor</span><input type="number" step="0.01" name="ComfortScore" value="@Model.ComfortScore" /></label>
+            <label><span>Konum puanı</span><input type="number" step="0.01" name="LocationScore" value="@Model.LocationScore" /></label>
+            <label><span>Personel</span><input type="number" step="0.01" name="StaffScore" value="@Model.StaffScore" /></label>
+            <label><span>Fiyat performans</span><input type="number" step="0.01" name="PricePerformanceScore" value="@Model.PricePerformanceScore" /></label>
+        </div>
+        <div class="span-3 admin-form-actions admin-hotel-save-actions">
+            <button type="submit" class="admin-action-btn primary ot-btn ot-btn--primary"><i class="fas fa-floppy-disk"></i> Otel kaydını güncelle</button>
+        </div>
+    </article>
+</form>

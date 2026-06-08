@@ -8,11 +8,13 @@ namespace otelturizmnew.Services;
 public class HeaderBildiriService : IHeaderBildiriService
 {
     private readonly string _connectionString;
+    private readonly IHotelCompletenessService _hotelCompletenessService;
 
-    public HeaderBildiriService(IConfiguration configuration)
+    public HeaderBildiriService(IConfiguration configuration, IHotelCompletenessService hotelCompletenessService)
     {
         _connectionString = configuration.GetConnectionString("DefaultConnection")
             ?? throw new InvalidOperationException("DefaultConnection tanimli degil.");
+        _hotelCompletenessService = hotelCompletenessService;
     }
 
     public async Task<HeaderBildiriViewModel> GetForPanelAsync(string panelKey, long userId, CancellationToken cancellationToken = default)
@@ -467,6 +469,26 @@ public class HeaderBildiriService : IHeaderBildiriService
                         timeUtc);
                 }
             }
+        }
+
+        var completenessItems = await _hotelCompletenessService.GetPartnerManagedHotelsCompletenessAsync(userId, cancellationToken);
+        foreach (var hotel in completenessItems.Where(x => x.MissingCount > 0))
+        {
+            var topMissing = hotel.MissingItems.FirstOrDefault();
+            var fixUrl = topMissing?.FixUrl ?? $"/panel/partner?otelId={hotel.HotelId}";
+            var description = hotel.MissingCount == 1
+                ? $"{hotel.HotelName}: {topMissing?.Label ?? "Eksik alan"} tamamlanmali."
+                : $"{hotel.HotelName}: {hotel.MissingCount} eksik alan var (%{hotel.CompletenessScore} tamamlanma).";
+            Add(
+                model,
+                BuildItemKey("partner-hotel-completeness", $"{hotel.HotelId}:{hotel.MissingCount}"),
+                topMissing?.IconClass ?? "fa-triangle-exclamation",
+                "Tesis profili eksik",
+                description,
+                hotel.CriticalMissingCount > 0 ? "danger" : "warning",
+                "Simdi",
+                fixUrl,
+                DateTime.UtcNow);
         }
     }
 

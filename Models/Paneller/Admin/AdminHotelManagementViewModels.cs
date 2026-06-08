@@ -73,6 +73,21 @@ public class AdminHotelManagementPageViewModel
     public AdminHotelCheckInOutViewModel CheckInOutRules { get; set; } = new();
     public AdminHotelCommissionSummaryViewModel CommissionSummary { get; set; } = new();
     public List<AdminHotelRoomTableRowViewModel> RoomTableRows { get; set; } = new();
+    public int CompletenessScore { get; set; }
+    public int CompletenessTotalRules { get; set; }
+    public int CompletenessCompletedRules { get; set; }
+    public int CompletenessCriticalMissingCount { get; set; }
+    public List<AdminHotelCompletenessRuleViewModel> CompletenessRules { get; set; } = new();
+}
+
+public class AdminHotelCompletenessRuleViewModel
+{
+    public string FieldKey { get; set; } = string.Empty;
+    public string FieldLabel { get; set; } = string.Empty;
+    public string Severity { get; set; } = "warning";
+    public string TabTarget { get; set; } = string.Empty;
+    public string? PartnerFixUrl { get; set; }
+    public bool IsMissing { get; set; }
 }
 
 public class AdminHotelManagerViewModel
@@ -184,8 +199,12 @@ public class AdminHotelRoomTableRowViewModel
 
 public class AdminHotelMissingFieldViewModel
 {
+    public string FieldKey { get; set; } = string.Empty;
     public string FieldLabel { get; set; } = string.Empty;
     public string Severity { get; set; } = "warning";
+    public string TabTarget { get; set; } = string.Empty;
+    public string? PartnerFixUrl { get; set; }
+    public bool IsComplete { get; set; }
 }
 
 public class AdminHotelAmenityViewModel

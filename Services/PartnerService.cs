@@ -29,6 +29,7 @@ public class PartnerService : IPartnerService
     private readonly ISecureFileService _secureFileService;
     private readonly ISlowSqlTracker _slowSql;
     private readonly ILogger<PartnerService> _logger;
+    private readonly IHotelCompletenessService _hotelCompletenessService;
 
     public PartnerService(
         IConfiguration configuration,
@@ -38,7 +39,8 @@ public class PartnerService : IPartnerService
         IFavoritePriceAlertService favoritePriceAlertService,
         ISecureFileService secureFileService,
         ISlowSqlTracker slowSql,
-        ILogger<PartnerService> logger)
+        ILogger<PartnerService> logger,
+        IHotelCompletenessService hotelCompletenessService)
     {
         _connectionString = configuration.GetConnectionString("DefaultConnection")
             ?? throw new InvalidOperationException("DefaultConnection tanimli degil.");
@@ -50,6 +52,7 @@ public class PartnerService : IPartnerService
         _secureFileService = secureFileService;
         _slowSql = slowSql;
         _logger = logger;
+        _hotelCompletenessService = hotelCompletenessService;
     }
 
     public async Task<PartnerDashboardViewModel> GetDashboardAsync(long userId, long? hotelId = null, DateTime? dateFrom = null, DateTime? dateTo = null, string? status = null, string? paymentMethod = null, int pageSize = 7, long? conversationId = null, CancellationToken cancellationToken = default)
@@ -289,6 +292,7 @@ public class PartnerService : IPartnerService
             new() { Title = "Galeri guncelle", Description = "Yeni gorsel yukle veya kapak secimini degistir.", IconClass = "fa-images", Url = $"/panel/partner/fotograflar?otelId={context.SelectedHotel.HotelId}#fotograf-yukle", ToneClass = "warning" },
             new() { Title = "Destek talebi ac", Description = "Operasyon, odeme veya teknik sorunlar icin aninda talep olustur.", IconClass = "fa-headset", Url = $"/panel/partner/724-destek?otelId={context.SelectedHotel.HotelId}", ToneClass = "danger" }
         };
+        model.HotelCompleteness = await _hotelCompletenessService.GetPartnerHotelCompletenessAsync(context.SelectedHotel.HotelId, cancellationToken);
         return model;
     }
 

@@ -25,6 +25,31 @@
         </div>
     </section>
 
+    @if (Model.HotelCompleteness is { MissingCount: > 0 } completeness)
+    {
+        <section class="row row-cards partner-completeness-alert-row">
+            <div class="col-12">
+                <div class="card partner-completeness-alert @(completeness.CriticalMissingCount > 0 ? "is-critical" : "is-warning")">
+                    <div class="card-body d-flex flex-wrap align-items-center justify-content-between gap-3">
+                        <div>
+                            <div class="partner-completeness-alert__title">
+                                <i class="fas fa-triangle-exclamation me-2"></i>
+                                Tesis profiliniz %@completeness.CompletenessScore tamamlandı
+                            </div>
+                            <p class="mb-0 text-muted">@completeness.MissingCount eksik alan yayın ve onay sürecini yavaşlatıyor. Aşağıdaki bağlantılardan tamamlayın.</p>
+                        </div>
+                        <div class="partner-completeness-alert__chips">
+                            @foreach (var item in completeness.MissingItems.Take(5))
+                            {
+                                <a class="partner-completeness-chip" href="@item.FixUrl"><i class="fas @item.IconClass"></i> @item.Label</a>
+                            }
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+    }
+
     <section class="row row-cards">
         <div class="col-12">
             <div class="partner-widget-strip" aria-label="Özet metrikler">
