@@ -155,6 +155,54 @@
         text-align: center !important;
     }
 
+    .oteldetay-page > #detailInfoModal.detail-info-modal.is-room-pick {
+        border-color: var(--od-border, #EBE9E4) !important;
+        background: #fff !important;
+        box-shadow: 0 28px 72px rgba(15, 23, 42, 0.32) !important;
+    }
+
+    .oteldetay-page > #detailInfoModal.is-room-pick .detail-modal-title-icon {
+        display: none !important;
+    }
+
+    .oteldetay-page > #detailInfoModal.is-room-pick .detail-modal-head {
+        text-align: left !important;
+        justify-content: flex-start !important;
+    }
+
+    .oteldetay-page > #detailInfoModal.is-room-pick .detail-modal-copy {
+        text-align: left !important;
+        margin-left: 0 !important;
+        margin-right: 0 !important;
+    }
+
+    .oteldetay-page > #detailInfoModal.is-room-pick .room-pick-select-wrap {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+        width: 100%;
+    }
+
+    .oteldetay-page > #detailInfoModal.is-room-pick .room-pick-select-label {
+        font-size: 11px;
+        font-weight: 700;
+        color: var(--od-muted, #6E6E77);
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+    }
+
+    .oteldetay-page > #detailInfoModal.is-room-pick .room-pick-select {
+        width: 100%;
+        min-height: 44px;
+        padding: 0 12px;
+        border: 1px solid var(--od-border, #EBE9E4);
+        border-radius: 10px;
+        background: #fff;
+        font-size: 14px;
+        font-weight: 700;
+        color: var(--od-dark, #1A1919);
+    }
+
     .oteldetay-page > #detailInfoModal.detail-info-modal {
         position: fixed !important;
         padding-top: 42px !important;
@@ -2337,17 +2385,24 @@
     }
 
     .oteldetay-page .booking-form .guest-row {
-        flex: 1 1 calc(50% - 5px);
-        min-width: calc(50% - 5px);
-        display: grid;
-        grid-template-columns: minmax(0, 1fr) auto;
+        flex: 1 1 100%;
+        width: 100%;
+        min-width: 0;
+        display: flex;
         align-items: center;
-        gap: 10px;
-        padding: 10px 12px;
-        border: 1px solid var(--od-border, #EBE9E4);
-        border-radius: 12px;
-        background: #fff;
-        min-height: 0;
+        justify-content: space-between;
+        gap: 12px;
+        padding: 10px 0;
+        border: 0;
+        border-bottom: 1px solid var(--od-border, #EBE9E4);
+        border-radius: 0;
+        background: transparent;
+        min-height: 48px;
+    }
+
+    .oteldetay-page .booking-form .guest-row:last-of-type {
+        border-bottom: 0;
+        margin-bottom: 4px;
     }
 
     .oteldetay-page .booking-form .guest-row > span {
@@ -2359,32 +2414,95 @@
     .oteldetay-page .booking-form {
         display: flex;
         flex-wrap: wrap;
-        flex-direction: row;
-        align-content: flex-start;
-        gap: 10px;
+        flex-direction: column;
+        align-content: stretch;
+        gap: 0;
+        width: 100%;
     }
 
     .oteldetay-page .booking-form > .multi-room,
     .oteldetay-page .booking-form > .booking-advanced-fields,
     .oteldetay-page .booking-form > input[type="hidden"],
-    .oteldetay-page .booking-form > .booking-submit-wrap {
-        flex: 1 1 100%;
+    .oteldetay-page .booking-form > .booking-submit-wrap,
+    .oteldetay-page .booking-form > .guest-row {
+        flex: 0 0 auto;
+        width: 100%;
+        max-width: 100%;
+    }
+
+    .oteldetay-page .multi-room {
+        width: 100%;
+        padding: 12px 0 8px;
+        border-bottom: 1px solid var(--od-border, #EBE9E4);
+    }
+
+    .oteldetay-page .multi-room-head {
+        margin-bottom: 8px;
+    }
+
+    .oteldetay-page .multi-room-list {
+        display: flex;
+        flex-direction: column;
+        gap: 0;
         width: 100%;
     }
 
     .oteldetay-page .multi-room-item {
-        border: 1px solid var(--od-border, #EBE9E4);
-        border-radius: 16px;
-        padding: 14px;
-        margin-bottom: 10px;
-        background: #fff;
-        box-shadow: 0 8px 24px rgba(26, 25, 25, 0.05);
+        border: 0;
+        border-radius: 0;
+        padding: 12px 0;
+        margin: 0;
+        background: transparent;
+        box-shadow: none;
+        border-bottom: 1px solid var(--od-border, #EBE9E4);
+    }
+
+    .oteldetay-page .multi-room-item:last-child {
+        border-bottom: 0;
+    }
+
+    .oteldetay-page .multi-room-item.is-active {
+        background: transparent;
+    }
+
+    .oteldetay-page .multi-room-item.is-new-room {
+        border-color: transparent;
+        box-shadow: none;
+        background: rgba(227, 10, 23, 0.04);
     }
 
     .oteldetay-page .multi-room-item-title {
-        font-size: 14px;
-        font-weight: 900;
+        font-size: 13px;
+        font-weight: 800;
         color: var(--od-dark, #1A1919);
+    }
+
+    .oteldetay-page .multi-room-item-head {
+        margin-bottom: 8px;
+    }
+
+    .oteldetay-page .multi-room-item-grid label > span,
+    .oteldetay-page .multi-room-item-type label > span,
+    .oteldetay-page .multi-room-quantity label > span {
+        display: block;
+        font-size: 11px;
+        font-weight: 700;
+        color: var(--od-muted, #6E6E77);
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+        margin-bottom: 4px;
+    }
+
+    .oteldetay-page .multi-room-item-grid select,
+    .oteldetay-page .multi-room-item-grid input[type="date"],
+    .oteldetay-page .multi-room-item-grid input[type="number"] {
+        width: 100%;
+        min-height: 44px;
+        border: 1px solid var(--od-border, #EBE9E4);
+        border-radius: 10px;
+        background: #fff;
+        font-size: 14px;
+        box-shadow: none;
     }
 
     .oteldetay-page .booking-card [data-reservation-create-button],
@@ -2441,10 +2559,41 @@
     }
 
     .oteldetay-page .booking-advanced-fields {
-        border: 1px solid var(--od-border, #EBE9E4);
-        border-radius: 14px;
-        padding: 12px;
-        background: var(--od-bg, #FCFBF9);
+        border: 0;
+        border-radius: 0;
+        border-top: 1px solid var(--od-border, #EBE9E4);
+        padding: 12px 0 4px;
+        margin-top: 4px;
+        background: transparent;
+        width: 100%;
+    }
+
+    .oteldetay-page .booking-advanced-grid {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        width: 100%;
+    }
+
+    .oteldetay-page .booking-advanced-grid label {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+        width: 100%;
+    }
+
+    .oteldetay-page .booking-advanced-grid label > span {
+        font-size: 11px;
+        font-weight: 700;
+        color: var(--od-muted, #6E6E77);
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+    }
+
+    .oteldetay-page .booking-advanced-grid select,
+    .oteldetay-page .booking-advanced-grid input {
+        width: 100%;
+        min-height: 44px;
     }
 
     .oteldetay-page .booking-advanced-heading {
@@ -3468,7 +3617,16 @@
     }
 
     .oteldetay-page .multi-room-item {
-        background: #fff !important;
+        background: transparent !important;
+    }
+
+    .oteldetay-page .booking-submit-wrap {
+        width: 100%;
+        padding-top: 8px;
+    }
+
+    .oteldetay-page .booking-card .booking-form {
+        scroll-behavior: auto;
     }
 }
 

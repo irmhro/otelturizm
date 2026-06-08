@@ -89,6 +89,19 @@
         if (bookingBackdrop) bookingBackdrop.click();
     }
 
+    function resetBookingSheetScroll() {
+        if (!bookingSidebar) return;
+        var formEl = bookingSidebar.querySelector('.booking-form');
+        if (formEl) formEl.scrollTop = 0;
+        var cardEl = bookingSidebar.querySelector('.booking-card');
+        if (cardEl) cardEl.scrollTop = 0;
+    }
+
+    function getSheetScrollEl() {
+        if (!bookingSidebar) return null;
+        return bookingSidebar.querySelector('.booking-form') || bookingSidebar.querySelector('.booking-card');
+    }
+
     if (bookingSidebar) {
         var sheetStartY = 0;
         var sheetTracking = false;
@@ -97,8 +110,8 @@
             if (!bookingSidebar.classList.contains('is-open') || !event.touches || event.touches.length !== 1) {
                 return;
             }
-            var card = bookingSidebar.querySelector('.booking-card');
-            if (card && card.scrollTop > 8) {
+            var scrollEl = getSheetScrollEl();
+            if (scrollEl && scrollEl.scrollTop > 8) {
                 return;
             }
             sheetStartY = event.touches[0].clientY;
@@ -131,6 +144,8 @@
         var sheetObserver = new MutationObserver(function () {
             syncSheetBodyClass();
             if (bookingSidebar.classList.contains('is-open')) {
+                resetBookingSheetScroll();
+                requestAnimationFrame(resetBookingSheetScroll);
                 activateFocusTrap();
             } else {
                 releaseFocusTrap();

@@ -2439,6 +2439,17 @@
                 }
             }
 
+            function resetBookingSheetScroll() {
+                const formEl = bookingSidebar?.querySelector('.booking-form');
+                if (formEl instanceof HTMLElement) {
+                    formEl.scrollTop = 0;
+                }
+                const cardEl = bookingSidebar?.querySelector('.booking-card');
+                if (cardEl instanceof HTMLElement) {
+                    cardEl.scrollTop = 0;
+                }
+            }
+
             function openBookingSheet() {
                 if (isInlineBookingMode()) {
                     scrollToBookingArea();
@@ -2453,6 +2464,8 @@
                 bookingModalBackdrop.classList.add('is-open');
                 document.documentElement.classList.add('modal-open');
                 document.body.classList.add('modal-open');
+                resetBookingSheetScroll();
+                requestAnimationFrame(resetBookingSheetScroll);
 
                 // Profil eksikse banner yerine modal ile yönlendir.
                 if (profileCompletionRequired && !hasAutoPromptedProfileCompletion) {
@@ -2783,7 +2796,6 @@
                         refreshPriceQuote();
                         if (isMobileBookingMode()) {
                             openBookingSheet();
-                            setTimeout(scrollToBookingArea, 90);
                         } else {
                             scrollToBookingArea();
                         }
@@ -2825,20 +2837,27 @@
                     }
                     infoModal.classList.add('is-room-pick');
 
+                    const activeIndex = nodes.findIndex(function (node) { return node.classList.contains('is-active'); });
+                    const defaultIndex = activeIndex >= 0 ? activeIndex : 0;
                     infoModalActions.innerHTML =
+                        '<label class="room-pick-select-wrap">' +
+                        '<span class="room-pick-select-label">Hangi oda güncellensin?</span>' +
+                        '<select id="roomPickSelect" class="room-pick-select">' +
                         nodes.map(function (_n, idx) {
-                            return '<button type="button" class="detail-modal-primary room-pick-btn" data-pick-room-index="' + idx + '">Oda ' + (idx + 1) + '</button>';
+                            const selected = idx === defaultIndex ? ' selected' : '';
+                            return '<option value="' + idx + '"' + selected + '>Oda ' + (idx + 1) + '</option>';
                         }).join('') +
+                        '</select></label>' +
+                        '<button type="button" class="detail-modal-primary" id="roomPickConfirmBtn">Uygula</button>' +
                         '<button type="button" class="detail-modal-secondary" data-close-modal="detailInfoModal">Vazgeç</button>';
 
                     openModal(infoModal);
-                    infoModalActions.querySelectorAll('[data-pick-room-index]').forEach(function (pickBtn) {
-                        pickBtn.addEventListener('click', function () {
-                            const idx = parseInt(pickBtn.getAttribute('data-pick-room-index') || '0', 10);
-                            closeModal(infoModal);
-                            infoModal.classList.remove('is-room-pick');
-                            applyRoomSelectionToIndex(Number.isFinite(idx) ? idx : 0);
-                        });
+                    document.getElementById('roomPickConfirmBtn')?.addEventListener('click', function () {
+                        const selectEl = document.getElementById('roomPickSelect');
+                        const idx = parseInt(selectEl?.value || '0', 10);
+                        closeModal(infoModal);
+                        infoModal.classList.remove('is-room-pick');
+                        applyRoomSelectionToIndex(Number.isFinite(idx) ? idx : 0);
                     });
                     infoModalActions.querySelectorAll('[data-close-modal]').forEach(function (btn) {
                         btn.addEventListener('click', function () {

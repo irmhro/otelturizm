@@ -218,6 +218,17 @@
         return window.matchMedia && window.matchMedia('(max-width: 900px)').matches;
     }
 
+    function resetBookingSheetScroll() {
+        const formEl = bookingSidebar?.querySelector('.booking-form');
+        if (formEl instanceof HTMLElement) {
+            formEl.scrollTop = 0;
+        }
+        const cardEl = bookingSidebar?.querySelector('.booking-card');
+        if (cardEl instanceof HTMLElement) {
+            cardEl.scrollTop = 0;
+        }
+    }
+
     function openBookingArea() {
         if (isMobile() && bookingSidebar && bookingBackdrop) {
             bookingBackdrop.hidden = false;
@@ -225,6 +236,9 @@
             bookingBackdrop.classList.add('is-open');
             document.documentElement.classList.add('modal-open');
             document.body.classList.add('modal-open');
+            resetBookingSheetScroll();
+            requestAnimationFrame(resetBookingSheetScroll);
+            return;
         }
         const target = bookingSidebar || form;
         if (target instanceof HTMLElement) {
