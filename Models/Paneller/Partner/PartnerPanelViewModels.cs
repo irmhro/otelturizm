@@ -238,6 +238,7 @@ public class PartnerReservationRowViewModel
     public string? RequestNote { get; set; }
     public string? CancellationReason { get; set; }
     public string? CancellationTimeText { get; set; }
+    public string? DiscountReasonLabel { get; set; }
     public byte AdultCount { get; set; }
     public byte ChildCount { get; set; }
     public short NightCount { get; set; }

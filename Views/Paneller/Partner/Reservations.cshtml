@@ -244,7 +244,8 @@
                                             data-guest-note="@(row.GuestNote ?? string.Empty)"
                                             data-request-note="@(row.RequestNote ?? string.Empty)"
                                             data-cancellation-reason="@(row.CancellationReason ?? string.Empty)"
-                                            data-cancellation-time="@(row.CancellationTimeText ?? string.Empty)">
+                                            data-cancellation-time="@(row.CancellationTimeText ?? string.Empty)"
+                                            data-discount-reason="@(row.DiscountReasonLabel ?? string.Empty)">
                                         Detay
                                     </button>
                                     @if (row.CanMessageGuest)
@@ -344,6 +345,7 @@
                         <tr><th>Durum</th><td id="reservation-detail-payment-status">-</td></tr>
                         <tr><th>Yöntem</th><td id="reservation-detail-payment-method">-</td></tr>
                         <tr><th>Tutar</th><td class="fw-bold" id="reservation-detail-total-table">-</td></tr>
+                        <tr><th>İndirim nedeni</th><td id="reservation-detail-discount-reason">-</td></tr>
                     </tbody>
                 </table>
             </section>
@@ -485,6 +487,7 @@
             document.getElementById('reservation-detail-created').textContent = button.dataset.created || '-';
             document.getElementById('reservation-detail-cancel-time').textContent = button.dataset.cancellationTime || '-';
             document.getElementById('reservation-detail-cancel-reason').textContent = button.dataset.cancellationReason || '-';
+            document.getElementById('reservation-detail-discount-reason').textContent = button.dataset.discountReason || 'Uygulanan indirim yok';
             document.getElementById('reservation-detail-guest-note').textContent = button.dataset.guestNote || 'Misafir notu bulunmuyor.';
             document.getElementById('reservation-detail-request-note').textContent = button.dataset.requestNote || 'Ek talep bulunmuyor.';
             detailDialog.showModal();

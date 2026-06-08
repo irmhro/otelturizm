@@ -6,28 +6,100 @@
     var page = document.querySelector('.oteldetay-page');
     if (!page) return;
 
-    /* Oda thumb → kapak onizleme */
-    page.querySelectorAll('#roomsCard .room-card').forEach(function (card) {
-        var coverImg = card.querySelector('.room-card-cover img');
-        var thumbs = card.querySelectorAll('.room-thumb-item');
-        if (!coverImg || !thumbs.length) return;
+    function initSwipeCarousel(track, dots, onIndexChange, autoMs) {
+        if (!track) return function () { };
 
-        thumbs.forEach(function (thumb) {
-            thumb.setAttribute('type', 'button');
-            thumb.addEventListener('click', function (e) {
-                e.preventDefault();
-                e.stopPropagation();
-                var img = thumb.querySelector('img');
-                if (!img || !img.src) return;
-                coverImg.src = img.src;
-                thumbs.forEach(function (t) {
-                    t.classList.remove('active');
-                    t.removeAttribute('aria-current');
+        var slides = Array.from(track.querySelectorAll('.room-carousel-slide, .room-detail-gallery-slide'));
+        if (slides.length <= 1) return function () { };
+
+        var index = 0;
+        var timer = null;
+        var startX = 0;
+        var tracking = false;
+
+        function setIndex(next) {
+            index = (next + slides.length) % slides.length;
+            track.scrollTo({ left: index * track.clientWidth, behavior: 'smooth' });
+            if (dots) {
+                dots.querySelectorAll('.room-carousel-dot, .room-detail-gallery-dot').forEach(function (dot, dotIndex) {
+                    dot.classList.toggle('active', dotIndex === index);
                 });
-                thumb.classList.add('active');
-                thumb.setAttribute('aria-current', 'true');
+            }
+            if (typeof onIndexChange === 'function') {
+                onIndexChange(index);
+            }
+        }
+
+        function startAuto() {
+            stopAuto();
+            if (!autoMs) return;
+            timer = window.setInterval(function () {
+                setIndex(index + 1);
+            }, autoMs);
+        }
+
+        function stopAuto() {
+            if (timer) {
+                window.clearInterval(timer);
+                timer = null;
+            }
+        }
+
+        track.addEventListener('scroll', function () {
+            if (!track.clientWidth) return;
+            var next = Math.round(track.scrollLeft / track.clientWidth);
+            if (next !== index) {
+                index = next;
+                if (dots) {
+                    dots.querySelectorAll('.room-carousel-dot, .room-detail-gallery-dot').forEach(function (dot, dotIndex) {
+                        dot.classList.toggle('active', dotIndex === index);
+                    });
+                }
+            }
+        }, { passive: true });
+
+        track.addEventListener('touchstart', function (event) {
+            if (!event.touches || event.touches.length !== 1) return;
+            startX = event.touches[0].clientX;
+            tracking = true;
+            stopAuto();
+        }, { passive: true });
+
+        track.addEventListener('touchend', function () {
+            tracking = false;
+            startAuto();
+        }, { passive: true });
+
+        if (dots) {
+            dots.querySelectorAll('.room-carousel-dot, .room-detail-gallery-dot').forEach(function (dot) {
+                dot.addEventListener('click', function () {
+                    var target = parseInt(dot.getAttribute('data-room-dot') || dot.getAttribute('data-gallery-dot') || '0', 10) || 0;
+                    setIndex(target);
+                    startAuto();
+                });
             });
+        }
+
+        startAuto();
+        return stopAuto;
+    }
+
+    page.querySelectorAll('[data-room-carousel]').forEach(function (carousel) {
+        var track = carousel.querySelector('.room-carousel-track');
+        var dots = carousel.querySelector('.room-carousel-dots');
+        initSwipeCarousel(track, dots, null, 2000);
+
+        carousel.addEventListener('click', function (event) {
+            if (event.target.closest('.room-carousel-dot')) return;
+            var trigger = carousel.querySelector('.room-gallery-trigger');
+            if (trigger) trigger.click();
         });
+    });
+
+    document.addEventListener('otelturizm:room-detail-gallery-ready', function (event) {
+        var track = event.detail?.track;
+        var dotsRoot = event.detail?.dotsRoot;
+        initSwipeCarousel(track, dotsRoot, null, 0);
     });
 
     /* Rezervasyon sheet — swipe-down, focus trap */
@@ -146,7 +218,11 @@
             if (bookingSidebar.classList.contains('is-open')) {
                 resetBookingSheetScroll();
                 requestAnimationFrame(resetBookingSheetScroll);
-                activateFocusTrap();
+                if (!document.querySelector('#detailActionBackdrop.is-open')) {
+                    activateFocusTrap();
+                } else {
+                    releaseFocusTrap();
+                }
             } else {
                 releaseFocusTrap();
             }

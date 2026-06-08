@@ -1467,7 +1467,7 @@
             }
         </article>
 
-        <article class="content-card detail-map-card od-section od-section--map">
+        <article class="content-card detail-map-card od-section od-section--map" id="detailMapSection">
             <div class="section-head tabler-section-head">
                 <div class="tabler-section-headrow">
                     <div class="tabler-section-titles">
@@ -2302,9 +2302,11 @@
             const weatherPopup = document.getElementById('weatherPopup');
             const weatherPopupBackdrop = document.getElementById('weatherPopupBackdrop');
             const weatherPopupOpen = document.getElementById('weatherPopupOpen');
+            const weatherTopbarOpen = document.getElementById('weatherTopbarOpen');
             const weatherPopupClose = document.getElementById('weatherPopupClose');
             const shareButton = document.getElementById('shareHotelBtn');
             const shareMenu = document.getElementById('shareMenu');
+            const shareWrap = shareButton?.closest('.detail-share-wrap');
             const bookingAdvancedFields = document.getElementById('bookingAdvancedFields');
             const bookingSidebar = document.getElementById('bookingSidebar') || document.querySelector('.booking-sidebar');
             const bookingModalBackdrop = document.getElementById('bookingModalBackdrop');
@@ -2328,7 +2330,10 @@
             const roomDetailModalCancellation = document.getElementById('roomDetailModalCancellation');
             const roomDetailModalGalleryBadge = document.getElementById('roomDetailModalGalleryBadge');
             const roomDetailModalFeatureBadge = document.getElementById('roomDetailModalFeatureBadge');
-            const roomDetailModalGalleryOpen = document.getElementById('roomDetailModalGalleryOpen');
+            const roomDetailModalGallery = document.getElementById('roomDetailModalGallery');
+            const roomDetailModalGalleryTrack = document.getElementById('roomDetailModalGalleryTrack');
+            const roomDetailModalGalleryDots = document.getElementById('roomDetailModalGalleryDots');
+            const roomDetailModalNightly = document.getElementById('roomDetailModalNightly');
             const roomDetailModalBedType = document.getElementById('roomDetailModalBedType');
             const roomDetailModalSquareMeter = document.getElementById('roomDetailModalSquareMeter');
             const roomDetailModalCapacity = document.getElementById('roomDetailModalCapacity');
@@ -3221,6 +3226,13 @@
 
                 shareMenu.hidden = true;
                 shareButton.setAttribute('aria-expanded', 'false');
+                shareWrap?.classList.remove('is-open');
+                document.documentElement.classList.remove('share-sheet-open');
+                document.body.classList.remove('share-sheet-open');
+                if (!document.querySelector('.detail-modal.is-open') && !bookingSidebar?.classList.contains('is-open')) {
+                    document.body.style.overflow = '';
+                    document.documentElement.style.overflow = '';
+                }
             }
 
             function openShareMenu() {
@@ -3230,6 +3242,8 @@
 
                 shareMenu.hidden = false;
                 shareButton.setAttribute('aria-expanded', 'true');
+                shareWrap?.classList.add('is-open');
+                document.body.classList.add('share-sheet-open');
             }
 
             function bindShareActions() {
@@ -3302,30 +3316,20 @@
 
             if (shareButton && shareMenu) {
                 bindShareActions();
-                shareButton.addEventListener('click', async function (event) {
-                    if (isMobileBookingMode() && navigator.share) {
-                        event.preventDefault();
-                        event.stopPropagation();
-                        const shareUrl = window.location.href;
-                        const hotelTitle = (document.querySelector('.detail-header h1')?.textContent || 'Otelturizm').trim();
-                        try {
-                            await navigator.share({ title: hotelTitle, text: hotelTitle, url: shareUrl });
-                            closeShareMenu();
-                        } catch (_) {
-                            if (shareMenu.hidden) {
-                                openShareMenu();
-                            } else {
-                                closeShareMenu();
-                            }
-                        }
-                        return;
-                    }
-
+                shareButton.addEventListener('click', function (event) {
+                    event.preventDefault();
+                    event.stopPropagation();
                     if (shareMenu.hidden) {
                         openShareMenu();
                     } else {
                         closeShareMenu();
                     }
+                });
+
+                shareMenu.querySelectorAll('[data-share-platform]').forEach(function (element) {
+                    element.addEventListener('click', function () {
+                        window.setTimeout(closeShareMenu, 0);
+                    });
                 });
 
                 document.addEventListener('click', function (event) {
@@ -3335,8 +3339,15 @@
                 });
             }
 
+            function bindWeatherPopupTriggers() {
+                [weatherPopupOpen, weatherTopbarOpen].forEach(function (trigger) {
+                    trigger?.addEventListener('click', openWeatherPopup);
+                });
+            }
+
             function openWeatherPopup() {
-                const hasWeather = weatherPopupOpen?.getAttribute('data-has-weather') === 'true';
+                const hasWeather = (weatherPopupOpen?.getAttribute('data-has-weather') === 'true')
+                    || (weatherTopbarOpen?.getAttribute('data-has-weather') === 'true');
                 if (!hasWeather || !weatherPopup || !weatherPopupBackdrop) {
                     showInfoModal('Hava durumu verisi şu an yüklenemedi. Birkaç saniye sonra tekrar deneyin.', false);
                     return;
@@ -3367,7 +3378,7 @@
                 document.body.style.overflow = '';
             }
 
-            weatherPopupOpen?.addEventListener('click', openWeatherPopup);
+            bindWeatherPopupTriggers();
             weatherPopupClose?.addEventListener('click', closeWeatherPopup);
             weatherPopupBackdrop?.addEventListener('click', closeWeatherPopup);
             document.addEventListener('keydown', function (event) {
@@ -3693,8 +3704,7 @@
 
                 const paymentText = (paymentMethodSelect?.value || '').trim() || (confirmI18n.notSelected || 'Seçilmedi');
                 const roomCards = items.map(function (item, index) {
-                    const room = roomOptions.find(function (opt) { return Number(opt.id) === Number(item.roomTypeId); });
-                    const roomName = room?.name || item.roomName || (confirmI18n.notSelected || 'Seçilmedi');
+                    const roomName = item.roomName || (confirmI18n.notSelected || 'Seçilmedi');
                     return buildConfirmRoomCard(item, index, roomName);
                 }).join('');
 
@@ -4470,6 +4480,73 @@
                 });
             }
 
+            function renderRoomDetailGallery(roomImages, hotelImages) {
+                if (!roomDetailModalGallery || !roomDetailModalGalleryTrack || !roomDetailModalGalleryDots) {
+                    return;
+                }
+
+                const merged = [];
+                (Array.isArray(roomImages) ? roomImages : []).forEach(function (src) {
+                    if (src && !merged.includes(src)) merged.push(src);
+                });
+                (Array.isArray(hotelImages) ? hotelImages : []).forEach(function (src) {
+                    if (src && !merged.includes(src)) merged.push(src);
+                });
+
+                if (!merged.length) {
+                    roomDetailModalGallery.hidden = true;
+                    roomDetailModalGalleryTrack.innerHTML = '';
+                    roomDetailModalGalleryDots.innerHTML = '';
+                    return;
+                }
+
+                roomDetailModalGallery.hidden = false;
+                roomDetailModalGalleryTrack.innerHTML = merged.map(function (src, index) {
+                    return '<div class="room-detail-gallery-slide" data-gallery-slide="' + index + '">'
+                        + '<img src="' + src + '" alt="" loading="' + (index === 0 ? 'eager' : 'lazy') + '" decoding="async" />'
+                        + '</div>';
+                }).join('');
+                roomDetailModalGalleryDots.innerHTML = merged.map(function (_, index) {
+                    return '<button type="button" class="room-detail-gallery-dot' + (index === 0 ? ' active' : '') + '" data-gallery-dot="' + index + '" aria-label="Görsel ' + (index + 1) + '"></button>';
+                }).join('');
+
+                document.dispatchEvent(new CustomEvent('otelturizm:room-detail-gallery-ready', {
+                    detail: { track: roomDetailModalGalleryTrack, dotsRoot: roomDetailModalGalleryDots }
+                }));
+            }
+
+            function renderRoomDetailNightlyBreakdown(priceText) {
+                if (!roomDetailModalNightly) {
+                    return;
+                }
+
+                const nightly = parseInt(String(priceText || '').replace(/\D/g, ''), 10) || 0;
+                const checkInValue = checkInInput?.value || '';
+                if (!nightly || !checkInValue) {
+                    roomDetailModalNightly.innerHTML = '';
+                    roomDetailModalNightly.hidden = true;
+                    return;
+                }
+
+                const start = new Date(checkInValue + 'T12:00:00');
+                if (Number.isNaN(start.getTime())) {
+                    roomDetailModalNightly.innerHTML = '';
+                    roomDetailModalNightly.hidden = true;
+                    return;
+                }
+
+                const rows = [];
+                for (let i = 0; i < 4; i += 1) {
+                    const day = new Date(start);
+                    day.setDate(day.getDate() + i);
+                    const label = day.toLocaleDateString('tr-TR', { weekday: 'short', day: 'numeric', month: 'short' });
+                    rows.push('<div class="room-detail-nightly-row"><span>' + label + '</span><strong>₺' + nightly.toLocaleString('tr-TR') + '</strong></div>');
+                }
+
+                roomDetailModalNightly.hidden = false;
+                roomDetailModalNightly.innerHTML = rows.join('');
+            }
+
             function openRoomDetailModal(button) {
                 if (!button || !roomDetailModal || !roomDetailModalGrid) {
                     return;
@@ -4479,15 +4556,15 @@
                 let galleryItems = [];
                 try {
                     const id = Number(button.getAttribute('data-room-id') || '0');
-                    const map = window.__hotelRoomDetails || {};
-                    details = (id && map && map[id]) ? map[id] : [];
+                    const detailMap = window.__otelDetayConfig?.roomDetails || window.__hotelRoomDetails || {};
+                    details = (id && detailMap && detailMap[id]) ? detailMap[id] : [];
                 } catch (error) {
                     details = [];
                 }
                 try {
                     const id = Number(button.getAttribute('data-room-id') || '0');
-                    const map = window.__hotelRoomGalleries || {};
-                    galleryItems = (id && map && map[id]) ? map[id] : [];
+                    const galleryMap = window.__otelDetayConfig?.roomGalleries || window.__hotelRoomGalleries || {};
+                    galleryItems = (id && galleryMap && galleryMap[id]) ? galleryMap[id] : [];
                 } catch (error) {
                     galleryItems = [];
                 }
@@ -4547,6 +4624,8 @@
                     roomDetailModalPrice.textContent = priceCurrent ? ('₺' + priceCurrent) : 'Fiyat bilgisi yok';
                 }
 
+                renderRoomDetailNightlyBreakdown(priceCurrent);
+
                 if (roomDetailModalSelectBtn) {
                     roomDetailModalSelectBtn.disabled = !roomId || !priceCurrent;
                     roomDetailModalSelectBtn.dataset.roomId = roomId;
@@ -4556,9 +4635,7 @@
                 activeRoomDetailName = roomName;
                 activeRoomDetailRoomId = roomId;
 
-                if (roomDetailModalGalleryOpen) {
-                    roomDetailModalGalleryOpen.hidden = activeRoomDetailGalleryItems.length === 0;
-                }
+                renderRoomDetailGallery(activeRoomDetailGalleryItems, galleryImages);
 
                 roomDetailModalGrid.innerHTML = '';
                 details.forEach(function (detail) {
@@ -4868,12 +4945,6 @@
                 button.addEventListener('click', function () {
                     openRoomDetailModal(button);
                 });
-            });
-
-            roomDetailModalGalleryOpen?.addEventListener('click', function () {
-                if (activeRoomDetailGalleryItems.length > 0) {
-                    openVisualGallery(activeRoomDetailGalleryItems, activeRoomDetailName, 0);
-                }
             });
 
             roomDetailModalSelectBtn?.addEventListener('click', function () {

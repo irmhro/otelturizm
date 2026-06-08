@@ -1,0 +1,8 @@
+-- REZERVASYONLAR: indirim kaynağı / nedeni (Şafak Sürprizi vb.)
+SET NOCOUNT ON;
+
+IF COL_LENGTH('dbo.REZERVASYONLAR', 'INDIRIM_NEDENI') IS NULL
+BEGIN
+    ALTER TABLE dbo.REZERVASYONLAR
+        ADD INDIRIM_NEDENI nvarchar(500) NULL;
+END;

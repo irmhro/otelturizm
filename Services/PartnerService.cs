@@ -9123,7 +9123,10 @@ END";
                     FROM [dbo].[REZERVASYON_ODEME_KALEMLERI] k
                     INNER JOIN [dbo].[ODEME_YONTEMI_TANIMLARI] y ON y.id = k.[ODEME_YONTEMI_ID]
                     WHERE k.[REZERVASYON_ID] = r.id
-                ) AS odeme_kalem_ozet
+                ) AS odeme_kalem_ozet,
+                COALESCE(NULLIF(r.[INDIRIM_NEDENI], ''), '') AS [INDIRIM_NEDENI],
+                COALESCE(r.[SAFAK_SURPRIZI_ORANI], 0) AS [SAFAK_SURPRIZI_ORANI],
+                COALESCE(r.[SAFAK_SURPRIZI_INDIRIM_TUTARI], 0) AS [SAFAK_SURPRIZI_INDIRIM_TUTARI]
             FROM [dbo].[REZERVASYONLAR] r
             LEFT JOIN [dbo].[ODA_TIPLERI] ot ON ot.id = r.[ODA_TIP_ID]
             WHERE r.[OTEL_ID] = @hotelId
@@ -9217,6 +9220,10 @@ END";
                 CanMessageGuest = !reader.IsDBNull(22) && Convert.ToInt64(reader.GetValue(22), CultureInfo.InvariantCulture) > 0,
                 PaymentLineCount = reader.IsDBNull(23) ? 0 : Convert.ToInt32(reader.GetValue(23), CultureInfo.InvariantCulture),
                 PaymentMixSummary = reader.IsDBNull(24) ? null : reader.GetString(24),
+                DiscountReasonLabel = BuildPartnerDiscountReasonLabel(
+                    reader.IsDBNull(25) ? null : reader.GetString(25),
+                    reader.IsDBNull(26) ? (byte)0 : SafeByte(reader, 26),
+                    reader.IsDBNull(27) ? 0m : SafeDecimal(reader, 27)),
                 StatusTone = GetPartnerReservationStatusTone(reservationStatus, hotelApprovalStatus)
             });
         }
@@ -9494,6 +9501,21 @@ END";
 
     private static decimal SafeDecimal(SqlDataReader reader, int ordinal)
         => reader.IsDBNull(ordinal) ? 0m : Convert.ToDecimal(reader.GetValue(ordinal), CultureInfo.InvariantCulture);
+
+    private static string? BuildPartnerDiscountReasonLabel(string? storedReason, byte dawnPercent, decimal dawnAmount)
+    {
+        if (!string.IsNullOrWhiteSpace(storedReason))
+        {
+            return storedReason.Trim();
+        }
+
+        if (dawnPercent > 0 && dawnAmount > 0m)
+        {
+            return $"Şafak Sürprizi ek indirim %{dawnPercent} (−{dawnAmount:N2} TL)";
+        }
+
+        return null;
+    }
 
     private static string FormatMoney(decimal value)
         => string.Format(CultureInfo.GetCultureInfo("tr-TR"), "{0:C0}", value);

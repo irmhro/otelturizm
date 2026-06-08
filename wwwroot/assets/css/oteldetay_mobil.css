@@ -373,6 +373,22 @@
         width: 100%;
     }
 
+    .oteldetay-page .gallery-mobile-overlay {
+        position: absolute;
+        inset: 0;
+        z-index: 2;
+        pointer-events: none;
+    }
+
+    .oteldetay-page .gallery-mobile-overlay > * {
+        pointer-events: auto;
+    }
+
+    .oteldetay-page .gallery-mobile-rating--compact,
+    .oteldetay-page .gallery-mobile-all-photos {
+        pointer-events: auto;
+    }
+
     .oteldetay-page .gallery-mobile-track {
         display: flex;
         overflow-x: auto;
@@ -2505,13 +2521,54 @@
         box-shadow: none;
     }
 
+    .oteldetay-page .multi-room-item-grid {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 10px;
+    }
+
+    .oteldetay-page .multi-room-item-dates {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 10px;
+    }
+
+    @media (max-width: 390px) {
+        .oteldetay-page .multi-room-item-dates {
+            grid-template-columns: 1fr;
+        }
+    }
+
     .oteldetay-page .booking-card [data-reservation-create-button],
-    .oteldetay-page .booking-card .booking-submit-btn {
+    .oteldetay-page .booking-card .booking-submit-btn,
+    .oteldetay-page .booking-card .reserve-btn {
         position: sticky;
         bottom: 0;
-        z-index: 2;
-        margin-top: 4px;
+        z-index: 4;
+        margin-top: 8px;
+        pointer-events: auto;
+        touch-action: manipulation;
         box-shadow: 0 -10px 28px rgba(255, 255, 255, 0.92);
+    }
+
+    .oteldetay-page .booking-sidebar .price-breakdown {
+        flex: 0 0 auto;
+        margin: 0;
+        padding: 12px 16px calc(8px + env(safe-area-inset-bottom, 0px));
+        border-top: 1px solid var(--od-border, #EBE9E4);
+        background: var(--od-bg, #FCFBF9);
+    }
+
+    .oteldetay-page .booking-sidebar .price-breakdown .price-row.total {
+        display: none;
+    }
+
+    .oteldetay-page .booking-sidebar .nightly-breakdown-details {
+        margin: 0 16px 12px;
+    }
+
+    .oteldetay-page .booking-sidebar .booking-quote-notice:not([hidden]) {
+        margin: 0 16px 8px;
     }
 
     .oteldetay-page .booking-card::before {
@@ -3627,6 +3684,627 @@
 
     .oteldetay-page .booking-card .booking-form {
         scroll-behavior: auto;
+    }
+
+    /* Mobile detail v2 — hero, weather, rooms, share, policies, amenities */
+    .oteldetay-page .gallery-mobile-back,
+    .oteldetay-page .gallery-mobile-chrome {
+        display: none !important;
+    }
+
+    .oteldetay-page .gallery-mobile-strip {
+        order: -3;
+        margin: 0 !important;
+        border-bottom: 0 !important;
+        border-radius: 0 !important;
+        width: 100% !important;
+        max-width: 100% !important;
+    }
+
+    .oteldetay-page .gallery-mobile-track {
+        aspect-ratio: 16 / 9;
+        max-height: none;
+    }
+
+    .oteldetay-page .gallery-mobile-overlay {
+        display: flex;
+        flex-direction: column;
+        justify-content: flex-end;
+        gap: 10px;
+        padding: 14px 14px 16px;
+        background: linear-gradient(180deg, rgba(0, 0, 0, 0.05) 0%, rgba(0, 0, 0, 0.62) 72%);
+    }
+
+    .oteldetay-page .gallery-mobile-stars-corner {
+        position: absolute;
+        top: 12px;
+        left: 12px;
+        z-index: 3;
+        display: inline-flex;
+        align-items: center;
+        gap: 2px;
+        padding: 6px 10px;
+        border-radius: 999px;
+        background: rgba(255, 255, 255, 0.92);
+        color: #f59e0b;
+        font-size: 11px;
+        box-shadow: 0 4px 14px rgba(0, 0, 0, 0.12);
+    }
+
+    .oteldetay-page .gallery-mobile-overlay-main {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+        min-width: 0;
+        padding-right: 0;
+    }
+
+    .oteldetay-page .gallery-mobile-hotel-name {
+        margin: 0;
+        color: #fff;
+        font-size: 1.35rem;
+        line-height: 1.15;
+        font-weight: 800;
+        text-shadow: 0 2px 10px rgba(0, 0, 0, 0.35);
+    }
+
+    .oteldetay-page .gallery-mobile-location {
+        margin: 0;
+        color: rgba(255, 255, 255, 0.92);
+        font-size: 0.82rem;
+        font-weight: 600;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+    }
+
+    .oteldetay-page .gallery-mobile-hero-meta {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+    }
+
+    .oteldetay-page .gallery-mobile-meta-chip {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        padding: 5px 9px;
+        border-radius: 999px;
+        background: rgba(255, 255, 255, 0.16);
+        border: 1px solid rgba(255, 255, 255, 0.22);
+        color: #fff;
+        font-size: 10px;
+        font-weight: 700;
+        backdrop-filter: blur(6px);
+    }
+
+    .oteldetay-page .gallery-mobile-meta-chip.is-benefit {
+        background: rgba(22, 163, 74, 0.28);
+        border-color: rgba(255, 255, 255, 0.28);
+    }
+
+    .oteldetay-page .gallery-mobile-rating--compact {
+        position: absolute;
+        left: 12px;
+        bottom: 12px;
+        z-index: 3;
+        display: inline-flex;
+        align-items: baseline;
+        gap: 4px;
+        padding: 8px 11px;
+        border: 0;
+        border-radius: 12px;
+        background: rgba(255, 255, 255, 0.94);
+        color: var(--od-dark, #1A1919);
+        box-shadow: 0 8px 22px rgba(0, 0, 0, 0.18);
+        cursor: pointer;
+        font: inherit;
+    }
+
+    .oteldetay-page .gallery-mobile-rating-score {
+        font-size: 1rem;
+        font-weight: 900;
+        line-height: 1;
+    }
+
+    .oteldetay-page .gallery-mobile-rating-sep {
+        font-size: 0.72rem;
+        font-weight: 700;
+        opacity: 0.75;
+    }
+
+    .oteldetay-page .gallery-mobile-rating-label {
+        margin-left: 4px;
+        font-size: 0.72rem;
+        font-weight: 800;
+        color: var(--od-crimson, #E30A17);
+    }
+
+    .oteldetay-page .gallery-mobile-all-photos {
+        position: absolute;
+        right: 12px;
+        bottom: 12px;
+        z-index: 3;
+    }
+
+    .oteldetay-page .detail-weather-topbar {
+        order: -2;
+        width: 100%;
+        padding: 10px 12px 0;
+        margin: 0;
+        background: transparent;
+    }
+
+    .oteldetay-page .detail-weather-topbar__trigger {
+        width: 100%;
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        padding: 10px 12px;
+        border: 1px solid var(--od-border, #EBE9E4);
+        border-radius: 14px;
+        background: #fff;
+        box-shadow: 0 8px 24px rgba(26, 25, 25, 0.06);
+        text-align: left;
+        font: inherit;
+        cursor: pointer;
+    }
+
+    .oteldetay-page .detail-weather-topbar__location {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        font-size: 12px;
+        font-weight: 800;
+        color: var(--od-dark, #1A1919);
+    }
+
+    .oteldetay-page .detail-weather-topbar__location i {
+        color: var(--od-crimson, #E30A17);
+    }
+
+    .oteldetay-page .detail-weather-topbar__cards {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 6px;
+    }
+
+    .oteldetay-page .detail-weather-topbar__card {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 4px;
+        padding: 8px 4px;
+        border-radius: 10px;
+        border: 1px solid var(--od-border, #EBE9E4);
+        background: var(--od-bg, #FCFBF9);
+        font-size: 11px;
+    }
+
+    .oteldetay-page .detail-weather-topbar__period {
+        font-style: normal;
+        font-weight: 800;
+        font-size: 10px;
+        color: var(--od-muted, #6E6E77);
+    }
+
+    .oteldetay-page .detail-weather-topbar__temp {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 1px;
+        line-height: 1.1;
+    }
+
+    .oteldetay-page .detail-weather-topbar__temp strong {
+        font-size: 12px;
+    }
+
+    .oteldetay-page .detail-weather-topbar__temp small {
+        font-size: 10px;
+        opacity: 0.75;
+    }
+
+    .oteldetay-page .detail-header.hotel-title-section .detail-hero-head,
+    .oteldetay-page .detail-header.hotel-title-section .header-right-stack--desktop-only,
+    .oteldetay-page .detail-quick-facts--desktop-only {
+        display: none !important;
+    }
+
+    .oteldetay-page .detail-header.hotel-title-section {
+        padding: 0 !important;
+        min-height: 0 !important;
+        border: 0 !important;
+    }
+
+    .oteldetay-page .detail-breadcrumb.detail-breadcrumb-with-weather {
+        order: 0;
+    }
+
+    .oteldetay-page .detail-share-wrap {
+        position: static !important;
+    }
+
+    .oteldetay-page .detail-share-wrap.is-open .share-menu,
+    body.share-sheet-open .oteldetay-page .detail-share-wrap .share-menu:not([hidden]) {
+        position: fixed !important;
+        inset: auto 12px calc(16px + env(safe-area-inset-bottom, 0px)) 12px !important;
+        top: auto !important;
+        width: auto !important;
+        max-width: none !important;
+        z-index: 2300 !important;
+        margin: 0 !important;
+        border-radius: 18px !important;
+        box-shadow: 0 24px 60px rgba(15, 23, 42, 0.28) !important;
+    }
+
+    body.share-sheet-open::before {
+        content: '';
+        position: fixed;
+        inset: 0;
+        background: rgba(15, 23, 42, 0.42);
+        z-index: 2290;
+        pointer-events: none;
+    }
+
+    .oteldetay-page > #detailInfoModal.detail-info-modal.is-open {
+        width: min(420px, calc(100% - 24px)) !important;
+        max-height: min(82vh, 560px) !important;
+    }
+
+    .oteldetay-page > #detailInfoModal .detail-modal-copy {
+        word-break: break-word;
+        overflow-wrap: anywhere;
+    }
+
+    .oteldetay-page > #detailInfoModal .detail-modal-actions {
+        margin-top: auto !important;
+    }
+
+    .oteldetay-page #roomsCard .room-thumb-strip {
+        display: none !important;
+    }
+
+    .oteldetay-page #roomsCard .room-card-cover {
+        aspect-ratio: 16 / 8.5;
+    }
+
+    .oteldetay-page #roomsCard .room-carousel {
+        position: relative;
+        width: 100%;
+        height: 100%;
+        overflow: hidden;
+    }
+
+    .oteldetay-page #roomsCard .room-carousel-track {
+        display: flex;
+        width: 100%;
+        height: 100%;
+        overflow-x: auto;
+        scroll-snap-type: x mandatory;
+        scrollbar-width: none;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    .oteldetay-page #roomsCard .room-carousel-track::-webkit-scrollbar {
+        display: none;
+    }
+
+    .oteldetay-page #roomsCard .room-carousel-slide {
+        flex: 0 0 100%;
+        width: 100%;
+        height: 100%;
+        scroll-snap-align: start;
+    }
+
+    .oteldetay-page #roomsCard .room-carousel-slide img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        display: block;
+    }
+
+    .oteldetay-page #roomsCard .room-carousel-name {
+        position: absolute;
+        top: 10px;
+        left: 10px;
+        z-index: 2;
+        max-width: calc(100% - 88px);
+        padding: 6px 10px;
+        border-radius: 10px;
+        background: rgba(0, 0, 0, 0.52);
+        color: #fff;
+        font-size: 12px;
+        font-weight: 800;
+        line-height: 1.25;
+    }
+
+    .oteldetay-page #roomsCard .room-carousel-count {
+        top: auto;
+        bottom: 10px;
+        right: 10px;
+    }
+
+    .oteldetay-page #roomsCard .room-carousel-dots {
+        position: absolute;
+        left: 0;
+        right: 0;
+        bottom: 8px;
+        z-index: 2;
+        display: flex;
+        justify-content: center;
+        gap: 5px;
+        pointer-events: none;
+    }
+
+    .oteldetay-page #roomsCard .room-carousel-dot {
+        width: 6px;
+        height: 6px;
+        border-radius: 999px;
+        background: rgba(255, 255, 255, 0.55);
+    }
+
+    .oteldetay-page #roomsCard .room-carousel-dot.active {
+        width: 16px;
+        background: #fff;
+    }
+
+    .oteldetay-page #roomsCard .room-feature-row,
+    .oteldetay-page #roomsCard .room-feature-more-inline {
+        display: none !important;
+    }
+
+    .oteldetay-page #roomsCard .od-room-card__title {
+        display: none;
+    }
+
+    .oteldetay-page #roomsCard .room-card-actions-row {
+        grid-template-columns: 1fr !important;
+        margin-top: 8px !important;
+    }
+
+    .oteldetay-page .od-amenities__mobile-toolbar {
+        display: none !important;
+    }
+
+    .oteldetay-page .od-amenities__mobile-grid-wrap {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        margin-top: 4px;
+    }
+
+    .oteldetay-page .od-amenities__mobile-grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 8px;
+    }
+
+    .oteldetay-page .od-amenity-grid-cell {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 6px;
+        min-height: 78px;
+        padding: 10px 8px;
+        border: 1px solid var(--od-border, #EBE9E4);
+        border-radius: 12px;
+        background: var(--od-bg, #FCFBF9);
+        text-align: center;
+        font: inherit;
+        cursor: pointer;
+    }
+
+    .oteldetay-page .od-amenity-grid-cell__icon {
+        width: 32px;
+        height: 32px;
+        border-radius: 999px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        background: rgba(0, 59, 149, 0.08);
+        color: #0f5bd7;
+        font-size: 14px;
+    }
+
+    .oteldetay-page .od-amenity-grid-cell__label {
+        font-size: 11px;
+        font-weight: 700;
+        line-height: 1.25;
+        color: var(--od-dark, #1A1919);
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+    }
+
+    .oteldetay-page .od-amenities__see-all-mobile {
+        width: 100%;
+        max-width: none;
+    }
+
+    .oteldetay-page > #amenitiesModal.detail-modal.is-open,
+    .oteldetay-page > #amenitiesModal.detail-modal:not([hidden]) {
+        inset: 0 !important;
+        justify-content: flex-start !important;
+        padding: 0 !important;
+        border-radius: 0 !important;
+        max-height: 100dvh !important;
+        height: 100dvh !important;
+    }
+
+    .oteldetay-page > #amenitiesModal .detail-modal-head {
+        border-radius: 0 !important;
+        padding-top: calc(12px + env(safe-area-inset-top, 0px)) !important;
+    }
+
+    .oteldetay-page .od-section--policies .od-policy-list--accordion {
+        display: grid !important;
+        grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+        gap: 8px !important;
+    }
+
+    .oteldetay-page .od-section--policies .od-policy-item {
+        padding: 0 !important;
+        border: 0 !important;
+        background: transparent !important;
+        min-height: 0 !important;
+    }
+
+    .oteldetay-page .od-policy-accordion {
+        border: 1px solid var(--od-border, #EBE9E4);
+        border-radius: 12px;
+        background: #fff;
+        overflow: hidden;
+    }
+
+    .oteldetay-page .od-policy-accordion__summary {
+        list-style: none;
+        display: flex;
+        align-items: flex-start;
+        gap: 8px;
+        padding: 10px;
+        cursor: pointer;
+        min-height: 44px;
+    }
+
+    .oteldetay-page .od-policy-accordion__summary::-webkit-details-marker {
+        display: none;
+    }
+
+    .oteldetay-page .od-policy-accordion__copy {
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+        min-width: 0;
+        flex: 1;
+    }
+
+    .oteldetay-page .od-policy-accordion__copy .od-policy-text {
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .oteldetay-page .od-policy-accordion__copy .od-policy-text::before {
+        content: none;
+    }
+
+    .oteldetay-page .od-policy-accordion__chevron {
+        margin-left: auto;
+        color: var(--od-muted, #6E6E77);
+        font-size: 11px;
+        transition: transform 0.18s ease;
+    }
+
+    .oteldetay-page .od-policy-accordion[open] .od-policy-accordion__chevron {
+        transform: rotate(180deg);
+    }
+
+    .oteldetay-page .od-policy-detail {
+        display: block !important;
+        padding: 0 10px 10px 48px;
+        font-size: 11px;
+        line-height: 1.45;
+        color: var(--od-muted, #6E6E77);
+    }
+
+    .oteldetay-page .room-detail-modal-gallery-pro {
+        margin: 0 -16px;
+        border-bottom: 1px solid var(--od-border, #EBE9E4);
+    }
+
+    .oteldetay-page .room-detail-gallery-track {
+        display: flex;
+        overflow-x: auto;
+        scroll-snap-type: x mandatory;
+        scrollbar-width: none;
+        aspect-ratio: 16 / 10;
+        background: #eceae6;
+    }
+
+    .oteldetay-page .room-detail-gallery-track::-webkit-scrollbar {
+        display: none;
+    }
+
+    .oteldetay-page .room-detail-gallery-slide {
+        flex: 0 0 100%;
+        scroll-snap-align: start;
+    }
+
+    .oteldetay-page .room-detail-gallery-slide img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        display: block;
+    }
+
+    .oteldetay-page .room-detail-gallery-dots {
+        display: flex;
+        justify-content: center;
+        gap: 6px;
+        padding: 8px 0 4px;
+    }
+
+    .oteldetay-page .room-detail-gallery-dot {
+        width: 7px;
+        height: 7px;
+        border-radius: 999px;
+        border: 0;
+        padding: 0;
+        background: rgba(26, 25, 25, 0.22);
+    }
+
+    .oteldetay-page .room-detail-gallery-dot.active {
+        width: 18px;
+        background: var(--od-crimson, #E30A17);
+    }
+
+    .oteldetay-page .room-detail-modal-location {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
+        padding: 10px 12px;
+        border-radius: 12px;
+        border: 1px solid var(--od-border, #EBE9E4);
+        background: var(--od-bg, #FCFBF9);
+        font-size: 12px;
+        font-weight: 700;
+    }
+
+    .oteldetay-page .room-detail-modal-map-link {
+        flex-shrink: 0;
+        color: var(--od-crimson, #E30A17);
+        text-decoration: none;
+        font-weight: 800;
+        white-space: nowrap;
+    }
+
+    .oteldetay-page .room-detail-nightly-breakdown {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 6px;
+        width: 100%;
+        margin-top: 8px;
+    }
+
+    .oteldetay-page .room-detail-nightly-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 8px;
+        padding: 8px 10px;
+        border-radius: 10px;
+        border: 1px solid var(--od-border, #EBE9E4);
+        background: #fff;
+        font-size: 11px;
+    }
+
+    .oteldetay-page .room-detail-nightly-row strong {
+        font-size: 12px;
+        color: var(--od-crimson, #E30A17);
     }
 }
 

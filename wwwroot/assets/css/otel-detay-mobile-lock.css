@@ -250,22 +250,23 @@
         font-weight: 800 !important;
     }
 
-    /* Oda detay modal — mobil bottom sheet */
+    /* Oda detay modal — mobil full-screen top */
     .oteldetay-page > #roomDetailModal.room-detail-modal {
         display: none !important;
         position: fixed !important;
-        inset: auto 0 0 0 !important;
-        top: auto !important;
+        inset: 0 !important;
+        top: 0 !important;
         z-index: 2200 !important;
         width: 100% !important;
         max-width: 100% !important;
-        height: min(94dvh, 100%) !important;
-        max-height: 94dvh !important;
+        height: 100dvh !important;
+        max-height: 100dvh !important;
         margin: 0 !important;
         padding: 0 !important;
-        border-radius: 18px 18px 0 0 !important;
+        padding-top: env(safe-area-inset-top, 0px) !important;
+        border-radius: 0 !important;
         background: #fff !important;
-        box-shadow: 0 -12px 40px rgba(26, 25, 25, 0.16) !important;
+        box-shadow: none !important;
         overflow: hidden !important;
         flex-direction: column !important;
         transform: none !important;

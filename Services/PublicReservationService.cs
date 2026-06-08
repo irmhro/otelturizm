@@ -102,12 +102,23 @@ public class PublicReservationService : IPublicReservationService
             pricing.OriginalTotalBeforeDawn = originalTotal;
             pricing.DawnSurprisePercent = dawnPercent;
             pricing.DawnSurpriseDiscountAmount = originalTotal - total;
+            pricing.DiscountReason = BuildDawnSurpriseDiscountReason(dawnPercent, pricing.DawnSurpriseDiscountAmount);
             pricing.TotalAmount = total;
             pricing.NetRoomAmount = net;
             pricing.VatAmount = vat;
             pricing.AccommodationTaxAmount = acc;
             pricing.TaxAmount = tax;
         }
+    }
+
+    private static string BuildDawnSurpriseDiscountReason(int percent, decimal discountAmount)
+    {
+        if (percent <= 0 || discountAmount <= 0m)
+        {
+            return string.Empty;
+        }
+
+        return $"Şafak Sürprizi ek indirim %{percent} (−{discountAmount:N2} TL)";
     }
 
     private PublicReservationPriceQuoteViewModel MapPriceQuoteViewModel(PriceSummary pricing)
@@ -376,7 +387,7 @@ public class PublicReservationService : IPublicReservationService
                     [HAVALE_EFT_BEKLEYEN_TUTARI], [ODEME_REFERANS_NO],
                     [TAHSIL_EDILEN_TUTAR], [KALAN_TAHSIL_EDILECEK_TUTAR], [ON_ODEME_TUTARI], [KALAN_ODEME_TUTARI],
                     [OTEL_ONAY_DURUMU], [FIRMA_ONAY_DURUMU],
-                    [INDIRIM_TUTARI], [SAFAK_SURPRIZI_ORANI], [SAFAK_SURPRIZI_INDIRIM_TUTARI],
+                    [INDIRIM_TUTARI], [SAFAK_SURPRIZI_ORANI], [SAFAK_SURPRIZI_INDIRIM_TUTARI], [INDIRIM_NEDENI],
                     [KAYNAK], [REZERVASYON_KANALI], [OZEL_ISTEKLER], [REZERVASYON_TASLAGI_ID]
                 )
                 VALUES
@@ -394,7 +405,7 @@ public class PublicReservationService : IPublicReservationService
                     @havalePendingAmount, @bankTransferReferenceSql,
                     0, @remainingCollectionAmount, 0, @remainingCollectionAmount,
                     'Beklemede', 'Onay Gerekmiyor',
-                    @discountAmount, @dawnSurprisePercent, @dawnSurpriseDiscountAmount,
+                    @discountAmount, @dawnSurprisePercent, @dawnSurpriseDiscountAmount, @discountReason,
                     'Web', 'Web', @note, @draftId
                 );
                 SELECT CAST(SCOPE_IDENTITY() AS bigint);";
@@ -475,6 +486,7 @@ public class PublicReservationService : IPublicReservationService
                     insertCommand.Parameters.AddWithValue("@discountAmount", pricing.DawnSurpriseDiscountAmount > 0m ? pricing.DawnSurpriseDiscountAmount : DBNull.Value);
                     insertCommand.Parameters.AddWithValue("@dawnSurprisePercent", pricing.DawnSurprisePercent > 0 ? pricing.DawnSurprisePercent : DBNull.Value);
                     insertCommand.Parameters.AddWithValue("@dawnSurpriseDiscountAmount", pricing.DawnSurpriseDiscountAmount > 0m ? pricing.DawnSurpriseDiscountAmount : DBNull.Value);
+                    insertCommand.Parameters.AddWithValue("@discountReason", string.IsNullOrWhiteSpace(pricing.DiscountReason) ? DBNull.Value : pricing.DiscountReason.Trim());
                     insertCommand.Parameters.AddWithValue("@draftId", draftId);
                     var reservationIdRaw = await insertCommand.ExecuteScalarAsync(cancellationToken);
                     reservationId = Convert.ToInt64(reservationIdRaw ?? 0L, CultureInfo.InvariantCulture);
@@ -1616,6 +1628,7 @@ public class PublicReservationService : IPublicReservationService
         public int DawnSurprisePercent { get; set; }
         public decimal DawnSurpriseDiscountAmount { get; set; }
         public decimal OriginalTotalBeforeDawn { get; set; }
+        public string? DiscountReason { get; set; }
         public long? CommissionRuleId { get; set; }
         public decimal CommissionRate { get; set; }
         public decimal CommissionAmount { get; set; }
