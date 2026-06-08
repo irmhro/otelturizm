@@ -2811,7 +2811,24 @@ public class AdminPanelController : Controller
     public Task<IActionResult> Notifications(CancellationToken cancellationToken) => RenderSectionAsync("notifications", "Notifications", cancellationToken);
 
     [HttpGet("ayarlar")]
-    public Task<IActionResult> Settings(CancellationToken cancellationToken) => RenderSectionAsync("settings", "Settings", cancellationToken);
+    public async Task<IActionResult> Settings(CancellationToken cancellationToken)
+    {
+        if (!CanAccessAdminPanel())
+        {
+            return RedirectToAction("UserLogin", "Auth");
+        }
+
+        if (!await CanAccessAsync("admin.settings", cancellationToken))
+        {
+            return Forbid();
+        }
+
+        var model = await _adminService.GetSettingsMonitorAsync(GetFullName(), GetEmail(), GetUserRole(), cancellationToken);
+        ViewData["Title"] = model.Shell.PanelTitle;
+        ViewData["PageCssPath"] = "admin_panel_section_masaustu";
+        ViewData["PageCssMobile"] = "admin_panel_section_mobil";
+        return View("~/Views/Paneller/Admin/Settings.cshtml", model);
+    }
 
     [HttpGet("whatsapp-cloud-api")]
     public async Task<IActionResult> WhatsAppCloudApi(CancellationToken cancellationToken)
