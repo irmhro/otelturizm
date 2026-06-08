@@ -250,14 +250,7 @@
             if (pathHasLocalePrefix) {
                 return normalizeLanguage(pathLangFromServer);
             }
-            if (!hasExplicitSelection()) {
-                return defaultLanguage;
-            }
-            const fromLocal = localStorage.getItem(languageStorageKey);
-            const fromLegacy = localStorage.getItem(legacyLanguageStorageKey);
-            const fromSession = sessionStorage.getItem(languageSessionKey);
-            const fromCookie = getCookie(languageCookieKey);
-            return normalizeLanguage(fromLocal || fromSession || fromCookie || fromLegacy || defaultLanguage);
+            return defaultLanguage;
         }
 
         function setGoogleTranslateCookie(lang) {

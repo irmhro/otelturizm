@@ -14,11 +14,9 @@
 
     var switcherPath = Context.Request.Path.Value ?? "/";
     var switcherHasLocalePrefix = InternationalSeoPaths.HasLocalePathPrefix(switcherPath);
-    var switcherExplicitSelection = string.Equals(Context.Request.Cookies["site_language_explicit_v1"], "1", StringComparison.Ordinal);
-    var switcherPreferred = (Context.Request.Cookies["site_language_v1"] ?? string.Empty).Trim().ToLowerInvariant();
     var pathLang = switcherHasLocalePrefix
         ? InternationalSeoPaths.ResolveCultureFromPath(switcherPath)
-        : (switcherExplicitSelection && switcherPreferred is "en" or "de" or "fr" or "es" or "ru" ? switcherPreferred : "tr");
+        : "tr";
     var pathCulture = pathLang switch
     {
         "en" => "en-US",

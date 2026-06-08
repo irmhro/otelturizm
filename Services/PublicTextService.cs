@@ -1,10 +1,17 @@
 using System.Globalization;
+using Microsoft.AspNetCore.Http;
 using otelturizmnew.Services.Abstractions;
 
 namespace otelturizmnew.Services;
 
 public sealed class PublicTextService : IPublicTextService
 {
+    private readonly IHttpContextAccessor _httpContextAccessor;
+
+    public PublicTextService(IHttpContextAccessor httpContextAccessor)
+    {
+        _httpContextAccessor = httpContextAccessor;
+    }
     private static readonly Dictionary<string, (string Tr, string En)> Map = new(StringComparer.OrdinalIgnoreCase)
     {
         ["safe_payment"] = ("Güvenli Ödeme", "Secure Payment"),
@@ -16,7 +23,10 @@ public sealed class PublicTextService : IPublicTextService
 
     public string Get(string key)
     {
-        var lang = CultureInfo.CurrentUICulture?.TwoLetterISOLanguageName?.ToLowerInvariant() ?? "tr";
+        var path = _httpContextAccessor.HttpContext?.Request.Path.Value ?? "/";
+        var lang = InternationalSeoPaths.HasLocalePathPrefix(path)
+            ? InternationalSeoPaths.ResolveCultureFromPath(path)
+            : "tr";
         if (!Map.TryGetValue(key ?? string.Empty, out var v))
         {
             return key ?? string.Empty;

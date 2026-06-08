@@ -5,13 +5,11 @@ namespace otelturizmnew.Infrastructure;
 
 /// <summary>
 /// Path prefix is the source of truth for public SEO routes.
-/// Turkish canonical paths (/oteller, /kampanyalar, /) stay tr-TR unless ?lang= is present.
-/// Cookie and Accept-Language are ignored (no silent ar/en drift).
+/// Turkish canonical paths (/oteller, /kampanyalar, /) are always tr-TR.
+/// Cookie, Accept-Language and ?lang= are ignored (no silent locale drift).
 /// </summary>
 public sealed class RoutePrefixRequestCultureProvider : IRequestCultureProvider
 {
-    private const string LangQueryKey = "lang";
-
     public Task<ProviderCultureResult?> DetermineProviderCultureResult(HttpContext httpContext)
     {
         try
@@ -28,46 +26,12 @@ public sealed class RoutePrefixRequestCultureProvider : IRequestCultureProvider
             }
 
             var pathCulture = InternationalSeoPaths.ResolveCultureFromPath(path);
-
-            if (!string.Equals(pathCulture, "tr", StringComparison.OrdinalIgnoreCase))
-            {
-                return Task.FromResult<ProviderCultureResult?>(ToResult(pathCulture));
-            }
-
-            if (TryGetQueryCulture(httpContext, out var queryCulture))
-            {
-                return Task.FromResult<ProviderCultureResult?>(ToResult(queryCulture));
-            }
-
-            return Task.FromResult<ProviderCultureResult?>(ToResult("tr"));
+            return Task.FromResult<ProviderCultureResult?>(ToResult(pathCulture));
         }
         catch
         {
             return Task.FromResult<ProviderCultureResult?>(ToResult("tr"));
         }
-    }
-
-    private static bool TryGetQueryCulture(HttpContext httpContext, out string cultureCode)
-    {
-        cultureCode = "tr";
-        if (!httpContext.Request.Query.TryGetValue(LangQueryKey, out var values))
-        {
-            return false;
-        }
-
-        var raw = values.ToString().Trim();
-        if (string.IsNullOrWhiteSpace(raw))
-        {
-            return false;
-        }
-
-        var two = raw.Length >= 2 ? raw[..2].ToLowerInvariant() : raw.ToLowerInvariant();
-        cultureCode = two switch
-        {
-            "en" or "de" or "fr" or "es" or "ru" or "tr" => two,
-            _ => "tr"
-        };
-        return true;
     }
 
     private static ProviderCultureResult ToResult(string cultureCode)

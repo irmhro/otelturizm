@@ -33,20 +33,9 @@
     var nonce = Context.Items["CspNonce"] as string;
 
     var pathHasLocalePrefix = InternationalSeoPaths.HasLocalePathPrefix(headerPath);
-    var currentLang = "tr";
-    if (pathHasLocalePrefix)
-    {
-        currentLang = InternationalSeoPaths.ResolveCultureFromPath(headerPath);
-    }
-    else if (Context.Request.Query.TryGetValue("lang", out var langQuery))
-    {
-        var rawLang = langQuery.ToString().Trim().ToLowerInvariant();
-        currentLang = rawLang.Length >= 2 ? rawLang[..2] : rawLang;
-        if (currentLang is not ("en" or "de" or "fr" or "es" or "ru" or "tr"))
-        {
-            currentLang = "tr";
-        }
-    }
+    var currentLang = pathHasLocalePrefix
+        ? InternationalSeoPaths.ResolveCultureFromPath(headerPath)
+        : "tr";
 
     var currentCurrency = (Context.Request.Cookies[UserPreferenceService.CurrencyCookieName] ?? "TRY").Trim().ToUpperInvariant();
     if (currentCurrency is not ("TRY" or "USD" or "EUR"))
@@ -79,13 +68,6 @@
         var dict = query
             .Where(kvp => !string.Equals(kvp.Key, "lang", StringComparison.OrdinalIgnoreCase))
             .ToDictionary(k => k.Key, v => v.Value.ToString(), StringComparer.OrdinalIgnoreCase);
-
-        var usesLangQuery = !path.StartsWith("/oteller", StringComparison.OrdinalIgnoreCase)
-            && !InternationalSeoPaths.HasLocalePathPrefix(targetPath);
-        if (usesLangQuery && !string.Equals(two, "tr", StringComparison.OrdinalIgnoreCase))
-        {
-            dict["lang"] = two;
-        }
 
         return dict.Count == 0
             ? targetPath

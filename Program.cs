@@ -126,7 +126,7 @@ builder.Services.Configure<RequestLocalizationOptions>(options =>
     options.SupportedCultures = supportedCultures;
     options.SupportedUICultures = supportedCultures;
 
-    // Path prefix (+ ?lang= on Turkish canonical routes only). Cookie/Accept-Language disabled.
+    // Path prefix only. Cookie, Accept-Language and ?lang= disabled.
     options.RequestCultureProviders = new IRequestCultureProvider[]
     {
         new RoutePrefixRequestCultureProvider()
@@ -141,7 +141,7 @@ builder.Services.AddOutputCache(options =>
         policy.Expire(TimeSpan.FromSeconds(30));
         policy.Tag("public");
         policy.SetVaryByQuery(new[] { "*" });
-        policy.SetVaryByHeader(new[] { "Accept-Language" });
+        policy.SetVaryByHeader(new[] { "X-Ot-Culture" });
         policy.Cache();
         policy.With(context => context.HttpContext.User?.Identity?.IsAuthenticated != true);
     });
@@ -151,7 +151,7 @@ builder.Services.AddOutputCache(options =>
         policy.Expire(TimeSpan.FromSeconds(20));
         policy.Tag("public-short");
         policy.SetVaryByQuery(new[] { "*" });
-        policy.SetVaryByHeader(new[] { "Accept-Language" });
+        policy.SetVaryByHeader(new[] { "X-Ot-Culture" });
         policy.Cache();
         policy.With(context => context.HttpContext.User?.Identity?.IsAuthenticated != true);
     });
@@ -161,7 +161,7 @@ builder.Services.AddOutputCache(options =>
         policy.Expire(TimeSpan.FromSeconds(60));
         policy.Tag("public-medium");
         policy.SetVaryByQuery(new[] { "*" });
-        policy.SetVaryByHeader(new[] { "Accept-Language" });
+        policy.SetVaryByHeader(new[] { "X-Ot-Culture" });
         policy.Cache();
         policy.With(context => context.HttpContext.User?.Identity?.IsAuthenticated != true);
     });
@@ -761,6 +761,34 @@ app.Use(async (context, next) =>
     await next();
 });
 
+// ?lang= query param is ignored; strip it from Turkish canonical routes to prevent locale drift.
+app.Use(async (context, next) =>
+{
+    if (!context.Request.Query.ContainsKey("lang"))
+    {
+        await next();
+        return;
+    }
+
+    var path = context.Request.Path.Value ?? "/";
+    if (InternationalSeoPaths.HasLocalePathPrefix(path))
+    {
+        await next();
+        return;
+    }
+
+    var query = Microsoft.AspNetCore.WebUtilities.QueryHelpers.ParseQuery(context.Request.QueryString.Value);
+    var dict = query
+        .Where(kvp => !string.Equals(kvp.Key, "lang", StringComparison.OrdinalIgnoreCase))
+        .ToDictionary(k => k.Key, v => v.Value.ToString(), StringComparer.OrdinalIgnoreCase);
+
+    var target = dict.Count == 0
+        ? path
+        : Microsoft.AspNetCore.WebUtilities.QueryHelpers.AddQueryString(path, dict!);
+
+    context.Response.Redirect(target, permanent: false);
+});
+
 if (!app.Environment.IsDevelopment())
 {
     app.UseExceptionHandler("/Home/Error");
@@ -792,16 +820,22 @@ app.Use(async (context, next) =>
 // p112: 404/4xx için kullanıcı dostu sayfa (SEO + UX)
 app.UseStatusCodePagesWithReExecute("/Home/HttpStatus", "?code={0}");
 
-// p65: OutputCache vary-by dilin doğru çalışması için seçilen culture'ı header'a yansıt.
-// Cookie ile culture seçildiğinde Accept-Language değişmediği için cache yanlış dil döndürebilir.
+// p65: OutputCache vary-by — path'ten çözülen kültür (tarayıcı Accept-Language / ?lang= yok sayılır).
 app.Use((context, next) =>
 {
-    var cultureName = CultureInfo.CurrentUICulture.Name;
-    if (!string.IsNullOrWhiteSpace(cultureName))
+    var path = context.Request.Path.Value ?? "/";
+    var pathCulture = InternationalSeoPaths.ResolveCultureFromPath(path);
+    var cultureName = pathCulture switch
     {
-        context.Request.Headers["Accept-Language"] = cultureName;
-    }
-
+        "en" => "en-US",
+        "de" => "de-DE",
+        "fr" => "fr-FR",
+        "es" => "es-ES",
+        "ru" => "ru-RU",
+        _ => "tr-TR"
+    };
+    context.Request.Headers["X-Ot-Culture"] = cultureName;
+    context.Request.Headers["Accept-Language"] = cultureName;
     return next();
 });
 
