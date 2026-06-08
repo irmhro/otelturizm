@@ -1,0 +1,189 @@
+@using otelturizmnew.Models.Paneller.Admin
+@model AdminLocationListPageViewModel
+@{
+    static string StatusTone(string? value)
+    {
+        var text = (value ?? string.Empty).Trim().ToLowerInvariant();
+        if (text.Contains("aktif")) return "success";
+        if (text.Contains("pasif")) return "danger";
+        return "info";
+    }
+
+    var pageSizes = new[] { 10, 25, 50, 100 };
+    var currentPath = Model.EntityType switch
+    {
+        AdminLocationEntityType.City => "/admin/konumlar/iller",
+        AdminLocationEntityType.District => "/admin/konumlar/ilceler",
+        _ => "/admin/konumlar/mahalleler"
+    };
+    static string Enc(string? value) => System.Net.WebUtility.UrlEncode(value ?? string.Empty);
+    string PageUrl(int targetPage)
+    {
+        var parts = new List<string>
+        {
+            $"q={Enc(Model.SearchTerm)}",
+            $"active={Enc(Model.ActiveFilter)}",
+            $"page={targetPage}",
+            $"pageSize={Model.PageSize}"
+        };
+        if (Model.CountryIdFilter.HasValue) parts.Add($"countryId={Model.CountryIdFilter.Value}");
+        if (Model.CityIdFilter.HasValue) parts.Add($"cityId={Model.CityIdFilter.Value}");
+        if (Model.DistrictIdFilter.HasValue) parts.Add($"districtId={Model.DistrictIdFilter.Value}");
+        return $"{currentPath}?{string.Join("&", parts)}";
+    }
+
+    var (col1, col2, col3, col4) = Model.EntityType switch
+    {
+        AdminLocationEntityType.City => ("İl Adı", "Ülke", "Bölge", "Bölge Tipi"),
+        AdminLocationEntityType.District => ("İlçe Adı", "İl", "Ülke", "Tip"),
+        _ => ("Mahalle Adı", "İlçe", "İl", "Posta Kodu")
+    };
+}
+
+<section class="admin-hotels-page admin-location-page">
+    <div class="admin-summary-grid admin-hotels-summary">
+        @foreach (var card in Model.SummaryCards)
+        {
+            var tone = string.IsNullOrWhiteSpace(card.ToneClass) ? "info" : card.ToneClass;
+            <article class="admin-summary-card @tone">
+                <span class="summary-icon"><i class="fas @card.IconClass"></i></span>
+                <div>
+                    <p>@card.Label</p>
+                    <h2>@card.Value</h2>
+                    <span>@card.Description</span>
+                </div>
+            </article>
+        }
+    </div>
+
+    <article class="admin-hotel-listing-card admin-hotels-table-card">
+        <header class="admin-hotel-listing-head">
+            <div>
+                <p class="mini-caption">KONUMLAR</p>
+                <h2>@Model.Shell.PanelTitle</h2>
+                <span>@Model.Shell.PanelSubtitle</span>
+            </div>
+        </header>
+
+        <form method="get" action="@currentPath" class="admin-hotels-filter-grid">
+            <label>
+                <span>Arama</span>
+                <input type="text" name="q" value="@Model.SearchTerm" placeholder="Ad, slug, plaka, posta kodu..." />
+            </label>
+            <label>
+                <span>Ülke</span>
+                <select name="countryId">
+                    <option value="">Tüm ülkeler</option>
+                    @foreach (var option in Model.CountryOptions)
+                    {
+                        <option value="@option.Id" selected="@(Model.CountryIdFilter == option.Id ? "selected" : null)">@option.Label</option>
+                    }
+                </select>
+            </label>
+            @if (Model.EntityType is AdminLocationEntityType.District or AdminLocationEntityType.Neighborhood)
+            {
+                <label>
+                    <span>İl</span>
+                    <select name="cityId">
+                        <option value="">Tüm iller</option>
+                        @foreach (var option in Model.CityOptions)
+                        {
+                            <option value="@option.Id" selected="@(Model.CityIdFilter == option.Id ? "selected" : null)">@option.Label</option>
+                        }
+                    </select>
+                </label>
+            }
+            @if (Model.EntityType == AdminLocationEntityType.Neighborhood)
+            {
+                <label>
+                    <span>İlçe</span>
+                    <select name="districtId">
+                        <option value="">Tüm ilçeler</option>
+                        @foreach (var option in Model.DistrictOptions)
+                        {
+                            <option value="@option.Id" selected="@(Model.DistrictIdFilter == option.Id ? "selected" : null)">@option.Label</option>
+                        }
+                    </select>
+                </label>
+            }
+            <label>
+                <span>Durum</span>
+                <select name="active">
+                    <option value="" selected="@(string.IsNullOrWhiteSpace(Model.ActiveFilter) ? "selected" : null)">Tümü</option>
+                    <option value="active" selected="@(string.Equals(Model.ActiveFilter, "active", StringComparison.OrdinalIgnoreCase) ? "selected" : null)">Aktif</option>
+                    <option value="inactive" selected="@(string.Equals(Model.ActiveFilter, "inactive", StringComparison.OrdinalIgnoreCase) ? "selected" : null)">Pasif</option>
+                </select>
+            </label>
+            <label>
+                <span>Sayfa başı</span>
+                <select name="pageSize">
+                    @foreach (var size in pageSizes)
+                    {
+                        <option value="@size" selected="@(Model.PageSize == size ? "selected" : null)">@size</option>
+                    }
+                </select>
+            </label>
+            <input type="hidden" name="page" value="1" />
+            <div class="admin-hotels-filter-actions">
+                <button type="submit" class="admin-action-btn primary"><i class="fas fa-filter"></i> Filtrele</button>
+                <a class="admin-action-btn secondary" href="@currentPath"><i class="fas fa-rotate-left"></i> Temizle</a>
+            </div>
+        </form>
+
+        <div class="admin-hotels-table-wrap">
+            <table class="table table-vcenter table-hover admin-table admin-hotels-table admin-table--cards">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>@col1</th>
+                        <th>@col2</th>
+                        <th>@col3</th>
+                        <th>SEO Slug</th>
+                        <th>Durum</th>
+                        <th>@col4</th>
+                        <th>Güncelleme</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (Model.Rows.Count == 0)
+                    {
+                        <tr>
+                            <td colspan="8" class="text-center text-muted py-4">Filtreye uygun konum kaydı bulunamadı.</td>
+                        </tr>
+                    }
+                    else
+                    {
+                        @foreach (var row in Model.Rows)
+                        {
+                            <tr>
+                                <td data-label="ID">@row.Id</td>
+                                <td data-label="@col1"><strong>@row.PrimaryLabel</strong></td>
+                                <td data-label="@col2">@row.SecondaryLabel</td>
+                                <td data-label="@col3">@row.TertiaryLabel</td>
+                                <td data-label="SEO Slug"><code>@row.Slug</code></td>
+                                <td data-label="Durum"><span class="badge bg-@(StatusTone(row.StatusLabel))-lt text-@(StatusTone(row.StatusLabel))">@row.StatusLabel</span></td>
+                                <td data-label="@col4">@row.RegionLabel</td>
+                                <td data-label="Güncelleme">@row.UpdatedAtText</td>
+                            </tr>
+                        }
+                    }
+                </tbody>
+            </table>
+        </div>
+
+        @if (Model.TotalPages > 1)
+        {
+            <nav class="admin-hotels-pagination" aria-label="Sayfalama">
+                @if (Model.Page > 1)
+                {
+                    <a class="admin-action-btn secondary" href="@PageUrl(Model.Page - 1)"><i class="fas fa-chevron-left"></i> Önceki</a>
+                }
+                <span class="admin-hotels-page-indicator">Sayfa @Model.Page / @Model.TotalPages · @Model.TotalCount kayıt</span>
+                @if (Model.Page < Model.TotalPages)
+                {
+                    <a class="admin-action-btn secondary" href="@PageUrl(Model.Page + 1)">Sonraki <i class="fas fa-chevron-right"></i></a>
+                }
+            </nav>
+        }
+    </article>
+</section>

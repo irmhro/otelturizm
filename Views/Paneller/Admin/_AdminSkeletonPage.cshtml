@@ -1,0 +1,37 @@
+@using otelturizmnew.Models.Paneller.Admin
+@model AdminSkeletonPageViewModel
+
+<section class="admin-section-shell">
+    <div class="admin-section-note">
+        <div>
+            <strong>Faz 2 — içerik geliştirme</strong>
+            <span>@Model.PhaseNote</span>
+        </div>
+    </div>
+
+    <div class="card admin-section-card">
+        <div class="card-header">
+            <div>
+                <h3 class="card-title mb-1">@Model.Shell.PanelTitle</h3>
+                <div class="text-muted small">@Model.Shell.PanelSubtitle</div>
+            </div>
+            <span class="badge bg-orange-lt text-orange">İskelet sayfa</span>
+        </div>
+        <div class="card-body">
+            <div class="admin-empty-state">
+                <span><i class="fas fa-layer-group"></i></span>
+                <strong>Bu modül menü ve route altyapısıyla hazır</strong>
+                <p>Detaylı tablo, form ve iş akışları sonraki fazda tamamlanacaktır.</p>
+            </div>
+            @if (Model.PlannedFeatures.Count > 0)
+            {
+                <ul class="admin-skeleton-feature-list">
+                    @foreach (var feature in Model.PlannedFeatures)
+                    {
+                        <li><i class="fas fa-circle-dot"></i> @feature</li>
+                    }
+                </ul>
+            }
+        </div>
+    </div>
+</section>

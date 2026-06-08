@@ -184,6 +184,7 @@ builder.Services.AddScoped<ICacheSingleFlight, CacheSingleFlight>();
 builder.Services.AddSingleton<ISlowSqlTracker, SlowSqlTracker>();
 builder.Services.AddScoped<IIdempotencyService, IdempotencyService>();
 builder.Services.AddScoped<IAdminHotelManagementService, AdminHotelManagementService>();
+builder.Services.AddScoped<IAdminLocationService, AdminLocationService>();
 builder.Services.AddScoped<ICampaignService, CampaignService>();
 builder.Services.AddScoped<IDeneyimlerService, DeneyimlerService>();
 builder.Services.AddScoped<ISeyahatPlanlamaService, SeyahatPlanlamaService>();

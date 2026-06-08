@@ -1,0 +1,8 @@
+@using otelturizmnew.Models.Paneller.Admin
+@model AdminLocationListPageViewModel
+@{
+    Layout = "~/Views/Paneller/Admin/_AdminPanelLayout.cshtml";
+    ViewData["AdminShell"] = Model.Shell;
+    ViewData["PageCssPath"] = "admin_panel_hotels_masaustu";
+}
+<partial name="~/Views/Paneller/Admin/_AdminLocationList.cshtml" model="Model" />

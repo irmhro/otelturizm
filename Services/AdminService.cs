@@ -4776,6 +4776,11 @@ public class AdminService : IAdminService
             "geo-search-logs" => ("Konum & Bölge Arama Logları", "Kullanıcının konumla arama yaptığı kayıtları; arama metni/bölgesi, yarıçap ve görünen oteller ile izleyin.", new[] { "Tarih", "Kaynak", "Arama Metni", "Arama Bölgesi", "Enlem", "Boylam", "Yarıçap(km)", "Görünen", "IP", "Cihaz" }, "Konum arama logu bulunamadı.", "Kaynak tablo: [dbo].[KULLANICI_KONUM_LOGLARI] (web/mobil arama istihbaratı)."),
             "hotel-coordinate-changes" => ("Otel Koordinat Değişimleri", "Otel enlem/boylam değişikliklerini admin bazlı audit trail ile takip edin.", new[] { "Tarih", "Admin", "Otel", "Önceki", "Yeni", "IP", "Not" }, "Koordinat değişim kaydı bulunamadı.", "Kaynak tablo: [dbo].[OTEL_KOORDINAT_DEGISIM_LOGLARI]"),
             "backups" => ("Yedekleme", "Yedekleme operasyonu icin snapshot kaydi ve dosya metadata tablolarini ekleyecegiz.", Array.Empty<string>(), "Yedekleme kaydi henuz bulunmuyor.", "Referans yedekleme ekrani icin yeni migration gerekir."),
+            "countries" => ("Ülkeler", "Platform adres hiyerarşisinin üst düzey ülke kayıtlarını izleyin.", new[] { "Ülke", "ISO2", "ISO3", "Para Birimi", "Varsayılan", "Durum" }, "Ülke kaydı bulunamadı.", null),
+            "roles" => ("Roller", "Platform kullanıcı rollerini departman ve seviye bilgisiyle yönetin.", new[] { "Rol Kodu", "Rol Adı", "Departman", "Seviye", "Varsayılan", "Açıklama" }, "Rol kaydı bulunamadı.", null),
+            "admin-rbac-roles" => ("Admin Panel Rolleri", "Admin panel RBAC rol tanımlarını ve yetki kapsamlarını izleyin.", new[] { "Rol Kodu", "Rol Adı", "Açıklama", "Durum" }, "Admin rol kaydı bulunamadı.", null),
+            "companies" => ("Firmalar", "B2B firma profillerini onay durumu ve rezervasyon hacmiyle izleyin.", new[] { "Firma", "Onay", "Kullanıcı", "Rezervasyon", "Kayıt" }, "Firma kaydı bulunamadı.", null),
+            "platform-db-stats" => ("Veritabanı İstatistikleri", "Tablo satır sayıları ve platform veri hacmi özetini izleyin.", new[] { "Tablo", "Satır Sayısı", "Şema" }, "Tablo istatistiği bulunamadı.", "Kaynak: sys.tables + sys.partitions"),
             _ => ("Admin Panel", "Bu admin bolumu icin veritabani baglantisi hazirlaniyor.", Array.Empty<string>(), "Veri bulunamadi.", null)
         };
     }
@@ -4938,6 +4943,41 @@ public class AdminService : IAdminService
                 ("One Cikan", "SELECT COUNT(*) FROM [dbo].[SSS_SORULARI] WHERE [ONE_CIKAN_MI] = 1", "Ana akista vurgulanan sorular", "success", "fa-fire"),
                 ("Aktif", "SELECT COUNT(*) FROM [dbo].[SSS_SORULARI] WHERE [AKTIF_MI] = 1", "Yayinda olan soru/cevaplar", "danger", "fa-circle-check")
             ],
+            "countries" =>
+            [
+                ("Ülke", "SELECT COUNT(*) FROM [dbo].[ULKELER]", "Tüm ülke kayıtları", "info", "fa-globe"),
+                ("Aktif", "SELECT COUNT(*) FROM [dbo].[ULKELER] WHERE [AKTIF_MI] = 1", "Kullanımda", "success", "fa-circle-check"),
+                ("Varsayılan", "SELECT COUNT(*) FROM [dbo].[ULKELER] WHERE [VARSAYILAN_ULKE] = 1", "Varsayılan ülke", "warning", "fa-flag"),
+                ("İl Bağlantısı", "SELECT COUNT(DISTINCT [ULKE_ID]) FROM [dbo].[ILLER]", "İli olan ülke", "danger", "fa-map")
+            ],
+            "roles" =>
+            [
+                ("Rol", "SELECT COUNT(*) FROM [dbo].[ROLLER]", "Platform rolleri", "info", "fa-key"),
+                ("Varsayılan", "SELECT COUNT(*) FROM [dbo].[ROLLER] WHERE [VARSAYILAN_MI] = 1", "Varsayılan rol", "success", "fa-star"),
+                ("Departman", "SELECT COUNT(DISTINCT [DEPARTMAN]) FROM [dbo].[ROLLER] WHERE [DEPARTMAN] IS NOT NULL", "Departman çeşidi", "warning", "fa-sitemap"),
+                ("Rol Ataması", "SELECT COUNT(*) FROM [dbo].[KULLANICI_ROLLERI]", "Kullanıcı-rol eşlemesi", "danger", "fa-user-check")
+            ],
+            "admin-rbac-roles" =>
+            [
+                ("Admin Rol", "SELECT COUNT(*) FROM [dbo].[ADMIN_ROLLER]", "Panel rolleri", "info", "fa-user-shield"),
+                ("Aktif Rol", "SELECT COUNT(*) FROM [dbo].[ADMIN_ROLLER] WHERE [ACTIVE] = 1", "Aktif tanımlar", "success", "fa-circle-check"),
+                ("Yetki", "SELECT COUNT(*) FROM [dbo].[ADMIN_YETKILER] WHERE [ACTIVE] = 1", "Tanımlı yetkiler", "warning", "fa-lock"),
+                ("Rol-Yetki", "SELECT COUNT(*) FROM [dbo].[ADMIN_ROL_YETKILER] WHERE [ACTIVE] = 1", "Eşleşmeler", "danger", "fa-link")
+            ],
+            "companies" =>
+            [
+                ("Firma", "SELECT COUNT(*) FROM [dbo].[FIRMALAR]", "Tüm firmalar", "info", "fa-building"),
+                ("Onay Bekleyen", "SELECT COUNT(*) FROM [dbo].[FIRMALAR] WHERE COALESCE([ONAY_DURUMU],'Beklemede') = 'Beklemede'", "İnceleme bekleyen", "warning", "fa-hourglass-half"),
+                ("Onaylı", "SELECT COUNT(*) FROM [dbo].[FIRMALAR] WHERE COALESCE([ONAY_DURUMU],'') = 'Onaylandı'", "Aktif firmalar", "success", "fa-circle-check"),
+                ("Firma Rezervasyonu", "SELECT COUNT(*) FROM [dbo].[REZERVASYONLAR] WHERE [FIRMA_ID] IS NOT NULL", "B2B rezervasyon", "danger", "fa-briefcase")
+            ],
+            "platform-db-stats" =>
+            [
+                ("Tablo", "SELECT COUNT(*) FROM sys.tables WHERE is_ms_shipped = 0", "Kullanıcı tabloları", "info", "fa-table"),
+                ("Toplam Satır", "SELECT COALESCE(SUM(p.[rows]),0) FROM sys.tables t INNER JOIN sys.partitions p ON t.[object_id]=p.[object_id] WHERE t.is_ms_shipped=0 AND p.index_id IN (0,1)", "Yaklaşık satır", "success", "fa-database"),
+                ("Otel", "SELECT COUNT(*) FROM [dbo].[OTELLER]", "Otel kaydı", "warning", "fa-hotel"),
+                ("Rezervasyon", "SELECT COUNT(*) FROM [dbo].[REZERVASYONLAR]", "Rezervasyon", "danger", "fa-calendar-check")
+            ],
             _ => []
         };
     }
@@ -5077,6 +5117,20 @@ public class AdminService : IAdminService
                                            ORDER BY [KAYIT_TARIHI] DESC;",
             "email-templates" => @"SELECT TOP (12) [SABLON_ADI], [KATEGORI], dil, [AKTIF_MI], [SISTEM_GENELI_MI], [KONU_BASLIGI] FROM [dbo].[MESAJ_SABLONLARI] ORDER BY id DESC;",
             "faq" => @"SELECT TOP (20) k.[KATEGORI_ADI], s.[SORU], s.[ONE_CIKAN_MI], s.[AKTIF_MI], FORMAT(s.[OLUSTURULMA_TARIHI], 'dd.MM.yyyy', 'tr-TR') FROM [dbo].[SSS_SORULARI] s INNER JOIN [dbo].[SSS_KATEGORILERI] k ON k.id = s.[SSS_KATEGORI_ID] ORDER BY k.[SIRALAMA], s.[SIRALAMA], s.id;",
+            "countries" => @"SELECT TOP (80) [ULKE_ADI], COALESCE([ISO2_KODU],'-'), COALESCE([ISO3_KODU],'-'), COALESCE([PARA_BIRIMI_KODU],'-'), CASE WHEN [VARSAYILAN_ULKE]=1 THEN N'Evet' ELSE N'Hayır' END, CASE WHEN [AKTIF_MI]=1 THEN N'Aktif' ELSE N'Pasif' END FROM [dbo].[ULKELER] ORDER BY [VARSAYILAN_ULKE] DESC, [ULKE_ADI];",
+            "roles" => @"SELECT TOP (80) [ROL_KODU], [ROL_ADI], COALESCE([DEPARTMAN],'-'), CAST(COALESCE([SEVIYE],0) AS nvarchar(10)), CASE WHEN [VARSAYILAN_MI]=1 THEN N'Evet' ELSE N'Hayır' END, COALESCE([ACIKLAMA],'-') FROM [dbo].[ROLLER] ORDER BY [SEVIYE], [ROL_ADI];",
+            "admin-rbac-roles" => @"SELECT TOP (40) [ROL_CODE], [ROL_NAME], COALESCE([DESCRIPTION],'-'), CASE WHEN [ACTIVE]=1 THEN N'Aktif' ELSE N'Pasif' END FROM [dbo].[ADMIN_ROLLER] ORDER BY [ROL_CODE];",
+            "companies" => @"SELECT TOP (80) f.[FIRMA_ADI], COALESCE(f.[ONAY_DURUMU], 'Beklemede'),
+                                    (SELECT COUNT(*) FROM [dbo].[KULLANICILAR] u WHERE u.[FIRMA_ID] = f.id AND u.[ROL] LIKE 'firma_%'),
+                                    (SELECT COUNT(*) FROM [dbo].[REZERVASYONLAR] r WHERE r.[FIRMA_ID] = f.id),
+                                    FORMAT(f.[OLUSTURULMA_TARIHI], 'dd.MM.yyyy', 'tr-TR')
+                             FROM [dbo].[FIRMALAR] f ORDER BY f.id DESC;",
+            "platform-db-stats" => @"SELECT TOP (60) t.[name], CAST(SUM(p.[rows]) AS nvarchar(30)), SCHEMA_NAME(t.[schema_id])
+                                     FROM sys.tables t
+                                     INNER JOIN sys.partitions p ON t.[object_id] = p.[object_id]
+                                     WHERE t.is_ms_shipped = 0 AND p.index_id IN (0, 1)
+                                     GROUP BY t.[name], t.[schema_id]
+                                     ORDER BY SUM(p.[rows]) DESC;",
             _ => string.Empty
         };
     }

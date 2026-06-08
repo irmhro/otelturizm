@@ -1,3 +1,12 @@
+@*
+    SIDEBAR MAP v2 (2026-06-08)
+    KONUMLAR: Countries, Cities, Districts, Neighborhoods
+    PARTNER: Hotels, ActiveHotels, PendingHotels, Campaigns, Reviews, ListingSubscriptions, PartnerApplications, PartnerDocuments, HotelCoordinateChanges
+    FIRMALAR: Companies, CompanyApplications, CompanyReservations
+    PLATFORM YÖNETİMİ: Dashboard, SystemHealth, PlatformCheckup, ApprovalCenter, PlatformDbStats, EmailQueue, GeoSearchLogs, SlowSqlMonitor, RateLimitStats, AdminActionLogs, Logs
+    FİNANS & KOMİSYON: RevenueCommandCenter, UnifiedReservations, Reservations, Commissions, CommissionCollection, Invoices, Payments, Contracts, Reports, CommerceInsight, PlatformPackages
+    SİSTEM KONFİGÜRASYONU: Roles, AdminRbacRoles, Users, Managers, PlatformOfficials, Settings, Security, MailCenter, Email*, Content, Notifications, DevelopmentRequests
+*@
 @using otelturizmnew.Models.Paneller.Admin
 @model AdminShellViewModel
 @{
@@ -6,16 +15,15 @@
     string Active(string action) => IsActive(action) ? "active" : string.Empty;
     string Badge(int value) => value > 0 ? value.ToString() : string.Empty;
     bool IsOpen(params string[] actions) => actions.Any(IsActive);
+    bool IsHotelsNavActive() => IsActive("Hotels") || IsActive("HotelDetail");
     bool Can(string code) => Model.Permissions.Contains("*") || Model.HasPermission(code);
 
-    var execOpen = IsOpen("Dashboard", "SystemHealth", "PlatformCheckup", "ApprovalCenter", "RevenueCommandCenter");
-    var hotelOpen = IsOpen("Hotels", "HotelDetail", "ActiveHotels", "PendingHotels", "Campaigns", "Reviews");
-    var reservationOpen = IsOpen("Reservations", "UnifiedReservations", "CompanyReservations");
-    var channelOpen = IsOpen("ListingSubscriptions", "CommerceInsight", "PlatformPackages");
-    var financeOpen = IsOpen("Payments", "Invoices", "Commissions", "CommissionCollection", "Contracts", "Reports");
-    var crmOpen = IsOpen("Users", "Managers", "PlatformOfficials", "PartnerApplications", "PartnerDocuments", "CompanyApplications", "DevelopmentRequests", "SecurityEvents");
-    var aiOpen = IsOpen("CommerceInsight", "RevenueCommandCenter", "DevelopmentRequests", "SlowSqlMonitor");
-    var platformOpen = IsOpen("Settings", "SettingsMonitor", "Sitemap", "Security", "SecurityEvents", "Backups", "Logs", "AdminActionLogs", "GeoSearchLogs", "HotelCoordinateChanges", "RateLimitStats", "Notifications", "MailCenter", "EmailQueue", "EmailRouting", "EmailTemplates", "WhatsAppCloudApi", "Blog", "Faq", "SupportArticles", "HelpCenter", "Team", "UploadHistory", "Complaints");
+    var locOpen = IsOpen("Countries", "LocationsCities", "LocationsDistricts", "LocationsNeighborhoods");
+    var partnerOpen = IsOpen("Hotels", "HotelDetail", "ActiveHotels", "PendingHotels", "Campaigns", "Reviews", "ListingSubscriptions", "PartnerApplications", "PartnerDocuments", "HotelCoordinateChanges", "Reservations", "Commissions", "EmailTemplates", "Managers");
+    var firmaOpen = IsOpen("Companies", "CompanyApplications", "CompanyReservations");
+    var platformOpen = IsOpen("Dashboard", "SystemHealth", "PlatformCheckup", "ApprovalCenter", "PlatformDbStats", "EmailQueue", "GeoSearchLogs", "SlowSqlMonitor", "RateLimitStats", "AdminActionLogs", "Logs");
+    var financeOpen = IsOpen("RevenueCommandCenter", "UnifiedReservations", "Reservations", "Commissions", "CommissionCollection", "Invoices", "Payments", "Contracts", "Reports", "CommerceInsight", "PlatformPackages");
+    var configOpen = IsOpen("AdminRoles", "AdminRbacRoles", "Users", "Managers", "PlatformOfficials", "Settings", "SettingsMonitor", "Security", "SecurityEvents", "Sitemap", "MailCenter", "EmailQueue", "EmailRouting", "EmailTemplates", "WhatsAppCloudApi", "Blog", "Faq", "SupportArticles", "HelpCenter", "Team", "Complaints", "Backups", "Notifications", "DevelopmentRequests", "UploadHistory");
 }
 <aside class="admin-sidebar" id="appSidebar" aria-label="Admin menüsü">
     <div class="sidebar-header">
@@ -28,60 +36,54 @@
 
     <div class="sidebar-scroll">
 
-        <span class="sidebar-group-label">Executive</span>
-        @if (Can("admin.dashboard") || Can("admin.system_health") || Can("admin.platform_checkup") || Can("admin.approval_center"))
+        <span class="sidebar-group-label">Konumlar</span>
+        @if (Can("admin.locations"))
         {
-            <div class="nav-menu-item @(execOpen ? "open active" : "")" data-nav-group>
-                <button type="button" class="nav-main-link" data-admin-nav-toggle aria-expanded="@(execOpen ? "true" : "false")">
-                    <div class="nav-link-left"><i class="fas fa-chart-pie ic-core"></i><span>Dashboard</span></div>
+            <div class="nav-menu-item @(locOpen ? "open active" : "")" data-nav-group>
+                <button type="button" class="nav-main-link" data-admin-nav-toggle aria-expanded="@(locOpen ? "true" : "false")">
+                    <div class="nav-link-left"><i class="fas fa-map-location-dot ic-core"></i><span>Adres Hiyerarşisi</span></div>
                     <i class="fas fa-chevron-down chevron-icon"></i>
                 </button>
                 <div class="sub-links-container">
-                    @if (Can("admin.dashboard"))
-                    {
-                        <a class="@Active("Dashboard")" asp-controller="AdminPanel" asp-action="Dashboard">Genel Bakış</a>
-                    }
-                    @if (Can("admin.system_health"))
-                    {
-                        <a class="@Active("SystemHealth")" asp-controller="AdminPanel" asp-action="SystemHealth">Canlı Akış Monitörü</a>
-                    }
-                    @if (Can("admin.approval_center"))
-                    {
-                        <a class="@Active("ApprovalCenter")" asp-controller="AdminPanel" asp-action="ApprovalCenter">
-                            Onay Merkezi
-                            @if (Model.PendingPartnerApplications + Model.PendingCompanyApplications > 0)
-                            {
-                                <span class="ap-nav-badge">@Badge(Model.PendingPartnerApplications + Model.PendingCompanyApplications)</span>
-                            }
-                        </a>
-                    }
-                    @if (Can("admin.platform_checkup"))
-                    {
-                        <a class="@Active("PlatformCheckup")" asp-controller="AdminPanel" asp-action="PlatformCheckup">Platform Checkup</a>
-                    }
-                    @if (Can("admin.reports"))
-                    {
-                        <a class="@Active("RevenueCommandCenter")" asp-controller="AdminPanel" asp-action="RevenueCommandCenter">Gelir Komuta Merkezi</a>
-                    }
+                    <a class="@Active("Countries")" asp-controller="AdminPanel" asp-action="Countries">Ülkeler</a>
+                    <a class="@Active("LocationsCities")" asp-controller="AdminPanel" asp-action="LocationsCities">İller</a>
+                    <a class="@Active("LocationsDistricts")" asp-controller="AdminPanel" asp-action="LocationsDistricts">İlçeler</a>
+                    <a class="@Active("LocationsNeighborhoods")" asp-controller="AdminPanel" asp-action="LocationsNeighborhoods">Mahalleler</a>
                 </div>
             </div>
         }
 
-        <span class="sidebar-group-label">Otel & Envanter Mimarisi</span>
-        @if (Can("admin.hotels") || Can("admin.reviews") || Can("admin.listing_subscriptions"))
+        <span class="sidebar-group-label">Partner</span>
+        @if (Can("admin.hotels") || Can("admin.reviews") || Can("admin.listing_subscriptions") || Can("admin.partner_applications"))
         {
-            <div class="nav-menu-item @(hotelOpen ? "open active" : "")" data-nav-group>
-                <button type="button" class="nav-main-link" data-admin-nav-toggle aria-expanded="@(hotelOpen ? "true" : "false")">
-                    <div class="nav-link-left"><i class="fas fa-building ic-inv"></i><span>Tesis Yönetimi</span></div>
+            <div class="nav-menu-item @(partnerOpen ? "open active" : "")" data-nav-group>
+                <button type="button" class="nav-main-link" data-admin-nav-toggle aria-expanded="@(partnerOpen ? "true" : "false")">
+                    <div class="nav-link-left"><i class="fas fa-hotel ic-inv"></i><span>Otel & Partner</span></div>
                     <i class="fas fa-chevron-down chevron-icon"></i>
                 </button>
                 <div class="sub-links-container">
                     @if (Can("admin.hotels"))
                     {
-                        <a class="@Active("Hotels")" asp-controller="AdminPanel" asp-action="Hotels">Multi-Otel Portföyü</a>
-                        <a class="@Active("ActiveHotels")" asp-controller="AdminPanel" asp-action="ActiveHotels">Oda Tipolojileri & Planlar</a>
-                        <a class="@Active("PendingHotels")" asp-controller="AdminPanel" asp-action="PendingHotels">Onay Bekleyen Tesisler</a>
-                        <a class="@Active("Campaigns")" asp-controller="AdminPanel" asp-action="Campaigns">Ekstra Hizmetler (Ancillary)</a>
+                        <a class="@(IsHotelsNavActive() ? "active" : string.Empty)" asp-controller="AdminPanel" asp-action="Hotels">Otel Listesi</a>
+                        <a class="@Active("ActiveHotels")" asp-controller="AdminPanel" asp-action="ActiveHotels">Açık Oteller & Oda Tipleri</a>
+                        <a class="@Active("PendingHotels")" asp-controller="AdminPanel" asp-action="PendingHotels">Onay Bekleyen Oteller</a>
+                        <a class="@Active("Campaigns")" asp-controller="AdminPanel" asp-action="Campaigns">Kampanyalar & Ekstra Hizmetler</a>
+                    }
+                    @if (Can("admin.reservations"))
+                    {
+                        <a class="@Active("Reservations")" asp-controller="AdminPanel" asp-action="Reservations">Otel Rezervasyonları</a>
+                    }
+                    @if (Can("admin.commissions"))
+                    {
+                        <a class="@Active("Commissions")" asp-controller="AdminPanel" asp-action="Commissions">Otel Komisyon Oranları</a>
+                    }
+                    @if (Can("admin.mail_center"))
+                    {
+                        <a class="@Active("EmailTemplates")" asp-controller="AdminPanel" asp-action="EmailTemplates">Otel E-posta Hesapları</a>
+                    }
+                    @if (Can("admin.managers"))
+                    {
+                        <a class="@Active("Managers")" asp-controller="AdminPanel" asp-action="Managers">Otel Yönetici Hesapları</a>
                     }
                     @if (Can("admin.reviews"))
                     {
@@ -95,126 +97,7 @@
                     }
                     @if (Can("admin.listing_subscriptions"))
                     {
-                        <a class="@Active("ListingSubscriptions")" asp-controller="AdminPanel" asp-action="ListingSubscriptions">Liste Abonelikleri</a>
-                    }
-                </div>
-            </div>
-        }
-
-        <span class="sidebar-group-label">Rezervasyon & Satış</span>
-        @if (Can("admin.reservations") || Can("admin.unified_reservations") || Can("admin.company_reservations"))
-        {
-            <div class="nav-menu-item @(reservationOpen ? "open active" : "")" data-nav-group>
-                <button type="button" class="nav-main-link" data-admin-nav-toggle aria-expanded="@(reservationOpen ? "true" : "false")">
-                    <div class="nav-link-left"><i class="fas fa-bookmark ic-book"></i><span>Rezervasyon Yönetimi</span></div>
-                    <i class="fas fa-chevron-down chevron-icon"></i>
-                </button>
-                <div class="sub-links-container">
-                    @if (Can("admin.unified_reservations"))
-                    {
-                        <a class="@Active("UnifiedReservations")" asp-controller="AdminPanel" asp-action="UnifiedReservations">Tüm Rezervasyonlar</a>
-                    }
-                    @if (Can("admin.reservations"))
-                    {
-                        <a class="@Active("Reservations")" asp-controller="AdminPanel" asp-action="Reservations">Rezervasyon Listesi</a>
-                    }
-                    @if (Can("admin.company_reservations"))
-                    {
-                        <a class="@Active("CompanyReservations")" asp-controller="AdminPanel" asp-action="CompanyReservations">B2B Acente Blokajları</a>
-                    }
-                </div>
-            </div>
-        }
-
-        <span class="sidebar-group-label">Dağıtım Ağı</span>
-        @if (Can("admin.listing_subscriptions") || Can("admin.platform_packages") || Can("admin.commerce_insight"))
-        {
-            <div class="nav-menu-item @(channelOpen ? "open active" : "")" data-nav-group>
-                <button type="button" class="nav-main-link" data-admin-nav-toggle aria-expanded="@(channelOpen ? "true" : "false")">
-                    <div class="nav-link-left"><i class="fas fa-network-wired ic-chan"></i><span>Kanal Yöneticisi</span></div>
-                    <i class="fas fa-chevron-down chevron-icon"></i>
-                </button>
-                <div class="sub-links-container">
-                    @if (Can("admin.listing_subscriptions"))
-                    {
-                        <a class="@Active("ListingSubscriptions")" asp-controller="AdminPanel" asp-action="ListingSubscriptions">OTA Senkronizasyonu</a>
-                    }
-                    @if (Can("admin.platform_packages"))
-                    {
-                        <a class="@Active("PlatformPackages")" asp-controller="AdminPanel" asp-action="PlatformPackages">Platform Paket Dağıtımı</a>
-                    }
-                    @if (Can("admin.commerce_insight"))
-                    {
-                        <a class="@Active("CommerceInsight")" asp-controller="AdminPanel" asp-action="CommerceInsight">Rakip Fiyat Analizi (Rate Shopper)</a>
-                    }
-                </div>
-            </div>
-        }
-
-        <span class="sidebar-group-label">Finansal Yapı</span>
-        @if (Can("admin.commissions") || Can("admin.invoices") || Can("admin.payments") || Can("admin.contracts") || Can("admin.reports"))
-        {
-            <div class="nav-menu-item @(financeOpen ? "open active" : "")" data-nav-group>
-                <button type="button" class="nav-main-link" data-admin-nav-toggle aria-expanded="@(financeOpen ? "true" : "false")">
-                    <div class="nav-link-left"><i class="fas fa-coins ic-fin"></i><span>Finans & Komisyon</span></div>
-                    <i class="fas fa-chevron-down chevron-icon"></i>
-                </button>
-                <div class="sub-links-container">
-                    @if (Can("admin.commissions"))
-                    {
-                        <a class="@Active("Commissions")" asp-controller="AdminPanel" asp-action="Commissions">Komisyon Oranları</a>
-                        <a class="@Active("CommissionCollection")" asp-controller="AdminPanel" asp-action="CommissionCollection">Acente Hakedişleri</a>
-                    }
-                    @if (Can("admin.invoices"))
-                    {
-                        <a class="@Active("Invoices")" asp-controller="AdminPanel" asp-action="Invoices">Faturalandırma & Cari</a>
-                    }
-                    @if (Can("admin.payments"))
-                    {
-                        <a class="@Active("Payments")" asp-controller="AdminPanel" asp-action="Payments">Ödeme Ağ Geçitleri</a>
-                    }
-                    @if (Can("admin.contracts"))
-                    {
-                        <a class="@Active("Contracts")" asp-controller="AdminPanel" asp-action="Contracts">Sözleşmeler</a>
-                    }
-                    @if (Can("admin.reports"))
-                    {
-                        <a class="@Active("Reports")" asp-controller="AdminPanel" asp-action="Reports">Gelir / Komisyon Raporu</a>
-                    }
-                </div>
-            </div>
-        }
-
-        <span class="sidebar-group-label">Kullanıcı Yönetimi</span>
-        @if (Can("admin.users") || Can("admin.managers") || Can("admin.platform_officials") || Can("admin.partner_applications") || Can("admin.company_applications") || Can("admin.development_requests"))
-        {
-            <div class="nav-menu-item @(crmOpen ? "open active" : "")" data-nav-group>
-                <button type="button" class="nav-main-link" data-admin-nav-toggle aria-expanded="@(crmOpen ? "true" : "false")">
-                    <div class="nav-link-left"><i class="fas fa-users ic-crm"></i><span>CRM & Firmalar</span></div>
-                    <i class="fas fa-chevron-down chevron-icon"></i>
-                </button>
-                <div class="sub-links-container">
-                    @if (Can("admin.company_applications"))
-                    {
-                        <a class="@Active("CompanyApplications")" asp-controller="AdminPanel" asp-action="CompanyApplications">
-                            Kurumsal Firmalar (B2B)
-                            @if (Model.PendingCompanyApplications > 0)
-                            {
-                                <span class="ap-nav-badge">@Badge(Model.PendingCompanyApplications)</span>
-                            }
-                        </a>
-                    }
-                    @if (Can("admin.users"))
-                    {
-                        <a class="@Active("Users")" asp-controller="AdminPanel" asp-action="Users">B2C Misafir Havuzu</a>
-                    }
-                    @if (Can("admin.managers"))
-                    {
-                        <a class="@Active("Managers")" asp-controller="AdminPanel" asp-action="Managers">Yönetici Hesapları</a>
-                    }
-                    @if (Can("admin.platform_officials"))
-                    {
-                        <a class="@Active("PlatformOfficials")" asp-controller="AdminPanel" asp-action="PlatformOfficials">Platform Yetkilileri</a>
+                        <a class="@Active("ListingSubscriptions")" asp-controller="AdminPanel" asp-action="ListingSubscriptions">Otel Liste Abonelikleri</a>
                     }
                     @if (Can("admin.partner_applications"))
                     {
@@ -227,71 +110,217 @@
                         </a>
                         <a class="@Active("PartnerDocuments")" asp-controller="AdminPanel" asp-action="PartnerDocuments">Partner Evrakları</a>
                     }
-                    @if (Can("admin.development_requests"))
+                    @if (Can("admin.hotel_coord_changes"))
                     {
-                        <a class="@Active("DevelopmentRequests")" asp-controller="AdminPanel" asp-action="DevelopmentRequests">Geliştirme Talepleri</a>
-                    }
-                    @if (Can("admin.security_events"))
-                    {
-                        <a class="@Active("SecurityEvents")" asp-controller="AdminPanel" asp-action="SecurityEvents">Kara Liste (Blacklist)</a>
+                        <a class="@Active("HotelCoordinateChanges")" asp-controller="AdminPanel" asp-action="HotelCoordinateChanges">Otel Koordinat Değişimleri</a>
                     }
                 </div>
             </div>
         }
 
-        <span class="sidebar-group-label">Yapay Zeka & Optimizasyon</span>
-        @if (Can("admin.commerce_insight") || Can("admin.reports") || Can("admin.development_requests") || Can("admin.system_health"))
+        <span class="sidebar-group-label">Firmalar</span>
+        @if (Can("admin.companies") || Can("admin.company_applications") || Can("admin.company_reservations"))
         {
-            <div class="nav-menu-item @(aiOpen ? "open active" : "")" data-nav-group>
-                <button type="button" class="nav-main-link" data-admin-nav-toggle aria-expanded="@(aiOpen ? "true" : "false")">
-                    <div class="nav-link-left"><i class="fas fa-microchip ic-ai"></i><span>Cloud AI Hub</span></div>
+            <div class="nav-menu-item @(firmaOpen ? "open active" : "")" data-nav-group>
+                <button type="button" class="nav-main-link" data-admin-nav-toggle aria-expanded="@(firmaOpen ? "true" : "false")">
+                    <div class="nav-link-left"><i class="fas fa-building ic-crm"></i><span>Kurumsal & B2B</span></div>
                     <i class="fas fa-chevron-down chevron-icon"></i>
                 </button>
                 <div class="sub-links-container">
-                    @if (Can("admin.commerce_insight"))
+                    @if (Can("admin.companies"))
                     {
-                        <a class="@Active("CommerceInsight")" asp-controller="AdminPanel" asp-action="CommerceInsight">AI Fiyat & Talep Motoru</a>
+                        <a class="@Active("Companies")" asp-controller="AdminPanel" asp-action="Companies">Firma Listesi</a>
                     }
-                    @if (Can("admin.reports"))
+                    @if (Can("admin.company_applications"))
                     {
-                        <a class="@Active("RevenueCommandCenter")" asp-controller="AdminPanel" asp-action="RevenueCommandCenter">Dinamik Rota Sihirbazı</a>
+                        <a class="@Active("CompanyApplications")" asp-controller="AdminPanel" asp-action="CompanyApplications">
+                            Firma Başvuruları
+                            @if (Model.PendingCompanyApplications > 0)
+                            {
+                                <span class="ap-nav-badge">@Badge(Model.PendingCompanyApplications)</span>
+                            }
+                        </a>
                     }
-                    @if (Can("admin.development_requests"))
+                    @if (Can("admin.company_reservations"))
                     {
-                        <a class="@Active("DevelopmentRequests")" asp-controller="AdminPanel" asp-action="DevelopmentRequests">AI Geliştirme Kuyruğu</a>
-                    }
-                    @if (Can("admin.system_health"))
-                    {
-                        <a class="@Active("SlowSqlMonitor")" asp-controller="AdminPanel" asp-action="SlowSqlMonitor">Performans Analiz Motoru</a>
+                        <a class="@Active("CompanyReservations")" asp-controller="AdminPanel" asp-action="CompanyReservations">Firma Rezervasyonları</a>
                     }
                 </div>
             </div>
         }
 
-        <span class="sidebar-group-label">Platform Ayarları</span>
-        @if (Can("admin.settings") || Can("admin.settings_monitor") || Can("admin.sitemap") || Can("admin.security") || Can("admin.backups") || Can("admin.logs") || Can("admin.notifications") || Can("admin.mail_center") || Can("admin.blog"))
+        <span class="sidebar-group-label">Platform Yönetimi</span>
+        @if (Can("admin.dashboard") || Can("admin.system_health") || Can("admin.platform_checkup") || Can("admin.approval_center") || Can("admin.platform_stats") || Can("admin.email_queue") || Can("admin.logs"))
         {
             <div class="nav-menu-item @(platformOpen ? "open active" : "")" data-nav-group>
                 <button type="button" class="nav-main-link" data-admin-nav-toggle aria-expanded="@(platformOpen ? "true" : "false")">
-                    <div class="nav-link-left"><i class="fas fa-cog ic-set"></i><span>Sistem Konfigürasyonu</span></div>
+                    <div class="nav-link-left"><i class="fas fa-heart-pulse ic-core"></i><span>Operasyon Merkezi</span></div>
                     <i class="fas fa-chevron-down chevron-icon"></i>
                 </button>
                 <div class="sub-links-container">
+                    @if (Can("admin.dashboard"))
+                    {
+                        <a class="@Active("Dashboard")" asp-controller="AdminPanel" asp-action="Dashboard">Genel Bakış</a>
+                    }
+                    @if (Can("admin.system_health"))
+                    {
+                        <a class="@Active("SystemHealth")" asp-controller="AdminPanel" asp-action="SystemHealth">Sistem Sağlığı</a>
+                        <a class="@Active("SlowSqlMonitor")" asp-controller="AdminPanel" asp-action="SlowSqlMonitor">Yavaş SQL Monitörü</a>
+                    }
+                    @if (Can("admin.platform_checkup"))
+                    {
+                        <a class="@Active("PlatformCheckup")" asp-controller="AdminPanel" asp-action="PlatformCheckup">Platform Checkup</a>
+                    }
+                    @if (Can("admin.platform_stats"))
+                    {
+                        <a class="@Active("PlatformDbStats")" asp-controller="AdminPanel" asp-action="PlatformDbStats">Veritabanı İstatistikleri</a>
+                    }
+                    @if (Can("admin.approval_center"))
+                    {
+                        <a class="@Active("ApprovalCenter")" asp-controller="AdminPanel" asp-action="ApprovalCenter">
+                            Onay Merkezi
+                            @if (Model.PendingPartnerApplications + Model.PendingCompanyApplications > 0)
+                            {
+                                <span class="ap-nav-badge">@Badge(Model.PendingPartnerApplications + Model.PendingCompanyApplications)</span>
+                            }
+                        </a>
+                    }
+                    @if (Can("admin.email_queue"))
+                    {
+                        <a class="@Active("EmailQueue")" asp-controller="AdminPanel" asp-action="EmailQueue">E-posta Kuyruğu</a>
+                    }
+                    @if (Can("admin.geo_search_logs"))
+                    {
+                        <a class="@Active("GeoSearchLogs")" asp-controller="AdminPanel" asp-action="GeoSearchLogs">Konum Arama Logları</a>
+                    }
+                    @if (Can("admin.rate_limit"))
+                    {
+                        <a class="@Active("RateLimitStats")" asp-controller="AdminPanel" asp-action="RateLimitStats">Rate Limit</a>
+                    }
+                    @if (Can("admin.admin_action_logs"))
+                    {
+                        <a class="@Active("AdminActionLogs")" asp-controller="AdminPanel" asp-action="AdminActionLogs">İşlem Logları</a>
+                    }
+                    @if (Can("admin.logs"))
+                    {
+                        <a class="@Active("Logs")" asp-controller="AdminPanel" asp-action="Logs">
+                            Log Kayıtları
+                            @if (Model.CriticalLogs > 0)
+                            {
+                                <span class="ap-nav-badge">@Badge(Model.CriticalLogs)</span>
+                            }
+                        </a>
+                    }
+                </div>
+            </div>
+        }
+
+        <span class="sidebar-group-label">Finans & Komisyon</span>
+        @if (Can("admin.commissions") || Can("admin.invoices") || Can("admin.payments") || Can("admin.contracts") || Can("admin.reports") || Can("admin.reservations") || Can("admin.commerce_insight") || Can("admin.platform_packages"))
+        {
+            <div class="nav-menu-item @(financeOpen ? "open active" : "")" data-nav-group>
+                <button type="button" class="nav-main-link" data-admin-nav-toggle aria-expanded="@(financeOpen ? "true" : "false")">
+                    <div class="nav-link-left"><i class="fas fa-coins ic-fin"></i><span>Gelir & Tahsilat</span></div>
+                    <i class="fas fa-chevron-down chevron-icon"></i>
+                </button>
+                <div class="sub-links-container">
+                    @if (Can("admin.reports"))
+                    {
+                        <a class="@Active("RevenueCommandCenter")" asp-controller="AdminPanel" asp-action="RevenueCommandCenter">Gelir Komuta Merkezi</a>
+                        <a class="@Active("Reports")" asp-controller="AdminPanel" asp-action="Reports">Gelir / Komisyon Raporu</a>
+                    }
+                    @if (Can("admin.unified_reservations"))
+                    {
+                        <a class="@Active("UnifiedReservations")" asp-controller="AdminPanel" asp-action="UnifiedReservations">Tüm Rezervasyonlar</a>
+                    }
+                    @if (Can("admin.reservations"))
+                    {
+                        <a class="@Active("Reservations")" asp-controller="AdminPanel" asp-action="Reservations">Rezervasyon Listesi</a>
+                    }
+                    @if (Can("admin.commissions"))
+                    {
+                        <a class="@Active("Commissions")" asp-controller="AdminPanel" asp-action="Commissions">Komisyon Oranları</a>
+                        <a class="@Active("CommissionCollection")" asp-controller="AdminPanel" asp-action="CommissionCollection">Komisyon Tahsilat</a>
+                    }
+                    @if (Can("admin.invoices"))
+                    {
+                        <a class="@Active("Invoices")" asp-controller="AdminPanel" asp-action="Invoices">Faturalar & Cari</a>
+                    }
+                    @if (Can("admin.payments"))
+                    {
+                        <a class="@Active("Payments")" asp-controller="AdminPanel" asp-action="Payments">Ödeme İşlemleri</a>
+                    }
+                    @if (Can("admin.contracts"))
+                    {
+                        <a class="@Active("Contracts")" asp-controller="AdminPanel" asp-action="Contracts">Sözleşmeler</a>
+                    }
+                    @if (Can("admin.commerce_insight"))
+                    {
+                        <a class="@Active("CommerceInsight")" asp-controller="AdminPanel" asp-action="CommerceInsight">Ticari İçgörü & Fiyat Analizi</a>
+                    }
+                    @if (Can("admin.platform_packages"))
+                    {
+                        <a class="@Active("PlatformPackages")" asp-controller="AdminPanel" asp-action="PlatformPackages">Platform Paketleri</a>
+                    }
+                </div>
+            </div>
+        }
+
+        <span class="sidebar-group-label">Sistem Konfigürasyonu</span>
+        @if (Can("admin.roles") || Can("admin.users") || Can("admin.managers") || Can("admin.platform_officials") || Can("admin.settings") || Can("admin.security") || Can("admin.mail_center") || Can("admin.notifications") || Can("admin.development_requests"))
+        {
+            <div class="nav-menu-item @(configOpen ? "open active" : "")" data-nav-group>
+                <button type="button" class="nav-main-link" data-admin-nav-toggle aria-expanded="@(configOpen ? "true" : "false")">
+                    <div class="nav-link-left"><i class="fas fa-sliders ic-set"></i><span>Kullanıcı & Ayarlar</span></div>
+                    <i class="fas fa-chevron-down chevron-icon"></i>
+                </button>
+                <div class="sub-links-container">
+                    @if (Can("admin.roles"))
+                    {
+                        <a class="@Active("AdminRoles")" asp-controller="AdminPanel" asp-action="AdminRoles">Roller</a>
+                        <a class="@Active("AdminRbacRoles")" asp-controller="AdminPanel" asp-action="AdminRbacRoles">Admin Panel Rolleri</a>
+                    }
+                    @if (Can("admin.users"))
+                    {
+                        <a class="@Active("Users")" asp-controller="AdminPanel" asp-action="Users">Kullanıcılar (B2C)</a>
+                    }
+                    @if (Can("admin.managers"))
+                    {
+                        <a class="@Active("Managers")" asp-controller="AdminPanel" asp-action="Managers">Yönetici Hesapları</a>
+                    }
+                    @if (Can("admin.platform_officials"))
+                    {
+                        <a class="@Active("PlatformOfficials")" asp-controller="AdminPanel" asp-action="PlatformOfficials">Platform Yetkilileri</a>
+                    }
                     @if (Can("admin.settings"))
                     {
-                        <a class="@Active("Settings")" asp-controller="AdminPanel" asp-action="Settings">Global Vergi Dilimleri</a>
+                        <a class="@Active("Settings")" asp-controller="AdminPanel" asp-action="Settings">Genel Ayarlar</a>
                     }
                     @if (Can("admin.settings_monitor"))
                     {
                         <a class="@Active("SettingsMonitor")" asp-controller="AdminPanel" asp-action="SettingsMonitor">Ayar Monitörü</a>
                     }
+                    @if (Can("admin.security"))
+                    {
+                        <a class="@Active("Security")" asp-controller="AdminPanel" asp-action="Security">Güvenlik Politikaları</a>
+                    }
+                    @if (Can("admin.security_events"))
+                    {
+                        <a class="@Active("SecurityEvents")" asp-controller="AdminPanel" asp-action="SecurityEvents">Güvenlik Olayları</a>
+                    }
                     @if (Can("admin.sitemap"))
                     {
                         <a class="@Active("Sitemap")" asp-controller="AdminPanel" asp-action="Sitemap">Sitemap XML</a>
                     }
-                    @if (Can("admin.security"))
+                    @if (Can("admin.mail_center"))
                     {
-                        <a class="@Active("Security")" asp-controller="AdminPanel" asp-action="Security">Güvenlik Politikaları</a>
+                        <a class="@Active("MailCenter")" asp-controller="AdminPanel" asp-action="MailCenter">Mail Merkezi</a>
+                        <a class="@Active("EmailRouting")" asp-controller="AdminPanel" asp-action="EmailRouting">E-posta Yönlendirmeleri</a>
+                        <a class="@Active("EmailTemplates")" asp-controller="AdminPanel" asp-action="EmailTemplates">E-posta Şablonları</a>
+                    }
+                    @if (Can("admin.whatsapp"))
+                    {
+                        <a class="@Active("WhatsAppCloudApi")" asp-controller="AdminPanel" asp-action="WhatsAppCloudApi">WhatsApp Cloud API</a>
                     }
                     @if (Can("admin.notifications"))
                     {
@@ -302,17 +331,6 @@
                                 <span class="ap-nav-badge">@Badge(Model.UnreadNotifications)</span>
                             }
                         </a>
-                    }
-                    @if (Can("admin.mail_center"))
-                    {
-                        <a class="@Active("MailCenter")" asp-controller="AdminPanel" asp-action="MailCenter">Mail Merkezi</a>
-                        <a class="@Active("EmailQueue")" asp-controller="AdminPanel" asp-action="EmailQueue">E-posta Kuyruğu</a>
-                        <a class="@Active("EmailRouting")" asp-controller="AdminPanel" asp-action="EmailRouting">E-posta Yönlendirmeleri</a>
-                        <a class="@Active("EmailTemplates")" asp-controller="AdminPanel" asp-action="EmailTemplates">E-posta Hesapları</a>
-                    }
-                    @if (Can("admin.whatsapp"))
-                    {
-                        <a class="@Active("WhatsAppCloudApi")" asp-controller="AdminPanel" asp-action="WhatsAppCloudApi">WhatsApp Cloud API</a>
                     }
                     @if (Can("admin.blog"))
                     {
@@ -325,8 +343,12 @@
                     @if (Can("admin.support_articles"))
                     {
                         <a class="@Active("SupportArticles")" asp-controller="AdminPanel" asp-action="SupportArticles">Destek Makaleleri</a>
-                        <a class="@Active("HelpCenter")" asp-controller="AdminPanel" asp-action="HelpCenter">Yardım Merkezi Yönetim</a>
+                        <a class="@Active("HelpCenter")" asp-controller="AdminPanel" asp-action="HelpCenter">Yardım Merkezi</a>
                         <a class="@Active("Team")" asp-controller="AdminPanel" asp-action="Team">Platform Ekibi</a>
+                    }
+                    @if (Can("admin.development_requests"))
+                    {
+                        <a class="@Active("DevelopmentRequests")" asp-controller="AdminPanel" asp-action="DevelopmentRequests">Geliştirme Talepleri</a>
                     }
                     @if (Can("admin.complaints"))
                     {
@@ -339,32 +361,6 @@
                     @if (Can("admin.backups"))
                     {
                         <a class="@Active("Backups")" asp-controller="AdminPanel" asp-action="Backups">Yedekleme</a>
-                    }
-                    @if (Can("admin.logs"))
-                    {
-                        <a class="@Active("Logs")" asp-controller="AdminPanel" asp-action="Logs">
-                            Log Kayıtları
-                            @if (Model.CriticalLogs > 0)
-                            {
-                                <span class="ap-nav-badge">@Badge(Model.CriticalLogs)</span>
-                            }
-                        </a>
-                    }
-                    @if (Can("admin.admin_action_logs"))
-                    {
-                        <a class="@Active("AdminActionLogs")" asp-controller="AdminPanel" asp-action="AdminActionLogs">İşlem Logları</a>
-                    }
-                    @if (Can("admin.geo_search_logs"))
-                    {
-                        <a class="@Active("GeoSearchLogs")" asp-controller="AdminPanel" asp-action="GeoSearchLogs">Konum Arama Logları</a>
-                    }
-                    @if (Can("admin.hotel_coord_changes"))
-                    {
-                        <a class="@Active("HotelCoordinateChanges")" asp-controller="AdminPanel" asp-action="HotelCoordinateChanges">Otel Koordinat Değişimleri</a>
-                    }
-                    @if (Can("admin.rate_limit"))
-                    {
-                        <a class="@Active("RateLimitStats")" asp-controller="AdminPanel" asp-action="RateLimitStats">Rate Limit</a>
                     }
                 </div>
             </div>
