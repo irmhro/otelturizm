@@ -17,7 +17,9 @@
     }
     var title = ViewData["Title"] as string ?? shell?.PanelTitle ?? "Admin Panel";
     var currentAction = ViewContext.RouteData.Values["action"]?.ToString() ?? string.Empty;
-    var hideLayoutHeader = string.Equals(currentAction, "Dashboard", StringComparison.OrdinalIgnoreCase);
+    var hideLayoutHeader = string.Equals(currentAction, "Dashboard", StringComparison.OrdinalIgnoreCase)
+        || string.Equals(currentAction, "Hotels", StringComparison.OrdinalIgnoreCase)
+        || string.Equals(currentAction, "HotelDetail", StringComparison.OrdinalIgnoreCase);
     var nonce = Context.Items["CspNonce"] as string;
     var rawUserId = Context.User.FindFirstValue(otelturizmnew.Constants.AuthClaimTypes.UserId) ?? Context.User.FindFirstValue(System.Security.Claims.ClaimTypes.NameIdentifier);
     var userId = long.TryParse(rawUserId, out var parsedUserId) ? parsedUserId : 0;

@@ -55,6 +55,22 @@
     <div class="admin-alert is-error"><i class="fas fa-triangle-exclamation"></i><span>@errorMessage</span></div>
 }
 
+@if (Model.MissingFields.Count > 0)
+{
+    <div class="admin-alert is-error admin-hotel-missing-alert">
+        <i class="fas fa-triangle-exclamation"></i>
+        <div>
+            <strong>Eksik veya tamamlanmamis alanlar (@Model.MissingFields.Count)</strong>
+            <ul class="admin-hotel-missing-list">
+                @foreach (var field in Model.MissingFields)
+                {
+                    <li class="@(string.Equals(field.Severity, "critical", StringComparison.OrdinalIgnoreCase) ? "is-critical" : "is-warning")">@field.FieldLabel</li>
+                }
+            </ul>
+        </div>
+    </div>
+}
+
 <section class="admin-hotel-command-bar">
     <div class="admin-hotel-command-copy">
         <h2>@Model.HotelForm.HotelName</h2>
@@ -88,11 +104,22 @@
 </section>
 
 <nav class="admin-section-pager" aria-label="Otel yonetim bolum gecisleri">
-    <a href="#section-temel-kayit" class="is-active">Temel Otel Kaydi</a>
-    <a href="#section-bagli-odalar">Bagli Odalar</a>
-    <a href="#section-yeni-oda">Yeni Oda Tipi Ekle</a>
-    <a href="#section-otel-galeri">Otel Galerisi</a>
-    <a href="#section-oda-gorselleri">Oda Gorselleri</a>
+    <a href="#section-temel-kayit" class="is-active" data-tab-target="section-temel-kayit">Temel Kayit</a>
+    <a href="#section-yonetici" data-tab-target="section-yonetici">Yonetici</a>
+    <a href="#section-partner-kullanicilar" data-tab-target="section-partner-kullanicilar">Partner Kullanicilari</a>
+    <a href="#section-epostalar" data-tab-target="section-epostalar">E-postalar</a>
+    <a href="#section-rezervasyonlar" data-tab-target="section-rezervasyonlar">Rezervasyonlar</a>
+    <a href="#section-giris-cikis" data-tab-target="section-giris-cikis">Giris / Cikis</a>
+    <a href="#section-odalar-tablo" data-tab-target="section-odalar-tablo">Oda Tipleri</a>
+    <a href="#section-komisyon" data-tab-target="section-komisyon">Komisyon / Fiyat</a>
+    <a href="#section-aciklama" data-tab-target="section-aciklama">Aciklama</a>
+    <a href="#section-ozellikler" data-tab-target="section-ozellikler">Ozellikler</a>
+    <a href="#section-bagli-odalar" data-tab-target="section-bagli-odalar">Odalar</a>
+    <a href="#section-yeni-oda" data-tab-target="section-yeni-oda">Oda Formu</a>
+    <a href="#section-fiyatlar" data-tab-target="section-fiyatlar">Fiyat / Kontenjan</a>
+    <a href="#section-otel-galeri" data-tab-target="section-otel-galeri">Galeri</a>
+    <a href="#section-oda-gorselleri" data-tab-target="section-oda-gorselleri">Oda Gorselleri</a>
+    <a href="#section-evraklar" data-tab-target="section-evraklar">Evraklar</a>
 </nav>
 
 <section class="admin-detail-grid">
@@ -177,7 +204,271 @@
         </form>
     </article>
 
-    <aside class="admin-section-card admin-side-card admin-anchor-target ot-card" id="section-bagli-odalar">
+    <article class="admin-section-card admin-anchor-target ot-card admin-tab-panel" id="section-yonetici" hidden>
+        <div class="admin-section-head">
+            <div>
+                <p class="mini-caption">PARTNER_DETAYLARI + OTELLER</p>
+                <h2>Yonetici bilgileri</h2>
+                <p>Partner yetkili ve otel satis kontak bilgileri.</p>
+            </div>
+            @if (Model.HotelForm.PartnerId > 0)
+            {
+                <a class="admin-action-btn secondary" href="/admin/partner-basvurulari?partnerId=@Model.HotelForm.PartnerId">Partner kaydina git</a>
+            }
+        </div>
+        <dl class="admin-readonly-grid">
+            <div><dt>Firma unvani</dt><dd>@(string.IsNullOrWhiteSpace(Model.ManagerInfo.CompanyName) ? "—" : Model.ManagerInfo.CompanyName)</dd></div>
+            <div><dt>Yetkili ad soyad</dt><dd>@(string.IsNullOrWhiteSpace(Model.ManagerInfo.ManagerName) ? "—" : Model.ManagerInfo.ManagerName)</dd></div>
+            <div><dt>Yetkili telefon</dt><dd>@(string.IsNullOrWhiteSpace(Model.ManagerInfo.ManagerPhone) ? "—" : Model.ManagerInfo.ManagerPhone)</dd></div>
+            <div><dt>Yetkili e-posta</dt><dd>@(string.IsNullOrWhiteSpace(Model.ManagerInfo.ManagerEmail) ? "—" : Model.ManagerInfo.ManagerEmail)</dd></div>
+            <div><dt>Yetkili gorev</dt><dd>@(string.IsNullOrWhiteSpace(Model.ManagerInfo.ManagerRole) ? "—" : Model.ManagerInfo.ManagerRole)</dd></div>
+            <div><dt>Partner onay</dt><dd>@(string.IsNullOrWhiteSpace(Model.ManagerInfo.ApprovalStatus) ? "—" : Model.ManagerInfo.ApprovalStatus)</dd></div>
+            <div><dt>Satis kontak</dt><dd>@(string.IsNullOrWhiteSpace(Model.ManagerInfo.SalesContactName) ? "—" : Model.ManagerInfo.SalesContactName)</dd></div>
+            <div><dt>Satis telefon</dt><dd>@(string.IsNullOrWhiteSpace(Model.ManagerInfo.SalesContactPhone) ? "—" : Model.ManagerInfo.SalesContactPhone)</dd></div>
+            <div><dt>Satis e-posta</dt><dd>@(string.IsNullOrWhiteSpace(Model.ManagerInfo.SalesContactEmail) ? "—" : Model.ManagerInfo.SalesContactEmail)</dd></div>
+        </dl>
+    </article>
+
+    <article class="admin-section-card admin-anchor-target ot-card admin-tab-panel" id="section-partner-kullanicilar" hidden>
+        <div class="admin-section-head">
+            <div>
+                <p class="mini-caption">OTEL_KULLANICI_SAHIPLIKLERI</p>
+                <h2>Partner kullanicilari</h2>
+                <p>Bu otel ile iliskili partner panel kullanicilari.</p>
+            </div>
+        </div>
+        @if (Model.PartnerUsers.Count == 0)
+        {
+            <div class="admin-empty-state">Bu otele bagli partner kullanicisi bulunamadi.</div>
+        }
+        else
+        {
+            <div class="admin-hotels-table-wrap">
+                <table class="admin-hotels-table">
+                    <thead><tr><th>Kullanici ID</th><th>Ad soyad</th><th>E-posta</th><th>Telefon</th><th>Rol</th><th>Ana sorumlu</th><th>Durum</th><th>Baglanti</th></tr></thead>
+                    <tbody>
+                        @foreach (var user in Model.PartnerUsers)
+                        {
+                            <tr>
+                                <td>@user.UserId</td>
+                                <td>@user.FullName</td>
+                                <td>@user.Email</td>
+                                <td>@(string.IsNullOrWhiteSpace(user.Phone) ? "—" : user.Phone)</td>
+                                <td>@user.Role</td>
+                                <td>@(user.IsMainResponsible ? "Evet" : "Hayir")</td>
+                                <td><span class="admin-chip @(user.IsActive ? "success" : "warning")">@(user.IsActive ? "Aktif" : "Pasif")</span></td>
+                                <td>@(user.LinkedAt?.ToString("dd.MM.yyyy") ?? "—")</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+    </article>
+
+    <article class="admin-section-card admin-anchor-target ot-card admin-tab-panel" id="section-epostalar" hidden>
+        <div class="admin-section-head">
+            <div>
+                <p class="mini-caption">PLATFORM_EPOSTA_HESAPLARI + OTELLER</p>
+                <h2>E-posta hesaplari</h2>
+            </div>
+            <a class="admin-action-btn secondary" href="/admin/e-posta-sablonlari">E-posta hesap merkezi</a>
+        </div>
+        @if (Model.EmailAccounts.Count == 0)
+        {
+            <div class="admin-empty-state">Bu otel icin tanimli e-posta hesabi bulunamadi.</div>
+        }
+        else
+        {
+            <div class="admin-hotels-table-wrap">
+                <table class="admin-hotels-table">
+                    <thead><tr><th>Kaynak</th><th>Hesap adi</th><th>E-posta</th><th>Protokol</th><th>Varsayilan</th><th>Durum</th><th>Son senkron</th></tr></thead>
+                    <tbody>
+                        @foreach (var account in Model.EmailAccounts)
+                        {
+                            <tr>
+                                <td>@account.Source</td>
+                                <td>@account.AccountName</td>
+                                <td>@account.EmailAddress</td>
+                                <td>@account.Protocol</td>
+                                <td>@(account.IsDefaultSender ? "Evet" : "—")</td>
+                                <td><span class="admin-chip @(account.IsActive ? "success" : "warning")">@(account.IsActive ? "Aktif" : "Pasif")</span></td>
+                                <td>@(account.LastSyncAt?.ToString("dd.MM.yyyy HH:mm") ?? "—")</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+    </article>
+
+    <article class="admin-section-card admin-anchor-target ot-card admin-tab-panel" id="section-rezervasyonlar" hidden>
+        <div class="admin-section-head">
+            <div>
+                <p class="mini-caption">REZERVASYONLAR + OTEL_ISTATISTIKLERI</p>
+                <h2>Rezervasyon istatistikleri</h2>
+            </div>
+            <a class="admin-action-btn secondary" href="/admin/rezervasyonlar?hotelId=@Model.HotelForm.HotelId">Tum rezervasyonlar</a>
+        </div>
+        <div class="admin-summary-grid compact">
+            <article class="admin-summary-card info"><div><p>Toplam rezervasyon</p><h2>@Model.ReservationStats.TotalReservations</h2></div></article>
+            <article class="admin-summary-card success"><div><p>Benzersiz misafir</p><h2>@Model.ReservationStats.UniqueGuestCount</h2></div></article>
+            <article class="admin-summary-card warning"><div><p>Onayli</p><h2>@Model.ReservationStats.ConfirmedCount</h2></div></article>
+            <article class="admin-summary-card danger"><div><p>Iptal</p><h2>@Model.ReservationStats.CancelledCount</h2></div></article>
+            <article class="admin-summary-card info"><div><p>Toplam ciro</p><h2>@Model.ReservationStats.TotalRevenue.ToString("0.##") TL</h2></div></article>
+            <article class="admin-summary-card success"><div><p>Toplam komisyon</p><h2>@Model.ReservationStats.TotalCommission.ToString("0.##") TL</h2></div></article>
+        </div>
+        @if (Model.RecentReservations.Count == 0)
+        {
+            <div class="admin-empty-state top-gap">Bu otelde henuz rezervasyon kaydi yok.</div>
+        }
+        else
+        {
+            <div class="admin-hotels-table-wrap top-gap">
+                <table class="admin-hotels-table">
+                    <thead><tr><th>No</th><th>Misafir</th><th>E-posta</th><th>Oda</th><th>Giris</th><th>Cikis</th><th>Tutar</th><th>Komisyon %</th><th>Durum</th></tr></thead>
+                    <tbody>
+                        @foreach (var reservation in Model.RecentReservations)
+                        {
+                            <tr>
+                                <td>@reservation.ReservationNo</td>
+                                <td>@reservation.GuestName</td>
+                                <td>@reservation.GuestEmail</td>
+                                <td>@reservation.RoomName</td>
+                                <td>@reservation.CheckIn.ToString("dd.MM.yyyy")</td>
+                                <td>@reservation.CheckOut.ToString("dd.MM.yyyy")</td>
+                                <td>@reservation.TotalAmount.ToString("0.##") TL</td>
+                                <td>@reservation.CommissionRate.ToString("0.##")</td>
+                                <td><span class="admin-chip info">@reservation.Status</span></td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+    </article>
+
+    <article class="admin-section-card admin-anchor-target ot-card admin-tab-panel" id="section-giris-cikis" hidden>
+        <div class="admin-section-head">
+            <div>
+                <p class="mini-caption">OTELLER + OTEL_KOSULLARI</p>
+                <h2>Giris / cikis kurallari</h2>
+            </div>
+        </div>
+        <dl class="admin-readonly-grid">
+            <div><dt>Check-in saati</dt><dd>@(string.IsNullOrWhiteSpace(Model.CheckInOutRules.CheckInTime) ? "—" : Model.CheckInOutRules.CheckInTime)</dd></div>
+            <div><dt>Check-out saati</dt><dd>@(string.IsNullOrWhiteSpace(Model.CheckInOutRules.CheckOutTime) ? "—" : Model.CheckInOutRules.CheckOutTime)</dd></div>
+            <div><dt>Erken giris</dt><dd>@(Model.CheckInOutRules.EarlyCheckInAvailable ? $"Acik ({Model.CheckInOutRules.EarlyCheckInFee?.ToString("0.##") ?? "0"} TL)" : "Kapali")</dd></div>
+            <div><dt>Gec cikis</dt><dd>@(Model.CheckInOutRules.LateCheckoutAvailable ? $"Acik ({Model.CheckInOutRules.LateCheckoutFee?.ToString("0.##") ?? "0"} TL)" : "Kapali")</dd></div>
+            <div><dt>Min gece</dt><dd>@(Model.CheckInOutRules.MinStay?.ToString() ?? "—")</dd></div>
+            <div><dt>Max gece</dt><dd>@(Model.CheckInOutRules.MaxStay?.ToString() ?? "—")</dd></div>
+            <div><dt>Iptal ozeti</dt><dd>@(string.IsNullOrWhiteSpace(Model.CheckInOutRules.CancellationPolicySummary) ? "—" : Model.CheckInOutRules.CancellationPolicySummary)</dd></div>
+            <div><dt>Ucretsiz iptal (saat)</dt><dd>@(Model.CheckInOutRules.FreeCancellationHours?.ToString() ?? "—")</dd></div>
+            <div><dt>No-show ceza %</dt><dd>@(Model.CheckInOutRules.NoShowPenaltyRate?.ToString("0.##") ?? "—")</dd></div>
+            <div><dt>Sessizlik saatleri</dt><dd>@(string.IsNullOrWhiteSpace(Model.CheckInOutRules.QuietHours) ? "—" : Model.CheckInOutRules.QuietHours)</dd></div>
+            <div class="span-2"><dt>Detayli iptal kosullari</dt><dd>@(string.IsNullOrWhiteSpace(Model.CheckInOutRules.DetailedCancellationRules) ? "—" : Model.CheckInOutRules.DetailedCancellationRules)</dd></div>
+            <div class="span-2"><dt>Ozel kosullar</dt><dd>@(string.IsNullOrWhiteSpace(Model.CheckInOutRules.SpecialRules) ? "—" : Model.CheckInOutRules.SpecialRules)</dd></div>
+        </dl>
+    </article>
+
+    <article class="admin-section-card admin-anchor-target ot-card admin-tab-panel" id="section-odalar-tablo" hidden>
+        <div class="admin-section-head">
+            <div>
+                <p class="mini-caption">ODA_TIPLERI</p>
+                <h2>Oda tipleri tablosu</h2>
+            </div>
+        </div>
+        @if (Model.RoomTableRows.Count == 0)
+        {
+            <div class="admin-empty-state">Bu otelde tanimli oda tipi yok.</div>
+        }
+        else
+        {
+            <div class="admin-hotels-table-wrap">
+                <table class="admin-hotels-table">
+                    <thead><tr><th>ID</th><th>Kod</th><th>Ad</th><th>Kategori</th><th>Taban fiyat</th><th>Kapasite</th><th>Stok</th><th>Yatak</th><th>m2</th><th>Durum</th><th></th></tr></thead>
+                    <tbody>
+                        @foreach (var room in Model.RoomTableRows)
+                        {
+                            <tr class="@(room.IsActive ? string.Empty : "is-passive-row")">
+                                <td>@room.RoomId</td>
+                                <td>@room.RoomCode</td>
+                                <td>@room.RoomName</td>
+                                <td>@room.Category</td>
+                                <td>@room.BasePrice.ToString("0.##") TL</td>
+                                <td>@room.MaxPeople</td>
+                                <td>@room.TotalRooms</td>
+                                <td>@(string.IsNullOrWhiteSpace(room.BedType) ? "—" : room.BedType)</td>
+                                <td>@(room.RoomSize?.ToString() ?? "—")</td>
+                                <td><span class="admin-chip @(room.IsActive ? "success" : "warning")">@(room.IsActive ? "Aktif" : "Pasif")</span></td>
+                                <td><a href="/admin/otel-detay/@Model.HotelForm.HotelId?roomId=@room.RoomId" class="admin-text-link">Duzenle</a></td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+    </article>
+
+    <article class="admin-section-card admin-anchor-target ot-card admin-tab-panel" id="section-komisyon" hidden>
+        <div class="admin-section-head">
+            <div>
+                <p class="mini-caption">OTELLER + REZERVASYONLAR</p>
+                <h2>Komisyon ve toplam fiyat ozeti</h2>
+            </div>
+            <a class="admin-action-btn secondary" href="/admin/komisyonlar">Komisyon merkezi</a>
+        </div>
+        <dl class="admin-readonly-grid">
+            <div><dt>Komisyon turu</dt><dd>@Model.CommissionSummary.CommissionType</dd></div>
+            <div><dt>Varsayilan oran %</dt><dd>@Model.CommissionSummary.DefaultCommissionRate.ToString("0.##")</dd></div>
+            <div><dt>Hesaplama tipi</dt><dd>@Model.CommissionSummary.CommissionCalculationType</dd></div>
+            <div><dt>Odeme vadesi</dt><dd>@Model.CommissionSummary.PaymentTerm</dd></div>
+            <div><dt>Odeme yontemi</dt><dd>@Model.CommissionSummary.PaymentMethod</dd></div>
+            <div><dt>Fatura kesim</dt><dd>@Model.CommissionSummary.InvoiceType</dd></div>
+            <div><dt>Toplam rezervasyon tutari</dt><dd>@Model.CommissionSummary.TotalReservationAmount.ToString("0.##") TL</dd></div>
+            <div><dt>Toplam komisyon tutari</dt><dd>@Model.CommissionSummary.TotalCommissionAmount.ToString("0.##") TL</dd></div>
+            <div><dt>Ortalama oda taban fiyati</dt><dd>@Model.CommissionSummary.AverageRoomBasePrice.ToString("0.##") TL</dd></div>
+        </dl>
+    </article>
+
+    <article class="admin-section-card admin-anchor-target ot-card admin-tab-panel" id="section-aciklama" hidden>
+        <div class="admin-section-head">
+            <div>
+                <p class="mini-caption">ACIKLAMA ALANLARI</p>
+                <h2>Otel aciklamalari</h2>
+                <p>Kisa/uzun aciklama ve konum metinleri temel kayit formundan guncellenir.</p>
+            </div>
+        </div>
+        <dl class="admin-readonly-grid">
+            <div><dt>Kisa aciklama</dt><dd>@(string.IsNullOrWhiteSpace(Model.HotelForm.ShortDescription) ? "—" : Model.HotelForm.ShortDescription)</dd></div>
+            <div><dt>Uzun aciklama</dt><dd>@(string.IsNullOrWhiteSpace(Model.HotelForm.Description) ? "—" : Model.HotelForm.Description)</dd></div>
+            <div><dt>Konum aciklamasi</dt><dd>@(string.IsNullOrWhiteSpace(Model.HotelForm.LocationDescription) ? "—" : Model.HotelForm.LocationDescription)</dd></div>
+        </dl>
+    </article>
+
+    <article class="admin-section-card admin-anchor-target ot-card admin-tab-panel" id="section-ozellikler" hidden>
+        <div class="admin-section-head">
+            <div>
+                <p class="mini-caption">OTEL_OZELLIK_ILISKILERI</p>
+                <h2>Ozellikler ve hizmetler</h2>
+            </div>
+        </div>
+        @if (Model.Amenities.Count == 0)
+        {
+            <div class="admin-empty-state">Bu otele bagli ozellik kaydi bulunamadi.</div>
+        }
+        else
+        {
+            <div class="admin-chip-grid">
+                @foreach (var amenity in Model.Amenities)
+                {
+                    <span class="admin-chip @(amenity.IsActive ? "success" : "warning")"><i class="fas fa-check"></i>@amenity.Category · @amenity.Name</span>
+                }
+            </div>
+        }
+    </article>
+
+    <aside class="admin-section-card admin-side-card admin-anchor-target ot-card admin-tab-panel" id="section-bagli-odalar" hidden>
         <div class="admin-section-head"><div><p class="mini-caption">ODA TIPLERI</p><h2>Bagli odalar</h2></div></div>
         <div class="admin-linked-list">
             @foreach (var room in Model.Rooms)
@@ -189,7 +480,7 @@
                         <small>@room.PriceText · @room.CapacityText · @room.StockText</small>
                     </div>
                     <div class="admin-inline-actions">
-                        <a href="/admin/oteller/duzenle/@Model.HotelForm.HotelId?roomId=@room.RoomId" class="admin-action-btn secondary ot-btn ot-btn--ghost">Duzenle</a>
+                        <a href="/admin/otel-detay/@Model.HotelForm.HotelId?roomId=@room.RoomId" class="admin-action-btn secondary ot-btn ot-btn--ghost">Duzenle</a>
                         <form method="post" action="/admin/oteller/oda-pasife-al" onsubmit="return confirm('Oda tipi pasife alinsin mi?');">
                             @Html.AntiForgeryToken()
                             <input type="hidden" name="hotelId" value="@Model.HotelForm.HotelId" />
@@ -204,7 +495,40 @@
 </section>
 
 <section class="admin-detail-grid secondary">
-    <article class="admin-section-card admin-anchor-target ot-card" id="section-yeni-oda">
+    <article class="admin-section-card admin-anchor-target ot-card admin-tab-panel" id="section-fiyatlar" hidden>
+        <div class="admin-section-head">
+            <div>
+                <p class="mini-caption">ODA_FIYAT_MUSAITLIK</p>
+                <h2>Fiyat ve kontenjan</h2>
+                <p>Son 30 gunluk oda bazli fiyat ve stok kayitlari.</p>
+            </div>
+        </div>
+        @if (Model.PriceRows.Count == 0)
+        {
+            <div class="admin-empty-state">Fiyat/musaitlik kaydi bulunamadi. Oda tiplerinden taban fiyat tanimlayin veya takvim fiyatlari ekleyin.</div>
+        }
+        else
+        {
+            <div class="admin-hotels-table-wrap">
+                <table class="admin-hotels-table">
+                    <thead><tr><th>Oda</th><th>Tarih</th><th>Fiyat</th><th>Toplam oda</th></tr></thead>
+                    <tbody>
+                        @foreach (var row in Model.PriceRows)
+                        {
+                            <tr>
+                                <td>@row.RoomName</td>
+                                <td>@row.Date.ToString("dd.MM.yyyy")</td>
+                                <td>@row.Price.ToString("0.##") TL</td>
+                                <td>@(row.AvailableRooms?.ToString() ?? "—")</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+    </article>
+
+    <article class="admin-section-card admin-anchor-target ot-card admin-tab-panel" id="section-yeni-oda" hidden>
         <div class="admin-section-head"><div><p class="mini-caption">ODA TIPLERI TABLOSU</p><h2>@(Model.IsEditingRoom ? "Oda tipini duzenle" : "Yeni oda tipi ekle")</h2></div></div>
         <form method="post" action="/admin/oteller/oda-kaydet" class="admin-form-grid">
             @Html.AntiForgeryToken()
@@ -242,7 +566,7 @@
         </form>
     </article>
 
-    <article class="admin-section-card admin-anchor-target ot-card" id="section-otel-galeri">
+    <article class="admin-section-card admin-anchor-target ot-card admin-tab-panel" id="section-otel-galeri" hidden>
         <div class="admin-section-head"><div><p class="mini-caption">OTEL GORSELLERI</p><h2>Otel galerisi</h2></div></div>
         <form method="post" action="/admin/oteller/otel-fotograf-yukle" enctype="multipart/form-data" class="admin-form-grid compact">
             @Html.AntiForgeryToken()
@@ -268,7 +592,7 @@
                             <span>@photo.Type · Sira @photo.SortOrder</span>
                             <p>@(string.IsNullOrWhiteSpace(photo.Description) ? "Aciklama girilmemis." : photo.Description)</p>
                             <div class="admin-inline-actions wrap">
-                                <a href="/admin/oteller/duzenle/@Model.HotelForm.HotelId?hotelPhotoId=@photo.PhotoId" class="admin-action-btn secondary">Duzenle</a>
+                                <a href="/admin/otel-detay/@Model.HotelForm.HotelId?hotelPhotoId=@photo.PhotoId" class="admin-action-btn secondary">Duzenle</a>
                                 <form method="post" action="/admin/oteller/otel-fotograf-kapak-yap">@Html.AntiForgeryToken()<input type="hidden" name="hotelId" value="@Model.HotelForm.HotelId" /><input type="hidden" name="photoId" value="@photo.PhotoId" /><button type="submit" class="admin-action-btn secondary">Kapak yap</button></form>
                                 <form method="post" action="/admin/oteller/otel-fotograf-sil" onsubmit="return confirm('Otel fotografi silinsin mi?');">@Html.AntiForgeryToken()<input type="hidden" name="hotelId" value="@Model.HotelForm.HotelId" /><input type="hidden" name="photoId" value="@photo.PhotoId" /><button type="submit" class="admin-action-btn danger">Sil</button></form>
                             </div>
@@ -292,7 +616,7 @@
     </article>
 </section>
 
-<section class="admin-section-card admin-anchor-target ot-card" id="section-oda-gorselleri">
+<section class="admin-section-card admin-anchor-target ot-card admin-tab-panel" id="section-oda-gorselleri" hidden>
     <div class="admin-section-head"><div><p class="mini-caption">ODA GORSELLERI</p><h2>@(string.IsNullOrWhiteSpace(Model.SelectedRoomName) ? "Oda secin" : Model.SelectedRoomName)</h2></div></div>
     @if (!Model.SelectedRoomId.HasValue)
     {
@@ -324,7 +648,7 @@
                             <span>@photo.RoomName · Sira @photo.SortOrder</span>
                             <p>@(string.IsNullOrWhiteSpace(photo.Description) ? "Aciklama girilmemis." : photo.Description)</p>
                             <div class="admin-inline-actions wrap">
-                                <a href="/admin/oteller/duzenle/@Model.HotelForm.HotelId?roomId=@photo.RoomId&roomPhotoId=@photo.PhotoId" class="admin-action-btn secondary">Duzenle</a>
+                                <a href="/admin/otel-detay/@Model.HotelForm.HotelId?roomId=@photo.RoomId&roomPhotoId=@photo.PhotoId" class="admin-action-btn secondary">Duzenle</a>
                                 <form method="post" action="/admin/oteller/oda-fotograf-kapak-yap">@Html.AntiForgeryToken()<input type="hidden" name="hotelId" value="@Model.HotelForm.HotelId" /><input type="hidden" name="roomId" value="@photo.RoomId" /><input type="hidden" name="photoId" value="@photo.PhotoId" /><button type="submit" class="admin-action-btn secondary">Kapak yap</button></form>
                                 <form method="post" action="/admin/oteller/oda-fotograf-sil" onsubmit="return confirm('Oda fotografi silinsin mi?');">@Html.AntiForgeryToken()<input type="hidden" name="hotelId" value="@Model.HotelForm.HotelId" /><input type="hidden" name="roomId" value="@photo.RoomId" /><input type="hidden" name="photoId" value="@photo.PhotoId" /><button type="submit" class="admin-action-btn danger">Sil</button></form>
                             </div>
@@ -347,6 +671,43 @@
     }
 </section>
 
+<section class="admin-section-card admin-anchor-target ot-card admin-tab-panel" id="section-evraklar" hidden>
+    <div class="admin-section-head">
+        <div>
+            <p class="mini-caption">PARTNER_BASVURU_EVRAKLARI</p>
+            <h2>Partner evraklari</h2>
+            <p>Partner ID: @Model.HotelForm.PartnerId</p>
+        </div>
+        @if (Model.HotelForm.PartnerId > 0)
+        {
+            <a class="admin-action-btn secondary" href="/admin/partner-evraklari?partnerId=@Model.HotelForm.PartnerId">Partner evrak merkezi</a>
+        }
+    </div>
+    @if (Model.Documents.Count == 0)
+    {
+        <div class="admin-empty-state">Bu partner icin yuklenmis evrak bulunamadi.</div>
+    }
+    else
+    {
+        <div class="admin-hotels-table-wrap">
+            <table class="admin-hotels-table">
+                <thead><tr><th>Baslik</th><th>Tip</th><th>Durum</th><th>Yukleme</th></tr></thead>
+                <tbody>
+                    @foreach (var doc in Model.Documents)
+                    {
+                        <tr>
+                            <td>@doc.Title</td>
+                            <td>@doc.Type</td>
+                            <td><span class="admin-chip info">@doc.Status</span></td>
+                            <td>@(doc.UploadedAt?.ToString("dd.MM.yyyy HH:mm") ?? "—")</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
+</section>
+
 @section Scripts {
     @{
         var nonce = Context.Items["CspNonce"] as string;
@@ -354,46 +715,38 @@
     <script nonce="@nonce">
         (function () {
             const pager = document.querySelector('.admin-section-pager');
-            if (!pager) {
-                return;
-            }
+            if (!pager) return;
 
-            const links = Array.from(pager.querySelectorAll('a[href^="#"]'));
-            const targets = links
-                .map(function (link) { return document.querySelector(link.getAttribute('href')); })
-                .filter(Boolean);
+            const links = Array.from(pager.querySelectorAll('a[data-tab-target]'));
+            const panels = Array.from(document.querySelectorAll('.admin-tab-panel, #section-temel-kayit'));
 
-            function setActiveById(id) {
-                links.forEach(function (link) {
-                    const isActive = link.getAttribute('href') === '#' + id;
-                    link.classList.toggle('is-active', isActive);
+            function showPanel(id) {
+                panels.forEach(function (panel) {
+                    const isTarget = panel.id === id;
+                    if (panel.classList.contains('admin-tab-panel')) {
+                        panel.hidden = !isTarget;
+                    } else if (panel.id === 'section-temel-kayit') {
+                        panel.hidden = id !== 'section-temel-kayit';
+                    }
                 });
+                links.forEach(function (link) {
+                    link.classList.toggle('is-active', link.getAttribute('data-tab-target') === id);
+                });
+                if (history.replaceState) {
+                    history.replaceState(null, '', '#' + id);
+                }
             }
 
             links.forEach(function (link) {
-                link.addEventListener('click', function () {
-                    const hash = link.getAttribute('href');
-                    if (hash) {
-                        const id = hash.replace('#', '');
-                        setActiveById(id);
-                    }
+                link.addEventListener('click', function (event) {
+                    event.preventDefault();
+                    const targetId = link.getAttribute('data-tab-target');
+                    if (targetId) showPanel(targetId);
                 });
             });
 
-            if ('IntersectionObserver' in window && targets.length > 0) {
-                const observer = new IntersectionObserver(function (entries) {
-                    entries.forEach(function (entry) {
-                        if (entry.isIntersecting) {
-                            setActiveById(entry.target.id);
-                        }
-                    });
-                }, {
-                    rootMargin: '-120px 0px -55% 0px',
-                    threshold: 0.08
-                });
-
-                targets.forEach(function (target) { observer.observe(target); });
-            }
+            const initial = (location.hash || '#section-temel-kayit').replace('#', '');
+            showPanel(links.some(function (l) { return l.getAttribute('data-tab-target') === initial; }) ? initial : 'section-temel-kayit');
         })();
     </script>
 }

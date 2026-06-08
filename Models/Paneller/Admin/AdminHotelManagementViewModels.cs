@@ -12,7 +12,7 @@ public class AdminHotelsPageViewModel
     public string PublishStatusFilter { get; set; } = string.Empty;
     public string ApprovalStatusFilter { get; set; } = string.Empty;
     public int Page { get; set; } = 1;
-    public int PageSize { get; set; } = 20;
+    public int PageSize { get; set; } = 50;
     public int TotalCount { get; set; }
     public int TotalPages => Math.Max(1, (int)Math.Ceiling(TotalCount / (double)Math.Max(PageSize, 1)));
     public bool HasPreviousPage => Page > 1;
@@ -40,6 +40,7 @@ public class AdminHotelListItemViewModel
     public int HotelPhotoCount { get; set; }
     public int RoomPhotoCount { get; set; }
     public bool IsFeatured { get; set; }
+    public bool IsPublished { get; set; }
 }
 
 public class AdminHotelManagementPageViewModel
@@ -60,6 +61,155 @@ public class AdminHotelManagementPageViewModel
     public bool IsEditingRoomPhoto => RoomPhotoEditForm.PhotoId.HasValue;
     public long? SelectedRoomId { get; set; }
     public string SelectedRoomName { get; set; } = string.Empty;
+    public List<AdminHotelMissingFieldViewModel> MissingFields { get; set; } = new();
+    public List<AdminHotelAmenityViewModel> Amenities { get; set; } = new();
+    public List<AdminHotelPriceRowViewModel> PriceRows { get; set; } = new();
+    public List<AdminHotelDocumentViewModel> Documents { get; set; } = new();
+    public AdminHotelManagerViewModel ManagerInfo { get; set; } = new();
+    public List<AdminHotelPartnerUserViewModel> PartnerUsers { get; set; } = new();
+    public List<AdminHotelEmailAccountViewModel> EmailAccounts { get; set; } = new();
+    public AdminHotelReservationStatsViewModel ReservationStats { get; set; } = new();
+    public List<AdminHotelReservationRowViewModel> RecentReservations { get; set; } = new();
+    public AdminHotelCheckInOutViewModel CheckInOutRules { get; set; } = new();
+    public AdminHotelCommissionSummaryViewModel CommissionSummary { get; set; } = new();
+    public List<AdminHotelRoomTableRowViewModel> RoomTableRows { get; set; } = new();
+}
+
+public class AdminHotelManagerViewModel
+{
+    public string CompanyName { get; set; } = string.Empty;
+    public string ManagerName { get; set; } = string.Empty;
+    public string ManagerPhone { get; set; } = string.Empty;
+    public string ManagerEmail { get; set; } = string.Empty;
+    public string ManagerRole { get; set; } = string.Empty;
+    public string SalesContactName { get; set; } = string.Empty;
+    public string SalesContactPhone { get; set; } = string.Empty;
+    public string SalesContactEmail { get; set; } = string.Empty;
+    public string ApprovalStatus { get; set; } = string.Empty;
+    public bool IsActive { get; set; }
+}
+
+public class AdminHotelPartnerUserViewModel
+{
+    public long UserId { get; set; }
+    public string FullName { get; set; } = string.Empty;
+    public string Email { get; set; } = string.Empty;
+    public string Phone { get; set; } = string.Empty;
+    public string Role { get; set; } = string.Empty;
+    public bool IsMainResponsible { get; set; }
+    public bool IsActive { get; set; }
+    public DateTime? LinkedAt { get; set; }
+}
+
+public class AdminHotelEmailAccountViewModel
+{
+    public string Source { get; set; } = string.Empty;
+    public string AccountName { get; set; } = string.Empty;
+    public string EmailAddress { get; set; } = string.Empty;
+    public string Protocol { get; set; } = string.Empty;
+    public bool IsActive { get; set; }
+    public bool IsDefaultSender { get; set; }
+    public DateTime? LastSyncAt { get; set; }
+}
+
+public class AdminHotelReservationStatsViewModel
+{
+    public int TotalReservations { get; set; }
+    public int UniqueGuestCount { get; set; }
+    public int ConfirmedCount { get; set; }
+    public int CancelledCount { get; set; }
+    public decimal TotalRevenue { get; set; }
+    public decimal TotalCommission { get; set; }
+    public decimal AverageNightlyRate { get; set; }
+}
+
+public class AdminHotelReservationRowViewModel
+{
+    public long ReservationId { get; set; }
+    public string ReservationNo { get; set; } = string.Empty;
+    public string GuestName { get; set; } = string.Empty;
+    public string GuestEmail { get; set; } = string.Empty;
+    public string RoomName { get; set; } = string.Empty;
+    public DateTime CheckIn { get; set; }
+    public DateTime CheckOut { get; set; }
+    public decimal TotalAmount { get; set; }
+    public decimal CommissionRate { get; set; }
+    public string Status { get; set; } = string.Empty;
+}
+
+public class AdminHotelCheckInOutViewModel
+{
+    public string CheckInTime { get; set; } = string.Empty;
+    public string CheckOutTime { get; set; } = string.Empty;
+    public bool LateCheckoutAvailable { get; set; }
+    public decimal? LateCheckoutFee { get; set; }
+    public bool EarlyCheckInAvailable { get; set; }
+    public decimal? EarlyCheckInFee { get; set; }
+    public int? MinStay { get; set; }
+    public int? MaxStay { get; set; }
+    public string? CancellationPolicySummary { get; set; }
+    public string? DetailedCancellationRules { get; set; }
+    public byte? FreeCancellationHours { get; set; }
+    public decimal? NoShowPenaltyRate { get; set; }
+    public string? QuietHours { get; set; }
+    public string? SpecialRules { get; set; }
+}
+
+public class AdminHotelCommissionSummaryViewModel
+{
+    public string CommissionType { get; set; } = string.Empty;
+    public decimal DefaultCommissionRate { get; set; }
+    public string CommissionCalculationType { get; set; } = string.Empty;
+    public string PaymentTerm { get; set; } = string.Empty;
+    public string PaymentMethod { get; set; } = string.Empty;
+    public string InvoiceType { get; set; } = string.Empty;
+    public decimal TotalReservationAmount { get; set; }
+    public decimal TotalCommissionAmount { get; set; }
+    public decimal AverageRoomBasePrice { get; set; }
+}
+
+public class AdminHotelRoomTableRowViewModel
+{
+    public long RoomId { get; set; }
+    public string RoomCode { get; set; } = string.Empty;
+    public string RoomName { get; set; } = string.Empty;
+    public string Category { get; set; } = string.Empty;
+    public decimal BasePrice { get; set; }
+    public int MaxPeople { get; set; }
+    public int TotalRooms { get; set; }
+    public string BedType { get; set; } = string.Empty;
+    public int? RoomSize { get; set; }
+    public bool IsActive { get; set; }
+}
+
+public class AdminHotelMissingFieldViewModel
+{
+    public string FieldLabel { get; set; } = string.Empty;
+    public string Severity { get; set; } = "warning";
+}
+
+public class AdminHotelAmenityViewModel
+{
+    public string Category { get; set; } = string.Empty;
+    public string Name { get; set; } = string.Empty;
+    public bool IsActive { get; set; }
+}
+
+public class AdminHotelPriceRowViewModel
+{
+    public string RoomName { get; set; } = string.Empty;
+    public DateTime Date { get; set; }
+    public decimal Price { get; set; }
+    public int? AvailableRooms { get; set; }
+}
+
+public class AdminHotelDocumentViewModel
+{
+    public long DocumentId { get; set; }
+    public string Title { get; set; } = string.Empty;
+    public string Type { get; set; } = string.Empty;
+    public string Status { get; set; } = string.Empty;
+    public DateTime? UploadedAt { get; set; }
 }
 
 public class AdminHotelEditForm

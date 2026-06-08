@@ -64,7 +64,7 @@
                 <div class="sub-links-container">
                     @if (Can("admin.hotels"))
                     {
-                        <a class="@(IsHotelsNavActive() ? "active" : string.Empty)" asp-controller="AdminPanel" asp-action="Hotels">Otel Listesi</a>
+                        <a class="@(IsHotelsNavActive() ? "active" : string.Empty)" asp-controller="AdminPanel" asp-action="Hotels">Merkezi Otel Yönetimi</a>
                         <a class="@Active("ActiveHotels")" asp-controller="AdminPanel" asp-action="ActiveHotels">Açık Oteller & Oda Tipleri</a>
                         <a class="@Active("PendingHotels")" asp-controller="AdminPanel" asp-action="PendingHotels">Onay Bekleyen Oteller</a>
                         <a class="@Active("Campaigns")" asp-controller="AdminPanel" asp-action="Campaigns">Kampanyalar & Ekstra Hizmetler</a>

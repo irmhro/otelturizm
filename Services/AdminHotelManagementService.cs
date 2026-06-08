@@ -1,7 +1,9 @@
 using System.Globalization;
+using System.Security.Claims;
 using System.Text.Json;
 using System.Linq;
 using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.Http;
 using Microsoft.Data.SqlClient;
 using SqlConnection = Microsoft.Data.SqlClient.SqlConnection;
 using SqlCommand = Microsoft.Data.SqlClient.SqlCommand;
@@ -17,22 +19,31 @@ public class AdminHotelManagementService : IAdminHotelManagementService
     private readonly string _connectionString;
     private readonly IWebHostEnvironment _environment;
     private readonly IImageStorageService _imageStorageService;
+    private readonly IAdminRbacService _adminRbacService;
+    private readonly IHttpContextAccessor _httpContextAccessor;
 
-    public AdminHotelManagementService(IConfiguration configuration, IWebHostEnvironment environment, IImageStorageService imageStorageService)
+    public AdminHotelManagementService(
+        IConfiguration configuration,
+        IWebHostEnvironment environment,
+        IImageStorageService imageStorageService,
+        IAdminRbacService adminRbacService,
+        IHttpContextAccessor httpContextAccessor)
     {
         _connectionString = configuration.GetConnectionString("DefaultConnection")
             ?? throw new InvalidOperationException("DefaultConnection tanimli degil.");
         _environment = environment;
         _imageStorageService = imageStorageService;
+        _adminRbacService = adminRbacService;
+        _httpContextAccessor = httpContextAccessor;
     }
 
-    public async Task<AdminHotelsPageViewModel> GetHotelsPageAsync(string fullName, string email, string userRole, string? searchTerm = null, string? city = null, string? district = null, string? neighborhood = null, string? publishStatus = null, string? approvalStatus = null, int page = 1, int pageSize = 20, CancellationToken cancellationToken = default)
+    public async Task<AdminHotelsPageViewModel> GetHotelsPageAsync(string fullName, string email, string userRole, string? searchTerm = null, string? city = null, string? district = null, string? neighborhood = null, string? publishStatus = null, string? approvalStatus = null, int page = 1, int pageSize = 50, CancellationToken cancellationToken = default)
     {
         await using var connection = new SqlConnection(_connectionString);
         await connection.OpenAsync(cancellationToken);
 
-        var shell = await BuildShellAsync(connection, "Oteller", "Otel kayitlarini, odalari ve medya varliklarini admin tarafindan hizli sekilde yonetin.", fullName, email, userRole, cancellationToken);
-        var safePageSize = Math.Clamp(pageSize, 7, 100);
+        var shell = await BuildShellAsync(connection, "Merkezi Otel Yonetimi", "Otelleri yatay tablo uzerinden filtreleyin, yayin/onay durumlarini yonetin ve detay sayfasina gecin.", fullName, email, userRole, cancellationToken);
+        var safePageSize = NormalizeHotelPageSize(pageSize);
         var safePage = Math.Max(1, page);
         var model = new AdminHotelsPageViewModel
         {
@@ -103,7 +114,7 @@ public class AdminHotelManagementService : IAdminHotelManagementService
         var sql = $@"
             {selectSql}
             {whereSql}
-            ORDER BY o.id DESC
+            ORDER BY COALESCE(o.[GUNCELLENME_TARIHI], o.[OLUSTURULMA_TARIHI], SYSUTCDATETIME()) DESC, o.id DESC
             OFFSET @offset ROWS FETCH NEXT @pageSize ROWS ONLY;";
 
         await using var command = new SqlCommand(sql, connection);
@@ -113,6 +124,7 @@ public class AdminHotelManagementService : IAdminHotelManagementService
         await using var reader = await command.ExecuteReaderAsync(cancellationToken);
         while (await reader.ReadAsync(cancellationToken))
         {
+            var hotelPublishStatus = reader.GetString(5);
             model.Hotels.Add(new AdminHotelListItemViewModel
             {
                 HotelId = reader.GetInt64(0),
@@ -120,13 +132,14 @@ public class AdminHotelManagementService : IAdminHotelManagementService
                 HotelName = reader.GetString(2),
                 HotelType = reader.GetString(3),
                 LocationText = reader.GetString(4),
-                PublishStatus = reader.GetString(5),
+                PublishStatus = hotelPublishStatus,
                 ApprovalStatus = reader.GetString(6),
                 ScoreText = reader.IsDBNull(7) ? "0.0" : reader.GetDecimal(7).ToString("0.0", CultureInfo.InvariantCulture),
                 RoomCount = SafeInt(reader, 8),
                 HotelPhotoCount = SafeInt(reader, 9),
                 RoomPhotoCount = SafeInt(reader, 10),
-                IsFeatured = SafeBool(reader, 11)
+                IsFeatured = SafeBool(reader, 11),
+                IsPublished = IsPublishedStatus(hotelPublishStatus)
             });
         }
 
@@ -153,6 +166,18 @@ public class AdminHotelManagementService : IAdminHotelManagementService
         };
 
         model.SummaryCards.AddRange(await LoadHotelManagementCardsAsync(connection, hotelId, cancellationToken));
+        model.MissingFields.AddRange(BuildHotelMissingFieldWarnings(model.HotelForm, model.Rooms.Count, model.HotelPhotos.Count));
+        model.Amenities.AddRange(await LoadHotelAmenitiesAsync(connection, hotelId, cancellationToken));
+        model.PriceRows.AddRange(await LoadHotelPriceRowsAsync(connection, hotelId, cancellationToken));
+        model.Documents.AddRange(await LoadHotelPartnerDocumentsAsync(connection, model.HotelForm.PartnerId, cancellationToken));
+        model.ManagerInfo = await LoadHotelManagerInfoAsync(connection, model.HotelForm, cancellationToken);
+        model.PartnerUsers.AddRange(await LoadHotelPartnerUsersAsync(connection, hotelId, model.HotelForm.PartnerId, cancellationToken));
+        model.EmailAccounts.AddRange(await LoadHotelEmailAccountsAsync(connection, model.HotelForm, cancellationToken));
+        model.ReservationStats = await LoadHotelReservationStatsAsync(connection, hotelId, cancellationToken);
+        model.RecentReservations.AddRange(await LoadHotelRecentReservationsAsync(connection, hotelId, cancellationToken));
+        model.CheckInOutRules = await LoadHotelCheckInOutRulesAsync(connection, hotelId, model.HotelForm, cancellationToken);
+        model.CommissionSummary = await LoadHotelCommissionSummaryAsync(connection, hotelId, model.HotelForm, cancellationToken);
+        model.RoomTableRows.AddRange(await LoadHotelRoomTableRowsAsync(connection, hotelId, cancellationToken));
 
         var selectedRoomId = roomId ?? model.Rooms.FirstOrDefault()?.RoomId;
         model.SelectedRoomId = selectedRoomId;
@@ -977,6 +1002,7 @@ public class AdminHotelManagementService : IAdminHotelManagementService
         const string sql = @"
             SELECT
                 (SELECT COUNT(*) FROM [dbo].[PARTNER_DETAYLARI] WHERE [ONAY_DURUMU] = 'Beklemede') AS pending_partner_applications,
+                (SELECT COUNT(*) FROM [dbo].[FIRMALAR] WHERE COALESCE([ONAY_DURUMU], 'Beklemede') = 'Beklemede') AS pending_company_applications,
                 (SELECT COUNT(*) FROM [dbo].[SISTEM_ICI_BILDIRIMLER] WHERE [OKUNDU_MU] = 0) AS unread_notifications,
                 (SELECT COUNT(*) FROM [dbo].[SISTEM_HATA_LOGLARI] WHERE [HATA_SEVIYESI] IN ('CRITICAL','ALERT','EMERGENCY') AND [COZULDU_MU] = 0) AS critical_logs,
                 (SELECT COUNT(*) FROM [dbo].[YORUMLAR] WHERE [ONAY_DURUMU] = 'Beklemede') AS pending_reviews;";
@@ -995,12 +1021,618 @@ public class AdminHotelManagementService : IAdminHotelManagementService
         if (await reader.ReadAsync(cancellationToken))
         {
             shell.PendingPartnerApplications = SafeInt(reader, 0);
-            shell.UnreadNotifications = SafeInt(reader, 1);
-            shell.CriticalLogs = SafeInt(reader, 2);
-            shell.PendingReviews = SafeInt(reader, 3);
+            shell.PendingCompanyApplications = SafeInt(reader, 1);
+            shell.UnreadNotifications = SafeInt(reader, 2);
+            shell.CriticalLogs = SafeInt(reader, 3);
+            shell.PendingReviews = SafeInt(reader, 4);
+        }
+
+        try
+        {
+            var rawUserId = _httpContextAccessor.HttpContext?.User?.FindFirstValue(otelturizmnew.Constants.AuthClaimTypes.UserId)
+                            ?? _httpContextAccessor.HttpContext?.User?.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (long.TryParse(rawUserId, out var adminUserId) && adminUserId > 0)
+            {
+                shell.Permissions = await _adminRbacService.GetPermissionsAsync(adminUserId, userRole, cancellationToken);
+            }
+        }
+        catch
+        {
+            // Controller endpoint guard devrede; menu bos kalmasin diye superadmin rolu fallback
+            if (string.Equals(userRole, "superadmin", StringComparison.OrdinalIgnoreCase) || string.Equals(userRole, "admin", StringComparison.OrdinalIgnoreCase))
+            {
+                shell.Permissions.Add("*");
+            }
         }
 
         return shell;
+    }
+
+    private static int NormalizeHotelPageSize(int pageSize) => pageSize switch
+    {
+        100 => 100,
+        200 => 200,
+        _ => 50
+    };
+
+    private static bool IsPublishedStatus(string? publishStatus)
+    {
+        var normalized = (publishStatus ?? string.Empty).Trim().Replace('ı', 'i').Replace('İ', 'I');
+        return string.Equals(normalized, "Yayinda", StringComparison.OrdinalIgnoreCase)
+            || string.Equals(normalized, "Yayında", StringComparison.OrdinalIgnoreCase);
+    }
+
+    private static List<AdminHotelMissingFieldViewModel> BuildHotelMissingFieldWarnings(AdminHotelEditForm form, int roomCount, int hotelPhotoCount)
+    {
+        var warnings = new List<AdminHotelMissingFieldViewModel>();
+        void AddIf(bool condition, string label, string severity = "warning")
+        {
+            if (condition)
+            {
+                warnings.Add(new AdminHotelMissingFieldViewModel { FieldLabel = label, Severity = severity });
+            }
+        }
+
+        AddIf(string.IsNullOrWhiteSpace(form.HotelName), "Otel adi", "critical");
+        AddIf(string.IsNullOrWhiteSpace(form.HotelCode), "Otel kodu", "critical");
+        AddIf(string.IsNullOrWhiteSpace(form.City), "Sehir", "critical");
+        AddIf(string.IsNullOrWhiteSpace(form.District), "Ilce", "critical");
+        AddIf(string.IsNullOrWhiteSpace(form.Address), "Tam adres", "critical");
+        AddIf(string.IsNullOrWhiteSpace(form.Phone1), "Telefon", "critical");
+        AddIf(string.IsNullOrWhiteSpace(form.ContactEmail), "E-posta", "critical");
+        AddIf(!form.Latitude.HasValue || !form.Longitude.HasValue, "Koordinat (enlem/boylam)", "warning");
+        AddIf(string.IsNullOrWhiteSpace(form.ShortDescription) && string.IsNullOrWhiteSpace(form.Description), "Aciklama", "warning");
+        AddIf(string.IsNullOrWhiteSpace(form.CoverPhotoPath) && hotelPhotoCount == 0, "Kapak / otel gorseli", "warning");
+        AddIf(roomCount == 0, "En az bir oda tipi", "critical");
+        AddIf(!string.Equals(form.ApprovalStatus, "Onaylandı", StringComparison.OrdinalIgnoreCase)
+            && !string.Equals(form.ApprovalStatus, "Onaylandi", StringComparison.OrdinalIgnoreCase), "Onay durumu (Onaylandi degil)", "warning");
+        AddIf(string.IsNullOrWhiteSpace(form.TourismDocumentNo), "Turizm belge no", "warning");
+
+        return warnings;
+    }
+
+    private static async Task<List<AdminHotelAmenityViewModel>> LoadHotelAmenitiesAsync(SqlConnection connection, long hotelId, CancellationToken cancellationToken)
+    {
+        const string sql = @"
+            SELECT COALESCE(k.[KATEGORI_ADI], N'Genel') AS kategori,
+                   o.[OZELLIK_ADI],
+                   COALESCE(i.[AKTIF_MI], 1) AS aktif_mi
+            FROM [dbo].[OTEL_OZELLIK_ILISKILERI] i
+            INNER JOIN [dbo].[OTEL_OZELLIKLERI] o ON o.id = i.[OZELLIK_ID]
+            LEFT JOIN [dbo].[OTEL_OZELLIK_KATEGORILERI] k ON k.id = o.[KATEGORI_ID]
+            WHERE i.[OTEL_ID] = @hotelId
+            ORDER BY k.[SIRALAMA], o.[SIRALAMA], o.[OZELLIK_ADI];";
+
+        var items = new List<AdminHotelAmenityViewModel>();
+        await using var command = new SqlCommand(sql, connection);
+        command.Parameters.AddWithValue("@hotelId", hotelId);
+        await using var reader = await command.ExecuteReaderAsync(cancellationToken);
+        while (await reader.ReadAsync(cancellationToken))
+        {
+            items.Add(new AdminHotelAmenityViewModel
+            {
+                Category = reader.GetString(0),
+                Name = reader.GetString(1),
+                IsActive = SafeBool(reader, 2)
+            });
+        }
+
+        return items;
+    }
+
+    private static async Task<List<AdminHotelPriceRowViewModel>> LoadHotelPriceRowsAsync(SqlConnection connection, long hotelId, CancellationToken cancellationToken)
+    {
+        const string sql = @"
+            SELECT TOP (30)
+                   od.[ODA_ADI],
+                   fm.[TARIH],
+                   COALESCE(fm.[INDIRIMLI_FIYAT], fm.[GECELIK_FIYAT], od.[STANDART_GECELIK_FIYAT]) AS fiyat,
+                   fm.[TOPLAM_ODA_SAYISI]
+            FROM [dbo].[ODA_FIYAT_MUSAITLIK] fm
+            INNER JOIN [dbo].[ODA_TIPLERI] od ON od.id = fm.[ODA_TIP_ID]
+            WHERE od.[OTEL_ID] = @hotelId
+            ORDER BY fm.[TARIH] DESC, od.[ODA_ADI];";
+
+        var rows = new List<AdminHotelPriceRowViewModel>();
+        await using var command = new SqlCommand(sql, connection);
+        command.Parameters.AddWithValue("@hotelId", hotelId);
+        try
+        {
+            await using var reader = await command.ExecuteReaderAsync(cancellationToken);
+            while (await reader.ReadAsync(cancellationToken))
+            {
+                rows.Add(new AdminHotelPriceRowViewModel
+                {
+                    RoomName = reader.GetString(0),
+                    Date = reader.GetDateTime(1),
+                    Price = SafeDecimalNullable(reader, 2) ?? 0,
+                    AvailableRooms = SafeNullableInt(reader, 3)
+                });
+            }
+        }
+        catch (SqlException)
+        {
+            // ODA_FIYAT_MUSAITLIK tablosu veya kolon adlari ortamda farkli olabilir
+        }
+
+        return rows;
+    }
+
+    private static async Task<List<AdminHotelDocumentViewModel>> LoadHotelPartnerDocumentsAsync(SqlConnection connection, long partnerId, CancellationToken cancellationToken)
+    {
+        if (partnerId <= 0)
+        {
+            return new List<AdminHotelDocumentViewModel>();
+        }
+
+        const string sql = @"
+            SELECT TOP (20)
+                   ped.id,
+                   COALESCE(ped.[BELGE_BASLIGI], ped.[EVRAK_TIPI], N'Belge'),
+                   COALESCE(ped.[EVRAK_TIPI], N'-'),
+                   COALESCE(ped.[DURUM], N'Beklemede'),
+                   ped.[OLUSTURULMA_TARIHI]
+            FROM [dbo].[PARTNER_BASVURU_EVRAKLARI] ped
+            WHERE ped.[PARTNER_ID] = @partnerId
+            ORDER BY ped.[OLUSTURULMA_TARIHI] DESC, ped.id DESC;";
+
+        var docs = new List<AdminHotelDocumentViewModel>();
+        await using var command = new SqlCommand(sql, connection);
+        command.Parameters.AddWithValue("@partnerId", partnerId);
+        try
+        {
+            await using var reader = await command.ExecuteReaderAsync(cancellationToken);
+            while (await reader.ReadAsync(cancellationToken))
+            {
+                docs.Add(new AdminHotelDocumentViewModel
+                {
+                    DocumentId = reader.GetInt64(0),
+                    Title = reader.GetString(1),
+                    Type = reader.GetString(2),
+                    Status = reader.GetString(3),
+                    UploadedAt = reader.IsDBNull(4) ? null : reader.GetDateTime(4)
+                });
+            }
+        }
+        catch (SqlException)
+        {
+            // Partner evrak tablosu bazi ortamlarda olmayabilir
+        }
+
+        return docs;
+    }
+
+    private static async Task<AdminHotelManagerViewModel> LoadHotelManagerInfoAsync(SqlConnection connection, AdminHotelEditForm form, CancellationToken cancellationToken)
+    {
+        var info = new AdminHotelManagerViewModel
+        {
+            SalesContactName = form.SalesContactName ?? string.Empty,
+            SalesContactPhone = form.SalesContactPhone ?? string.Empty,
+            SalesContactEmail = form.SalesContactEmail ?? string.Empty
+        };
+
+        if (form.PartnerId <= 0)
+        {
+            return info;
+        }
+
+        const string sql = @"
+            SELECT TOP (1)
+                   COALESCE([FIRMA_UNVANI], N''),
+                   COALESCE([YETKILI_AD_SOYAD], N''),
+                   COALESCE([YETKILI_TELEFON], N''),
+                   COALESCE([YETKILI_EPOSTA], N''),
+                   COALESCE([YETKILI_GOREV], N'Yonetici'),
+                   COALESCE([ONAY_DURUMU], N'Beklemede'),
+                   COALESCE([AKTIF_MI], 1)
+            FROM [dbo].[PARTNER_DETAYLARI]
+            WHERE id = @partnerId;";
+
+        await using var command = new SqlCommand(sql, connection);
+        command.Parameters.AddWithValue("@partnerId", form.PartnerId);
+        try
+        {
+            await using var reader = await command.ExecuteReaderAsync(cancellationToken);
+            if (await reader.ReadAsync(cancellationToken))
+            {
+                info.CompanyName = reader.GetString(0);
+                info.ManagerName = reader.GetString(1);
+                info.ManagerPhone = reader.GetString(2);
+                info.ManagerEmail = reader.GetString(3);
+                info.ManagerRole = reader.GetString(4);
+                info.ApprovalStatus = reader.GetString(5);
+                info.IsActive = SafeBool(reader, 6);
+            }
+        }
+        catch (SqlException)
+        {
+        }
+
+        return info;
+    }
+
+    private static async Task<List<AdminHotelPartnerUserViewModel>> LoadHotelPartnerUsersAsync(SqlConnection connection, long hotelId, long partnerId, CancellationToken cancellationToken)
+    {
+        const string sql = @"
+            SELECT
+                   u.id,
+                   COALESCE(u.[AD_SOYAD], N''),
+                   COALESCE(u.[EPOSTA], N''),
+                   COALESCE(u.[TELEFON], N''),
+                   COALESCE(s.[ROL], kp.[ROL], N'partner'),
+                   COALESCE(s.[ANA_SORUMLU_MU], 0),
+                   COALESCE(s.[AKTIF_MI], kp.[AKTIF_MI], 1),
+                   s.[OLUSTURULMA_TARIHI]
+            FROM [dbo].[OTEL_KULLANICI_SAHIPLIKLERI] s
+            INNER JOIN [dbo].[KULLANICILAR] u ON u.id = s.[KULLANICI_ID]
+            LEFT JOIN [dbo].[KULLANICI_PARTNERLERI] kp ON kp.[KULLANICI_ID] = u.id AND kp.[PARTNER_ID] = s.[PARTNER_ID]
+            WHERE s.[OTEL_ID] = @hotelId
+            ORDER BY s.[ANA_SORUMLU_MU] DESC, s.[AKTIF_MI] DESC, u.[AD_SOYAD];";
+
+        var users = new List<AdminHotelPartnerUserViewModel>();
+        await using var command = new SqlCommand(sql, connection);
+        command.Parameters.AddWithValue("@hotelId", hotelId);
+        try
+        {
+            await using var reader = await command.ExecuteReaderAsync(cancellationToken);
+            while (await reader.ReadAsync(cancellationToken))
+            {
+                users.Add(new AdminHotelPartnerUserViewModel
+                {
+                    UserId = reader.GetInt64(0),
+                    FullName = reader.GetString(1),
+                    Email = reader.GetString(2),
+                    Phone = reader.GetString(3),
+                    Role = reader.GetString(4),
+                    IsMainResponsible = SafeBool(reader, 5),
+                    IsActive = SafeBool(reader, 6),
+                    LinkedAt = reader.IsDBNull(7) ? null : reader.GetDateTime(7)
+                });
+            }
+        }
+        catch (SqlException)
+        {
+        }
+
+        if (users.Count == 0 && partnerId > 0)
+        {
+            const string partnerUsersSql = @"
+                SELECT u.id, COALESCE(u.[AD_SOYAD], N''), COALESCE(u.[EPOSTA], N''), COALESCE(u.[TELEFON], N''),
+                       COALESCE(kp.[ROL], N'partner'), COALESCE(kp.[ANA_HESAP_MI], 0), COALESCE(kp.[AKTIF_MI], 1), kp.[OLUSTURULMA_TARIHI]
+                FROM [dbo].[KULLANICI_PARTNERLERI] kp
+                INNER JOIN [dbo].[KULLANICILAR] u ON u.id = kp.[KULLANICI_ID]
+                WHERE kp.[PARTNER_ID] = @partnerId
+                ORDER BY kp.[ANA_HESAP_MI] DESC, kp.[AKTIF_MI] DESC, u.[AD_SOYAD];";
+            await using var partnerCommand = new SqlCommand(partnerUsersSql, connection);
+            partnerCommand.Parameters.AddWithValue("@partnerId", partnerId);
+            try
+            {
+                await using var reader = await partnerCommand.ExecuteReaderAsync(cancellationToken);
+                while (await reader.ReadAsync(cancellationToken))
+                {
+                    users.Add(new AdminHotelPartnerUserViewModel
+                    {
+                        UserId = reader.GetInt64(0),
+                        FullName = reader.GetString(1),
+                        Email = reader.GetString(2),
+                        Phone = reader.GetString(3),
+                        Role = reader.GetString(4),
+                        IsMainResponsible = SafeBool(reader, 5),
+                        IsActive = SafeBool(reader, 6),
+                        LinkedAt = reader.IsDBNull(7) ? null : reader.GetDateTime(7)
+                    });
+                }
+            }
+            catch (SqlException)
+            {
+            }
+        }
+
+        return users;
+    }
+
+    private static async Task<List<AdminHotelEmailAccountViewModel>> LoadHotelEmailAccountsAsync(SqlConnection connection, AdminHotelEditForm form, CancellationToken cancellationToken)
+    {
+        var accounts = new List<AdminHotelEmailAccountViewModel>();
+        var trackedEmails = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+
+        void AddOperational(string source, string name, string? email)
+        {
+            if (string.IsNullOrWhiteSpace(email))
+            {
+                return;
+            }
+
+            var normalized = email.Trim();
+            if (!trackedEmails.Add(normalized))
+            {
+                return;
+            }
+
+            accounts.Add(new AdminHotelEmailAccountViewModel
+            {
+                Source = source,
+                AccountName = name,
+                EmailAddress = normalized,
+                Protocol = "Operasyonel",
+                IsActive = true
+            });
+        }
+
+        AddOperational("OTELLER", "Otel iletisim e-postasi", form.ContactEmail);
+        AddOperational("OTELLER", "Satis kontak e-postasi", form.SalesContactEmail);
+
+        if (form.PartnerId > 0)
+        {
+            const string partnerEmailSql = "SELECT TOP (1) COALESCE([YETKILI_EPOSTA], N'') FROM [dbo].[PARTNER_DETAYLARI] WHERE id = @partnerId;";
+            await using var partnerCommand = new SqlCommand(partnerEmailSql, connection);
+            partnerCommand.Parameters.AddWithValue("@partnerId", form.PartnerId);
+            try
+            {
+                var partnerEmail = await partnerCommand.ExecuteScalarAsync(cancellationToken) as string;
+                AddOperational("PARTNER_DETAYLARI", "Partner yetkili e-postasi", partnerEmail);
+            }
+            catch (SqlException)
+            {
+            }
+        }
+
+        if (trackedEmails.Count == 0)
+        {
+            return accounts;
+        }
+
+        var emailParams = trackedEmails.Select((_, index) => $"@email{index}").ToArray();
+        var platformSql = $@"
+            SELECT [HESAP_KODU], [HESAP_ADI], [EPOSTA_ADRESI], [GELEN_PROTOKOL], [AKTIF_MI], [VARSAYILAN_GONDEREN_MI], [SON_SENKRON_TARIHI]
+            FROM [dbo].[PLATFORM_EPOSTA_HESAPLARI]
+            WHERE LOWER([EPOSTA_ADRESI]) IN ({string.Join(", ", emailParams.Select(p => $"LOWER({p})"))})
+            ORDER BY [VARSAYILAN_GONDEREN_MI] DESC, [HESAP_ADI];";
+
+        await using var command = new SqlCommand(platformSql, connection);
+        var index = 0;
+        foreach (var email in trackedEmails)
+        {
+            command.Parameters.AddWithValue($"@email{index++}", email);
+        }
+
+        try
+        {
+            await using var reader = await command.ExecuteReaderAsync(cancellationToken);
+            while (await reader.ReadAsync(cancellationToken))
+            {
+                accounts.Add(new AdminHotelEmailAccountViewModel
+                {
+                    Source = "PLATFORM_EPOSTA_HESAPLARI",
+                    AccountName = reader.GetString(1),
+                    EmailAddress = reader.GetString(2).Trim(),
+                    Protocol = reader.GetString(3),
+                    IsActive = SafeBool(reader, 4),
+                    IsDefaultSender = SafeBool(reader, 5),
+                    LastSyncAt = reader.IsDBNull(6) ? null : reader.GetDateTime(6)
+                });
+            }
+        }
+        catch (SqlException)
+        {
+        }
+
+        return accounts
+            .GroupBy(x => x.EmailAddress, StringComparer.OrdinalIgnoreCase)
+            .Select(g => g.OrderByDescending(x => x.Source == "PLATFORM_EPOSTA_HESAPLARI").First())
+            .OrderByDescending(x => x.IsDefaultSender)
+            .ThenBy(x => x.Source)
+            .ToList();
+    }
+
+    private static async Task<AdminHotelReservationStatsViewModel> LoadHotelReservationStatsAsync(SqlConnection connection, long hotelId, CancellationToken cancellationToken)
+    {
+        const string sql = @"
+            SELECT
+                COUNT(*) AS total_count,
+                COUNT(DISTINCT [KULLANICI_ID]) AS unique_guests,
+                SUM(CASE WHEN COALESCE([DURUM], N'') IN (N'Onaylandi', N'Onaylandı', N'Tamamlandi', N'Tamamlandı', N'Konaklamada') THEN 1 ELSE 0 END) AS confirmed_count,
+                SUM(CASE WHEN COALESCE([DURUM], N'') IN (N'Iptal', N'İptal', N'Reddedildi') THEN 1 ELSE 0 END) AS cancelled_count,
+                COALESCE(SUM([TOPLAM_TUTAR]), 0) AS total_revenue,
+                COALESCE(SUM([KOMISYON_TUTARI]), 0) AS total_commission,
+                COALESCE(AVG(NULLIF([GECELIK_FIYAT], 0)), 0) AS avg_nightly
+            FROM [dbo].[REZERVASYONLAR]
+            WHERE [OTEL_ID] = @hotelId;";
+
+        await using var command = new SqlCommand(sql, connection);
+        command.Parameters.AddWithValue("@hotelId", hotelId);
+        var stats = new AdminHotelReservationStatsViewModel();
+        try
+        {
+            await using var reader = await command.ExecuteReaderAsync(cancellationToken);
+            if (await reader.ReadAsync(cancellationToken))
+            {
+                stats.TotalReservations = SafeInt(reader, 0);
+                stats.UniqueGuestCount = SafeInt(reader, 1);
+                stats.ConfirmedCount = SafeInt(reader, 2);
+                stats.CancelledCount = SafeInt(reader, 3);
+                stats.TotalRevenue = SafeDecimalNullable(reader, 4) ?? 0;
+                stats.TotalCommission = SafeDecimalNullable(reader, 5) ?? 0;
+                stats.AverageNightlyRate = SafeDecimalNullable(reader, 6) ?? 0;
+            }
+        }
+        catch (SqlException)
+        {
+        }
+
+        return stats;
+    }
+
+    private static async Task<List<AdminHotelReservationRowViewModel>> LoadHotelRecentReservationsAsync(SqlConnection connection, long hotelId, CancellationToken cancellationToken)
+    {
+        const string sql = @"
+            SELECT TOP (25)
+                   r.id,
+                   r.[REZERVASYON_NO],
+                   r.[MISAFIR_AD_SOYAD],
+                   r.[MISAFIR_EPOSTA],
+                   COALESCE(od.[ODA_ADI], N'-'),
+                   r.[GIRIS_TARIHI],
+                   r.[CIKIS_TARIHI],
+                   r.[TOPLAM_TUTAR],
+                   r.[KOMISYON_ORANI],
+                   COALESCE(r.[DURUM], N'Beklemede')
+            FROM [dbo].[REZERVASYONLAR] r
+            LEFT JOIN [dbo].[ODA_TIPLERI] od ON od.id = r.[ODA_TIP_ID]
+            WHERE r.[OTEL_ID] = @hotelId
+            ORDER BY r.id DESC;";
+
+        var rows = new List<AdminHotelReservationRowViewModel>();
+        await using var command = new SqlCommand(sql, connection);
+        command.Parameters.AddWithValue("@hotelId", hotelId);
+        try
+        {
+            await using var reader = await command.ExecuteReaderAsync(cancellationToken);
+            while (await reader.ReadAsync(cancellationToken))
+            {
+                rows.Add(new AdminHotelReservationRowViewModel
+                {
+                    ReservationId = reader.GetInt64(0),
+                    ReservationNo = reader.GetString(1),
+                    GuestName = reader.GetString(2),
+                    GuestEmail = reader.GetString(3),
+                    RoomName = reader.GetString(4),
+                    CheckIn = reader.GetDateTime(5),
+                    CheckOut = reader.GetDateTime(6),
+                    TotalAmount = SafeDecimalNullable(reader, 7) ?? 0,
+                    CommissionRate = SafeDecimalNullable(reader, 8) ?? 0,
+                    Status = reader.GetString(9)
+                });
+            }
+        }
+        catch (SqlException)
+        {
+        }
+
+        return rows;
+    }
+
+    private static async Task<AdminHotelCheckInOutViewModel> LoadHotelCheckInOutRulesAsync(SqlConnection connection, long hotelId, AdminHotelEditForm form, CancellationToken cancellationToken)
+    {
+        var rules = new AdminHotelCheckInOutViewModel
+        {
+            CheckInTime = form.CheckInTime ?? string.Empty,
+            CheckOutTime = form.CheckOutTime ?? string.Empty,
+            LateCheckoutAvailable = form.LateCheckoutAvailable,
+            LateCheckoutFee = form.LateCheckoutFee,
+            EarlyCheckInAvailable = form.EarlyCheckInAvailable,
+            EarlyCheckInFee = form.EarlyCheckInFee,
+            MinStay = form.MinStay,
+            MaxStay = form.MaxStay
+        };
+
+        const string sql = @"
+            SELECT TOP (1)
+                   COALESCE([IPTAL_POLITIKASI_OZET], N''),
+                   COALESCE([DETAYLI_IPTAL_KOSULLARI], N''),
+                   [UCRETSIZ_IPTAL_SURESI],
+                   [NO_SHOW_CEZA_ORANI],
+                   CASE WHEN [SESSIZLIK_SAATLERI_BASLANGIC] IS NOT NULL AND [SESSIZLIK_SAATLERI_BITIS] IS NOT NULL
+                        THEN CONCAT(CONVERT(varchar(5), [SESSIZLIK_SAATLERI_BASLANGIC], 108), N' - ', CONVERT(varchar(5), [SESSIZLIK_SAATLERI_BITIS], 108))
+                        ELSE N'' END,
+                   COALESCE([OZEL_KOSULLAR], N'')
+            FROM [dbo].[OTEL_KOSULLARI]
+            WHERE [OTEL_ID] = @hotelId
+            ORDER BY id DESC;";
+
+        await using var command = new SqlCommand(sql, connection);
+        command.Parameters.AddWithValue("@hotelId", hotelId);
+        try
+        {
+            await using var reader = await command.ExecuteReaderAsync(cancellationToken);
+            if (await reader.ReadAsync(cancellationToken))
+            {
+                rules.CancellationPolicySummary = reader.GetString(0);
+                rules.DetailedCancellationRules = reader.GetString(1);
+                rules.FreeCancellationHours = reader.IsDBNull(2) ? null : reader.GetByte(2);
+                rules.NoShowPenaltyRate = SafeDecimalNullable(reader, 3);
+                rules.QuietHours = reader.GetString(4);
+                rules.SpecialRules = reader.GetString(5);
+            }
+        }
+        catch (SqlException)
+        {
+        }
+
+        return rules;
+    }
+
+    private static async Task<AdminHotelCommissionSummaryViewModel> LoadHotelCommissionSummaryAsync(SqlConnection connection, long hotelId, AdminHotelEditForm form, CancellationToken cancellationToken)
+    {
+        const string sql = @"
+            SELECT
+                COALESCE(SUM(r.[TOPLAM_TUTAR]), 0),
+                COALESCE(SUM(r.[KOMISYON_TUTARI]), 0),
+                COALESCE(AVG(NULLIF(od.[STANDART_GECELIK_FIYAT], 0)), 0)
+            FROM [dbo].[REZERVASYONLAR] r
+            LEFT JOIN [dbo].[ODA_TIPLERI] od ON od.[OTEL_ID] = @hotelId
+            WHERE r.[OTEL_ID] = @hotelId;";
+
+        var summary = new AdminHotelCommissionSummaryViewModel
+        {
+            CommissionType = form.CommissionType,
+            DefaultCommissionRate = form.DefaultCommissionRate,
+            CommissionCalculationType = form.CommissionCalculationType,
+            PaymentTerm = form.PaymentTerm,
+            PaymentMethod = form.PaymentMethod,
+            InvoiceType = form.InvoiceType
+        };
+
+        await using var command = new SqlCommand(sql, connection);
+        command.Parameters.AddWithValue("@hotelId", hotelId);
+        try
+        {
+            await using var reader = await command.ExecuteReaderAsync(cancellationToken);
+            if (await reader.ReadAsync(cancellationToken))
+            {
+                summary.TotalReservationAmount = SafeDecimalNullable(reader, 0) ?? 0;
+                summary.TotalCommissionAmount = SafeDecimalNullable(reader, 1) ?? 0;
+                summary.AverageRoomBasePrice = SafeDecimalNullable(reader, 2) ?? 0;
+            }
+        }
+        catch (SqlException)
+        {
+        }
+
+        return summary;
+    }
+
+    private static async Task<List<AdminHotelRoomTableRowViewModel>> LoadHotelRoomTableRowsAsync(SqlConnection connection, long hotelId, CancellationToken cancellationToken)
+    {
+        const string sql = @"
+            SELECT id, [ODA_TIP_KODU], [ODA_ADI], [ODA_KATEGORISI], COALESCE([STANDART_GECELIK_FIYAT], 0),
+                   [MAKSIMUM_KISI_SAYISI], [TOPLAM_ODA_SAYISI], COALESCE([YATAK_TIPI], N''), [ODA_METREKARE], [AKTIF_MI]
+            FROM [dbo].[ODA_TIPLERI]
+            WHERE [OTEL_ID] = @hotelId
+            ORDER BY [AKTIF_MI] DESC, [SIRALAMA], id DESC;";
+
+        var rows = new List<AdminHotelRoomTableRowViewModel>();
+        await using var command = new SqlCommand(sql, connection);
+        command.Parameters.AddWithValue("@hotelId", hotelId);
+        await using var reader = await command.ExecuteReaderAsync(cancellationToken);
+        while (await reader.ReadAsync(cancellationToken))
+        {
+            rows.Add(new AdminHotelRoomTableRowViewModel
+            {
+                RoomId = reader.GetInt64(0),
+                RoomCode = reader.GetString(1),
+                RoomName = reader.GetString(2),
+                Category = reader.GetString(3),
+                BasePrice = SafeDecimalNullable(reader, 4) ?? 0,
+                MaxPeople = SafeInt(reader, 5),
+                TotalRooms = SafeInt(reader, 6),
+                BedType = reader.GetString(7),
+                RoomSize = SafeNullableInt(reader, 8),
+                IsActive = SafeBool(reader, 9)
+            });
+        }
+
+        return rows;
     }
 
     private static async Task<List<AdminSummaryCardViewModel>> LoadHotelSummaryCardsAsync(SqlConnection connection, CancellationToken cancellationToken)

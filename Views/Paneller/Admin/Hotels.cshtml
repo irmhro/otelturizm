@@ -13,7 +13,7 @@
         return "info";
     }
 
-    var pageSizes = new[] { 7, 10, 20, 50, 100 };
+    var pageSizes = new[] { 50, 100, 200 };
     var currentPath = Context.Request.Path.Value ?? "/admin/oteller";
     var returnUrl = $"{Context.Request.Path}{Context.Request.QueryString}";
     static string Enc(string? value) => System.Net.WebUtility.UrlEncode(value ?? string.Empty);
@@ -190,10 +190,10 @@
                                 <td data-label="Onay"><span class="admin-chip @StatusTone(hotel.ApprovalStatus)">@hotel.ApprovalStatus</span></td>
                                 <td data-label="Puan"><span class="admin-hotel-score compact">@hotel.ScoreText</span></td>
                                 <td data-label="Aksiyon" class="admin-hotels-actions panel-form-ux-actions">
-                                    <a class="admin-action-btn primary panel-form-ux-edit" href="/admin/oteller/duzenle/@hotel.HotelId">
+                                    <a class="admin-action-btn primary panel-form-ux-edit" href="/admin/otel-detay/@hotel.HotelId">
                                         <i class="fas fa-pen"></i> Düzenle
                                     </a>
-                                    @if (string.Equals(hotel.PublishStatus, "Yayında", StringComparison.OrdinalIgnoreCase) || string.Equals(hotel.PublishStatus, "Yayinda", StringComparison.OrdinalIgnoreCase))
+                                    @if (hotel.IsPublished)
                                     {
                                         <form method="post" action="/admin/oteller/pasife-al" class="admin-inline-post panel-form-ux-delete panel-form-ux-toggle-form">
                                             @Html.AntiForgeryToken()
