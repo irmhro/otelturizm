@@ -297,23 +297,6 @@
                                     aria-pressed="@(hotel.IsFavorite ? "true" : "false")">
                                 <i class="@(hotel.IsFavorite ? "fas" : "far") fa-heart" aria-hidden="true"></i>
                             </button>
-                            <div class="otelliste-card-media-actions">
-                                @if (Model.ShowLoyaltyTouchpoints && hotel.EstimatedLoyaltyPoints is > 0)
-                                {
-                                    <p class="otelliste-card-loyalty otelliste-card-loyalty--media" data-loyalty-hook="listing-card">
-                                        <i class="fas fa-gift" aria-hidden="true"></i>
-                                        +@hotel.EstimatedLoyaltyPoints.Value puan kazanın
-                                    </p>
-                                }
-                                @if (price > 0m)
-                                {
-                                    <a class="otelliste-card-cta otelliste-card-cta--media" href="@detailUrl">İncele</a>
-                                }
-                                else
-                                {
-                                    <a class="otelliste-card-cta otelliste-card-cta--media otelliste-card-cta--secondary" href="@detailUrl">Fiyat sor</a>
-                                }
-                            </div>
                             </div>
                             <div class="otelliste-card-body">
                                 <div class="otelliste-card-meta-row">
@@ -340,29 +323,6 @@
                                 <p class="otelliste-card-location">
                                     <i class="fas fa-map-marker-alt" aria-hidden="true"></i> @locationText
                                 </p>
-                                <div class="otelliste-card-offer">
-                                    @if (!string.IsNullOrWhiteSpace(hotel.ListingLeadRoomName))
-                                    {
-                                        <p class="otelliste-card-lead-room">
-                                            <i class="fas fa-bed" aria-hidden="true"></i> @hotel.ListingLeadRoomName
-                                        </p>
-                                    }
-                                    <div class="otelliste-card-price otelliste-card-price--body">
-                                        @if (price > 0m)
-                                        {
-                                            if (originalPrice > price)
-                                            {
-                                                <span class="otelliste-card-price-old">@($"{originalPrice:N0} ₺")</span>
-                                            }
-                                            <span class="otelliste-card-price-current">@($"{price:N0} ₺")</span>
-                                            <span class="otelliste-card-price-unit">/ gece · vergi dahil</span>
-                                        }
-                                        else
-                                        {
-                                            <span class="otelliste-card-price-unit">Fiyat sor</span>
-                                        }
-                                    </div>
-                                </div>
                                 @if (Model.ShowLoyaltyTouchpoints && hotel.EstimatedLoyaltyPoints is > 0)
                                 {
                                     <p class="otelliste-card-loyalty otelliste-card-loyalty--body" data-loyalty-hook="listing-card">
@@ -370,6 +330,39 @@
                                         +@hotel.EstimatedLoyaltyPoints.Value puan kazanın
                                     </p>
                                 }
+                                <div class="otelliste-card-offer">
+                                    @if (!string.IsNullOrWhiteSpace(hotel.ListingLeadRoomName))
+                                    {
+                                        <p class="otelliste-card-lead-room">
+                                            <i class="fas fa-bed" aria-hidden="true"></i> @hotel.ListingLeadRoomName
+                                        </p>
+                                    }
+                                    <div class="otelliste-card-offer-row">
+                                        <div class="otelliste-card-price otelliste-card-price--body">
+                                            @if (price > 0m)
+                                            {
+                                                if (originalPrice > price)
+                                                {
+                                                    <span class="otelliste-card-price-old">@($"{originalPrice:N0} ₺")</span>
+                                                }
+                                                <span class="otelliste-card-price-current">@($"{price:N0} ₺")</span>
+                                                <span class="otelliste-card-price-unit">/ gece · vergi dahil</span>
+                                            }
+                                            else
+                                            {
+                                                <span class="otelliste-card-price-unit">Fiyat sor</span>
+                                            }
+                                        </div>
+                                        @if (price > 0m)
+                                        {
+                                            <a class="otelliste-card-cta otelliste-card-cta--body" href="@detailUrl">İncele</a>
+                                        }
+                                        else
+                                        {
+                                            <a class="otelliste-card-cta otelliste-card-cta--body otelliste-card-cta--secondary" href="@detailUrl">Fiyat sor</a>
+                                        }
+                                    </div>
+                                </div>
                                 @if (amenityItemsList.Count > 0 || hotel.StarCount > 0)
                                 {
                                     <div class="otelliste-card-amenities" data-amenity-expanded="false">

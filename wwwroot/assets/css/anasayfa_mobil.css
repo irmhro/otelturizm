@@ -46,8 +46,10 @@
     }
 
     .hero-top-grid--solo .hero-headline-pro {
-        max-width: none;
+        max-width: min(420px, 92vw);
         width: 100%;
+        margin-inline: auto;
+        align-items: center;
     }
 
     /* Arama — legacy form (search-engine-pro hariç) */
@@ -553,7 +555,9 @@
         padding: 0 2px;
         gap: 10px;
         width: 100%;
-        max-width: none;
+        max-width: min(420px, 92vw);
+        margin-inline: auto;
+        align-items: center;
     }
 
     .hero-meta-chip-text {
@@ -598,38 +602,44 @@
 
     .hero-title.hero-title-pro--headline {
         width: 100%;
-        max-width: none;
-        font-size: clamp(26px, 7.2vw, 40px);
-        line-height: 1.12;
-        gap: clamp(4px, 1.2vw, 8px);
+        max-width: min(420px, 92vw);
+        margin-inline: auto;
+        font-size: clamp(22px, 6.4vw, 34px);
+        line-height: 1.16;
+        gap: clamp(4px, 1vw, 6px);
+        text-align: center;
+        align-items: center;
     }
 
     .hero-title-pro--headline .hero-title-row--spread {
-        justify-content: space-between;
+        justify-content: center;
         flex-wrap: wrap;
-        gap: clamp(0.24em, 2.4vw, 0.72em);
+        gap: clamp(0.18em, 1.6vw, 0.42em);
         width: 100%;
-        max-width: 100%;
+        max-width: min(420px, 92vw);
+        margin-inline: auto;
     }
 
     .hero-title-pro--headline .hero-title-row--spread .hero-title-word {
         flex: 0 1 auto;
-        white-space: nowrap;
+        white-space: normal;
     }
 
     .hero-title-row {
         display: flex;
         flex-wrap: wrap;
         align-items: baseline;
-        justify-content: space-between;
-        gap: clamp(0.22em, 2.2vw, 0.65em);
+        justify-content: center;
+        gap: clamp(0.18em, 1.6vw, 0.42em);
         width: 100%;
-        max-width: 100%;
+        max-width: min(420px, 92vw);
+        margin-inline: auto;
         white-space: normal;
+        text-align: center;
     }
 
     .hero-title-row .hero-title-word {
-        white-space: nowrap;
+        white-space: normal;
     }
 
     .hero-title-row--impact {
@@ -943,21 +953,24 @@
 
     .hero-title.hero-title-pro--headline {
         width: 100%;
-        max-width: none;
-        font-size: clamp(22px, 6.6vw, 32px);
-        line-height: 1.12;
+        max-width: min(360px, 90vw);
+        margin-inline: auto;
+        font-size: clamp(20px, 6vw, 28px);
+        line-height: 1.18;
         gap: 4px;
-        letter-spacing: -0.026em;
+        letter-spacing: -0.024em;
+        text-align: center;
     }
 
     .hero-title-pro--headline .hero-title-row--spread {
-        justify-content: space-between;
+        justify-content: center;
         flex-wrap: wrap;
-        gap: clamp(0.22em, 2vw, 0.55em);
+        gap: clamp(0.16em, 1.4vw, 0.36em);
+        max-width: min(360px, 90vw);
     }
 
     .hero-title-pro--headline .hero-title-row--spread .hero-title-word {
-        white-space: nowrap;
+        white-space: normal;
     }
 
     .search-pro-row-trip {

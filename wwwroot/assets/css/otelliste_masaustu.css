@@ -967,6 +967,14 @@
     display: inline-flex;
 }
 
+.otelliste-page .otelliste-card-offer-row {
+    display: none;
+}
+
+.otelliste-page .otelliste-card-cta--body {
+    display: none;
+}
+
 .otelliste-page .otelliste-card-offer,
 .otelliste-page .otelliste-card-price--body {
     display: none;
