@@ -1,7 +1,7 @@
 -- Puan yönetimi admin sayfası RBAC
 IF NOT EXISTS (SELECT 1 FROM [dbo].[ADMIN_YETKILER] WHERE [YETKI_CODE] = N'admin.puan_yonetimi')
 BEGIN
-    INSERT INTO [dbo].[ADMIN_YETKILER] ([YETKI_CODE], [YETKI_ADI], [MODUL], [ACIKLAMA], [ACTIVE])
+    INSERT INTO [dbo].[ADMIN_YETKILER] ([YETKI_CODE], [YETKI_NAME], [GROUP_CODE], [DESCRIPTION], [ACTIVE])
     VALUES (N'admin.puan_yonetimi', N'Puan Yönetimi', N'crm', N'PUAN_AYAR / PUAN_KULLANICI yönetimi', 1);
 END
 GO
