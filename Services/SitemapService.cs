@@ -100,11 +100,11 @@ public sealed class SitemapService : ISitemapService
             var indexEntries = new List<SitemapIndexEntry>
             {
                 new("sitemaps/static.xml", now, staticEntries.Count),
-                new("sitemaps/hotels.xml", hotelEntries.MaxBy(x => x.LastModifiedUtc)?.LastModifiedUtc ?? now, hotelEntries.Count),
-                new("sitemaps/rooms.xml", roomEntries.MaxBy(x => x.LastModifiedUtc)?.LastModifiedUtc ?? now, roomEntries.Count),
-                new("sitemaps/campaigns.xml", campaignEntries.MaxBy(x => x.LastModifiedUtc)?.LastModifiedUtc ?? now, campaignEntries.Count),
-                new("sitemaps/blog.xml", blogEntries.MaxBy(x => x.LastModifiedUtc)?.LastModifiedUtc ?? now, blogEntries.Count),
-                new("sitemaps/locations.xml", locationEntries.MaxBy(x => x.LastModifiedUtc)?.LastModifiedUtc ?? now, locationEntries.Count),
+                new("sitemaps/hotels.xml", ResolveLastModifiedUtc(hotelEntries, now), hotelEntries.Count),
+                new("sitemaps/rooms.xml", ResolveLastModifiedUtc(roomEntries, now), roomEntries.Count),
+                new("sitemaps/campaigns.xml", ResolveLastModifiedUtc(campaignEntries, now), campaignEntries.Count),
+                new("sitemaps/blog.xml", ResolveLastModifiedUtc(blogEntries, now), blogEntries.Count),
+                new("sitemaps/locations.xml", ResolveLastModifiedUtc(locationEntries, now), locationEntries.Count),
                 new("feeds/hotel-offers.json", now, 0)
             };
 
@@ -1091,6 +1091,11 @@ public sealed class SitemapService : ISitemapService
         return null;
     }
 
+    private static DateTime ResolveLastModifiedUtc(IReadOnlyCollection<SitemapUrlEntry> entries, DateTime fallbackUtc)
+        => entries.Count == 0
+            ? fallbackUtc
+            : entries.Max(x => x.LastModifiedUtc ?? DateTime.MinValue);
+
     private string BuildAbsoluteUrl(string relativeOrAbsolute)
     {
         if (string.IsNullOrWhiteSpace(relativeOrAbsolute))
@@ -1104,6 +1109,11 @@ public sealed class SitemapService : ISitemapService
         }
 
         var baseUrl = _configuration["App:PublicBaseUrl"]?.TrimEnd('/') ?? "https://otelturizm.com";
+        if (_environment.IsProduction()
+            && baseUrl.Contains("localhost", StringComparison.OrdinalIgnoreCase))
+        {
+            baseUrl = "https://otelturizm.com";
+        }
         if (!relativeOrAbsolute.StartsWith('/'))
         {
             relativeOrAbsolute = "/" + relativeOrAbsolute;
