@@ -63,7 +63,7 @@ public sealed class SitemapService : ISitemapService
                 return;
             }
 
-            await using var lockHandle = TryAcquireFileLock(GetSitemapLockFilePath());
+            await using var lockHandle = await TryAcquireFileLockAsync(GetSitemapLockFilePath(), force, cancellationToken);
             if (lockHandle is null)
             {
                 return;
@@ -1049,38 +1049,17 @@ public sealed class SitemapService : ISitemapService
         }, cancellationToken);
     }
 
-    private string GetSitemapFilePath()
-    {
-        var webRootPath = _environment.WebRootPath;
-        if (string.IsNullOrWhiteSpace(webRootPath))
-        {
-            webRootPath = Path.Combine(_environment.ContentRootPath, "wwwroot");
-        }
+    private string GetSeoOutputRootPath()
+        => Path.Combine(_environment.ContentRootPath, "App_Data", "seo");
 
-        return Path.Combine(webRootPath, "sitemap.xml");
-    }
+    private string GetSitemapFilePath()
+        => Path.Combine(GetSeoOutputRootPath(), "sitemap.xml");
 
     private string GetSubSitemapDirectoryPath()
-    {
-        var webRootPath = _environment.WebRootPath;
-        if (string.IsNullOrWhiteSpace(webRootPath))
-        {
-            webRootPath = Path.Combine(_environment.ContentRootPath, "wwwroot");
-        }
-
-        return Path.Combine(webRootPath, "sitemaps");
-    }
+        => Path.Combine(GetSeoOutputRootPath(), "sitemaps");
 
     private string GetPriceFeedFilePath()
-    {
-        var webRootPath = _environment.WebRootPath;
-        if (string.IsNullOrWhiteSpace(webRootPath))
-        {
-            webRootPath = Path.Combine(_environment.ContentRootPath, "wwwroot");
-        }
-
-        return Path.Combine(webRootPath, "feeds", "hotel-offers.json");
-    }
+        => Path.Combine(GetSeoOutputRootPath(), "feeds", "hotel-offers.json");
 
     private string GetRegionalSitemapDirectoryPath()
         => Path.Combine(_environment.ContentRootPath, "Views", "xml");
@@ -1088,17 +1067,27 @@ public sealed class SitemapService : ISitemapService
     private string GetSitemapLockFilePath()
         => Path.Combine(Path.GetDirectoryName(GetSitemapFilePath())!, ".sitemap.lock");
 
-    private static FileStream? TryAcquireFileLock(string absoluteLockPath)
+    private static async Task<FileStream?> TryAcquireFileLockAsync(string absoluteLockPath, bool force, CancellationToken cancellationToken)
     {
-        try
+        Directory.CreateDirectory(Path.GetDirectoryName(absoluteLockPath)!);
+        var attempts = force ? 8 : 1;
+        for (var attempt = 0; attempt < attempts; attempt++)
         {
-            Directory.CreateDirectory(Path.GetDirectoryName(absoluteLockPath)!);
-            return new FileStream(absoluteLockPath, FileMode.OpenOrCreate, FileAccess.ReadWrite, FileShare.None);
+            try
+            {
+                return new FileStream(absoluteLockPath, FileMode.OpenOrCreate, FileAccess.ReadWrite, FileShare.None);
+            }
+            catch when (force && attempt < attempts - 1)
+            {
+                await Task.Delay(TimeSpan.FromMilliseconds(250 * (attempt + 1)), cancellationToken);
+            }
+            catch
+            {
+                return null;
+            }
         }
-        catch
-        {
-            return null;
-        }
+
+        return null;
     }
 
     private string BuildAbsoluteUrl(string relativeOrAbsolute)
