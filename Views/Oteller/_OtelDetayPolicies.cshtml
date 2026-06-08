@@ -7,6 +7,14 @@
         || !string.IsNullOrWhiteSpace(Model.ChildPolicy)
         || Model.HasFreeCancellation
         || Model.PrepaymentRequired;
+
+    string JoinPolicyText(string? primary, string? secondary)
+    {
+        var parts = new[] { primary?.Trim(), secondary?.Trim() }
+            .Where(x => !string.IsNullOrWhiteSpace(x))
+            .ToList();
+        return parts.Count == 0 ? string.Empty : string.Join(" ", parts);
+    }
 }
 @if (hasContent)
 {
@@ -22,66 +30,53 @@
         <ul class="od-policy-list">
             @if (Model.HasFreeCancellation || !string.IsNullOrWhiteSpace(Model.CancellationSummary))
             {
+                var cancelText = JoinPolicyText(
+                    string.IsNullOrWhiteSpace(Model.CancellationSummary) ? "Ücretsiz iptal seçeneği mevcut." : Model.CancellationSummary,
+                    Model.CancellationDetail);
                 <li class="od-policy-item">
                     <span class="od-policy-icon" aria-hidden="true"><i class="fas fa-calendar-check"></i></span>
-                    <div>
-                        <strong>İptal politikası</strong>
-                        <p>@(string.IsNullOrWhiteSpace(Model.CancellationSummary) ? "Ücretsiz iptal seçeneği mevcut." : Model.CancellationSummary)</p>
-                        @if (!string.IsNullOrWhiteSpace(Model.CancellationDetail))
-                        {
-                            <small class="od-policy-detail">@Model.CancellationDetail</small>
-                        }
-                    </div>
+                    <strong class="od-policy-title">İptal politikası</strong>
+                    <span class="od-policy-text">@cancelText</span>
                 </li>
             }
             @if (!string.IsNullOrWhiteSpace(Model.SmokingPolicy))
             {
                 <li class="od-policy-item">
                     <span class="od-policy-icon" aria-hidden="true"><i class="fas fa-smoking-ban"></i></span>
-                    <div>
-                        <strong>Sigara politikası</strong>
-                        <p>@Model.SmokingPolicy</p>
-                    </div>
+                    <strong class="od-policy-title">Sigara politikası</strong>
+                    <span class="od-policy-text">@Model.SmokingPolicy</span>
                 </li>
             }
             @if (!string.IsNullOrWhiteSpace(Model.PetPolicy))
             {
                 <li class="od-policy-item">
                     <span class="od-policy-icon" aria-hidden="true"><i class="fas fa-paw"></i></span>
-                    <div>
-                        <strong>Evcil hayvan</strong>
-                        <p>@Model.PetPolicy</p>
-                    </div>
+                    <strong class="od-policy-title">Evcil hayvan</strong>
+                    <span class="od-policy-text">@Model.PetPolicy</span>
                 </li>
             }
             @if (!string.IsNullOrWhiteSpace(Model.ChildPolicy))
             {
                 <li class="od-policy-item">
                     <span class="od-policy-icon" aria-hidden="true"><i class="fas fa-child"></i></span>
-                    <div>
-                        <strong>Çocuk politikası</strong>
-                        <p>@Model.ChildPolicy</p>
-                    </div>
+                    <strong class="od-policy-title">Çocuk politikası</strong>
+                    <span class="od-policy-text">@Model.ChildPolicy</span>
                 </li>
             }
             @if (Model.PrepaymentRequired)
             {
                 <li class="od-policy-item">
                     <span class="od-policy-icon" aria-hidden="true"><i class="fas fa-credit-card"></i></span>
-                    <div>
-                        <strong>Ön ödeme</strong>
-                        <p>Rezervasyon sırasında @(Model.PrepaymentPercent > 0m ? $"%{Model.PrepaymentPercent:N0}" : "ön") ödeme gerekebilir.</p>
-                    </div>
+                    <strong class="od-policy-title">Ön ödeme</strong>
+                    <span class="od-policy-text">Rezervasyon sırasında @(Model.PrepaymentPercent > 0m ? $"%{Model.PrepaymentPercent:N0}" : "ön") ödeme gerekebilir.</span>
                 </li>
             }
             else if (Model.CardPaymentAccepted)
             {
                 <li class="od-policy-item">
                     <span class="od-policy-icon" aria-hidden="true"><i class="fas fa-wallet"></i></span>
-                    <div>
-                        <strong>Ödeme</strong>
-                        <p>Kredi kartı ile online ödeme kabul edilir.</p>
-                    </div>
+                    <strong class="od-policy-title">Ödeme</strong>
+                    <span class="od-policy-text">Kredi kartı ile online ödeme kabul edilir.</span>
                 </li>
             }
         </ul>
