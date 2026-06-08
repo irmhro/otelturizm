@@ -22,6 +22,19 @@ public class SitemapController : Controller
         return Content(xml, "application/xml; charset=utf-8");
     }
 
+    [HttpGet("/sitemaps/{fileName}.xml")]
+    [ResponseCache(Duration = 3600, Location = ResponseCacheLocation.Any, NoStore = false)]
+    public async Task<IActionResult> SubSitemapXml(string fileName, CancellationToken cancellationToken)
+    {
+        var xml = await _sitemapService.GetSubSitemapXmlAsync(fileName, cancellationToken);
+        if (string.IsNullOrWhiteSpace(xml))
+        {
+            return NotFound();
+        }
+
+        return Content(xml, "application/xml; charset=utf-8");
+    }
+
     [HttpGet("/xml/{fileName}.xml")]
     [ResponseCache(Duration = 3600, Location = ResponseCacheLocation.Any, NoStore = false)]
     public async Task<IActionResult> RegionalXml(string fileName, CancellationToken cancellationToken)
@@ -33,6 +46,19 @@ public class SitemapController : Controller
         }
 
         return Content(xml, "application/xml; charset=utf-8");
+    }
+
+    [HttpGet("/feeds/hotel-offers.json")]
+    [ResponseCache(Duration = 1800, Location = ResponseCacheLocation.Any, NoStore = false)]
+    public async Task<IActionResult> HotelOffersFeed(CancellationToken cancellationToken)
+    {
+        var json = await _sitemapService.GetHotelOffersFeedJsonAsync(cancellationToken);
+        if (string.IsNullOrWhiteSpace(json))
+        {
+            return NotFound();
+        }
+
+        return Content(json, "application/json; charset=utf-8");
     }
 
     [HttpGet("/seo/sitemap-refresh")]

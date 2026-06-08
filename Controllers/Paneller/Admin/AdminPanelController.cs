@@ -39,15 +39,13 @@ public class AdminPanelController : Controller
     private readonly IGrowthGovernanceService _growthGovernance;
     private readonly IPanelThemeService _panelThemeService;
     private readonly IPlatformPackageService _platformPackageService;
-    private readonly IAdminLocationService _adminLocationService;
 
-    public AdminPanelController(IAdminService adminService, IAdminEmailRoutingService adminEmailRoutingService, IAdminRbacService adminRbacService, IAdminHotelManagementService adminHotelManagementService, IAdminLocationService adminLocationService, IContractContentService contractContentService, IDevelopmentRequestService developmentRequestService, IPhoneVerificationService phoneVerificationService, IAuditLogService auditLogService, IImageStorageService imageStorageService, ISitemapService sitemapService, IAdminSupportArticleService adminSupportArticleService, IWebHostEnvironment environment, IHttpClientFactory httpClientFactory, IOutputCacheStore outputCacheStore, ISecureFileService secureFileService, IGrowthGovernanceService growthGovernance, IPanelThemeService panelThemeService, IPlatformPackageService platformPackageService)
+    public AdminPanelController(IAdminService adminService, IAdminEmailRoutingService adminEmailRoutingService, IAdminRbacService adminRbacService, IAdminHotelManagementService adminHotelManagementService, IContractContentService contractContentService, IDevelopmentRequestService developmentRequestService, IPhoneVerificationService phoneVerificationService, IAuditLogService auditLogService, IImageStorageService imageStorageService, ISitemapService sitemapService, IAdminSupportArticleService adminSupportArticleService, IWebHostEnvironment environment, IHttpClientFactory httpClientFactory, IOutputCacheStore outputCacheStore, ISecureFileService secureFileService, IGrowthGovernanceService growthGovernance, IPanelThemeService panelThemeService, IPlatformPackageService platformPackageService)
     {
         _adminService = adminService;
         _adminEmailRoutingService = adminEmailRoutingService;
         _adminRbacService = adminRbacService;
         _adminHotelManagementService = adminHotelManagementService;
-        _adminLocationService = adminLocationService;
         _contractContentService = contractContentService;
         _developmentRequestService = developmentRequestService;
         _phoneVerificationService = phoneVerificationService;
@@ -1411,7 +1409,7 @@ public class AdminPanelController : Controller
         }
 
         await _sitemapService.EnsureFreshSitemapAsync(true, cancellationToken);
-        TempData["AdminMessage"] = "Sitemap ve il/ilçe XML dosyaları güncellendi.";
+        TempData["AdminMessage"] = "Sitemap index, alt sitemap dosyaları, il/ilçe XML ve fiyat feed üretildi.";
         return RedirectToAction(nameof(Sitemap));
     }
 
@@ -1422,7 +1420,7 @@ public class AdminPanelController : Controller
     public Task<IActionResult> Managers(CancellationToken cancellationToken) => RenderSectionAsync("managers", "Managers", cancellationToken);
 
     [HttpGet("oteller")]
-    public async Task<IActionResult> Hotels([FromQuery] string? q, [FromQuery] string? city, [FromQuery] string? district, [FromQuery] string? neighborhood, [FromQuery] string? publishStatus, [FromQuery] string? approvalStatus, [FromQuery] int page = 1, [FromQuery] int pageSize = 50, CancellationToken cancellationToken = default)
+    public async Task<IActionResult> Hotels([FromQuery] string? q, [FromQuery] string? city, [FromQuery] string? district, [FromQuery] string? neighborhood, [FromQuery] string? publishStatus, [FromQuery] string? approvalStatus, [FromQuery] int page = 1, [FromQuery] int pageSize = 20, CancellationToken cancellationToken = default)
     {
         if (!CanAccessAdminPanel())
         {
@@ -1463,7 +1461,6 @@ public class AdminPanelController : Controller
         var model = await _adminHotelManagementService.GetHotelManagementPageAsync(id.Value, GetFullName(), GetEmail(), GetUserRole(), roomId, hotelPhotoId, roomPhotoId, cancellationToken);
         ViewData["Title"] = model.Shell.PanelTitle;
         ViewData["PageCssPath"] = "admin_panel_hotels_masaustu";
-        ViewData["PageCssMobilePath"] = "admin_panel_hotels_mobil";
         return View("~/Views/Paneller/Admin/HotelDetail.cshtml", model);
     }
 
@@ -3133,52 +3130,6 @@ public class AdminPanelController : Controller
     [HttpGet("yedekleme")]
     public Task<IActionResult> Backups(CancellationToken cancellationToken) => RenderSectionAsync("backups", "Backups", cancellationToken);
 
-    [HttpGet("konumlar/ulkeler")]
-    public Task<IActionResult> Countries(CancellationToken cancellationToken) => RenderSectionAsync("countries", "Countries", cancellationToken);
-
-    [HttpGet("konumlar/iller")]
-    public async Task<IActionResult> LocationsCities([FromQuery] string? q, [FromQuery] string? active, [FromQuery] long? countryId, [FromQuery] int page = 1, [FromQuery] int pageSize = 25, CancellationToken cancellationToken = default)
-        => await RenderLocationPageAsync("LocationsCities", _adminLocationService.GetCitiesPageAsync(GetFullName(), GetEmail(), GetUserRole(), q, active, countryId, page, pageSize, cancellationToken), "admin.locations", cancellationToken);
-
-    [HttpGet("konumlar/ilceler")]
-    public async Task<IActionResult> LocationsDistricts([FromQuery] string? q, [FromQuery] string? active, [FromQuery] long? countryId, [FromQuery] long? cityId, [FromQuery] int page = 1, [FromQuery] int pageSize = 25, CancellationToken cancellationToken = default)
-        => await RenderLocationPageAsync("LocationsDistricts", _adminLocationService.GetDistrictsPageAsync(GetFullName(), GetEmail(), GetUserRole(), q, active, countryId, cityId, page, pageSize, cancellationToken), "admin.locations", cancellationToken);
-
-    [HttpGet("konumlar/mahalleler")]
-    public async Task<IActionResult> LocationsNeighborhoods([FromQuery] string? q, [FromQuery] string? active, [FromQuery] long? countryId, [FromQuery] long? cityId, [FromQuery] long? districtId, [FromQuery] int page = 1, [FromQuery] int pageSize = 25, CancellationToken cancellationToken = default)
-        => await RenderLocationPageAsync("LocationsNeighborhoods", _adminLocationService.GetNeighborhoodsPageAsync(GetFullName(), GetEmail(), GetUserRole(), q, active, countryId, cityId, districtId, page, pageSize, cancellationToken), "admin.locations", cancellationToken);
-
-    [HttpGet("firmalar")]
-    public Task<IActionResult> Companies(CancellationToken cancellationToken) => RenderSectionAsync("companies", "Companies", cancellationToken);
-
-    [HttpGet("roller")]
-    public Task<IActionResult> AdminRoles(CancellationToken cancellationToken) => RenderSectionAsync("roles", "AdminRoles", cancellationToken);
-
-    [HttpGet("admin-panel-rolleri")]
-    public Task<IActionResult> AdminRbacRoles(CancellationToken cancellationToken) => RenderSectionAsync("admin-rbac-roles", "AdminRbacRoles", cancellationToken);
-
-    [HttpGet("veritabani-istatistikleri")]
-    public Task<IActionResult> PlatformDbStats(CancellationToken cancellationToken) => RenderSectionAsync("platform-db-stats", "PlatformDbStats", cancellationToken);
-
-    private async Task<IActionResult> RenderLocationPageAsync(string viewName, Task<AdminLocationListPageViewModel> pageTask, string permissionCode, CancellationToken cancellationToken)
-    {
-        if (!CanAccessAdminPanel())
-        {
-            return RedirectToAction("UserLogin", "Auth");
-        }
-
-        if (!await CanAccessAsync(permissionCode, cancellationToken))
-        {
-            return Forbid();
-        }
-
-        var model = await pageTask;
-        ViewData["Title"] = model.Shell.PanelTitle;
-        ViewData["AdminShell"] = model.Shell;
-        ViewData["PageCssPath"] = "admin_panel_hotels_masaustu";
-        return View($"~/Views/Paneller/Admin/{viewName}.cshtml", model);
-    }
-
     private async Task<IActionResult> RenderSectionAsync(string sectionKey, string viewName, CancellationToken cancellationToken)
     {
         if (!CanAccessAdminPanel())
@@ -3210,15 +3161,6 @@ public class AdminPanelController : Controller
             "hotel-coordinate-changes" => "admin.hotel_coord_changes",
             "company-reservations" => "admin.company_reservations",
             "backups" => "admin.backups",
-            "countries" => "admin.locations",
-            "roles" => "admin.roles",
-            "admin-rbac-roles" => "admin.roles",
-            "companies" => "admin.companies",
-            "platform-db-stats" => "admin.platform_stats",
-            "commissions" => "admin.commissions",
-            "partner-applications" => "admin.partner_applications",
-            "company-applications" => "admin.company_applications",
-            "email-templates" => "admin.email_templates",
             _ => string.Empty
         };
         if (string.IsNullOrWhiteSpace(permission))

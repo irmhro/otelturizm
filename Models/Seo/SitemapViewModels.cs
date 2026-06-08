@@ -8,6 +8,15 @@ public sealed class SitemapUrlEntry
     public decimal Priority { get; set; } = 0.5m;
     public string? ImageUrl { get; set; }
     public string? ImageTitle { get; set; }
+    public List<SitemapImageEntry> Images { get; set; } = new();
+    public bool IncludeHrefLang { get; set; } = true;
+}
+
+public sealed class SitemapImageEntry
+{
+    public string Url { get; set; } = string.Empty;
+    public string? Title { get; set; }
+    public string? Caption { get; set; }
 }
 
 public sealed class SitemapDiagnosticsViewModel
@@ -15,8 +24,16 @@ public sealed class SitemapDiagnosticsViewModel
     public DateTime? LastRefreshUtc { get; set; }
     public string MainSitemapPhysicalPath { get; set; } = string.Empty;
     public int MainSitemapUrlCount { get; set; }
+    public int SubSitemapCount { get; set; }
+    public int HotelUrlCount { get; set; }
+    public int RoomUrlCount { get; set; }
+    public int CampaignUrlCount { get; set; }
+    public int BlogUrlCount { get; set; }
+    public int LocationUrlCount { get; set; }
     public int RegionalFileCount { get; set; }
     public int RegionalUrlCount { get; set; }
+    public int PriceFeedOfferCount { get; set; }
+    public string PriceFeedUrl { get; set; } = string.Empty;
     public List<SitemapFileSummaryViewModel> Files { get; set; } = new();
 }
 

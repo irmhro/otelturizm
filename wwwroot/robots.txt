@@ -13,3 +13,4 @@ Disallow: /cikis-yap
 Disallow: /gelisim/
 
 Sitemap: https://otelturizm.com/sitemap.xml
+Sitemap: https://otelturizm.com/feeds/hotel-offers.json

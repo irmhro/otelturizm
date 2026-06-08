@@ -27,14 +27,22 @@
 
     try
     {
+        var pricedRooms = Model.Rooms
+            .Where(x => x.Price > 0m)
+            .OrderBy(x => x.Price)
+            .ThenBy(x => x.RoomTypeId)
+            .ToList();
+        var minRoomPrice = pricedRooms.FirstOrDefault()?.Price ?? Model.LowestRoomPrice;
+        var maxRoomPrice = pricedRooms.LastOrDefault()?.Price ?? minRoomPrice;
         var hotelJsonLd = new Dictionary<string, object?>
         {
             ["@context"] = "https://schema.org",
-            ["@type"] = "Hotel",
+            ["@type"] = new[] { "Hotel", "LodgingBusiness" },
             ["name"] = Model.Name,
             ["inLanguage"] = uiCulture,
             ["url"] = $"{baseUrl}/oteller/{Model.Slug}",
             ["image"] = string.IsNullOrWhiteSpace(Model.MainImageUrl) ? null : Model.MainImageUrl,
+            ["priceRange"] = minRoomPrice > 0m ? $"{minRoomPrice:N0}-{maxRoomPrice:N0} TRY" : null,
             ["address"] = new Dictionary<string, object?>
             {
                 ["@type"] = "PostalAddress",
@@ -58,6 +66,28 @@
                     ["bestRating"] = 10,
                     ["worstRating"] = 0
                 }
+                : null,
+            ["makesOffer"] = pricedRooms.Count > 0
+                ? pricedRooms.Select(room => new Dictionary<string, object?>
+                {
+                    ["@type"] = "Offer",
+                    ["name"] = room.Name,
+                    ["price"] = room.Price,
+                    ["priceCurrency"] = "TRY",
+                    ["url"] = $"{baseUrl}/oteller/{Model.Slug}?room={room.RoomTypeId}",
+                    ["availability"] = "https://schema.org/InStock",
+                    ["itemOffered"] = new Dictionary<string, object?>
+                    {
+                        ["@type"] = "HotelRoom",
+                        ["name"] = room.Name,
+                        ["occupancy"] = new Dictionary<string, object?>
+                        {
+                            ["@type"] = "QuantitativeValue",
+                            ["maxValue"] = room.MaxGuestCount > 0 ? room.MaxGuestCount : null,
+                            ["unitText"] = "guests"
+                        }
+                    }
+                }).ToList()
                 : null
         };
 
