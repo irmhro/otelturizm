@@ -589,7 +589,8 @@ public class PartnerService : IPartnerService
                     ["check_out_date"] = reservationSnapshot.CheckOutDate.ToString("dd MMM yyyy", CultureInfo.GetCultureInfo("tr-TR")),
                     ["total_price"] = reservationSnapshot.TotalAmount.ToString("N2", CultureInfo.GetCultureInfo("tr-TR")),
                     ["room_type_name"] = string.IsNullOrWhiteSpace(reservationSnapshot.RoomName) ? "Oda bilgisi" : reservationSnapshot.RoomName,
-                    ["rejection_reason"] = string.IsNullOrWhiteSpace(reason) ? "Belirtilmedi." : reason
+                    ["rejection_reason"] = string.IsNullOrWhiteSpace(reason) ? "Belirtilmedi." : reason,
+                    ["booking_details_link"] = "/panel/user/rezervasyonlarim"
                 };
                 var templateCode = normalizedAction == "approve" ? "reservation_confirmed_customer" : normalizedAction == "reject" ? "reservation_rejected_customer" : string.Empty;
                 if (!string.IsNullOrWhiteSpace(templateCode))

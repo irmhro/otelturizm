@@ -10,6 +10,7 @@ namespace otelturizmnew.Services;
 public class EmailQueueService : IEmailQueueService
 {
     private readonly string _connectionString;
+    private readonly string _publicBaseUrl;
     private readonly IEmailTemplateService _emailTemplateService;
     private readonly ILogger<EmailQueueService> _logger;
 
@@ -17,6 +18,7 @@ public class EmailQueueService : IEmailQueueService
     {
         _connectionString = configuration.GetConnectionString("DefaultConnection")
             ?? throw new InvalidOperationException("DefaultConnection tanimli degil.");
+        _publicBaseUrl = (configuration["App:PublicBaseUrl"] ?? "https://otelturizm.com").TrimEnd('/');
         _emailTemplateService = emailTemplateService;
         _logger = logger;
     }
@@ -313,6 +315,8 @@ public class EmailQueueService : IEmailQueueService
 
             var current = updated[key];
             if (string.IsNullOrWhiteSpace(current)) continue;
+            current = NormalizeToAbsoluteUrl(key, current);
+            updated[key] = current;
             if (!Uri.TryCreate(current, UriKind.Absolute, out var uri)) continue;
 
             var ub = new UriBuilder(uri);
@@ -330,6 +334,27 @@ public class EmailQueueService : IEmailQueueService
         }
 
         return updated;
+    }
+
+    private string NormalizeToAbsoluteUrl(string tokenKey, string value)
+    {
+        var trimmed = value.Trim();
+        if (Uri.TryCreate(trimmed, UriKind.Absolute, out _))
+        {
+            return trimmed;
+        }
+
+        if (trimmed.StartsWith('/'))
+        {
+            return $"{_publicBaseUrl}{trimmed}";
+        }
+
+        if (tokenKey.Equals("hotel_link", StringComparison.OrdinalIgnoreCase))
+        {
+            return $"{_publicBaseUrl}/oteller/{trimmed.TrimStart('/')}";
+        }
+
+        return $"{_publicBaseUrl}/{trimmed.TrimStart('/')}";
     }
 
     private static async Task<EmailProviderSettings> LoadProviderAsync(DbConnection connection, DbTransaction? transaction, string? preferredServiceCode, string preferredSenderEmail, CancellationToken cancellationToken)
