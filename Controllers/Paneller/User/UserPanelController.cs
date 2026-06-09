@@ -91,8 +91,8 @@ public class UserPanelController : Controller
         if (created == 1)
         {
             var successMessage = string.IsNullOrWhiteSpace(@ref)
-                ? "Rezervasyonunuz başarıyla oluşturuldu."
-                : $"Rezervasyonunuz başarıyla oluşturuldu. Rezervasyon numaranız: {@ref}";
+                ? "Teşekkür ederiz! Rezervasyonunuz oluşturuldu."
+                : $"Teşekkür ederiz! Rezervasyonunuz oluşturuldu. Rezervasyon numaranız: {@ref}";
             ViewData["UserReservationSuccess"] = successMessage;
         }
 

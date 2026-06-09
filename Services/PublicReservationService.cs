@@ -840,8 +840,8 @@ public class PublicReservationService : IPublicReservationService
             {
                 Success = true,
                 Message = createdReservationNos.Count > 1
-                    ? $"Rezervasyonlarınız başarıyla oluşturuldu. Rezervasyon numaralarınız: {reservationNosText}"
-                    : $"Rezervasyonunuz başarıyla oluşturuldu. Rezervasyon numaranız: {reservationNosText}",
+                    ? $"Teşekkür ederiz! Rezervasyonlarınız oluşturuldu. Rezervasyon numaralarınız: {reservationNosText}"
+                    : $"Teşekkür ederiz! Rezervasyonunuz oluşturuldu. Rezervasyon numaranız: {reservationNosText}",
                 ReservationId = createdReservationIds.Count > 0 ? createdReservationIds[0] : null,
                 BookingReference = reservationNosText,
                 RedirectUrl = "/panel/user/rezervasyonlarim"

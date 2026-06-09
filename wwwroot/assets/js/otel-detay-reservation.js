@@ -475,6 +475,7 @@
             submitButton?.classList.add('is-submitting');
             form.dataset.reservationDirectSubmit = 'true';
             closeModal(confirmModal);
+            window.showReservationSubmitOverlay();
             HTMLFormElement.prototype.submit.call(form);
         }
     }, true);
@@ -523,7 +524,10 @@
     }, true);
 
     form.addEventListener('submit', function (event) {
-        if (form.dataset.reservationDirectSubmit === 'true') return;
+        if (form.dataset.reservationDirectSubmit === 'true') {
+            window.showReservationSubmitOverlay();
+            return;
+        }
         event.preventDefault();
         event.stopImmediatePropagation();
 
@@ -544,6 +548,18 @@
     renumberRooms();
     syncHiddenFields();
     updateRoomButtons();
+
+    window.showReservationSubmitOverlay = function showReservationSubmitOverlay() {
+        const overlay = document.getElementById('reservationSubmitOverlay');
+        if (!(overlay instanceof HTMLElement)) {
+            return;
+        }
+
+        overlay.hidden = false;
+        overlay.classList.add('is-visible');
+        document.documentElement.classList.add('reservation-submit-overlay-open');
+        document.body.classList.add('reservation-submit-overlay-open');
+    };
 
     const successRedirect = document.querySelector('[data-reservation-success-redirect]');
     if (successRedirect instanceof HTMLElement) {

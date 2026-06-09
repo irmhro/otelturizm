@@ -96,3 +96,85 @@
 @keyframes reservationCreateSpin {
     to { transform: rotate(360deg); }
 }
+
+.reservation-submit-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 12050;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 24px 16px calc(24px + env(safe-area-inset-bottom, 0px));
+    background: rgba(15, 23, 42, 0.58);
+    backdrop-filter: blur(6px);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.22s ease;
+}
+
+.reservation-submit-overlay.is-visible,
+.reservation-submit-overlay:not([hidden]) {
+    opacity: 1;
+    pointer-events: auto;
+}
+
+.reservation-submit-overlay__panel {
+    width: min(100%, 360px);
+    padding: 28px 22px 24px;
+    border-radius: 20px;
+    background: #fff;
+    box-shadow: 0 24px 60px rgba(15, 23, 42, 0.22);
+    text-align: center;
+}
+
+.reservation-submit-overlay__icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 56px;
+    height: 56px;
+    margin-bottom: 14px;
+    border-radius: 999px;
+    background: rgba(16, 185, 129, 0.12);
+    color: #059669;
+    font-size: 1.65rem;
+}
+
+.reservation-submit-overlay__title {
+    margin: 0 0 8px;
+    font-size: 1.15rem;
+    font-weight: 900;
+    color: #0f172a;
+}
+
+.reservation-submit-overlay__text {
+    margin: 0 0 10px;
+    font-size: 0.95rem;
+    font-weight: 700;
+    color: #334155;
+}
+
+.reservation-submit-overlay__redirect {
+    margin: 0;
+    font-size: 0.86rem;
+    font-weight: 700;
+    color: #64748b;
+}
+
+.reservation-submit-overlay__redirect::after {
+    content: "";
+    display: inline-block;
+    width: 12px;
+    height: 12px;
+    margin-left: 6px;
+    border: 2px solid rgba(100, 116, 139, 0.35);
+    border-top-color: #64748b;
+    border-radius: 999px;
+    vertical-align: -2px;
+    animation: reservationCreateSpin 0.7s linear infinite;
+}
+
+html.reservation-submit-overlay-open,
+body.reservation-submit-overlay-open {
+    overflow: hidden;
+}

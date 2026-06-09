@@ -1737,6 +1737,9 @@
                             </select>
                         </label>
                         <div class="booking-advanced-times">
+                            <p class="booking-advanced-times-note">
+                                Otel konaklama saatleri: giriş <strong>@guestCheckInDefault</strong>, çıkış <strong>@guestCheckOutDefault</strong>. Tercihe göre fiyatlar değişebilir.
+                            </p>
                             <label>
                                 <span>Giriş saati</span>
                                 <input type="time" name="CheckInTime" id="checkInTimeInput" value="@guestCheckInDefault" step="900" lang="tr-TR" />
@@ -1748,7 +1751,7 @@
                         </div>
                     </div>
                     <p class="booking-advanced-tip">
-                        Standart çıkış saatinden (@hotelCheckOutStandard) sonra ayrılırsanız fiyata ek günlük ücret yansıtılır. İptal ve oda koşulları seçilen oda tipine göre onaylanır.
+                        Seçtiğiniz giriş ve çıkış saatlerine göre toplam fiyat güncellenebilir. Standart çıkış saatinden (@hotelCheckOutStandard) sonra ayrılırsanız ek günlük ücret uygulanabilir.
                     </p>
                 </div>
 
@@ -1798,17 +1801,17 @@
     <div class="mobile-booking-bar od-mobile-bottom-dock od-sticky-cta mob-sticky-cta fe-world-safe-bottom" id="mobileBookingBar" role="region" aria-label="@SharedLocalizer["Booking.MobileSummary"].Value">
         <div class="mobile-booking-bar__row mobile-booking-bar__row--price">
             <div class="mobile-booking-price-stack">
-                    <div class="mobile-booking-price-main">
-                        <div class="mobile-booking-price-labels">
-                            <div class="mobile-booking-room-row">
-                                <span class="mobile-booking-room-name" id="mobileBookingRoomName">@selectedRoomSeed?.Name</span>
-                                <span class="mobile-booking-loyalty" id="mobileBookingLoyalty" data-loyalty-hook="detail-mobile-bar" @(initialEarnPoints <= 0 ? "hidden" : null)>
-                                    <i class="fas fa-gift" aria-hidden="true"></i>
-                                    +@initialEarnPoints puan kazanın
-                                </span>
-                            </div>
-                            <span class="mobile-booking-label">@SharedLocalizer["Detail.Booking.Total"].Value</span>
-                        </div>
+                <div class="mobile-booking-room-row">
+                    <span class="mobile-booking-room-name" id="mobileBookingRoomName">@selectedRoomSeed?.Name</span>
+                    <span class="mobile-booking-loyalty" id="mobileBookingLoyalty" data-loyalty-hook="detail-mobile-bar" @(initialEarnPoints <= 0 ? "hidden" : null)>
+                        <i class="fas fa-gift" aria-hidden="true"></i>
+                        +@initialEarnPoints puan kazanın
+                    </span>
+                </div>
+                <div class="mobile-booking-price-main">
+                    <div class="mobile-booking-price-labels">
+                        <span class="mobile-booking-label">@SharedLocalizer["Detail.Booking.Total"].Value</span>
+                    </div>
                     <div class="mobile-booking-total-wrap">
                         <del class="mobile-booking-original" id="mobileBookingOriginal" @(initialHasDawn ? null : "hidden aria-hidden=\"true\"")>@(initialHasDawn ? $"₺{initialOriginalTotal:N0}" : "")</del>
                         <strong id="mobileBookingPrice" class="mobile-booking-total">@(initialTotal > 0m ? $"₺{initialTotal:N0}" : (Model.LowestRoomPrice > 0m ? $"₺{Model.GuestInclusiveNightlyFromStoredNet(Model.LowestRoomPrice):N0}" : "—"))</strong>
@@ -2050,6 +2053,16 @@
         </footer>
     </div>
 </section>
+
+<div id="reservationSubmitOverlay" class="reservation-submit-overlay" hidden aria-live="polite" aria-label="Rezervasyon oluşturuldu">
+    <div class="reservation-submit-overlay__panel">
+        <div class="reservation-submit-overlay__icon" aria-hidden="true"><i class="fas fa-circle-check"></i></div>
+        <p class="reservation-submit-overlay__title">Teşekkür ederiz!</p>
+        <p class="reservation-submit-overlay__text">Rezervasyonunuz oluşturuldu.</p>
+        <p class="reservation-submit-overlay__redirect">Rezervasyonlarım sayfasına yönlendiriliyorsunuz...</p>
+    </div>
+</div>
+
 <script type="application/json" id="reservationConfirmI18nJson">@Html.Raw(System.Text.Json.JsonSerializer.Serialize(new {
     room = SharedLocalizer["Detail.ConfirmModal.Room"].Value,
     paymentPlan = SharedLocalizer["Detail.ConfirmModal.PaymentPlan"].Value,
@@ -5301,6 +5314,9 @@
                     reserveButton.classList.add('is-submitting');
                     reserveButton.disabled = true;
                 }
+                if (typeof window.showReservationSubmitOverlay === 'function') {
+                    window.showReservationSubmitOverlay();
+                }
                 HTMLFormElement.prototype.submit.call(bookingForm);
             });
 
@@ -5525,7 +5541,11 @@
                 url.searchParams.delete('reservationCreated');
                 window.history.replaceState({}, '', url.pathname + (url.search || ''));
 
-                showInfoModal('Rezervasyonunuz başarıyla oluşturuldu. Rezervasyonlarınıza yönlendiriliyorsunuz.', false);
+                if (typeof window.showReservationSubmitOverlay === 'function') {
+                    window.showReservationSubmitOverlay();
+                } else {
+                    showInfoModal('Teşekkür ederiz! Rezervasyonunuz oluşturuldu. Rezervasyonlarım sayfasına yönlendiriliyorsunuz.', false);
+                }
                 window.setTimeout(function () {
                     window.location.href = '/panel/user/rezervasyonlarim?created=1';
                 }, 1600);
