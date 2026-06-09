@@ -7,7 +7,14 @@
 }
 
 <div class="user-reservations-page">
-    @if (TempData["UserReservationSuccess"] is string successMessage && !string.IsNullOrWhiteSpace(successMessage))
+    @{
+        var successMessage = TempData["UserReservationSuccess"] as string;
+        if (string.IsNullOrWhiteSpace(successMessage))
+        {
+            successMessage = ViewData["UserReservationSuccess"] as string;
+        }
+    }
+    @if (!string.IsNullOrWhiteSpace(successMessage))
     {
         <div class="reservation-alert reservation-alert--success"><i class="fas fa-check-circle"></i><span>@successMessage</span></div>
     }
@@ -16,16 +23,15 @@
         <div class="reservation-alert reservation-alert--danger"><i class="fas fa-triangle-exclamation"></i><span>@errorMessage</span></div>
     }
 
-    <section class="reservation-hero">
-        <div>
-            <div class="page-pretitle">KONAKLAMA MERKEZİ</div>
-            <h1 class="page-title">Rezervasyonlarım</h1>
-            <p class="text-muted mb-0">Aktif, geçmiş ve reddedilen konaklama kayıtlarını tek ekranda takip et.</p>
+    <section class="reservation-hero reservation-hero--compact">
+        <div class="reservation-hero-copy">
+            <div class="page-pretitle">Konaklama</div>
+            <p class="reservation-hero-lead mb-0">Aktif, geçmiş ve iptal edilen kayıtlarını buradan yönet.</p>
         </div>
         <div class="reservation-hero-actions">
-            <a class="btn btn-outline-primary btn-pill" href="@BuildExportUrl(Model)"><i class="fas fa-download me-2"></i>Dışa aktar</a>
-            <a class="btn btn-primary btn-pill" href="/oteller"><i class="fas fa-magnifying-glass me-2"></i>Otel Ara</a>
-            <a class="btn btn-outline-primary btn-pill" href="/panel/user/mesajlarim"><i class="fas fa-envelope me-2"></i>Mesajlarım</a>
+            <a class="btn btn-primary btn-pill reservation-hero-cta" href="/oteller"><i class="fas fa-magnifying-glass me-2"></i>Otel Ara</a>
+            <a class="btn btn-outline-primary btn-pill reservation-hero-link" href="/panel/user/mesajlarim"><i class="fas fa-envelope me-2"></i>Mesajlar</a>
+            <a class="btn btn-outline-primary btn-pill reservation-hero-link" href="@BuildExportUrl(Model)"><i class="fas fa-download me-2"></i>Dışa aktar</a>
         </div>
     </section>
 
@@ -48,22 +54,21 @@
         </article>
     </section>
 
-    <section class="card reservation-filter-card">
-        <div class="card-header">
-            <h3 class="card-title">Gelişmiş Filtreleme</h3>
-            <div class="card-actions">
+    <section class="reservation-filter-card">
+        <div class="reservation-filter-shell">
+            <div class="reservation-filter-top">
                 <span class="reservation-count-chip">@pageStart-@pageEnd / @Model.FilteredCount kayıt</span>
             </div>
-        </div>
-        <div class="card-body">
-            <nav class="reservation-status-tabs" aria-label="Rezervasyon durumları">
+            <nav class="reservation-status-tabs reservation-status-tabs--scroll" aria-label="Rezervasyon durumları">
                 <a asp-action="Reservations" asp-route-status="all" asp-route-startDate="@Model.StartDateText" asp-route-endDate="@Model.EndDateText" asp-route-pageSize="@Model.PageSize" asp-route-searchTerm="@Model.SearchTerm" asp-route-sort="@Model.SortFilter" asp-route-page="1" class="reservation-tab @(Model.StatusFilter == "all" ? "is-active" : string.Empty)">Tümü</a>
                 <a asp-action="Reservations" asp-route-status="upcoming" asp-route-startDate="@Model.StartDateText" asp-route-endDate="@Model.EndDateText" asp-route-pageSize="@Model.PageSize" asp-route-searchTerm="@Model.SearchTerm" asp-route-sort="@Model.SortFilter" asp-route-page="1" class="reservation-tab @(Model.StatusFilter == "upcoming" ? "is-active" : string.Empty)">Yaklaşan</a>
                 <a asp-action="Reservations" asp-route-status="past" asp-route-startDate="@Model.StartDateText" asp-route-endDate="@Model.EndDateText" asp-route-pageSize="@Model.PageSize" asp-route-searchTerm="@Model.SearchTerm" asp-route-sort="@Model.SortFilter" asp-route-page="1" class="reservation-tab @(Model.StatusFilter == "past" ? "is-active" : string.Empty)">Geçmiş</a>
                 <a asp-action="Reservations" asp-route-status="cancelled" asp-route-startDate="@Model.StartDateText" asp-route-endDate="@Model.EndDateText" asp-route-pageSize="@Model.PageSize" asp-route-searchTerm="@Model.SearchTerm" asp-route-sort="@Model.SortFilter" asp-route-page="1" class="reservation-tab @(Model.StatusFilter == "cancelled" ? "is-active" : string.Empty)">İptal / Red</a>
             </nav>
 
-            <form method="get" asp-action="Reservations" class="reservation-filter-form" data-user-reservations-filter>
+            <details class="reservation-filter-drawer">
+                <summary><i class="fas fa-sliders" aria-hidden="true"></i> Arama ve filtreler</summary>
+                <form method="get" asp-action="Reservations" class="reservation-filter-form" data-user-reservations-filter>
                 <input type="hidden" name="status" value="@Model.StatusFilter" />
                 <input type="hidden" name="page" value="1" />
                 <div class="reservation-filter-field reservation-filter-field--search">
@@ -103,14 +108,16 @@
                     <button type="submit" class="btn btn-primary"><i class="fas fa-filter me-2"></i>Filtrele</button>
                     <a asp-action="Reservations" class="btn btn-outline-primary">Temizle</a>
                 </div>
-            </form>
+                </form>
+            </details>
+            <p class="reservation-policy-note"><i class="fas fa-circle-info" aria-hidden="true"></i> Onaylı rezervasyonlar giriş saatinden (14:00) en az 24 saat önce iptal edilebilir.</p>
         </div>
     </section>
 
-    <section class="card reservation-list-card">
-        <div class="card-header">
-            <h3 class="card-title">Rezervasyon Listesi</h3>
-            <div class="card-actions text-muted">Sayfa @Model.Page / @Model.TotalPages</div>
+    <section class="reservation-list-card">
+        <div class="reservation-list-head">
+            <h2 class="reservation-list-title">Kayıtlar</h2>
+            <span class="reservation-list-meta">Sayfa @Model.Page / @Model.TotalPages</span>
         </div>
 
         @if (Model.Reservations.Count == 0)
@@ -256,20 +263,27 @@
                                 <span><i class="far fa-user"></i>@reservation.GuestText</span>
                             </div>
                             <div class="reservation-mobile-footer">
-                                <div>
+                                <div class="reservation-mobile-price">
                                     <small>@reservation.ReservationNo</small>
                                     <strong>@reservation.TotalText</strong>
                                 </div>
-                                <div class="reservation-mobile-actions">
+                                <div class="reservation-mobile-actions reservation-mobile-actions--primary">
                                     <button type="button" class="btn btn-outline-primary btn-sm" data-reservation-detail data-reservation-no="@reservation.ReservationNo" data-hotel-name="@reservation.HotelName" data-room-name="@reservation.RoomName" data-stay="@reservation.StayDateText" data-guest="@reservation.GuestText" data-status="@reservation.StatusText" data-total="@reservation.TotalText" data-cancel-reason="@(reservation.CancellationReason ?? string.Empty)" data-cancel-time="@(reservation.CancellationTimeText ?? string.Empty)">Detay</button>
                                     <a asp-action="Messages" class="btn btn-primary btn-sm">Mesaj</a>
+                                </div>
+                                <div class="reservation-mobile-actions reservation-mobile-actions--secondary">
                                     @if (reservation.CanUpdateDates)
                                     {
                                         <button type="button" class="btn btn-outline-primary btn-sm" data-reservation-update data-reservation-id="@reservation.ReservationId" data-reservation-no="@reservation.ReservationNo" data-hotel-name="@reservation.HotelName" data-check-in="@reservation.CheckInDate.ToString("yyyy-MM-dd")" data-check-out="@reservation.CheckOutDate.ToString("yyyy-MM-dd")" data-total="@reservation.TotalText">Tarih</button>
                                     }
+                                    @if (reservation.CanSubmitReview)
+                                    {
+                                        <a asp-action="ReservationReview" asp-route-reservationId="@reservation.ReservationId" class="btn btn-outline-success btn-sm">Değerlendir</a>
+                                    }
+                                    <button type="button" class="btn btn-outline-secondary btn-sm" data-reservation-note data-reservation-id="@reservation.ReservationId" data-reservation-no="@reservation.ReservationNo" data-hotel-name="@reservation.HotelName" data-request-note="@reservation.RequestNote">Not</button>
                                     @if (reservation.CanCancel)
                                     {
-                                        <button type="button" class="btn btn-outline-danger btn-sm" data-reservation-cancel data-reservation-id="@reservation.ReservationId" data-reservation-no="@reservation.ReservationNo" data-hotel-name="@reservation.HotelName">İptal</button>
+                                        <button type="button" class="btn btn-outline-danger btn-sm reservation-mobile-cancel" data-reservation-cancel data-reservation-id="@reservation.ReservationId" data-reservation-no="@reservation.ReservationNo" data-hotel-name="@reservation.HotelName">İptal et</button>
                                     }
                                 </div>
                             </div>
@@ -279,7 +293,7 @@
             </div>
         }
 
-        <div class="card-footer reservation-pager">
+        <div class="reservation-pager reservation-list-footer">
             <div class="text-muted">@pageStart-@pageEnd arası gösteriliyor · @Model.FilteredCount kayıt</div>
             <div class="btn-list">
                 <a asp-action="Reservations" asp-route-status="@Model.StatusFilter" asp-route-startDate="@Model.StartDateText" asp-route-endDate="@Model.EndDateText" asp-route-pageSize="@Model.PageSize" asp-route-searchTerm="@Model.SearchTerm" asp-route-sort="@Model.SortFilter" asp-route-page="@(Math.Max(1, Model.Page - 1))" class="btn btn-outline-primary btn-sm @(Model.Page <= 1 ? "disabled" : string.Empty)">
@@ -430,6 +444,7 @@
         <form method="post" asp-action="CancelReservation" class="reservation-cancel-form">
             @Html.AntiForgeryToken()
             <input type="hidden" name="reservationId" id="cancel-reservation-id" value="0" />
+            <p class="reservation-cancel-policy">Onaylı rezervasyonlar giriş saatinden (14:00) en az 24 saat önce iptal edilebilir.</p>
             <label class="form-label" for="cancel-reason">İptal nedeni</label>
             <textarea class="form-control" name="cancellationReason" id="cancel-reason" rows="5" minlength="10" required placeholder="Lütfen rezervasyonu neden iptal ettiğinizi açıklayın."></textarea>
             <button type="submit" class="btn btn-danger"><i class="fas fa-ban me-2"></i>İptal Talebini Kaydet</button>

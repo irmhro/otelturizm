@@ -79,11 +79,21 @@ public class UserPanelController : Controller
         int pageSize = 5,
         string? searchTerm = null,
         string? sort = null,
+        int? created = null,
+        string? @ref = null,
         CancellationToken cancellationToken = default)
     {
         if (!CanAccessUserPanel())
         {
             return RedirectToAction("UserLogin", "Auth");
+        }
+
+        if (created == 1)
+        {
+            var successMessage = string.IsNullOrWhiteSpace(@ref)
+                ? "Rezervasyonunuz başarıyla oluşturuldu."
+                : $"Rezervasyonunuz başarıyla oluşturuldu. Rezervasyon numaranız: {@ref}";
+            ViewData["UserReservationSuccess"] = successMessage;
         }
 
         var userId = GetCurrentUserId();

@@ -116,6 +116,7 @@ public class PublicReservationResult
     public string Message { get; set; } = string.Empty;
     public string RedirectUrl { get; set; } = string.Empty;
     public long? ReservationId { get; set; }
+    public string? BookingReference { get; set; }
 }
 
 public class PublicReservationPriceQuoteViewModel

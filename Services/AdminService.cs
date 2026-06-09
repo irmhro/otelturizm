@@ -5728,6 +5728,9 @@ ORDER BY y.[OLUSTURULMA_TARIHI] DESC, y.id DESC;";
             "firma_reservation_created_company" => "Kurumsal rezervasyon / firma",
             "firma_reservation_created_partner" => "Kurumsal rezervasyon / partner",
             "system_health_link_report" => "Admin / sistem sağlığı",
+            "admin_routing_notice" => "Admin yönlendirme",
+            "admin_partner_basvuru" => "Partner başvurusu",
+            "admin_firma_basvuru" => "Firma başvurusu",
             _ => "Genel sistem akışı"
         };
     }

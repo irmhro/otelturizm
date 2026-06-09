@@ -235,6 +235,88 @@ public class PublicReservationService : IPublicReservationService
         quote.DawnSurpriseDiscountAmount = baseTotal - total;
     }
 
+    public async Task SaveBookingDraftAsync(long? userId, string sessionKey, long hotelId, string hotelSlug, PublicHotelReservationForm form, CancellationToken cancellationToken = default)
+    {
+        if (hotelId <= 0 || form.CheckOutDate <= form.CheckInDate)
+        {
+            return;
+        }
+
+        var selections = ParseMultiRoomSelections(form);
+        if (selections.Count == 0 && form.RoomTypeId > 0)
+        {
+            selections.Add(new PublicMultiRoomSelectionItem
+            {
+                RoomTypeId = form.RoomTypeId,
+                CheckInDate = form.CheckInDate,
+                CheckOutDate = form.CheckOutDate,
+                RoomCount = Math.Max(1, form.RoomCount)
+            });
+        }
+
+        if (selections.Count == 0)
+        {
+            return;
+        }
+
+        await using var connection = await OpenConnectionAsync(cancellationToken);
+        decimal totalAmount = 0m;
+        decimal netRoomAmount = 0m;
+        decimal vatAmount = 0m;
+        decimal accommodationTaxAmount = 0m;
+        decimal taxAmount = 0m;
+        decimal? vatRate = null;
+        decimal? accommodationTaxRate = null;
+
+        foreach (var selection in selections)
+        {
+            var pricing = await BuildPriceSummaryAsync(connection, selection.RoomTypeId, selection.CheckInDate, selection.CheckOutDate, Math.Max(1, selection.RoomCount), cancellationToken);
+            if (!pricing.IsAvailable)
+            {
+                continue;
+            }
+
+            ApplyDawnSurpriseToSummary(pricing);
+            totalAmount += pricing.TotalAmount;
+            netRoomAmount += pricing.NetRoomAmount;
+            vatAmount += pricing.VatAmount;
+            accommodationTaxAmount += pricing.AccommodationTaxAmount;
+            taxAmount += pricing.TaxAmount;
+            vatRate ??= pricing.VatRate;
+            accommodationTaxRate ??= pricing.AccommodationTaxRate;
+        }
+
+        var first = selections[0];
+        var draftRequest = new ReservationDraftUpsertRequest
+        {
+            UserId = userId,
+            SessionKey = sessionKey,
+            Source = "Public",
+            Status = userId.GetValueOrDefault() > 0 ? "Taslak" : "Giris Bekliyor",
+            HotelId = hotelId,
+            RoomTypeId = first.RoomTypeId,
+            CheckInDate = first.CheckInDate,
+            CheckOutDate = first.CheckOutDate,
+            AdultCount = Math.Max(1, form.AdultCount),
+            ChildCount = Math.Max(0, form.ChildCount),
+            RoomCount = Math.Max(1, selections.Sum(x => x.RoomCount)),
+            NetRoomAmount = netRoomAmount > 0m ? netRoomAmount : null,
+            VatRate = vatRate,
+            VatAmount = vatAmount > 0m ? vatAmount : null,
+            AccommodationTaxRate = accommodationTaxRate,
+            AccommodationTaxAmount = accommodationTaxAmount > 0m ? accommodationTaxAmount : null,
+            TaxAmount = taxAmount > 0m ? taxAmount : null,
+            TotalAmount = totalAmount > 0m ? totalAmount : null,
+            ReturnUrl = $"/oteller/{hotelSlug}?continueDraft=1",
+            ProfileCompletionUrl = $"/oteller/{hotelSlug}?continueDraft=1&openProfile=1",
+            Notes = string.IsNullOrWhiteSpace(form.RoomsJson)
+                ? "Otel detay otomatik taslak kaydi."
+                : "Otel detay otomatik taslak kaydi. RoomsJson=" + form.RoomsJson
+        };
+
+        await _reservationDraftService.SaveOrUpdateAsync(draftRequest, cancellationToken);
+    }
+
     public static PublicReservationPriceQuoteViewModel ClonePriceQuote(PublicReservationPriceQuoteViewModel source)
     {
         return new PublicReservationPriceQuoteViewModel
@@ -392,7 +474,7 @@ public class PublicReservationService : IPublicReservationService
             return new PublicReservationResult
             {
                 Message = "Rezervasyonunuz kaydedildi. Devam etmek icin once giris yapiniz.",
-                RedirectUrl = $"/kullanici-giris?ReturnUrl={Uri.EscapeDataString($"/oteller/{hotel.Slug}")}"
+                RedirectUrl = $"/kullanici-giris?ReturnUrl={Uri.EscapeDataString($"/oteller/{hotel.Slug}?continueDraft=1")}"
             };
         }
 
@@ -758,10 +840,11 @@ public class PublicReservationService : IPublicReservationService
             {
                 Success = true,
                 Message = createdReservationNos.Count > 1
-                    ? $"Rezervasyonlariniz alindi: {reservationNosText}"
-                    : $"Rezervasyonunuz alindi: {reservationNosText}",
+                    ? $"Rezervasyonlarınız başarıyla oluşturuldu. Rezervasyon numaralarınız: {reservationNosText}"
+                    : $"Rezervasyonunuz başarıyla oluşturuldu. Rezervasyon numaranız: {reservationNosText}",
                 ReservationId = createdReservationIds.Count > 0 ? createdReservationIds[0] : null,
-                RedirectUrl = $"/oteller/{hotel.Slug}?reservationCreated=1"
+                BookingReference = reservationNosText,
+                RedirectUrl = "/panel/user/rezervasyonlarim"
             };
         }
         catch (Exception ex)
@@ -1864,7 +1947,6 @@ public class PublicReservationService : IPublicReservationService
             !string.IsNullOrWhiteSpace(Phone) &&
             !string.IsNullOrWhiteSpace(City) &&
             !string.IsNullOrWhiteSpace(District) &&
-            !string.IsNullOrWhiteSpace(Neighborhood) &&
             IsAgeEligible &&
             !string.IsNullOrWhiteSpace(Gender);
     }

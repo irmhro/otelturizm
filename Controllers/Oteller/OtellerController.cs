@@ -216,7 +216,7 @@ public class OtellerController : Controller
             };
         }
 
-        var activeDraft = await _publicReservationService.GetActiveDraftAsync(GetCurrentUserIdOrNull(), GetCurrentReservationSessionKey(), cancellationToken);
+        var activeDraft = await _publicReservationService.GetActiveDraftAsync(GetCurrentUserIdOrNull(), EnsureReservationSessionKey(), cancellationToken);
         model.ActiveDraft = activeDraft;
         var queryCheckIn = model.ReservationForm.CheckInDate;
         var queryCheckOut = model.ReservationForm.CheckOutDate;
@@ -245,6 +245,29 @@ public class OtellerController : Controller
                 model.ReservationForm.RoomTypeId = queryRoomTypeId;
             }
         }
+        else
+        {
+            var today = DateOnly.FromDateTime(DateTime.Today);
+            model.ReservationForm.CheckInDate = today;
+            model.ReservationForm.CheckOutDate = today.AddDays(1);
+        }
+
+        if (model.ReservationForm.CheckOutDate <= model.ReservationForm.CheckInDate)
+        {
+            model.ReservationForm.CheckOutDate = model.ReservationForm.CheckInDate.AddDays(1);
+        }
+
+        if (model.ReservationForm.RoomTypeId > 0)
+        {
+            var initialQuote = await _publicReservationService.GetPriceQuoteAsync(
+                model.ReservationForm.RoomTypeId,
+                model.ReservationForm.CheckInDate,
+                model.ReservationForm.CheckOutDate,
+                Math.Max(1, model.ReservationForm.RoomCount),
+                cancellationToken: cancellationToken);
+            _publicReservationService.ApplyDawnSurpriseToQuote(initialQuote);
+            model.InitialPriceQuote = initialQuote;
+        }
 
         model.IsLoggedInUser = CanAccessUserFeatures();
         model.ShouldResumeDraftOnLoad = Request.Query.TryGetValue("continueDraft", out var continueDraft) && string.Equals(continueDraft.ToString(), "1", StringComparison.OrdinalIgnoreCase);
@@ -269,6 +292,27 @@ public class OtellerController : Controller
         ViewData["SuppressGlobalDraftBanner"] = true;
         ApplyDetailSeoViewData(slug, detailCulture);
         return View("~/Views/Oteller/OtelDetay.cshtml", model);
+    }
+
+    [HttpPost("{slug}/rezervasyon-taslagi-kaydet")]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> SaveReservationDraft(string slug, PublicHotelReservationForm form, CancellationToken cancellationToken)
+    {
+        var hotel = await _hotelService.GetHotelDetailPageAsync(slug, cancellationToken: cancellationToken);
+        if (hotel is null || form.HotelId <= 0)
+        {
+            return BadRequest(new { success = false, message = "Taslak kaydedilemedi." });
+        }
+
+        if (form.HotelId != hotel.Id)
+        {
+            form.HotelId = hotel.Id;
+        }
+
+        var userId = GetCurrentUserIdOrNull();
+        var sessionKey = EnsureReservationSessionKey();
+        await _publicReservationService.SaveBookingDraftAsync(userId, sessionKey, hotel.Id, slug, form, cancellationToken);
+        return Json(new { success = true });
     }
 
     [HttpPost("{slug}/rezervasyon")]
@@ -330,7 +374,19 @@ public class OtellerController : Controller
                 ttl: TimeSpan.FromSeconds(25),
                 cancellationToken: cancellationToken);
 
-            TempData[result.Success ? "PublicReservationSuccess" : "PublicReservationInfo"] = result.Message;
+            if (result.Success)
+            {
+                TempData["UserReservationSuccess"] = result.Message;
+                var redirectUrl = "/panel/user/rezervasyonlarim?created=1";
+                if (!string.IsNullOrWhiteSpace(result.BookingReference))
+                {
+                    redirectUrl += $"&ref={Uri.EscapeDataString(result.BookingReference)}";
+                }
+
+                return Redirect(redirectUrl);
+            }
+
+            TempData["PublicReservationInfo"] = result.Message;
             if (!string.IsNullOrWhiteSpace(result.RedirectUrl))
             {
                 return Redirect(result.RedirectUrl);
@@ -374,6 +430,10 @@ public class OtellerController : Controller
         form.TravelPurpose = string.IsNullOrWhiteSpace(form.TravelPurpose) ? existingProfile.Form.TravelPurpose : form.TravelPurpose;
         form.SpecialRequests = string.IsNullOrWhiteSpace(form.SpecialRequests) ? existingProfile.Form.SpecialRequests : form.SpecialRequests;
         form.Phone = string.IsNullOrWhiteSpace(form.Phone) ? existingProfile.Form.Phone : form.Phone;
+        if (existingProfile.EmailVerified)
+        {
+            form.Email = existingProfile.Form.Email;
+        }
 
         var validationMessage = ValidateReservationProfile(form);
         if (!string.IsNullOrWhiteSpace(validationMessage))
@@ -849,6 +909,7 @@ public class OtellerController : Controller
             FirstName = profile.Form.FirstName,
             LastName = profile.Form.LastName,
             Email = profile.Form.Email,
+            EmailVerified = profile.EmailVerified,
             Phone = profile.Form.Phone,
             BirthDateText = profile.Form.BirthDateText,
             Gender = profile.Form.Gender,
@@ -866,7 +927,6 @@ public class OtellerController : Controller
                                 || string.IsNullOrWhiteSpace(profile.Form.Gender)
                                 || string.IsNullOrWhiteSpace(profile.Form.City)
                                 || string.IsNullOrWhiteSpace(profile.Form.District)
-                                || string.IsNullOrWhiteSpace(profile.Form.Neighborhood)
         };
     }
 
@@ -920,11 +980,6 @@ public class OtellerController : Controller
         if (string.IsNullOrWhiteSpace(form.District))
         {
             return "Rezervasyon için ilçe seçimi zorunludur.";
-        }
-
-        if (string.IsNullOrWhiteSpace(form.Neighborhood))
-        {
-            return "Rezervasyon için mahalle seçimi zorunludur.";
         }
 
         return null;

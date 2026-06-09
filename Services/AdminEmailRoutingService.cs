@@ -230,13 +230,15 @@ public class AdminEmailRoutingService : IAdminEmailRoutingService
                 ["occurred_at"] = DateTime.Now.ToString("dd.MM.yyyy HH:mm", CultureInfo.GetCultureInfo("tr-TR"))
             };
 
+            var templateCode = ResolveTemplateCode(eventCode);
+
             foreach (var to in recipients)
             {
                 await _emailQueueService.QueueTemplateAsync(new QueuedEmailTemplateRequest
                 {
                     UserId = actorUserId,
                     RecipientEmail = to,
-                    TemplateCode = "admin_routing_notice",
+                    TemplateCode = templateCode,
                     SubjectOverride = subject,
                     RelatedTable = relatedTable,
                     RelatedRecordId = relatedRecordId,
@@ -323,6 +325,16 @@ public class AdminEmailRoutingService : IAdminEmailRoutingService
 
         sb.Append("</table>");
         return sb.ToString();
+    }
+
+    private static string ResolveTemplateCode(string eventCode)
+    {
+        return (eventCode ?? string.Empty).Trim().ToLowerInvariant() switch
+        {
+            "partner_kayit" => "admin_partner_basvuru",
+            "firma_kayit" => "admin_firma_basvuru",
+            _ => "admin_routing_notice"
+        };
     }
 
     private static bool IsMissingTable(SqlException ex)
