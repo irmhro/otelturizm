@@ -38,12 +38,12 @@
 }
 
 .footer {
-    background: #1A1919;
-    color: #ffffff;
-    padding: 36px 0 18px;
-    margin-top: 36px;
-    border-top: 2px solid var(--flag-crimson, #E30A17);
-    font-family: "Inter", "Segoe UI", sans-serif;
+    background: var(--luxury-dark, #1A1919);
+    color: #EBE9E4;
+    padding: 52px 0 24px;
+    margin-top: 52px;
+    border-top: 3px solid var(--flag-crimson, #E30A17);
+    font-family: 'Plus Jakarta Sans', "Inter", "Segoe UI", sans-serif;
 }
 
 .footer .container {

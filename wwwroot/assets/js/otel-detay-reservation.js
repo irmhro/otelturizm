@@ -17,8 +17,8 @@
     const roomCountInput = document.getElementById('roomCountInput');
     const adultCountInput = document.getElementById('adultCountInput');
     const paymentMethodSelect = document.getElementById('paymentMethodSelect');
-    const bookingSidebar = document.getElementById('bookingSidebar');
-    const bookingBackdrop = document.getElementById('bookingModalBackdrop');
+    const bookingSidebar = document.getElementById('rezervasyonAksiyon') || document.getElementById('bookingSidebar');
+    const bookingBackdrop = document.getElementById('rezervasyonAksiyonBackdrop') || document.getElementById('bookingModalBackdrop');
     const submitButton = form.querySelector('[data-reservation-create-button]');
     const addRoomButton = document.getElementById('addRoomBtn');
     const confirmModal = document.getElementById('reservationConfirmModal');

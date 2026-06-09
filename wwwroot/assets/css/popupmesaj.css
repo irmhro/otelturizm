@@ -39,31 +39,6 @@
     border: 1px solid rgba(255, 255, 255, 0.65);
 }
 
-.popupmesaj__close {
-    position: absolute;
-    top: 10px;
-    right: 10px;
-    z-index: 3;
-    width: 36px;
-    height: 36px;
-    border: 0;
-    border-radius: 999px;
-    background: rgba(255, 255, 255, 0.94);
-    color: #1a1919;
-    font-size: 14px;
-    cursor: pointer;
-    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.18);
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    transition: transform 0.15s ease, background 0.15s ease;
-}
-
-.popupmesaj__close:hover {
-    transform: scale(1.04);
-    background: #fff;
-}
-
 .popupmesaj__visual {
     display: block;
     line-height: 0;

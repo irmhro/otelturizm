@@ -15,8 +15,16 @@
     }
 
     .footer {
-        padding: 28px 0 16px;
-        margin-top: 28px;
+        width: 100%;
+        max-width: none;
+        padding: 28px 0 calc(16px + env(safe-area-inset-bottom, 0px));
+        margin-top: 0;
+        border-radius: 0;
+    }
+
+    .footer .container {
+        padding-left: var(--page-content-gutter, 16px);
+        padding-right: var(--page-content-gutter, 16px);
     }
 
     .footer-top {

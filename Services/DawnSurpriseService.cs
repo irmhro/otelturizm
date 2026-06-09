@@ -18,7 +18,7 @@ public sealed class DawnSurpriseService : IDawnSurpriseService
 
     public const string CookieName = "Otelturizm.DawnSurprise";
 
-    private static readonly TimeSpan RewardLifetime = TimeSpan.FromDays(1);
+    private static readonly TimeSpan RewardLifetime = TimeSpan.FromHours(1);
 
 
 

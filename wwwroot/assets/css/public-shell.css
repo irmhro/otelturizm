@@ -1,0 +1,57 @@
+/* Ortak kamu kabuğu — anasayfa ile aynı header/footer, tam genişlik */
+
+body.anasayfa-page {
+    --page-max-width: 1240px;
+    --page-content-gutter: 24px;
+    --page-content-inset: 48px;
+}
+
+html,
+body.anasayfa-page {
+    margin: 0;
+    padding: 0;
+    width: 100%;
+    max-width: 100%;
+    overflow-x: clip;
+}
+
+body.anasayfa-page .home-header-shell {
+    width: 100%;
+    max-width: none;
+    margin: 0;
+    padding: 0;
+}
+
+body.anasayfa-page .footer {
+    width: 100%;
+    max-width: none;
+    margin-left: 0;
+    margin-right: 0;
+    border-radius: 0;
+    box-sizing: border-box;
+}
+
+body.anasayfa-page .public-premium-main,
+body.anasayfa-page .site-main,
+body.anasayfa-page .login-main {
+    padding-left: 0;
+    padding-right: 0;
+    max-width: none;
+}
+
+@media (max-width: 900px) {
+    body.anasayfa-page {
+        --page-content-gutter: 16px;
+        --page-content-inset: 32px;
+        --home-header-sticky-h: var(--home-header-bar-h, 56px);
+    }
+
+    body.anasayfa-page .footer {
+        margin-top: 0;
+    }
+
+    body.anasayfa-page .footer .container {
+        padding-left: var(--page-content-gutter, 16px);
+        padding-right: var(--page-content-gutter, 16px);
+    }
+}

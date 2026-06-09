@@ -200,13 +200,21 @@
         font-size: 1.2rem !important;
     }
 
-    .oteldetay-page.otel-detail-template-v41.od-detail .booking-sidebar.od-detail__booking {
+    .oteldetay-page.otel-detail-template-v41.od-detail .booking-sidebar.od-detail__booking,
+    .oteldetay-page.otel-detail-template-v41.od-detail .rezervasyon-aksiyon {
         position: fixed !important;
         inset: auto 0 0 0 !important;
         top: auto !important;
         width: 100% !important;
         max-width: 100% !important;
         margin: 0 !important;
+    }
+
+    .oteldetay-page.otel-detail-template-v41.od-detail .rezervasyon-aksiyon {
+        inset: 0 !important;
+        top: 0 !important;
+        height: 100dvh !important;
+        max-height: 100dvh !important;
     }
 
     .oteldetay-page.otel-detail-template-v41.od-detail .od-gallery--mobile {

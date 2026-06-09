@@ -202,6 +202,13 @@
         .Where(x => !string.IsNullOrWhiteSpace(x.Name))
         .Take(8)
         .ToList();
+    var mobileInlineAmenities = Model.Amenities
+        .Where(x => !string.IsNullOrWhiteSpace(x.Name))
+        .ToList();
+    if (mobileInlineAmenities.Count == 0)
+    {
+        mobileInlineAmenities = featuredAmenities;
+    }
     var initialNightCount = Math.Max(1, reservationForm.CheckOutDate.DayNumber - reservationForm.CheckInDate.DayNumber);
     var initialRooms = Math.Max(1, reservationForm.RoomCount);
     var initialTotal = roomPriceSeed * initialNightCount * initialRooms;
@@ -343,6 +350,7 @@
 <link rel="stylesheet" href="~/assets/css/otel-detay-reservation.css" asp-append-version="true" />
 <link rel="stylesheet" href="~/assets/css/otel-detay-world.css" asp-append-version="true" />
 <link rel="stylesheet" href="~/assets/css/otel-detay-mobile-lock.css" asp-append-version="true" media="(max-width: 900px)" />
+<link rel="stylesheet" href="~/assets/css/rezervasyonaksiyon_mobil.css" asp-append-version="true" media="(max-width: 900px)" />
 }
 
 <div class="oteldetay-page otel-detail-template-v41 otel-detail-tabler od-detail"
@@ -452,7 +460,6 @@
                     <i class="fas fa-chevron-right" aria-hidden="true"></i>
                 </button>
             </div>
-            <p class="gallery-swipe-hint" aria-hidden="true"><i class="fas fa-hand-pointer"></i> @SharedLocalizer["Detail.Gallery.SwipeHint"].Value</p>
         }
         <div class="gallery-mobile-stage">
             <div class="gallery-mobile-track" id="galleryMobileTrack">
@@ -463,7 +470,7 @@
                     </button>
                 }
             </div>
-            <div class="gallery-mobile-overlay">
+            <div class="gallery-mobile-overlay@(Model.StarCount.HasValue && Model.StarCount.Value > 0 ? " has-stars" : string.Empty)">
                 @if (Model.StarCount.HasValue && Model.StarCount.Value > 0)
                 {
                     <div class="gallery-mobile-stars-corner" aria-label="@($"{Model.StarCount.Value} yıldızlı otel")">
@@ -473,45 +480,48 @@
                         }
                     </div>
                 }
-                <div class="gallery-mobile-overlay-main">
-                    <h1 class="gallery-mobile-hotel-name">@Model.Name</h1>
-                    <p class="gallery-mobile-location" role="text">
-                        <i class="fas fa-location-dot" aria-hidden="true"></i>
-                        <span>@headerLocationText</span>
-                    </p>
-                    <div class="gallery-mobile-hero-meta" aria-label="Otel bilgileri">
-                        @if (Model.HasFreeCancellation)
-                        {
-                            <span class="gallery-mobile-meta-chip is-benefit"><i class="fas fa-check-circle" aria-hidden="true"></i> Ücretsiz iptal</span>
-                        }
-                        <span class="gallery-mobile-meta-chip"><i class="fas fa-door-open" aria-hidden="true"></i> Giriş @checkInDisplay / Çıkış @checkOutDisplay</span>
+                <div class="gallery-mobile-overlay-top">
+                    <div class="gallery-mobile-overlay-main">
+                        <h1 class="gallery-mobile-hotel-name">@Model.Name</h1>
+                        <p class="gallery-mobile-location" role="text">
+                            <i class="fas fa-location-dot" aria-hidden="true"></i>
+                            <span>@headerLocationText</span>
+                        </p>
                     </div>
+                    <button type="button"
+                            class="gallery-mobile-all-photos"
+                            data-gallery-index="0"
+                            data-gallery-open-fullscreen
+                            aria-label="Tüm fotoğrafları aç">
+                        <i class="far fa-images" aria-hidden="true"></i>
+                        <span>Tüm Fotoğraflar (@gallery.Count)</span>
+                    </button>
                 </div>
-                <button type="button"
-                        class="gallery-mobile-rating gallery-mobile-rating--compact"
-                        data-rating-jump
-                        aria-label="@SharedLocalizer["Detail.Reviews.GoTo"].Value">
-                    @if (Model.ReviewCount <= 0)
+                <div class="gallery-mobile-overlay-bottom">
+                    @if (Model.HasFreeCancellation)
                     {
-                        <span class="gallery-mobile-rating-score">@(Model.Rating > 0 ? Model.Rating.ToString("0.0").Replace('.', ',') : "0,0")</span>
-                        <span class="gallery-mobile-rating-sep">/10</span>
-                        <strong class="gallery-mobile-rating-label">@SharedLocalizer["Detail.Rating.Pending"].Value</strong>
+                        <div class="gallery-mobile-hero-meta" aria-label="Otel bilgileri">
+                            <span class="gallery-mobile-meta-chip is-benefit"><i class="fas fa-check-circle" aria-hidden="true"></i> Ücretsiz iptal</span>
+                        </div>
                     }
-                    else
-                    {
-                        <span class="gallery-mobile-rating-score">@Model.Rating.ToString("0.0").Replace('.', ',')</span>
-                        <span class="gallery-mobile-rating-sep">/10</span>
-                        <strong class="gallery-mobile-rating-label">@Model.RatingText</strong>
-                    }
-                </button>
-                <button type="button"
-                        class="gallery-mobile-all-photos"
-                        data-gallery-index="0"
-                        data-gallery-open-fullscreen
-                        aria-label="Tüm fotoğrafları aç">
-                    <i class="far fa-images" aria-hidden="true"></i>
-                    <span>Tüm Fotoğraflar (@gallery.Count)</span>
-                </button>
+                    <button type="button"
+                            class="gallery-mobile-rating gallery-mobile-rating--compact"
+                            data-rating-jump
+                            aria-label="@SharedLocalizer["Detail.Reviews.GoTo"].Value">
+                        @if (Model.ReviewCount <= 0)
+                        {
+                            <span class="gallery-mobile-rating-score">@(Model.Rating > 0 ? Model.Rating.ToString("0.0").Replace('.', ',') : "0,0")</span>
+                            <span class="gallery-mobile-rating-sep">/10</span>
+                            <strong class="gallery-mobile-rating-label">@SharedLocalizer["Detail.Rating.Pending"].Value</strong>
+                        }
+                        else
+                        {
+                            <span class="gallery-mobile-rating-score">@Model.Rating.ToString("0.0").Replace('.', ',')</span>
+                            <span class="gallery-mobile-rating-sep">/10</span>
+                            <strong class="gallery-mobile-rating-label">@Model.RatingText</strong>
+                        }
+                    </button>
+                </div>
             </div>
         </div>
         @if (gallery.Count > 1)
@@ -904,27 +914,32 @@
                     }
                 </div>
             </div>
-            @if (amenityIconStrip.Count > 0)
+            @if (mobileInlineAmenities.Count > 0)
             {
-                <div class="od-amenities__mobile-grid-wrap">
-                    <div class="od-amenities__mobile-grid" role="list" aria-label="@SharedLocalizer["Detail.Amenities.Title"].Value">
-                        @foreach (var item in featuredAmenities.Take(4))
+                var mobileAmenitiesVisible = mobileInlineAmenities.Take(2).ToList();
+                var mobileAmenitiesRest = mobileInlineAmenities.Skip(2).ToList();
+                <div class="od-amenities__mobile-inline">
+                    <div class="od-amenities__tag-grid" role="list" aria-label="@SharedLocalizer["Detail.Amenities.Title"].Value">
+                        @foreach (var item in mobileAmenitiesVisible)
                         {
-                            <button type="button"
-                                    class="od-amenity-grid-cell"
-                                    role="listitem"
-                                    data-open-amenities
-                                    aria-label="@item.Name"
-                                    title="@item.Name">
-                                <span class="od-amenity-grid-cell__icon" aria-hidden="true"><i class="fas @item.IconClass"></i></span>
-                                <span class="od-amenity-grid-cell__label">@item.Name</span>
-                            </button>
+                            <span class="od-amenity-tag" role="listitem">@item.Name</span>
                         }
                     </div>
-                    <button type="button" class="od-amenities__see-all-mobile" data-open-amenities aria-haspopup="dialog">
-                        @SharedLocalizer["Detail.Amenities.SeeAll"].Value
-                        <i class="fas fa-chevron-right" aria-hidden="true"></i>
-                    </button>
+                    @if (mobileAmenitiesRest.Count > 0)
+                    {
+                        <details class="od-amenities__inline-more">
+                            <summary class="od-amenities__see-all-mobile">
+                                @SharedLocalizer["Detail.Amenities.SeeAll"].Value
+                                <i class="fas fa-chevron-down" aria-hidden="true"></i>
+                            </summary>
+                            <div class="od-amenities__tag-grid od-amenities__tag-grid--more" role="list" aria-label="@SharedLocalizer["Detail.Amenities.Title"].Value">
+                                @foreach (var item in mobileAmenitiesRest)
+                                {
+                                    <span class="od-amenity-tag" role="listitem">@item.Name</span>
+                                }
+                            </div>
+                        </details>
+                    }
                 </div>
             }
             <div class="od-amenities__scroll" role="list" aria-label="@SharedLocalizer["Detail.Amenities.Title"].Value">
@@ -1516,10 +1531,11 @@
 
     </div>
 
-    <div class="booking-modal-backdrop" id="bookingModalBackdrop" hidden></div>
-    <aside class="booking-sidebar od-detail__booking" id="bookingSidebar">
-        <div class="booking-sheet-handle" aria-hidden="true"></div>
-        <div class="booking-card">
+    <div class="booking-modal-backdrop rezervasyon-aksiyon-backdrop" id="rezervasyonAksiyonBackdrop" data-rezervasyonaksiyon="backdrop" hidden></div>
+    <aside class="booking-sidebar od-detail__booking rezervasyon-aksiyon" id="rezervasyonAksiyon" data-rezervasyonaksiyon="sheet" role="dialog" aria-modal="true" aria-labelledby="rezervasyonAksiyonTitle">
+        <h2 class="rezervasyon-aksiyon__title" id="rezervasyonAksiyonTitle" hidden>Rezervasyon</h2>
+        <div class="booking-sheet-handle rezervasyon-aksiyon__handle" aria-hidden="true"></div>
+        <div class="booking-card rezervasyon-aksiyon__card">
             <button type="button" class="booking-modal-close" id="bookingModalClose" aria-label="Rezervasyon panelini kapat">
                 <i class="fas fa-times"></i>
             </button>
@@ -2308,8 +2324,8 @@
             const shareMenu = document.getElementById('shareMenu');
             const shareWrap = shareButton?.closest('.detail-share-wrap');
             const bookingAdvancedFields = document.getElementById('bookingAdvancedFields');
-            const bookingSidebar = document.getElementById('bookingSidebar') || document.querySelector('.booking-sidebar');
-            const bookingModalBackdrop = document.getElementById('bookingModalBackdrop');
+            const bookingSidebar = document.getElementById('rezervasyonAksiyon') || document.getElementById('bookingSidebar') || document.querySelector('.rezervasyon-aksiyon, .booking-sidebar');
+            const bookingModalBackdrop = document.getElementById('rezervasyonAksiyonBackdrop') || document.getElementById('bookingModalBackdrop');
             const bookingModalClose = document.getElementById('bookingModalClose');
             const openBookingSheetBtn = document.getElementById('openBookingSheetBtn');
             const mobileBookingPrice = document.getElementById('mobileBookingPrice');
@@ -2501,8 +2517,8 @@
                 bookingModalBackdrop.hidden = false;
                 bookingSidebar.classList.add('is-open');
                 bookingModalBackdrop.classList.add('is-open');
-                document.documentElement.classList.add('modal-open');
-                document.body.classList.add('modal-open');
+                document.documentElement.classList.add('modal-open', 'booking-sheet-open', 'rezervasyon-aksiyon-open');
+                document.body.classList.add('modal-open', 'booking-sheet-open', 'rezervasyon-aksiyon-open');
                 resetBookingSheetScroll();
                 requestAnimationFrame(resetBookingSheetScroll);
 
@@ -2525,8 +2541,8 @@
 
                 bookingSidebar.classList.remove('is-open');
                 bookingModalBackdrop.classList.remove('is-open');
-                document.documentElement.classList.remove('modal-open');
-                document.body.classList.remove('modal-open');
+                document.documentElement.classList.remove('modal-open', 'booking-sheet-open', 'rezervasyon-aksiyon-open');
+                document.body.classList.remove('modal-open', 'booking-sheet-open', 'rezervasyon-aksiyon-open');
                 window.setTimeout(function () {
                     bookingModalBackdrop.hidden = true;
                 }, 220);
@@ -3243,7 +3259,12 @@
                 shareMenu.hidden = false;
                 shareButton.setAttribute('aria-expanded', 'true');
                 shareWrap?.classList.add('is-open');
+                document.documentElement.classList.add('share-sheet-open');
                 document.body.classList.add('share-sheet-open');
+                if (!document.querySelector('.detail-modal.is-open') && !bookingSidebar?.classList.contains('is-open')) {
+                    document.body.style.overflow = 'hidden';
+                    document.documentElement.style.overflow = 'hidden';
+                }
             }
 
             function bindShareActions() {

@@ -664,22 +664,7 @@
     }
 
     .oteldetay-page .gallery-swipe-hint {
-        display: flex !important;
-        position: absolute;
-        left: 50%;
-        bottom: 10px;
-        transform: translateX(-50%);
-        z-index: 4;
-        align-items: center;
-        gap: 6px;
-        padding: 5px 12px;
-        border-radius: 999px;
-        background: rgba(15, 23, 42, 0.62);
-        color: #fff;
-        font-size: 10px;
-        font-weight: 700;
-        pointer-events: none;
-        white-space: nowrap;
+        display: none !important;
     }
 
     .oteldetay-page .gallery-mobile-nav {
@@ -1309,18 +1294,19 @@
     .oteldetay-page .od-section--about .od-about-checkinout {
         display: flex;
         flex-direction: row;
-        flex-wrap: wrap;
-        gap: 14px 20px;
+        flex-wrap: nowrap;
+        align-items: center;
+        gap: 16px;
         width: 100%;
-        margin: 0 0 12px;
-        padding: 0;
+        margin: 0 0 10px;
+        padding: 0 0 0 16px;
         list-style: none;
     }
 
     .oteldetay-page .od-section--about .od-quick-facts__item {
         display: inline-flex;
-        align-items: center;
-        gap: 8px;
+        align-items: baseline;
+        gap: 0;
         padding: 0;
         border-radius: 0;
         border: 0;
@@ -1330,19 +1316,18 @@
     }
 
     .oteldetay-page .od-section--about .od-quick-facts__icon {
-        width: 32px;
-        height: 32px;
-        border-radius: 10px;
+        display: none !important;
+    }
+
+    .oteldetay-page .od-section--about .od-quick-facts__copy {
         display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        background: rgba(227, 10, 23, 0.08);
-        color: var(--od-crimson, #E30A17);
-        flex-shrink: 0;
+        flex-direction: row;
+        align-items: baseline;
+        gap: 4px;
     }
 
     .oteldetay-page .od-section--about .od-quick-facts__label {
-        font-size: 10px;
+        font-size: 11px;
         font-weight: 700;
         text-transform: uppercase;
         letter-spacing: 0.04em;
@@ -1350,7 +1335,7 @@
     }
 
     .oteldetay-page .od-section--about .od-quick-facts__value {
-        font-size: 14px;
+        font-size: 13px;
         font-weight: 800;
         color: var(--od-dark, #1A1919);
     }
@@ -1459,23 +1444,26 @@
         display: inline-flex;
         align-items: center;
         justify-content: center;
-        gap: 4px;
-        flex: 0 0 auto;
-        width: auto;
-        min-width: 84px;
-        max-width: 38%;
+        gap: 6px;
+        width: 100%;
         min-height: 44px;
         margin: 0;
-        padding: 0 10px;
+        padding: 0 14px;
         border: 1px solid var(--od-border, #EBE9E4);
-        border-radius: 12px;
+        border-radius: 10px;
         background: #fff;
         color: var(--od-dark, #1A1919);
-        font-size: 11px;
+        font-size: 12px;
         font-weight: 800;
         cursor: pointer;
         touch-action: manipulation;
         white-space: nowrap;
+        box-sizing: border-box;
+    }
+
+    .oteldetay-page .od-amenities__see-all-mobile i {
+        font-size: 11px;
+        transition: transform 0.2s ease;
     }
 
     .oteldetay-page > #amenitiesModal.detail-modal.is-open,
@@ -1527,88 +1515,42 @@
         color: var(--od-muted, #6E6E77);
     }
 
-    /* Kurallar — mobil tek sütun, satır: ikon + başlık + metin */
+    /* Kurallar — mobil düz akordeon */
     .oteldetay-page .od-section--policies.content-card {
         border: 0 !important;
         border-radius: 0 !important;
         box-shadow: none !important;
-        background: transparent !important;
-        padding: 0 16px 16px !important;
+        background: #fff !important;
+        padding: 16px !important;
         margin-bottom: 0 !important;
     }
 
     .oteldetay-page .od-section--policies .tabler-section-head {
         padding: 0 0 10px !important;
+        margin: 0 !important;
     }
 
     .oteldetay-page .od-section--policies .od-policy-list {
         display: flex !important;
         flex-direction: column !important;
-        gap: 8px !important;
+        gap: 0 !important;
         list-style: none;
         margin: 0;
         padding: 0;
     }
 
     .oteldetay-page .od-section--policies .od-policy-item {
-        display: flex !important;
-        flex-direction: row !important;
-        flex-wrap: nowrap !important;
-        align-items: center !important;
-        gap: 8px !important;
-        padding: 10px 12px !important;
-        border: 1px solid var(--od-border, #EBE9E4) !important;
-        border-radius: 12px !important;
-        background: #fff !important;
-        min-height: 44px;
+        display: block !important;
+        padding: 0 !important;
+        border: 0 !important;
+        background: transparent !important;
+        min-height: 0 !important;
         min-width: 0;
     }
 
-    .oteldetay-page .od-section--policies .od-policy-icon {
-        width: 30px;
-        height: 30px;
-        flex-shrink: 0;
-        border-radius: 9px;
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        background: rgba(227, 10, 23, 0.08);
-        color: var(--od-crimson, #E30A17);
-        font-size: 12px;
-    }
-
-    .oteldetay-page .od-section--policies .od-policy-title {
-        flex-shrink: 0;
-        font-size: 12px;
-        font-weight: 800;
-        line-height: 1.2;
-        color: var(--od-dark, #1A1919);
-        white-space: nowrap;
-    }
-
-    .oteldetay-page .od-section--policies .od-policy-text {
-        flex: 1 1 auto;
-        min-width: 0;
-        font-size: 11px;
-        font-weight: 600;
-        line-height: 1.3;
-        color: var(--od-muted, #6E6E77);
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
-    }
-
-    .oteldetay-page .od-section--policies .od-policy-text::before {
-        content: '·';
-        margin: 0 6px;
-        color: var(--od-border, #CFCBC4);
-        font-weight: 700;
-    }
-
-    .oteldetay-page .od-section--policies .od-policy-item > div,
-    .oteldetay-page .od-section--policies .od-policy-item p,
-    .oteldetay-page .od-section--policies .od-policy-item small,
-    .oteldetay-page .od-section--policies .od-policy-detail {
+    .oteldetay-page .od-section--policies .od-policy-icon,
+    .oteldetay-page .od-section--policies .od-policy-text,
+    .oteldetay-page .od-section--policies .od-policy-accordion__copy {
         display: none !important;
     }
 
@@ -1653,7 +1595,11 @@
     }
 
     .oteldetay-page .od-section--about .detail-collapsible__body {
-        padding-top: 4px;
+        margin-top: 8px;
+        padding: 0 !important;
+        border: 0 !important;
+        background: transparent !important;
+        border-radius: 0 !important;
     }
 
     /* Oda özellikleri — dikey akış + panel */
@@ -1698,7 +1644,7 @@
         width: 100% !important;
     }
 
-    .oteldetay-page #roomsCard .room-card-actions-row:not(:has(.room-feature-more-btn)) {
+    .oteldetay-page #roomsCard .room-card-actions-row:not(:has(.room-feature-more-inline)) {
         grid-template-columns: 1fr !important;
         justify-content: stretch !important;
     }
@@ -2011,11 +1957,23 @@
         margin-bottom: 14px;
     }
 
+    .oteldetay-page .tabler-section-titles {
+        padding-left: 12px;
+        border-left: 4px solid var(--od-sun, #FF9E00);
+    }
+
+    .oteldetay-page .od-section--map .tabler-section-titles,
+    .oteldetay-page .detail-map-card .tabler-section-titles {
+        padding-left: 0;
+        border-left: 0;
+    }
+
     .oteldetay-page .tabler-section-head h2,
     .oteldetay-page .detail-collapsible__summary h2 {
         font-size: var(--od-type-section, 20px);
-        padding-left: 12px;
-        border-left-width: 4px;
+        padding-left: 0;
+        border-left: 0;
+        margin: 0;
     }
 
     .oteldetay-page .amenities-list-clean {
@@ -2026,17 +1984,22 @@
     .oteldetay-page #roomsCard .room-list {
         display: flex;
         flex-direction: column;
-        gap: 14px;
+        gap: 0;
     }
 
     .oteldetay-page #roomsCard .room-card.od-room-card {
         display: flex;
         flex-direction: column;
-        border: 1px solid var(--od-border, #EBE9E4);
-        border-radius: 18px;
-        overflow: hidden;
-        background: #fff;
-        box-shadow: 0 6px 18px rgba(26, 25, 25, 0.05);
+        border: 0;
+        border-bottom: 1px solid var(--od-border, #EBE9E4);
+        border-radius: 0;
+        overflow: visible;
+        background: transparent;
+        box-shadow: none;
+    }
+
+    .oteldetay-page #roomsCard .room-list .room-card.od-room-card:last-child {
+        border-bottom: 0;
     }
 
     .oteldetay-page #roomsCard .room-card-main.od-room-card__body {
@@ -2052,8 +2015,8 @@
         max-width: 100%;
         display: flex;
         flex-direction: column;
-        gap: 8px;
-        padding: 12px 12px 0;
+        gap: 0;
+        padding: 0;
         background: transparent;
         overflow: visible;
     }
@@ -2061,11 +2024,11 @@
     .oteldetay-page #roomsCard .room-card-cover {
         position: relative;
         width: 100%;
-        aspect-ratio: 16 / 10;
-        border-radius: 14px;
+        aspect-ratio: 16 / 9;
+        border-radius: 0;
         overflow: hidden;
         background: #eceae6;
-        border: 1px solid rgba(235, 233, 228, 0.9);
+        border: 0;
     }
 
     .oteldetay-page #roomsCard .room-card-cover .room-gallery-trigger {
@@ -2227,7 +2190,7 @@
     }
 
     .oteldetay-page #roomsCard .room-card.od-room-card {
-        min-height: 320px;
+        min-height: 0;
     }
 
     .oteldetay-page #roomsCard .room-card-cover img {
@@ -2259,11 +2222,11 @@
         grid-template-areas: "price cta";
         align-items: center;
         gap: 10px 14px;
-        padding: 14px 16px;
+        padding: 12px 16px 16px;
         margin: 0;
         min-width: 0;
-        border-top: 1px solid var(--od-border, #EBE9E4);
-        background: linear-gradient(180deg, #fff 0%, #fcfbfa 100%);
+        border-top: 0;
+        background: transparent;
         text-align: left;
     }
 
@@ -2277,11 +2240,7 @@
     }
 
     .oteldetay-page #roomsCard .room-price-kicker {
-        font-size: 0.68rem;
-        font-weight: 700;
-        color: #64748b;
-        text-transform: uppercase;
-        letter-spacing: 0.04em;
+        display: none !important;
     }
 
     .oteldetay-page #roomsCard .room-price-box strong {
@@ -3095,12 +3054,35 @@
         border: var(--od-m-border);
     }
 
+    .oteldetay-page .od-section--about .detail-collapsible__body {
+        margin-top: 8px;
+        padding: 0 !important;
+        border: 0 !important;
+        background: transparent !important;
+        border-radius: 0 !important;
+    }
+
     .oteldetay-page .od-section--rooms .tabler-section-actions {
         display: none !important;
     }
 
+    .oteldetay-page #roomsCard.content-card.od-section--rooms {
+        padding-left: 0 !important;
+        padding-right: 0 !important;
+    }
+
+    .oteldetay-page #roomsCard .tabler-section-head {
+        padding-left: 16px;
+        padding-right: 16px;
+    }
+
+    .oteldetay-page #roomsCard .room-list {
+        gap: 0 !important;
+    }
+
     .oteldetay-page #roomsCard .room-card.od-room-card {
-        box-shadow: 0 2px 10px rgba(26, 25, 25, 0.05) !important;
+        box-shadow: none !important;
+        min-height: 0 !important;
     }
 
     .oteldetay-page #roomsCard .room-detail-btn,
@@ -3646,6 +3628,7 @@
         font-size: 12px;
         color: var(--od-muted, #6E6E77);
         margin: 4px 0 0;
+        padding-left: 0;
     }
 
     .oteldetay-page .mobile-booking-bar {
@@ -3709,17 +3692,46 @@
     .oteldetay-page .gallery-mobile-overlay {
         display: flex;
         flex-direction: column;
-        justify-content: flex-end;
+        justify-content: space-between;
         gap: 10px;
-        padding: 14px 14px 16px;
-        background: linear-gradient(180deg, rgba(0, 0, 0, 0.05) 0%, rgba(0, 0, 0, 0.62) 72%);
+        padding: 12px;
+        background: linear-gradient(180deg, rgba(0, 0, 0, 0.58) 0%, rgba(0, 0, 0, 0.08) 38%, rgba(0, 0, 0, 0.55) 100%);
+        pointer-events: none;
+    }
+
+    .oteldetay-page .gallery-mobile-overlay > * {
+        pointer-events: auto;
+    }
+
+    .oteldetay-page .gallery-mobile-overlay-top {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 10px;
+        width: 100%;
+        min-width: 0;
+        margin-top: 0;
+        z-index: 4;
+    }
+
+    .oteldetay-page .gallery-mobile-overlay.has-stars .gallery-mobile-overlay-top {
+        padding-top: 34px;
+    }
+
+    .oteldetay-page .gallery-mobile-overlay-bottom {
+        display: flex;
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 8px;
+        width: 100%;
+        z-index: 4;
     }
 
     .oteldetay-page .gallery-mobile-stars-corner {
         position: absolute;
         top: 12px;
         left: 12px;
-        z-index: 3;
+        z-index: 5;
         display: inline-flex;
         align-items: center;
         gap: 2px;
@@ -3729,12 +3741,14 @@
         color: #f59e0b;
         font-size: 11px;
         box-shadow: 0 4px 14px rgba(0, 0, 0, 0.12);
+        pointer-events: none;
     }
 
     .oteldetay-page .gallery-mobile-overlay-main {
         display: flex;
         flex-direction: column;
-        gap: 6px;
+        gap: 4px;
+        flex: 1 1 auto;
         min-width: 0;
         padding-right: 0;
     }
@@ -3742,20 +3756,31 @@
     .oteldetay-page .gallery-mobile-hotel-name {
         margin: 0;
         color: #fff;
-        font-size: 1.35rem;
+        font-size: 1.15rem;
         line-height: 1.15;
         font-weight: 800;
         text-shadow: 0 2px 10px rgba(0, 0, 0, 0.35);
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
     }
 
     .oteldetay-page .gallery-mobile-location {
         margin: 0;
         color: rgba(255, 255, 255, 0.92);
-        font-size: 0.82rem;
+        font-size: 0.78rem;
         font-weight: 600;
         display: inline-flex;
         align-items: center;
         gap: 6px;
+        min-width: 0;
+    }
+
+    .oteldetay-page .gallery-mobile-location span {
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
     }
 
     .oteldetay-page .gallery-mobile-hero-meta {
@@ -3784,10 +3809,7 @@
     }
 
     .oteldetay-page .gallery-mobile-rating--compact {
-        position: absolute;
-        left: 12px;
-        bottom: 12px;
-        z-index: 3;
+        position: static;
         display: inline-flex;
         align-items: baseline;
         gap: 4px;
@@ -3821,10 +3843,32 @@
     }
 
     .oteldetay-page .gallery-mobile-all-photos {
-        position: absolute;
-        right: 12px;
-        bottom: 12px;
-        z-index: 3;
+        position: static;
+        top: auto;
+        right: auto;
+        bottom: auto;
+        flex: 0 0 auto;
+        align-self: flex-start;
+        min-height: 34px;
+        max-width: min(148px, 42vw);
+        padding: 0 10px;
+        border-radius: 999px;
+        border: 1px solid rgba(255, 255, 255, 0.35);
+        background: rgba(255, 255, 255, 0.94);
+        font-size: 10px;
+        font-weight: 800;
+        color: var(--od-dark, #1A1919);
+        white-space: nowrap;
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        box-shadow: 0 8px 20px rgba(0, 0, 0, 0.18);
+        cursor: pointer;
+    }
+
+    .oteldetay-page .gallery-mobile-all-photos span {
+        overflow: hidden;
+        text-overflow: ellipsis;
     }
 
     .oteldetay-page .detail-weather-topbar {
@@ -3925,26 +3969,116 @@
         position: static !important;
     }
 
-    .oteldetay-page .detail-share-wrap.is-open .share-menu,
-    body.share-sheet-open .oteldetay-page .detail-share-wrap .share-menu:not([hidden]) {
+    .oteldetay-page .share-menu {
+        display: block;
+        box-sizing: border-box;
+        border: 1px solid var(--od-border, #EBE9E4);
+        border-radius: 18px;
+        background: #fff;
+        box-shadow: 0 22px 46px rgba(15, 23, 42, 0.18);
+        padding: 16px;
+        color: var(--od-dark, #1A1919);
+    }
+
+    .oteldetay-page .share-menu--top {
+        position: static !important;
+        top: auto !important;
+        right: auto !important;
+        left: auto !important;
+        width: auto !important;
+        min-width: 0 !important;
+    }
+
+    .oteldetay-page .share-menu-title {
+        margin: 0 0 12px;
+        color: var(--od-dark, #1A1919);
+        font-weight: 800;
+        font-size: 14px;
+        line-height: 1.3;
+    }
+
+    .oteldetay-page .share-menu-grid {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 8px;
+    }
+
+    .oteldetay-page .share-menu-grid a,
+    .oteldetay-page .share-menu-grid button {
+        min-height: 62px;
+        border-radius: 12px;
+        border: 1px solid var(--od-border, #EBE9E4);
+        background: #fff;
+        color: var(--od-dark, #1A1919);
+        text-decoration: none;
+        display: inline-flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        gap: 6px;
+        padding: 8px 6px;
+        font-size: 11px;
+        font-weight: 700;
+        font-family: inherit;
+        cursor: pointer;
+        box-sizing: border-box;
+    }
+
+    .oteldetay-page .share-menu-grid a i,
+    .oteldetay-page .share-menu-grid button i {
+        font-size: 17px;
+        color: var(--od-crimson, #E30A17);
+    }
+
+    .oteldetay-page .share-more-btn {
+        width: 100%;
+        margin-top: 10px;
+        min-height: 42px;
+        border-radius: 12px;
+        border: 1px dashed rgba(227, 10, 23, 0.35);
+        background: #fff;
+        color: var(--od-crimson, #E30A17);
+        font-weight: 800;
+        font-size: 12px;
+        font-family: inherit;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+    }
+
+    .oteldetay-page .detail-share-wrap .share-menu:not([hidden]) {
         position: fixed !important;
         inset: auto 12px calc(16px + env(safe-area-inset-bottom, 0px)) 12px !important;
         top: auto !important;
+        left: 12px !important;
+        right: 12px !important;
+        bottom: calc(16px + env(safe-area-inset-bottom, 0px)) !important;
         width: auto !important;
         max-width: none !important;
+        max-height: min(72vh, 520px);
+        overflow: auto;
+        -webkit-overflow-scrolling: touch;
         z-index: 2300 !important;
         margin: 0 !important;
         border-radius: 18px !important;
         box-shadow: 0 24px 60px rgba(15, 23, 42, 0.28) !important;
     }
 
+    html.share-sheet-open,
+    body.share-sheet-open {
+        overflow: hidden !important;
+    }
+
+    html.share-sheet-open::before,
     body.share-sheet-open::before {
         content: '';
         position: fixed;
         inset: 0;
         background: rgba(15, 23, 42, 0.42);
         z-index: 2290;
-        pointer-events: none;
+        pointer-events: auto;
     }
 
     .oteldetay-page > #detailInfoModal.detail-info-modal.is-open {
@@ -4049,8 +4183,7 @@
         background: #fff;
     }
 
-    .oteldetay-page #roomsCard .room-feature-row,
-    .oteldetay-page #roomsCard .room-feature-more-inline {
+    .oteldetay-page #roomsCard .room-feature-row {
         display: none !important;
     }
 
@@ -4059,69 +4192,81 @@
     }
 
     .oteldetay-page #roomsCard .room-card-actions-row {
-        grid-template-columns: 1fr !important;
+        display: grid !important;
+        grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
         margin-top: 8px !important;
+    }
+
+    .oteldetay-page #roomsCard .room-card-actions-row:not(:has(.room-feature-more-inline)) {
+        grid-template-columns: 1fr !important;
+    }
+
+    .oteldetay-page #roomsCard .room-card-actions-row .room-feature-more-inline {
+        display: block !important;
+        min-width: 0;
+    }
+
+    .oteldetay-page #roomsCard .room-card-actions-row .room-feature-panel {
+        grid-column: 1 / -1;
     }
 
     .oteldetay-page .od-amenities__mobile-toolbar {
         display: none !important;
     }
 
-    .oteldetay-page .od-amenities__mobile-grid-wrap {
+    .oteldetay-page .od-amenities__mobile-inline {
         display: flex;
         flex-direction: column;
         gap: 10px;
         margin-top: 4px;
     }
 
-    .oteldetay-page .od-amenities__mobile-grid {
+    .oteldetay-page .od-amenities__tag-grid {
         display: grid;
         grid-template-columns: repeat(2, minmax(0, 1fr));
         gap: 8px;
     }
 
-    .oteldetay-page .od-amenity-grid-cell {
+    .oteldetay-page .od-amenity-tag {
         display: flex;
-        flex-direction: column;
         align-items: center;
         justify-content: center;
-        gap: 6px;
-        min-height: 78px;
-        padding: 10px 8px;
+        min-height: 40px;
+        padding: 8px 10px;
         border: 1px solid var(--od-border, #EBE9E4);
-        border-radius: 12px;
-        background: var(--od-bg, #FCFBF9);
-        text-align: center;
-        font: inherit;
-        cursor: pointer;
-    }
-
-    .oteldetay-page .od-amenity-grid-cell__icon {
-        width: 32px;
-        height: 32px;
-        border-radius: 999px;
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        background: rgba(0, 59, 149, 0.08);
-        color: #0f5bd7;
-        font-size: 14px;
-    }
-
-    .oteldetay-page .od-amenity-grid-cell__label {
+        border-radius: 10px;
+        background: #fff;
+        color: var(--od-dark, #1A1919);
         font-size: 11px;
         font-weight: 700;
         line-height: 1.25;
-        color: var(--od-dark, #1A1919);
-        display: -webkit-box;
-        -webkit-line-clamp: 2;
-        -webkit-box-orient: vertical;
-        overflow: hidden;
+        text-align: center;
+        box-sizing: border-box;
     }
 
-    .oteldetay-page .od-amenities__see-all-mobile {
-        width: 100%;
-        max-width: none;
+    .oteldetay-page .od-amenities__inline-more {
+        display: block;
+    }
+
+    .oteldetay-page .od-amenities__inline-more summary.od-amenities__see-all-mobile {
+        list-style: none;
+    }
+
+    .oteldetay-page .od-amenities__inline-more summary.od-amenities__see-all-mobile::-webkit-details-marker {
+        display: none;
+    }
+
+    .oteldetay-page .od-amenities__inline-more[open] summary.od-amenities__see-all-mobile i {
+        transform: rotate(180deg);
+    }
+
+    .oteldetay-page .od-amenities__tag-grid--more {
+        margin-top: 8px;
+    }
+
+    .oteldetay-page .od-amenities__mobile-grid-wrap,
+    .oteldetay-page .od-amenities__mobile-grid {
+        display: none !important;
     }
 
     .oteldetay-page > #amenitiesModal.detail-modal.is-open,
@@ -4140,9 +4285,9 @@
     }
 
     .oteldetay-page .od-section--policies .od-policy-list--accordion {
-        display: grid !important;
-        grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
-        gap: 8px !important;
+        display: flex !important;
+        flex-direction: column !important;
+        gap: 0 !important;
     }
 
     .oteldetay-page .od-section--policies .od-policy-item {
@@ -4153,18 +4298,24 @@
     }
 
     .oteldetay-page .od-policy-accordion {
-        border: 1px solid var(--od-border, #EBE9E4);
-        border-radius: 12px;
-        background: #fff;
+        border: 0;
+        border-bottom: 1px solid var(--od-border, #EBE9E4);
+        border-radius: 0;
+        background: transparent;
         overflow: hidden;
+    }
+
+    .oteldetay-page .od-section--policies .od-policy-item:last-child .od-policy-accordion {
+        border-bottom: 0;
     }
 
     .oteldetay-page .od-policy-accordion__summary {
         list-style: none;
         display: flex;
-        align-items: flex-start;
-        gap: 8px;
-        padding: 10px;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
+        padding: 12px 0;
         cursor: pointer;
         min-height: 44px;
     }
@@ -4173,26 +4324,19 @@
         display: none;
     }
 
-    .oteldetay-page .od-policy-accordion__copy {
-        display: flex;
-        flex-direction: column;
-        gap: 2px;
+    .oteldetay-page .od-section--policies .od-policy-title {
+        display: block !important;
+        flex: 1 1 auto;
         min-width: 0;
-        flex: 1;
-    }
-
-    .oteldetay-page .od-policy-accordion__copy .od-policy-text {
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
-    }
-
-    .oteldetay-page .od-policy-accordion__copy .od-policy-text::before {
-        content: none;
+        font-size: 13px;
+        font-weight: 800;
+        line-height: 1.3;
+        color: var(--od-dark, #1A1919);
+        white-space: normal;
     }
 
     .oteldetay-page .od-policy-accordion__chevron {
-        margin-left: auto;
+        flex-shrink: 0;
         color: var(--od-muted, #6E6E77);
         font-size: 11px;
         transition: transform 0.18s ease;
@@ -4202,11 +4346,11 @@
         transform: rotate(180deg);
     }
 
-    .oteldetay-page .od-policy-detail {
+    .oteldetay-page .od-section--policies .od-policy-detail {
         display: block !important;
-        padding: 0 10px 10px 48px;
-        font-size: 11px;
-        line-height: 1.45;
+        padding: 0 0 12px;
+        font-size: 13px;
+        line-height: 1.55;
         color: var(--od-muted, #6E6E77);
     }
 

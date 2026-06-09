@@ -819,43 +819,42 @@
     .oteldetay-page .od-section--policies .od-policy-list {
         display: grid !important;
         grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
-        gap: 8px !important;
+        gap: 12px !important;
         list-style: none;
         margin: 0;
         padding: 0;
     }
 
     .oteldetay-page .od-section--policies .od-policy-item {
-        display: grid;
-        grid-template-columns: 32px minmax(0, 1fr);
-        grid-template-rows: auto auto;
-        align-items: start;
-        gap: 4px 10px;
-        padding: 12px 14px;
-        border: 1px solid var(--od-border, #EBE9E4);
-        border-radius: 12px;
-        background: #fff;
+        display: block;
+        padding: 0;
+        border: 0;
+        background: transparent;
         min-width: 0;
     }
 
-    .oteldetay-page .od-section--policies .od-policy-icon {
-        grid-row: 1 / span 2;
-        grid-column: 1;
-        width: 32px;
-        height: 32px;
-        flex-shrink: 0;
-        border-radius: 10px;
-        display: inline-flex;
+    .oteldetay-page .od-policy-accordion {
+        border: 1px solid var(--od-border, #EBE9E4);
+        border-radius: 12px;
+        background: #fff;
+        overflow: hidden;
+    }
+
+    .oteldetay-page .od-policy-accordion__summary {
+        list-style: none;
+        display: flex;
         align-items: center;
-        justify-content: center;
-        background: rgba(227, 10, 23, 0.08);
-        color: var(--od-crimson, #E30A17);
-        font-size: 13px;
+        justify-content: space-between;
+        gap: 10px;
+        padding: 12px 14px;
+        cursor: pointer;
+    }
+
+    .oteldetay-page .od-policy-accordion__summary::-webkit-details-marker {
+        display: none;
     }
 
     .oteldetay-page .od-section--policies .od-policy-title {
-        grid-column: 2;
-        grid-row: 1;
         display: block;
         font-size: 12px;
         font-weight: 800;
@@ -864,18 +863,23 @@
         color: var(--od-dark, #1A1919);
     }
 
-    .oteldetay-page .od-section--policies .od-policy-text {
-        grid-column: 2;
-        grid-row: 2;
+    .oteldetay-page .od-policy-accordion__chevron {
+        flex-shrink: 0;
+        color: var(--od-muted, #6E6E77);
+        font-size: 11px;
+        transition: transform 0.18s ease;
+    }
+
+    .oteldetay-page .od-policy-accordion[open] .od-policy-accordion__chevron {
+        transform: rotate(180deg);
+    }
+
+    .oteldetay-page .od-section--policies .od-policy-detail {
         display: block;
+        padding: 0 14px 12px;
         font-size: 11px;
         line-height: 1.45;
         color: var(--od-dark, #1A1919);
-        margin: 0;
-    }
-
-    .oteldetay-page .od-section--policies .od-policy-text::before {
-        content: none;
     }
 
     .oteldetay-page .od-section--about .hotel-about-text.is-clamped:not(.is-expanded) {

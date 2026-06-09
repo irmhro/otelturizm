@@ -55,9 +55,25 @@
     .hero-top-grid--solo .hero-headline-pro {
         max-width: none;
         width: 100%;
-        margin-inline: 0;
-        align-items: flex-start;
-        text-align: left;
+        margin-inline: auto;
+        align-items: center;
+        text-align: center;
+    }
+
+    .hero-top-grid--solo .hero-headline-pro .hero-ozel-gun,
+    .hero-top-grid--solo .hero-headline-pro .hero-kicker {
+        justify-content: center;
+    }
+
+    .hero-top-grid--solo .hero-title.hero-title-pro--headline {
+        text-align: center;
+        align-items: center;
+    }
+
+    .hero-top-grid--solo .hero-title-pro--headline .hero-title-row,
+    .hero-top-grid--solo .hero-title-pro--headline .hero-title-row--spread {
+        justify-content: center;
+        text-align: center;
     }
 
     /* Arama — legacy form (search-engine-pro hariç) */
@@ -564,9 +580,30 @@
         margin-bottom: 0;
     }
 
-    .hero-top-grid:not(.hero-top-grid--solo) .hero-kicker,
-    .hero-top-grid:not(.hero-top-grid--solo) .hero-title-row {
-        justify-content: flex-start;
+    .hero-top-grid--solo {
+        justify-items: center;
+        text-align: center;
+    }
+
+    .hero-top-grid--solo .hero-headline-pro {
+        align-items: center;
+        text-align: center;
+    }
+
+    .hero-top-grid--solo .hero-headline-pro .hero-ozel-gun,
+    .hero-top-grid--solo .hero-headline-pro .hero-kicker {
+        justify-content: center;
+    }
+
+    .hero-top-grid--solo .hero-title.hero-title-pro--headline {
+        text-align: center;
+        align-items: center;
+    }
+
+    .hero-top-grid--solo .hero-title-pro--headline .hero-title-row,
+    .hero-top-grid--solo .hero-title-pro--headline .hero-title-row--spread {
+        justify-content: center;
+        text-align: center;
     }
 
     .hero-headline-pro {
@@ -579,6 +616,16 @@
         align-items: flex-start;
         text-align: left;
         box-sizing: border-box;
+    }
+
+    .hero-top-grid:not(.hero-top-grid--solo) .hero-kicker,
+    .hero-top-grid:not(.hero-top-grid--solo) .hero-title-row {
+        justify-content: flex-start;
+    }
+
+    .hero-top-grid--solo .hero-headline-pro .hero-ozel-gun,
+    .hero-top-grid--solo .hero-headline-pro .hero-kicker {
+        justify-content: center;
     }
 
     .hero-headline-pro .hero-ozel-gun,
@@ -627,7 +674,7 @@
         letter-spacing: -0.03em;
     }
 
-    .hero-title.hero-title-pro--headline {
+    .hero-top-grid:not(.hero-top-grid--solo) .hero-title.hero-title-pro--headline {
         width: 100%;
         max-width: none;
         margin-inline: 0;
@@ -639,13 +686,23 @@
         text-wrap: balance;
     }
 
-    .hero-title-pro--headline .hero-title-row--spread {
+    .hero-top-grid--solo .hero-title.hero-title-pro--headline {
+        text-align: center;
+        align-items: center;
+    }
+
+    .hero-top-grid:not(.hero-top-grid--solo) .hero-title-pro--headline .hero-title-row--spread {
         justify-content: flex-start;
         flex-wrap: wrap;
         gap: 0.18em 0.28em;
         width: 100%;
         max-width: none;
         margin-inline: 0;
+    }
+
+    .hero-top-grid--solo .hero-title-pro--headline .hero-title-row--spread {
+        justify-content: center;
+        text-align: center;
     }
 
     .hero-title-pro--headline .hero-title-row--line {
@@ -658,7 +715,7 @@
         white-space: normal;
     }
 
-    .hero-title-row {
+    .hero-top-grid:not(.hero-top-grid--solo) .hero-title-row {
         display: flex;
         flex-wrap: wrap;
         align-items: baseline;
@@ -669,6 +726,11 @@
         margin-inline: 0;
         white-space: normal;
         text-align: left;
+    }
+
+    .hero-top-grid--solo .hero-title-row {
+        justify-content: center;
+        text-align: center;
     }
 
     .hero-title-row .hero-title-word {
@@ -994,10 +1056,24 @@
         line-height: 1.22;
         gap: 4px;
         letter-spacing: -0.022em;
+    }
+
+    .hero-top-grid--solo .hero-title.hero-title-pro--headline {
+        text-align: center;
+    }
+
+    .hero-top-grid:not(.hero-top-grid--solo) .hero-title.hero-title-pro--headline {
         text-align: left;
     }
 
-    .hero-title-pro--headline .hero-title-row--spread {
+    .hero-top-grid--solo .hero-title-pro--headline .hero-title-row--spread {
+        justify-content: center;
+        flex-wrap: wrap;
+        gap: 0.16em 0.22em;
+        max-width: none;
+    }
+
+    .hero-top-grid:not(.hero-top-grid--solo) .hero-title-pro--headline .hero-title-row--spread {
         justify-content: flex-start;
         flex-wrap: wrap;
         gap: 0.16em 0.22em;

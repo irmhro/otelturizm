@@ -103,8 +103,8 @@
     });
 
     /* Rezervasyon sheet — swipe-down, focus trap */
-    var bookingSidebar = document.getElementById('bookingSidebar');
-    var bookingBackdrop = document.getElementById('bookingModalBackdrop');
+    var bookingSidebar = document.getElementById('rezervasyonAksiyon') || document.getElementById('bookingSidebar');
+    var bookingBackdrop = document.getElementById('rezervasyonAksiyonBackdrop') || document.getElementById('bookingModalBackdrop');
     var focusTrapActive = false;
     var lastFocusedBeforeSheet = null;
 

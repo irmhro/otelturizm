@@ -36,9 +36,9 @@
         popup.setAttribute('aria-hidden', 'false');
         popup.classList.add('is-open');
         document.body.classList.add('popupmesaj-open');
-        var closeBtn = popup.querySelector('.popupmesaj__close');
-        if (closeBtn) {
-            closeBtn.focus();
+        var dismissBtn = popup.querySelector('.popupmesaj__dismiss');
+        if (dismissBtn) {
+            dismissBtn.focus();
         }
     }
 

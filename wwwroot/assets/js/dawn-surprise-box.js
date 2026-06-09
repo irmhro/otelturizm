@@ -9,7 +9,7 @@
     const countdownEl = document.getElementById('dawnSurpriseCountdown');
     const copyEl = document.querySelector('[data-dawn-surprise-copy]');
     const storageKey = 'otelturizm.dawnSurprise';
-    const oneDayMs = 24 * 60 * 60 * 1000;
+    const oneHourMs = 60 * 60 * 1000;
 
     if (!banner || !openBtn || !modal || !box || !result || !percentValue || !countdownEl) {
         return;
@@ -91,7 +91,7 @@
     };
 
     const setCountdownIdle = () => {
-        countdownEl.textContent = '🎁 24 saat geçerli';
+        countdownEl.textContent = '🎁 1 saat geçerli';
     };
 
     const setCountdownActive = (seconds) => {
@@ -136,7 +136,7 @@
         openBtn.textContent = `%${percent} indirim aktif`;
         openBtn.disabled = true;
         if (copyEl) {
-            copyEl.textContent = `Şafak sürpriziniz hazır: rezervasyon toplamından ek %${percent} indirim 24 saat boyunca uygulanacak.`;
+            copyEl.textContent = `Şafak sürpriziniz hazır: rezervasyon toplamından ek %${percent} indirim 1 saat boyunca uygulanacak.`;
         }
     };
 
@@ -225,8 +225,8 @@
 
             revealResult(data.percent);
             applyClaimedUi(data.percent);
-            startCountdown(data.remainingSeconds || Math.floor(oneDayMs / 1000));
-            persistClientState(data.percent, data.remainingSeconds || Math.floor(oneDayMs / 1000));
+            startCountdown(data.remainingSeconds || Math.floor(oneHourMs / 1000));
+            persistClientState(data.percent, data.remainingSeconds || Math.floor(oneHourMs / 1000));
         } catch (err) {
             showError(err && err.message ? String(err.message) : 'Kutu su an acilamadi. Lutfen tekrar deneyin.');
             openBtn.disabled = false;

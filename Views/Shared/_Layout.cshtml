@@ -132,11 +132,13 @@
     <link rel="preload" as="style" href="~/assets/css/site-layout.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/assets/css/site-layout.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/assets/css/site-layout.mobile.css" asp-append-version="true" media="(max-width: 900px)" />
-    <link rel="stylesheet" href="~/assets/css/site-footer.mobile.css" asp-append-version="true" media="(max-width: 900px)" />
     <link rel="stylesheet" href="~/assets/css/anasayfa-header.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/assets/css/anasayfa-header.mobile.css" asp-append-version="true" media="(max-width: 900px)" />
     <link rel="stylesheet" href="~/assets/css/footer_masaustu.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/assets/css/footer_mobil.css" asp-append-version="true" media="(max-width: 900px)" />
+    <link rel="stylesheet" href="~/assets/css/public-shell.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/assets/css/public-shell.mobile.css" asp-append-version="true" media="(max-width: 900px)" />
+    <link rel="stylesheet" href="~/assets/css/public-premium-pages.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/assets/css/route-picker-modal.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/assets/css/route-picker-modal.mobile.css" asp-append-version="true" media="(max-width: 900px)" />
     <link rel="stylesheet" href="~/assets/vendor/swiper/swiper-bundle.min.css" asp-append-version="true" />
@@ -177,7 +179,7 @@
     }
 </head>
 @{
-    var layoutBodyClass = ViewData["BodyClass"] as string ?? string.Empty;
+    var layoutBodyClass = ViewData["BodyClass"] as string ?? "anasayfa-page";
     var layoutBodyClasses = string.Join(" ",
         isDevelopmentUnlocked ? "development-unlocked" : "development-locked",
         layoutBodyClass).Trim();

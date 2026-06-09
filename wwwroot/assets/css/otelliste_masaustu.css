@@ -962,7 +962,7 @@
 
 .otelliste-page .otelliste-card-offer-row {
     display: flex;
-    align-items: center;
+    align-items: flex-end;
     justify-content: space-between;
     gap: 12px;
     min-width: 0;
@@ -979,10 +979,10 @@
 }
 
 .otelliste-page .otelliste-card-price--body {
-    flex-direction: row;
-    align-items: baseline;
-    flex-wrap: wrap;
-    gap: 4px 8px;
+    flex-direction: column;
+    align-items: flex-start;
+    flex-wrap: nowrap;
+    gap: 2px;
     text-align: left;
 }
 

@@ -65,8 +65,8 @@
         const shareButton = document.getElementById('shareHotelBtn');
         const shareMenu = document.getElementById('shareMenu');
         const bookingAdvancedFields = document.getElementById('bookingAdvancedFields');
-        const bookingSidebar = document.getElementById('bookingSidebar') || document.querySelector('.booking-sidebar');
-        const bookingModalBackdrop = document.getElementById('bookingModalBackdrop');
+        const bookingSidebar = document.getElementById('rezervasyonAksiyon') || document.getElementById('bookingSidebar') || document.querySelector('.rezervasyon-aksiyon, .booking-sidebar');
+        const bookingModalBackdrop = document.getElementById('rezervasyonAksiyonBackdrop') || document.getElementById('bookingModalBackdrop');
         const bookingModalClose = document.getElementById('bookingModalClose');
         const openBookingSheetBtn = document.getElementById('openBookingSheetBtn');
         const mobileBookingPrice = document.getElementById('mobileBookingPrice');
@@ -125,8 +125,8 @@
             bookingModalBackdrop.hidden = false;
             bookingSidebar.classList.add('is-open');
             bookingModalBackdrop.classList.add('is-open');
-            document.documentElement.classList.add('modal-open');
-            document.body.classList.add('modal-open');
+            document.documentElement.classList.add('modal-open', 'booking-sheet-open', 'rezervasyon-aksiyon-open');
+            document.body.classList.add('modal-open', 'booking-sheet-open', 'rezervasyon-aksiyon-open');
         }
 
         function closeBookingSheet() {
@@ -136,8 +136,8 @@
 
             bookingSidebar.classList.remove('is-open');
             bookingModalBackdrop.classList.remove('is-open');
-            document.documentElement.classList.remove('modal-open');
-            document.body.classList.remove('modal-open');
+            document.documentElement.classList.remove('modal-open', 'booking-sheet-open', 'rezervasyon-aksiyon-open');
+            document.body.classList.remove('modal-open', 'booking-sheet-open', 'rezervasyon-aksiyon-open');
             window.setTimeout(function () {
                 bookingModalBackdrop.hidden = true;
             }, 220);

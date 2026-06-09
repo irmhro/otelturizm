@@ -608,7 +608,7 @@
 
     .otelliste-page .otelliste-card-offer-row {
         display: flex;
-        align-items: center;
+        align-items: flex-end;
         justify-content: space-between;
         gap: 8px;
         min-width: 0;
@@ -635,14 +635,13 @@
         flex: 1 1 auto;
         min-width: 0;
         display: flex;
-        flex-wrap: wrap;
-        align-items: baseline;
-        gap: 4px 6px;
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 2px;
         line-height: 1.2;
     }
 
     .otelliste-page .otelliste-card-price--body .otelliste-card-price-old {
-        flex: 0 0 100%;
         font-size: 11px;
         font-weight: 600;
         color: #9ca3af;
@@ -655,6 +654,7 @@
         font-weight: 900;
         color: var(--otl-dark, #1A1919);
         letter-spacing: -0.02em;
+        line-height: 1.1;
     }
 
     .otelliste-page .otelliste-card-price--body .otelliste-card-price-unit {
