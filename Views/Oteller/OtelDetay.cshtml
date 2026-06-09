@@ -169,6 +169,16 @@
     var reservationAdultCutoffText = reservationAdultCutoffDate.ToString("yyyy-MM-dd");
     var locationText = $"{Model.District}, {Model.City}";
     var longDescription = string.IsNullOrWhiteSpace(Model.LongDescription) ? Model.ShortDescription : Model.LongDescription;
+    var aboutLocationNote = (Model.LocationDescription ?? string.Empty).Trim();
+    var hasPolicyContent = Model.Conditions is not null && (
+        Model.Conditions.HasFreeCancellation
+        || !string.IsNullOrWhiteSpace(Model.Conditions.CancellationSummary)
+        || !string.IsNullOrWhiteSpace(Model.Conditions.CancellationDetail)
+        || !string.IsNullOrWhiteSpace(Model.Conditions.SmokingPolicy)
+        || !string.IsNullOrWhiteSpace(Model.Conditions.PetPolicy)
+        || !string.IsNullOrWhiteSpace(Model.Conditions.ChildPolicy)
+        || Model.Conditions.PrepaymentRequired
+        || Model.Conditions.CardPaymentAccepted);
     var overallBarWidth = Model.Rating > 0 ? Math.Min(100m, Model.Rating * 10m).ToString(System.Globalization.CultureInfo.InvariantCulture) : "0";
     var locScore = Model.ReviewLocationScore > 0 ? Model.ReviewLocationScore : Model.Rating;
     var cleaningScore = Model.ReviewCleaningScore > 0 ? Model.ReviewCleaningScore : (Model.ReviewRoomScore > 0 ? Model.ReviewRoomScore : Model.Rating);
@@ -595,7 +605,7 @@
             </a>
             @if (Model.Weather is not null && Model.Weather.Days.Count > 0)
             {
-                @await Html.PartialAsync("_OtelDetayWeatherStrip", (Model.Weather, weatherThemeClass, "header"))
+                @await Html.PartialAsync("_OtelDetayWeatherStrip", (Model.Weather, weatherThemeClass, "header", "weatherTopbarOpen"))
             }
         </div>
         <partial name="~/Views/Oteller/_OtelDetayBusinessTrust.cshtml" model="Model" />
@@ -865,70 +875,66 @@
     <div class="detail-content od-detail__main">
         <article class="content-card detail-about-card od-section od-section--about">
             <div class="section-head tabler-section-head detail-about__head">
-                <div class="tabler-section-titles">
-                    <h2>@SharedLocalizer["Detail.About.Title"].Value</h2>
+                <div class="detail-about__head-row">
+                    <div class="tabler-section-titles">
+                        <h2>@SharedLocalizer["Detail.About.Title"].Value</h2>
+                    </div>
+                    @if (Model.Weather is not null && Model.Weather.Days.Count > 0)
+                    {
+                        @await Html.PartialAsync("_OtelDetayWeatherStrip", (Model.Weather, weatherThemeClass, "about", "weatherAboutOpen"))
+                    }
                 </div>
             </div>
             <div class="detail-about__body">
-                <ul class="od-about-checkinout od-quick-facts__list" aria-label="@SharedLocalizer["Detail.QuickFacts.Aria"].Value">
-                    <li class="od-quick-facts__item">
-                        <span class="od-quick-facts__icon" aria-hidden="true"><i class="fas fa-door-open"></i></span>
-                        <span class="od-quick-facts__copy">
-                            <span class="od-quick-facts__label">@SharedLocalizer["Detail.QuickFacts.CheckIn"].Value</span>
-                            <strong class="od-quick-facts__value">@checkInDisplay</strong>
-                        </span>
-                    </li>
-                    <li class="od-quick-facts__item">
-                        <span class="od-quick-facts__icon" aria-hidden="true"><i class="fas fa-door-closed"></i></span>
-                        <span class="od-quick-facts__copy">
-                            <span class="od-quick-facts__label">@SharedLocalizer["Detail.QuickFacts.CheckOut"].Value</span>
-                            <strong class="od-quick-facts__value">@checkOutDisplay</strong>
-                        </span>
-                    </li>
-                </ul>
-                <p class="hotel-about-text" id="hotelAboutText">
-                    @(!string.IsNullOrWhiteSpace(Model.LocationDescription) ? Model.LocationDescription : longDescription)
-                </p>
+                @if (!string.IsNullOrWhiteSpace(longDescription))
+                {
+                    <p class="hotel-about-text" id="hotelAboutText">@longDescription</p>
+                }
+                else if (!string.IsNullOrWhiteSpace(aboutLocationNote))
+                {
+                    <p class="hotel-about-text" id="hotelAboutText">@aboutLocationNote</p>
+                }
+                @if (!string.IsNullOrWhiteSpace(aboutLocationNote)
+                    && !string.IsNullOrWhiteSpace(longDescription)
+                    && !string.Equals(aboutLocationNote, longDescription.Trim(), StringComparison.OrdinalIgnoreCase))
+                {
+                    <p class="hotel-about-location">@aboutLocationNote</p>
+                }
                 <button type="button" class="hotel-about-toggle" id="hotelAboutToggle" hidden data-label-more="Devamını oku" data-label-less="Kapat">
                     Devamını oku
                 </button>
                 @if (mobileInlineAmenities.Count > 0)
                 {
-                    var mobileAmenitiesVisible = mobileInlineAmenities.Take(2).ToList();
-                    var mobileAmenitiesHidden = mobileInlineAmenities.Skip(2).ToList();
-                    <div class="od-amenities__mobile-inline od-amenities__mobile-inline--about" aria-label="@SharedLocalizer["Detail.Amenities.Title"].Value">
-                        @if (mobileAmenitiesVisible.Count > 0)
+                    <div class="od-about-features" role="list" aria-label="@SharedLocalizer["Detail.Amenities.Title"].Value">
+                        @foreach (var item in mobileInlineAmenities.Take(2))
                         {
-                            <div class="od-amenities__tag-grid od-amenities__tag-grid--preview" role="list">
-                                @foreach (var item in mobileAmenitiesVisible)
-                                {
-                                    var amenityIcon = string.IsNullOrWhiteSpace(item.IconClass) ? "fa-circle-check" : item.IconClass;
-                                    <div class="od-amenity-tile od-amenity-tile--preview" role="listitem">
-                                        <span class="od-amenity-tile__icon" aria-hidden="true"><i class="fas @amenityIcon"></i></span>
-                                        <span class="od-amenity-tile__label">@item.Name</span>
-                                    </div>
-                                }
-                            </div>
+                            <span class="od-about-feature" role="listitem">@item.Name</span>
                         }
-                        @if (mobileAmenitiesHidden.Count > 0)
+                    </div>
+                    <div class="od-about-actions">
+                        @if (mobileInlineAmenities.Count > 0)
                         {
-                            <details class="od-amenities__inline-more">
-                                <summary class="od-amenities__see-all-mobile">
-                                    @SharedLocalizer["Detail.Amenities.SeeAll"].Value
-                                    <i class="fas fa-chevron-down" aria-hidden="true"></i>
-                                </summary>
-                                <div class="od-amenities__expand-grid" role="list" aria-label="@SharedLocalizer["Detail.Amenities.Title"].Value">
-                                    @foreach (var item in mobileAmenitiesHidden)
-                                    {
-                                        var amenityIcon = string.IsNullOrWhiteSpace(item.IconClass) ? "fa-circle-check" : item.IconClass;
-                                        <div class="od-amenity-tile" role="listitem">
-                                            <span class="od-amenity-tile__icon" aria-hidden="true"><i class="fas @amenityIcon"></i></span>
-                                            <span class="od-amenity-tile__label">@item.Name</span>
-                                        </div>
-                                    }
-                                </div>
-                            </details>
+                            <button type="button" class="od-about-action-btn" data-open-amenities>
+                                @SharedLocalizer["Detail.Amenities.SeeAll"].Value
+                                <i class="fas fa-chevron-right" aria-hidden="true"></i>
+                            </button>
                         }
+                        @if (hasPolicyContent)
+                        {
+                            <button type="button" class="od-about-action-btn od-about-action-btn--secondary" data-open-policies>
+                                Otel kuralları
+                                <i class="fas fa-chevron-right" aria-hidden="true"></i>
+                            </button>
+                        }
+                    </div>
+                }
+                else if (hasPolicyContent)
+                {
+                    <div class="od-about-actions od-about-actions--solo">
+                        <button type="button" class="od-about-action-btn od-about-action-btn--secondary" data-open-policies>
+                            Otel kuralları ve koşullar
+                            <i class="fas fa-chevron-right" aria-hidden="true"></i>
+                        </button>
                     </div>
                 }
             </div>
@@ -2370,6 +2376,7 @@
             const weatherPopupBackdrop = document.getElementById('weatherPopupBackdrop');
             const weatherPopupOpen = document.getElementById('weatherPopupOpen');
             const weatherTopbarOpen = document.getElementById('weatherTopbarOpen');
+            const weatherAboutOpen = document.getElementById('weatherAboutOpen');
             const weatherPopupClose = document.getElementById('weatherPopupClose');
             const shareButton = document.getElementById('shareHotelBtn');
             const shareMenu = document.getElementById('shareMenu');
@@ -2385,6 +2392,7 @@
             const openProfileCompletionFromBanner = document.getElementById('openProfileCompletionFromBanner');
             const openAmenitiesModal = document.getElementById('openAmenitiesModal');
             const amenitiesModal = document.getElementById('amenitiesModal');
+            const policiesModal = document.getElementById('policiesModal');
             const cancelDraftForm = document.getElementById('cancelDraftForm');
             const activeDraftResumeUrl = '@(Model.ActiveDraft?.ResumeUrl ?? "")';
             const activeDraftPromptMessage = '@(Model.ActiveDraft?.Message ?? "")';
@@ -3412,14 +3420,15 @@
             }
 
             function bindWeatherPopupTriggers() {
-                [weatherPopupOpen, weatherTopbarOpen].forEach(function (trigger) {
+                [weatherPopupOpen, weatherTopbarOpen, weatherAboutOpen].forEach(function (trigger) {
                     trigger?.addEventListener('click', openWeatherPopup);
                 });
             }
 
             function openWeatherPopup() {
                 const hasWeather = (weatherPopupOpen?.getAttribute('data-has-weather') === 'true')
-                    || (weatherTopbarOpen?.getAttribute('data-has-weather') === 'true');
+                    || (weatherTopbarOpen?.getAttribute('data-has-weather') === 'true')
+                    || (weatherAboutOpen?.getAttribute('data-has-weather') === 'true');
                 if (!hasWeather || !weatherPopup || !weatherPopupBackdrop) {
                     showInfoModal('Hava durumu verisi şu an yüklenemedi. Birkaç saniye sonra tekrar deneyin.', false);
                     return;
@@ -3705,6 +3714,7 @@
                 closeModal(infoModal);
                 closeModal(reservationConfirmModal);
                 closeModal(amenitiesModal);
+                closeModal(policiesModal);
                 closeModal(roomDetailModal);
             });
 
@@ -5048,6 +5058,13 @@
                     if (expand && 'open' in expand) {
                         expand.open = true;
                         scrollToElementWithOffset(expand, 86);
+                    }
+                });
+            });
+            document.querySelectorAll('[data-open-policies]').forEach(function (btn) {
+                btn.addEventListener('click', function () {
+                    if (policiesModal) {
+                        openModal(policiesModal);
                     }
                 });
             });

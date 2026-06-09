@@ -1,5 +1,5 @@
 @using System.Globalization
-@model (otelturizmnew.Models.Oteller.HotelWeatherWidgetViewModel Weather, string ThemeClass, string Variant)
+@model (otelturizmnew.Models.Oteller.HotelWeatherWidgetViewModel Weather, string ThemeClass, string Variant, string TriggerId)
 
 @{
     string GetWeatherDayTone(string? conditionText)
@@ -36,12 +36,15 @@
         ? "detail-weather-strip--standalone"
         : string.Equals(Model.Variant, "header", StringComparison.OrdinalIgnoreCase)
             ? "detail-weather-strip--header"
-            : "detail-weather-strip--gallery";
+            : string.Equals(Model.Variant, "about", StringComparison.OrdinalIgnoreCase)
+                ? "detail-weather-strip--about"
+                : "detail-weather-strip--gallery";
+    var triggerId = string.IsNullOrWhiteSpace(Model.TriggerId) ? "weatherTopbarOpen" : Model.TriggerId;
 }
 
 <button type="button"
         class="detail-weather-strip @Model.ThemeClass @variantClass"
-        id="weatherTopbarOpen"
+        id="@triggerId"
         data-has-weather="true"
         aria-haspopup="dialog"
         aria-controls="weatherPopup"

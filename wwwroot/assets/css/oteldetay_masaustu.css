@@ -3083,10 +3083,17 @@
         line-height: 1.65;
         color: var(--od-dark, #1A1919);
         margin: 0 0 12px;
+        padding: 0 16px;
+    }
+
+    .oteldetay-page .detail-weather-strip--about,
+    .oteldetay-page .od-about-features,
+    .oteldetay-page .od-about-actions {
+        display: none !important;
     }
 
     .oteldetay-page .od-section--about .od-about-checkinout {
-        margin-bottom: 18px !important;
+        display: none !important;
     }
 
     .oteldetay-page .od-section--amenities .tabler-section-headrow {

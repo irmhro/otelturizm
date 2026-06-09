@@ -39,7 +39,7 @@
 }
 @if (policyItems.Count > 0)
 {
-    <article class="content-card od-section od-section--policies" id="hotelPoliciesSection">
+    <article class="content-card od-section od-section--policies od-section--policies-desktop" id="hotelPoliciesSection">
         <div class="section-head tabler-section-head od-section__head">
             <div class="tabler-section-headrow">
                 <div class="tabler-section-titles">
@@ -63,4 +63,26 @@
             }
         </ul>
     </article>
+
+    <section class="detail-modal" id="policiesModal" hidden aria-hidden="true" role="dialog" aria-modal="true" aria-labelledby="policiesModalTitle">
+        <div class="detail-modal-head">
+            <div>
+                <span class="detail-modal-kicker">Konaklama politikaları</span>
+                <h3 id="policiesModalTitle">Otel kuralları ve koşullar</h3>
+            </div>
+            <button type="button" class="detail-modal-close" data-close-modal="policiesModal"><i class="fas fa-times"></i></button>
+        </div>
+        <div class="policies-modal-list">
+            @foreach (var policy in policyItems)
+            {
+                <article class="policies-modal-item">
+                    <h4 class="policies-modal-item__title">
+                        <i class="fas @policy.Icon" aria-hidden="true"></i>
+                        @policy.Title
+                    </h4>
+                    <p class="policies-modal-item__text">@policy.Text</p>
+                </article>
+            }
+        </div>
+    </section>
 }
