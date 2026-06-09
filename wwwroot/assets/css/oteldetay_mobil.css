@@ -1792,32 +1792,94 @@
     .oteldetay-page > #amenitiesModal.detail-modal:not([hidden]) {
         display: flex !important;
         flex-direction: column !important;
-        z-index: 2120 !important;
-        justify-content: flex-end !important;
+        inset: 0 !important;
+        z-index: 2210 !important;
+        width: 100% !important;
+        max-width: 100% !important;
+        height: 100dvh !important;
+        max-height: 100dvh !important;
+        margin: 0 !important;
         padding: 0 !important;
+        border: 0 !important;
+        border-radius: 0 !important;
+        background: #fff !important;
+        box-shadow: none !important;
+        transform: none !important;
+        opacity: 1 !important;
+        left: auto !important;
+        top: auto !important;
+        overflow: hidden !important;
+        justify-content: flex-start !important;
     }
 
     .oteldetay-page > #amenitiesModal .detail-modal-head {
-        border-radius: 18px 18px 0 0;
+        flex: 0 0 auto;
+        margin: 0 !important;
+        padding: 14px 16px 12px !important;
+        padding-top: calc(12px + env(safe-area-inset-top, 0px)) !important;
+        border-bottom: 1px solid var(--od-border, #EBE9E4);
+        background: #fff;
+        border-radius: 0 !important;
+    }
+
+    .oteldetay-page > #amenitiesModal .detail-modal-kicker {
+        font-size: 11px;
+        font-weight: 700;
+        letter-spacing: 0.03em;
+        text-transform: uppercase;
+    }
+
+    .oteldetay-page > #amenitiesModal .detail-modal-head h3 {
+        margin: 6px 0 0 !important;
+        font-size: 1.05rem !important;
+        font-weight: 800 !important;
+        line-height: 1.25 !important;
+        color: var(--od-dark, #1A1919);
+    }
+
+    .oteldetay-page > #amenitiesModal .detail-modal-close {
+        width: 40px;
+        height: 40px;
+        min-width: 40px;
+        border-radius: 999px;
+        border: 1px solid var(--od-border, #EBE9E4);
+        background: #fff;
+        color: var(--od-dark, #1A1919);
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
     }
 
     .oteldetay-page > #amenitiesModal .amenities-modal-grid {
         flex: 1 1 auto;
+        display: grid !important;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 10px;
+        width: 100%;
+        min-height: 0;
+        max-height: none;
         overflow: auto;
-        max-height: min(68vh, 520px);
-        padding-bottom: calc(12px + env(safe-area-inset-bottom, 0px));
+        -webkit-overflow-scrolling: touch;
+        padding: 14px 16px calc(16px + env(safe-area-inset-bottom, 0px));
+        box-sizing: border-box;
+        align-content: start;
+        background: #fff;
     }
 
     .oteldetay-page > #amenitiesModal .amenity-item-lux {
         display: flex;
         align-items: center;
         gap: 10px;
+        min-height: 44px;
         padding: 10px 12px;
         border-radius: 12px;
         border: 1px solid var(--od-border, #EBE9E4);
-        background: #fff;
+        background: var(--od-bg, #FCFBF9);
         font-size: 13px;
         font-weight: 600;
+        line-height: 1.25;
+        color: var(--od-dark, #1A1919);
+        text-align: left;
     }
 
     .oteldetay-page > #amenitiesModal .amenity-item-lux i {
@@ -1830,6 +1892,7 @@
         background: rgba(0, 59, 149, 0.08);
         color: #0f5bd7;
         flex-shrink: 0;
+        font-size: 14px;
     }
 
     .oteldetay-page .od-amenities__see-all-mobile i {
@@ -5840,21 +5903,6 @@
     .oteldetay-page .od-amenities__mobile-grid-wrap,
     .oteldetay-page .od-amenities__mobile-grid {
         display: none !important;
-    }
-
-    .oteldetay-page > #amenitiesModal.detail-modal.is-open,
-    .oteldetay-page > #amenitiesModal.detail-modal:not([hidden]) {
-        inset: 0 !important;
-        justify-content: flex-start !important;
-        padding: 0 !important;
-        border-radius: 0 !important;
-        max-height: 100dvh !important;
-        height: 100dvh !important;
-    }
-
-    .oteldetay-page > #amenitiesModal .detail-modal-head {
-        border-radius: 0 !important;
-        padding-top: calc(12px + env(safe-area-inset-top, 0px)) !important;
     }
 
     .oteldetay-page .od-section--policies .od-policy-list--accordion {
