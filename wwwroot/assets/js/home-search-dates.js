@@ -24,6 +24,21 @@
         return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
     };
 
+    const persistDates = () => {
+        if (window.otelturizmBookingDates && typeof window.otelturizmBookingDates.persistSearchDates === 'function') {
+            window.otelturizmBookingDates.persistSearchDates(checkIn.value, checkOut.value);
+            return;
+        }
+        const payload = `${checkIn.value}|${checkOut.value}`;
+        try {
+            sessionStorage.setItem('Otelturizm.SearchDates', payload);
+        } catch {
+            // ignore
+        }
+        const secure = window.location.protocol === 'https:' ? '; Secure' : '';
+        document.cookie = `Otelturizm.SearchDates=${encodeURIComponent(payload)}; Path=/; Max-Age=${30 * 24 * 60 * 60}; SameSite=Lax${secure}`;
+    };
+
     const syncDates = () => {
         const today = localToday();
         checkIn.min = today;
@@ -40,6 +55,8 @@
         if (!checkOut.value || checkOut.value <= checkIn.value) {
             checkOut.value = addDays(checkIn.value, 7);
         }
+
+        persistDates();
     };
 
     const refreshBeforePicker = () => {
@@ -76,12 +93,17 @@
         if (checkOut.value <= checkIn.value) {
             checkOut.value = addDays(checkIn.value, 1);
         }
+        persistDates();
     });
     checkOut.addEventListener('input', () => {
         if (checkOut.value <= checkIn.value) {
             checkOut.value = addDays(checkIn.value, 1);
         }
+        persistDates();
     });
+
+    const form = checkIn.closest('form');
+    form?.addEventListener('submit', persistDates);
 
     document.addEventListener('visibilitychange', () => {
         if (document.visibilityState === 'visible') {

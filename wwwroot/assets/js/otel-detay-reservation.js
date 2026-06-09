@@ -60,16 +60,20 @@
         const checkOut = item?.querySelector('[data-field="checkOut"]');
         if (!(checkIn instanceof HTMLInputElement) || !(checkOut instanceof HTMLInputElement)) return;
 
-        const today = new Date();
-        today.setHours(0, 0, 0, 0);
-        const todayText = today.toISOString().slice(0, 10);
+        if (window.otelturizmBookingDates && typeof window.otelturizmBookingDates.normalizePair === 'function') {
+            window.otelturizmBookingDates.normalizePair(checkIn, checkOut);
+            return;
+        }
+
+        const todayText = (window.otelturizmBookingDates && window.otelturizmBookingDates.localToday)
+            ? window.otelturizmBookingDates.localToday()
+            : new Date().toLocaleDateString('en-CA');
         if (!checkIn.value || checkIn.value < todayText) checkIn.value = todayText;
 
-        const inDate = new Date(checkIn.value + 'T00:00:00');
-        if (Number.isNaN(inDate.getTime())) return;
-        const outDate = new Date(inDate);
-        outDate.setDate(outDate.getDate() + 1);
-        const minOut = outDate.toISOString().slice(0, 10);
+        const addDays = (window.otelturizmBookingDates && window.otelturizmBookingDates.addDays)
+            ? window.otelturizmBookingDates.addDays.bind(window.otelturizmBookingDates)
+            : (iso) => iso;
+        const minOut = addDays(checkIn.value, 1);
         checkOut.min = minOut;
         if (!checkOut.value || checkOut.value <= checkIn.value) checkOut.value = minOut;
     }

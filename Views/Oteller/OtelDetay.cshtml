@@ -1608,11 +1608,11 @@
                                 <div class="multi-room-item-dates">
                                     <label>
                                         <span>Giriş Tarihi</span>
-                                        <input type="date" data-field="checkIn" min="@todayDate" value="@checkInDefault" />
+                                        <input type="date" data-field="checkIn" lang="tr-TR" min="@todayDate" value="@checkInDefault" title="@reservationForm.CheckInDate.ToString("dd/MM/yyyy")" />
                                     </label>
                                     <label>
                                         <span>Çıkış Tarihi</span>
-                                        <input type="date" data-field="checkOut" min="@checkOutMinDefault" value="@checkOutDefault" />
+                                        <input type="date" data-field="checkOut" lang="tr-TR" min="@checkOutMinDefault" value="@checkOutDefault" title="@reservationForm.CheckOutDate.ToString("dd/MM/yyyy")" />
                                     </label>
                                 </div>
                                 <label class="multi-room-item-type">
@@ -2339,6 +2339,7 @@
     @{
         var nonce = Context.Items["CspNonce"] as string;
     }
+    <script src="~/assets/js/booking-date-guard.js" asp-append-version="true"></script>
     <script nonce="@nonce">
         // Inline OtelDetay (v41) script'i aktif: legacy `otel-detay.js` içindeki minimal multi-room init'i devre dışı bırakmak için.
         window.__otelDetayInlineV41 = true;
@@ -3221,6 +3222,9 @@
             function formatDateShort(iso) {
                 if (!iso) {
                     return '—';
+                }
+                if (window.otelturizmBookingDates && typeof window.otelturizmBookingDates.formatDateTr === 'function') {
+                    return window.otelturizmBookingDates.formatDateTr(iso);
                 }
                 const parts = iso.split('-');
                 if (parts.length !== 3) {
@@ -5422,6 +5426,10 @@
                 }, 80);
             }
 
+            if (window.otelturizmBookingDates && typeof window.otelturizmBookingDates.applyPersistedDatesToHidden === 'function') {
+                window.otelturizmBookingDates.applyPersistedDatesToHidden();
+            }
+
             // init first room row (single-room compatible)
             if (getRoomItemNodes().length === 0) {
                 addRoomItem({
@@ -5437,6 +5445,14 @@
             ensureGuestCapacity(false);
             syncPaymentMethodState();
             refreshPriceQuote();
+            if (window.otelturizmBookingDates && typeof window.otelturizmBookingDates.initAll === 'function') {
+                window.otelturizmBookingDates.initAll();
+                getRoomItemNodes().forEach(function (item) {
+                    updateRoomItemSummary(item);
+                });
+                syncRoomsJsonAndHiddenFields();
+                refreshPriceQuote();
+            }
             initReviewReadMore();
             initRoomFeaturePanels();
             paymentMethodSelect?.addEventListener('change', syncPaymentMethodState);
@@ -5554,7 +5570,6 @@
     </script>
     <script src="~/assets/js/oteldetay-gallery-mobile.js" asp-append-version="true" defer></script>
     <script src="~/assets/js/otel-detay-reservation.js" asp-append-version="true"></script>
-    <script src="~/assets/js/booking-date-guard.js" asp-append-version="true" defer></script>
     <script src="~/assets/js/oteldetay-detail-mobile.js" asp-append-version="true" defer></script>
     <script src="~/assets/js/otel-detay.js" asp-append-version="true"></script>
     <partial name="~/Views/Shared/_FavoriteToggleScriptPartial.cshtml" />

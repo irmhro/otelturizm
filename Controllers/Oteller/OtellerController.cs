@@ -27,6 +27,7 @@ public class OtellerController : Controller
 {
     private const string ReservationDraftCookieName = "Otelturizm.ReservationDraftKey";
     private const string LocationSessionCookieName = "Otelturizm.LocationSession";
+    private const string SearchDatesCookieName = "Otelturizm.SearchDates";
     private readonly IHotelService _hotelService;
     private readonly IPublicReservationService _publicReservationService;
     private readonly IWeatherService _weatherService;
@@ -80,8 +81,16 @@ public class OtellerController : Controller
     [HttpGet("")]
     [HttpGet("istanbul")]
     [OutputCache(PolicyName = "public-short")]
-    public async Task<IActionResult> OtelListeleme([FromQuery] string? q, [FromQuery] string? city, [FromQuery] string? etiket, [FromQuery] string? filter, [FromQuery] string? kampanya, [FromQuery] decimal? minPrice, [FromQuery] decimal? maxPrice, [FromQuery] long? ilceId, [FromQuery] long? sehirId, [FromQuery] int page, CancellationToken cancellationToken)
+    public async Task<IActionResult> OtelListeleme([FromQuery] string? q, [FromQuery] string? city, [FromQuery] string? etiket, [FromQuery] string? filter, [FromQuery] string? kampanya, [FromQuery] decimal? minPrice, [FromQuery] decimal? maxPrice, [FromQuery] long? ilceId, [FromQuery] long? sehirId, [FromQuery] int page, [FromQuery] string? checkIn, [FromQuery] string? checkOut, CancellationToken cancellationToken)
     {
+        if (DateOnly.TryParse(checkIn, out var listingCheckIn))
+        {
+            var listingCheckOut = DateOnly.TryParse(checkOut, out var parsedListingCheckOut) && parsedListingCheckOut > listingCheckIn
+                ? parsedListingCheckOut
+                : listingCheckIn.AddDays(1);
+            PersistSearchDatesCookie(listingCheckIn, listingCheckOut);
+        }
+
         var listingCulture = ApplyRouteListingCulture();
         ViewData["PageCss"] = "otelliste_masaustu";
         ViewData["PageCssMobile"] = "otelliste_mobil";
@@ -245,6 +254,11 @@ public class OtellerController : Controller
                 model.ReservationForm.RoomTypeId = queryRoomTypeId;
             }
         }
+        else if (TryReadSearchDatesCookie(out var cookieCheckIn, out var cookieCheckOut))
+        {
+            model.ReservationForm.CheckInDate = cookieCheckIn;
+            model.ReservationForm.CheckOutDate = cookieCheckOut;
+        }
         else
         {
             var today = DateOnly.FromDateTime(DateTime.Today);
@@ -256,6 +270,8 @@ public class OtellerController : Controller
         {
             model.ReservationForm.CheckOutDate = model.ReservationForm.CheckInDate.AddDays(1);
         }
+
+        PersistSearchDatesCookie(model.ReservationForm.CheckInDate, model.ReservationForm.CheckOutDate);
 
         if (model.ReservationForm.RoomTypeId > 0)
         {
@@ -1014,6 +1030,58 @@ public class OtellerController : Controller
             Expires = DateTimeOffset.UtcNow.AddDays(90)
         });
         return key;
+    }
+
+    private void PersistSearchDatesCookie(DateOnly checkIn, DateOnly checkOut)
+    {
+        if (checkOut <= checkIn)
+        {
+            checkOut = checkIn.AddDays(1);
+        }
+
+        Response.Cookies.Append(
+            SearchDatesCookieName,
+            $"{checkIn:O}|{checkOut:O}",
+            new CookieOptions
+            {
+                HttpOnly = false,
+                Secure = Request.IsHttps,
+                SameSite = SameSiteMode.Lax,
+                MaxAge = TimeSpan.FromDays(30),
+                Path = "/",
+                IsEssential = false
+            });
+    }
+
+    private bool TryReadSearchDatesCookie(out DateOnly checkIn, out DateOnly checkOut)
+    {
+        checkIn = default;
+        checkOut = default;
+        if (!Request.Cookies.TryGetValue(SearchDatesCookieName, out var raw) || string.IsNullOrWhiteSpace(raw))
+        {
+            return false;
+        }
+
+        var parts = raw.Split('|', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries);
+        if (parts.Length != 2
+            || !DateOnly.TryParse(parts[0], out checkIn)
+            || !DateOnly.TryParse(parts[1], out checkOut))
+        {
+            return false;
+        }
+
+        var today = DateOnly.FromDateTime(DateTime.Today);
+        if (checkIn < today)
+        {
+            checkIn = today;
+        }
+
+        if (checkOut <= checkIn)
+        {
+            checkOut = checkIn.AddDays(1);
+        }
+
+        return true;
     }
 
 public sealed class UserLocationLogRequest
