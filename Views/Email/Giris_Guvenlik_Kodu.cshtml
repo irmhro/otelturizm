@@ -1,36 +1,29 @@
-<!DOCTYPE html>
-<html lang="tr">
-<head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Giriş Güvenlik Kodu</title>
-</head>
-<body style="margin:0;padding:0;background:#f4f7fb;font-family:'Segoe UI',Arial,sans-serif;color:#132238;">
-    <table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="background:#f4f7fb;padding:24px 0;">
-        <tr>
-            <td align="center">
-                <table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="max-width:640px;background:#ffffff;border-radius:24px;overflow:hidden;box-shadow:0 18px 45px rgba(12,34,68,.12);">
+@* Layout: _EmailMaster *@
+@* EmailTitle: Otelturizm · Giriş Güvenlik Kodu *@
+@* Preheader: Tek kullanımlık güvenlik kodunuz *@
+@* HeaderTagline: Otelturizm Güvenlik *@
+@* HeaderTitle: Giriş güvenlik kodunuz hazır *@
+@* HeaderSubtitle: Kodu giriş ekranına yazın *@
+@* FooterLine1: 7/24 destek: destek@otelturizm.com *@
+@* FooterLine2: İstek zamanı: {{login_time}} *@
+@* FooterLegal: Bu işlemi siz başlatmadıysanız şifrenizi değiştirin. *@
                     <tr>
-                        <td style="background:linear-gradient(135deg,#0f3d91,#2766ff);padding:28px 32px;color:#ffffff;">
-                            <div style="font-size:13px;letter-spacing:.12em;text-transform:uppercase;opacity:.8;">Otelturizm Güvenlik</div>
-                            <div style="font-size:28px;font-weight:800;margin-top:8px;">Giriş güvenlik kodunuz hazır</div>
+                        <td class="email-pad">
+                            <p class="email-greeting">Merhaba <strong>{{user_first_name}}</strong>,</p>
+                            <p class="email-lead">
+                                Hesabınıza giriş yapmak için {{verification_channel}} üzerinden doğrulama istediniz.
+                                Aşağıdaki tek kullanımlık güvenlik kodunu giriş ekranına yazın.
+                            </p>
+
+                            <table role="presentation" cellpadding="0" cellspacing="0" border="0" class="email-code">
+                                <tr>
+                                    <td class="email-code__cell">
+                                        <p class="email-code__label">Güvenlik Kodu</p>
+                                        <p class="email-code__value">{{verification_code}}</p>
+                                    </td>
+                                </tr>
+                            </table>
+
+                            <p class="email-muted">Bu kod birkaç dakika içinde kullanılmalıdır. Giriş işlemini siz başlatmadıysanız şifrenizi değiştirin ve destek ekibimizle iletişime geçin.</p>
                         </td>
                     </tr>
-                    <tr>
-                        <td style="padding:32px;">
-                            <p style="margin:0 0 14px;font-size:16px;">Merhaba <strong>{{user_first_name}}</strong>,</p>
-                            <p style="margin:0 0 16px;font-size:15px;line-height:1.7;">Hesabınıza giriş yapmak için {{verification_channel}} üzerinden doğrulama istediniz. Aşağıdaki tek kullanımlık güvenlik kodunu giriş ekranına yazın.</p>
-                            <div style="margin:24px 0;padding:18px 24px;border-radius:18px;background:#eef4ff;border:1px solid #c9d9ff;text-align:center;">
-                                <div style="font-size:13px;color:#47618c;text-transform:uppercase;letter-spacing:.18em;">Güvenlik Kodu</div>
-                                <div style="margin-top:10px;font-size:34px;font-weight:800;letter-spacing:.28em;color:#0f3d91;">{{verification_code}}</div>
-                            </div>
-                            <p style="margin:0 0 12px;font-size:14px;color:#50617a;">İstek zamanı: <strong>{{login_time}}</strong></p>
-                            <p style="margin:0 0 8px;font-size:14px;line-height:1.7;color:#50617a;">Bu kod birkaç dakika içinde kullanılmalıdır. Giriş işlemini siz başlatmadıysanız şifrenizi değiştirin ve destek ekibimizle iletişime geçin.</p>
-                        </td>
-                    </tr>
-                </table>
-            </td>
-        </tr>
-    </table>
-</body>
-</html>

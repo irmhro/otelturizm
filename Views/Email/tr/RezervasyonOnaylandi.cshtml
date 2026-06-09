@@ -8,36 +8,36 @@
 @* FooterLine2: Rezervasyon No: #{{booking_reference}} *@
 @* FooterLegal: Bu e-posta bilgilendirme amaçlıdır. Yanıtlamayın. *@
                     <tr>
-                        <td class="email-pad" style="padding:28px;">
-                            <p style="margin:0 0 12px;font-size:18px;">Harika haber <strong>{{user_first_name}}</strong>!</p>
-                            <p style="margin:0 0 18px;font-size:15px;line-height:1.7;color:#334155;">
+                        <td class="email-pad">
+                            <p class="email-greeting">Harika haber <strong>{{user_first_name}}</strong>!</p>
+                            <p class="email-lead">
                                 <strong>{{hotel_name}}</strong> rezervasyonun onaylandı. Rezervasyon numaran:
-                                <strong style="font-size:18px;color:#003B95;">#{{booking_reference}}</strong>
+                                <strong class="email-ref">#{{booking_reference}}</strong>
                             </p>
 
-                            <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="background:#F5F7FA;border:1px solid #E7E9EC;border-radius:16px;margin:0 0 16px;">
+                            <table role="presentation" cellpadding="0" cellspacing="0" border="0" class="email-card">
                                 <tr>
-                                    <td style="padding:16px;">
-                                        <div style="font-size:12px;color:#6B7380;text-transform:uppercase;letter-spacing:.08em;font-weight:800;">Konaklama Detayları</div>
-                                        <div style="margin-top:10px;font-size:14px;color:#1A1F26;"><strong>Konaklama:</strong> {{check_in_date}} → {{check_out_date}}</div>
-                                        <div style="margin-top:6px;font-size:14px;color:#1A1F26;"><strong>Oda:</strong> {{room_type_name}}</div>
-                                        <div style="margin-top:6px;font-size:14px;color:#1A1F26;"><strong>Toplam:</strong> ₺{{total_price}}</div>
+                                    <td class="email-card__cell">
+                                        <p class="email-card__label">Konaklama Detayları</p>
+                                        <p class="email-card__row"><strong>Konaklama:</strong> {{check_in_date}} → {{check_out_date}}</p>
+                                        <p class="email-card__row"><strong>Oda:</strong> {{room_type_name}}</p>
+                                        <p class="email-card__row"><strong>Toplam:</strong> ₺{{total_price}}</p>
                                     </td>
                                 </tr>
                             </table>
 
-                            <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="background:rgba(0,168,107,0.10);border:1px solid rgba(0,168,107,0.26);border-radius:14px;margin:0 0 16px;">
+                            <table role="presentation" cellpadding="0" cellspacing="0" border="0" class="email-note email-note--success">
                                 <tr>
-                                    <td style="padding:14px 16px;font-size:13px;line-height:1.65;color:#1e6f42;">
+                                    <td class="email-note__cell">
                                         Check-in detayların ve varsa ek taleplerin hesap panelinde görüntülenir.
                                     </td>
                                 </tr>
                             </table>
 
-                            <table role="presentation" cellpadding="0" cellspacing="0" border="0" class="email-cta" style="margin:0;">
+                            <table role="presentation" cellpadding="0" cellspacing="0" border="0" class="email-cta">
                                 <tr>
-                                    <td style="border-radius:999px;background:linear-gradient(135deg,#003B95 0%,#0055CC 100%);">
-                                        <a href="{{booking_details_link}}" style="display:inline-block;min-height:44px;line-height:44px;padding:0 22px;color:#ffffff !important;text-decoration:none;font-size:15px;font-weight:900;border-radius:999px;">Rezervasyonu görüntüle →</a>
+                                    <td>
+                                        <a href="{{booking_details_link}}" class="email-cta__btn">Rezervasyonu görüntüle →</a>
                                     </td>
                                 </tr>
                             </table>

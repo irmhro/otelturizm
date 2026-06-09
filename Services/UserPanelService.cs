@@ -351,9 +351,9 @@ public class UserPanelService : IUserPanelService
             return (false, "Bu rezervasyon zaten iptal edildi.");
         }
 
-        if (checkInDate.Value.Date <= DateTime.Today)
+        if (!IsWithinUserCancellationWindow(checkInDate.Value))
         {
-            return (false, "Check-in tarihi gelen veya gecen rezervasyonlar panelden iptal edilemez. Sadece otel rezervasyonunuzu iptal edebilir, firma ile iletisim icin Mesajlarim alanina geciniz.");
+            return (false, "Rezervasyon giriş saatinden (14:00) en az 24 saat önce iptal edilebilir. Girişe 24 saatten az kaldıysa Mesajlarım üzerinden otele ulaşabilirsiniz.");
         }
 
         const string updateSql = @"
@@ -3152,7 +3152,7 @@ INNER JOIN agg ON agg.[OTEL_ID] = o.id;";
             var otelOnay = reader.IsDBNull(18) ? string.Empty : reader.GetString(18);
             var hasReview = SafeInt(reader, 28) != 0;
             var canSubmitReview = CanReservationReceiveReview(status, otelOnay, hasReview, isCancelled);
-            var canCancel = CanUserCancelReservation(status, otelOnay, checkOut);
+            var canCancel = CanUserCancelReservation(status, otelOnay, checkIn, checkOut);
             list.Add(new UserReservationCardViewModel
             {
                 ReservationId = reader.GetInt64(0),
@@ -3278,7 +3278,7 @@ INNER JOIN agg ON agg.[OTEL_ID] = o.id;";
             var otelOnay = reader.IsDBNull(15) ? string.Empty : reader.GetString(15);
             var hasReview = SafeInt(reader, 18) != 0;
             var canSubmitReview = CanReservationReceiveReview(status, otelOnay, hasReview, isCancelled);
-            var canCancel = CanUserCancelReservation(status, otelOnay, checkOut);
+            var canCancel = CanUserCancelReservation(status, otelOnay, checkIn, checkOut);
             list.Add(new UserReservationCardViewModel
             {
                 ReservationId = reader.GetInt64(0),
@@ -3505,9 +3505,25 @@ INNER JOIN agg ON agg.[OTEL_ID] = o.id;";
         return "Bekliyor";
     }
 
-    private static bool CanUserCancelReservation(string status, string hotelApprovalStatus, DateTime checkOut)
+    private static bool IsWithinUserCancellationWindow(DateTime checkIn)
     {
-        if (checkOut < DateTime.Today)
+        var checkInMoment = checkIn.Date.AddHours(14);
+        return DateTime.Now.AddHours(24) < checkInMoment;
+    }
+
+    private static bool CanUserCancelReservation(string status, string hotelApprovalStatus, DateTime checkIn, DateTime checkOut)
+    {
+        if (checkOut.Date < DateTime.Today)
+        {
+            return false;
+        }
+
+        if (string.Equals(status, "İptal Edildi", StringComparison.OrdinalIgnoreCase))
+        {
+            return false;
+        }
+
+        if (!IsWithinUserCancellationWindow(checkIn))
         {
             return false;
         }

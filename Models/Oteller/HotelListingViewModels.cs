@@ -178,6 +178,8 @@ public class HotelDetailPageViewModel
     public string ConversationInfoMessage { get; set; } = string.Empty;
     public bool ShouldResumeDraftOnLoad { get; set; }
     public PublicHotelReservationForm ReservationForm { get; set; } = new();
+    /// <summary>SSR fiyat özeti (seçili oda/tarih için fiyat tablosundan).</summary>
+    public PublicReservationPriceQuoteViewModel? InitialPriceQuote { get; set; }
     public ReservationDraftSummaryViewModel? ActiveDraft { get; set; }
     public HotelProfileCompletionPromptViewModel ProfilePrompt { get; set; } = new();
     public List<string> GalleryImages { get; set; } = new();
@@ -284,6 +286,7 @@ public class HotelProfileCompletionPromptViewModel
     public string? FirstName { get; set; }
     public string? LastName { get; set; }
     public string? Email { get; set; }
+    public bool EmailVerified { get; set; }
     public string? Phone { get; set; }
     public string? BirthDateText { get; set; }
     public string? Gender { get; set; }

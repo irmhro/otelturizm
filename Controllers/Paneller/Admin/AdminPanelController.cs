@@ -1708,7 +1708,6 @@ public class AdminPanelController : Controller
         }
 
         var result = await _adminHotelManagementService.SaveHotelAsync(GetUserId(), request, cancellationToken);
-        TempData[result.Success ? "AdminHotelMessage" : "AdminHotelError"] = result.Message;
         if (result.Success)
         {
             await EvictPublicOutputCacheAsync(cancellationToken);
@@ -1721,6 +1720,14 @@ public class AdminPanelController : Controller
                 HttpContext.Connection.RemoteIpAddress?.ToString(),
                 cancellationToken);
         }
+
+        if (string.Equals(Request.Headers["X-Requested-With"], "XMLHttpRequest", StringComparison.OrdinalIgnoreCase))
+        {
+            Response.StatusCode = result.Success ? StatusCodes.Status200OK : StatusCodes.Status400BadRequest;
+            return Json(new { success = result.Success, message = result.Message });
+        }
+
+        TempData[result.Success ? "AdminHotelMessage" : "AdminHotelError"] = result.Message;
         return RedirectToAction(nameof(HotelDetail), new { id = request.HotelId });
     }
 

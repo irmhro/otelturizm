@@ -1,24 +1,45 @@
-<!DOCTYPE html>
-<html lang="tr">
-<body style="margin:0;padding:0;background:#f5f7fb;font-family:Arial,sans-serif;color:#10203a;">
-    <div style="max-width:640px;margin:0 auto;padding:28px 14px;">
-        <div style="background:#fff;border:1px solid #dbe4f0;border-radius:18px;padding:28px;">
-            <p style="margin:0 0 10px;font-size:13px;font-weight:700;letter-spacing:.08em;color:#2f6fed;">OTELTURIZM</p>
-            <h1 style="margin:0 0 14px;font-size:26px;line-height:1.25;">Rezervasyonunuz onaylandı</h1>
-            <p style="margin:0 0 10px;font-size:15px;">Merhaba <strong>{{user_first_name}}</strong>,</p>
-            <p style="margin:0 0 16px;font-size:15px;line-height:1.6;">
-                <strong>{{hotel_name}}</strong> için <strong>{{booking_reference}}</strong> numaralı rezervasyonunuz onaylandı.
-            </p>
-            <div style="padding:14px 16px;border-radius:12px;background:#f0fdf4;border:1px solid #bbf7d0;margin:0 0 16px;">
-                <div style="font-size:14px;margin:0 0 6px;"><strong>Giriş:</strong> {{check_in_date}}</div>
-                <div style="font-size:14px;margin:0 0 6px;"><strong>Çıkış:</strong> {{check_out_date}}</div>
-                <div style="font-size:14px;margin:0 0 6px;"><strong>Oda:</strong> {{room_type_name}}</div>
-                <div style="font-size:14px;"><strong>Toplam:</strong> {{total_price}}</div>
-            </div>
-            <a href="{{booking_details_link}}" style="display:inline-block;padding:12px 18px;border-radius:999px;background:#174ea6;color:#fff;text-decoration:none;font-weight:700;">
-                Rezervasyonu görüntüle
-            </a>
-        </div>
-    </div>
-</body>
-</html>
+@* Layout: _EmailMaster *@
+@* EmailTitle: Otelturizm · Rezervasyonun Onaylandı *@
+@* Preheader: Tatilin için geri sayım başladı *@
+@* HeaderTagline: Rezervasyon Merkezi *@
+@* HeaderTitle: Rezervasyonun Onaylandı! *@
+@* HeaderSubtitle: Tatilin için geri sayım başladı *@
+@* FooterLine1: Detaylar için hesap panelini ziyaret edebilirsin. *@
+@* FooterLine2: Rezervasyon No: #{{booking_reference}} *@
+@* FooterLegal: Bu e-posta bilgilendirme amaçlıdır. Yanıtlamayın. *@
+                    <tr>
+                        <td class="email-pad">
+                            <p class="email-greeting">Harika haber <strong>{{user_first_name}}</strong>!</p>
+                            <p class="email-lead">
+                                <strong>{{hotel_name}}</strong> rezervasyonun onaylandı. Rezervasyon numaran:
+                                <strong class="email-ref">#{{booking_reference}}</strong>
+                            </p>
+
+                            <table role="presentation" cellpadding="0" cellspacing="0" border="0" class="email-card">
+                                <tr>
+                                    <td class="email-card__cell">
+                                        <p class="email-card__label">Konaklama Detayları</p>
+                                        <p class="email-card__row"><strong>Konaklama:</strong> {{check_in_date}} → {{check_out_date}}</p>
+                                        <p class="email-card__row"><strong>Oda:</strong> {{room_type_name}}</p>
+                                        <p class="email-card__row"><strong>Toplam:</strong> ₺{{total_price}}</p>
+                                    </td>
+                                </tr>
+                            </table>
+
+                            <table role="presentation" cellpadding="0" cellspacing="0" border="0" class="email-note email-note--success">
+                                <tr>
+                                    <td class="email-note__cell">
+                                        Check-in detayların ve varsa ek taleplerin hesap panelinde görüntülenir.
+                                    </td>
+                                </tr>
+                            </table>
+
+                            <table role="presentation" cellpadding="0" cellspacing="0" border="0" class="email-cta">
+                                <tr>
+                                    <td>
+                                        <a href="{{booking_details_link}}" class="email-cta__btn">Rezervasyonu görüntüle →</a>
+                                    </td>
+                                </tr>
+                            </table>
+                        </td>
+                    </tr>

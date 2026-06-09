@@ -1,23 +1,53 @@
-<!DOCTYPE html>
-<html lang="tr">
-<head><meta charset="UTF-8" /><meta name="viewport" content="width=device-width, initial-scale=1.0" /><title>Otelturizm · Rezervasyon Güncelleme Bildirimi</title></head>
-<body style="margin:0;padding:0;background:#E8ECF2;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Inter,Helvetica,Arial,sans-serif;color:#1A1F26;">
-  <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="background:#E8ECF2;padding:36px 12px;"><tr><td align="center">
-    <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="620" style="max-width:620px;background:#fff;border-radius:22px;overflow:hidden;box-shadow:0 14px 38px rgba(15,23,42,.12);">
-      <tr><td style="background:linear-gradient(135deg,#0f766e,#14b8a6);padding:30px;color:#fff;text-align:center;"><div style="font-size:13px;letter-spacing:.14em;text-transform:uppercase;font-weight:800;">Partner Bildirimi</div><div style="margin-top:9px;font-size:23px;font-weight:900;">Rezervasyon tarihleri güncellendi</div></td></tr>
-      <tr><td style="padding:28px;">
-        <p style="margin:0 0 12px;font-size:18px;">Merhaba <strong>{{hotel_manager_name}}</strong>,</p>
-        <p style="margin:0 0 18px;font-size:15px;line-height:1.7;color:#334155;"><strong>{{hotel_name}}</strong> için <strong>#{{booking_reference}}</strong> numaralı rezervasyon misafir tarafından güncellendi.</p>
-        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border-collapse:separate;border-spacing:0 10px;">
-          <tr><td style="padding:14px;border:1px solid #E7E9EC;border-radius:14px;background:#F8FAFC;"><strong>Misafir</strong><br/>{{guest_full_name}} · {{guest_email}} · {{guest_phone}}</td></tr>
-          <tr><td style="padding:14px;border:1px solid #E7E9EC;border-radius:14px;background:#F8FAFC;"><strong>Eski tarih</strong><br/>{{old_check_in_date}} → {{old_check_out_date}} · ₺{{old_total_price}}</td></tr>
-          <tr><td style="padding:14px;border:1px solid #BBF7D0;border-radius:14px;background:#F0FDF4;"><strong>Yeni tarih</strong><br/>{{check_in_date}} → {{check_out_date}} · {{night_count}} gece · ₺{{total_price}}</td></tr>
-          <tr><td style="padding:14px;border:1px solid #E7E9EC;border-radius:14px;background:#F8FAFC;"><strong>Oda</strong><br/>{{room_type_name}} · Ortalama gecelik ₺{{nightly_price}}</td></tr>
-        </table>
-        <p style="margin:18px 0 0;font-size:13px;line-height:1.6;color:#64748b;">Lütfen partner panelinden güncellenen rezervasyon detayını kontrol edin.</p>
-      </td></tr>
-      <tr><td style="padding:18px 22px;background:#F5F7FA;border-top:1px solid #E7E9EC;color:#6B7380;text-align:center;font-size:12px;">© 2026 Otelturizm · Rezervasyon No: #{{booking_reference}}</td></tr>
-    </table>
-  </td></tr></table>
-</body>
-</html>
+@* Layout: _EmailMaster *@
+@* EmailTitle: Otelturizm · Rezervasyon Güncelleme Bildirimi *@
+@* Preheader: Rezervasyon #{{booking_reference}} güncellendi *@
+@* HeaderTagline: Partner Bildirimi *@
+@* HeaderTitle: Rezervasyon tarihleri güncellendi *@
+@* HeaderSubtitle: Misafir tarafından güncellenen rezervasyon detayları *@
+@* FooterLine1: Lütfen partner panelinden güncellenen rezervasyon detayını kontrol edin. *@
+@* FooterLine2: Rezervasyon No: #{{booking_reference}} *@
+@* FooterLegal: Bu bildirim otomatik gönderilmiştir. *@
+                    <tr>
+                        <td class="email-pad">
+                            <p class="email-greeting">Merhaba <strong>{{hotel_manager_name}}</strong>,</p>
+                            <p class="email-lead">
+                                <strong>{{hotel_name}}</strong> için <strong class="email-ref">#{{booking_reference}}</strong> numaralı rezervasyon misafir tarafından güncellendi.
+                            </p>
+
+                            <table role="presentation" cellpadding="0" cellspacing="0" border="0" class="email-card">
+                                <tr>
+                                    <td class="email-card__cell">
+                                        <p class="email-card__label">Misafir</p>
+                                        <p class="email-card__row">{{guest_full_name}} · {{guest_email}} · {{guest_phone}}</p>
+                                    </td>
+                                </tr>
+                            </table>
+
+                            <table role="presentation" cellpadding="0" cellspacing="0" border="0" class="email-card">
+                                <tr>
+                                    <td class="email-card__cell">
+                                        <p class="email-card__label">Eski tarih</p>
+                                        <p class="email-card__row">{{old_check_in_date}} → {{old_check_out_date}} · ₺{{old_total_price}}</p>
+                                    </td>
+                                </tr>
+                            </table>
+
+                            <table role="presentation" cellpadding="0" cellspacing="0" border="0" class="email-card" style="border-color:rgba(22,163,74,0.22);background:rgba(22,163,74,0.06);">
+                                <tr>
+                                    <td class="email-card__cell">
+                                        <p class="email-card__label" style="color:#166534;">Yeni tarih</p>
+                                        <p class="email-card__row">{{check_in_date}} → {{check_out_date}} · {{night_count}} gece · ₺{{total_price}}</p>
+                                    </td>
+                                </tr>
+                            </table>
+
+                            <table role="presentation" cellpadding="0" cellspacing="0" border="0" class="email-card">
+                                <tr>
+                                    <td class="email-card__cell">
+                                        <p class="email-card__label">Oda</p>
+                                        <p class="email-card__row">{{room_type_name}} · Ortalama gecelik ₺{{nightly_price}}</p>
+                                    </td>
+                                </tr>
+                            </table>
+                        </td>
+                    </tr>

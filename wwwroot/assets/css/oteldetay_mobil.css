@@ -2029,9 +2029,11 @@
     /* Rezervasyon form alanları */
     .oteldetay-page .multi-room-item {
         display: grid;
-        grid-template-columns: minmax(0, 1fr) minmax(96px, 118px);
-        column-gap: 10px;
+        grid-template-columns: minmax(0, 1fr);
         row-gap: 10px;
+        width: 100%;
+        max-width: 100%;
+        min-width: 0;
     }
 
     .oteldetay-page .multi-room-item-head {
@@ -2041,6 +2043,8 @@
     .oteldetay-page .multi-room-item-grid {
         display: contents;
         gap: 10px;
+        width: 100%;
+        min-width: 0;
     }
 
     .oteldetay-page .multi-room-item-dates {
@@ -2048,18 +2052,54 @@
         grid-template-columns: 1fr 1fr;
         gap: 10px;
         grid-column: 1 / -1;
+        width: 100%;
+        min-width: 0;
     }
 
     .oteldetay-page .multi-room-item-type {
         grid-column: 1;
-        align-self: end;
+        width: 100%;
         min-width: 0;
     }
 
     .oteldetay-page .od-booking-counters-band--item {
-        grid-column: 2;
+        grid-column: 1;
         margin-top: 0;
-        align-self: end;
+        width: 100%;
+        min-width: 0;
+        max-width: 100%;
+    }
+
+    .oteldetay-page .od-booking-counters-band--item .multi-room-quantity {
+        width: 100%;
+        min-width: 0;
+        max-width: 100%;
+    }
+
+    .oteldetay-page .od-booking-counters-band--item .room-quantity-control {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 8px;
+        width: 100%;
+        max-width: 100%;
+        min-width: 0;
+        box-sizing: border-box;
+        padding: 4px 12px;
+        border: 1px solid var(--od-border, #EBE9E4);
+        border-radius: 12px;
+        background: #fff;
+    }
+
+    .oteldetay-page .od-booking-counters-band--item .room-quantity-control input {
+        flex: 0 0 48px;
+        width: 48px;
+        min-width: 0;
+        max-width: 56px;
+    }
+
+    .oteldetay-page .od-booking-counters-band--item .room-quantity-control button {
+        flex: 0 0 auto;
     }
 
     .oteldetay-page .od-booking-counters-band--guests {
@@ -2618,9 +2658,12 @@
     .oteldetay-page .booking-card .booking-form {
         flex: 1 1 auto;
         min-height: 0;
+        overflow-x: hidden;
         overflow-y: auto;
         padding: 0 16px calc(12px + env(safe-area-inset-bottom, 0px));
         -webkit-overflow-scrolling: touch;
+        max-width: 100%;
+        box-sizing: border-box;
     }
 
     .oteldetay-page .booking-price-head--ota {
@@ -2790,6 +2833,21 @@
 
     .oteldetay-page .booking-sidebar .nightly-breakdown-details {
         margin: 0 16px 12px;
+        border-radius: 14px;
+        overflow: hidden;
+    }
+
+    .oteldetay-page .booking-sidebar .nightly-breakdown-details summary {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
+        padding: 12px 14px;
+        list-style: none;
+    }
+
+    .oteldetay-page .booking-sidebar .nightly-breakdown-details summary::-webkit-details-marker {
+        display: none;
     }
 
     .oteldetay-page .booking-sidebar .booking-quote-notice:not([hidden]) {
@@ -2878,6 +2936,45 @@
         min-height: 44px;
     }
 
+    .oteldetay-page .booking-advanced-times {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 10px;
+        width: 100%;
+    }
+
+    .oteldetay-page .booking-advanced-times label {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+        min-width: 0;
+    }
+
+    .oteldetay-page .booking-advanced-times label > span {
+        font-size: 11px;
+        font-weight: 700;
+        color: var(--od-muted, #6E6E77);
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+    }
+
+    .oteldetay-page .booking-advanced-times input[type="time"] {
+        width: 100%;
+        min-height: 44px;
+        font-variant-numeric: tabular-nums;
+    }
+
+    .oteldetay-page .booking-advanced-times input[type="time"]::-webkit-datetime-edit-ampm-field {
+        display: none;
+    }
+
+    .oteldetay-page .booking-advanced-tip {
+        margin: 8px 0 0;
+        font-size: 11px;
+        line-height: 1.45;
+        color: #15803d;
+    }
+
     .oteldetay-page .booking-advanced-heading {
         margin-bottom: 10px;
     }
@@ -2908,14 +3005,32 @@
     }
 
     .oteldetay-page > #reservationConfirmModal .detail-confirm-modal__head {
+        display: flex;
         align-items: flex-start;
-        gap: 10px;
-        padding-bottom: 10px;
+        justify-content: space-between;
+        gap: 12px;
+        flex: 0 0 auto;
+        padding-bottom: 12px;
         border-bottom: 1px solid var(--od-border, #EBE9E4);
-        margin-bottom: 10px;
+        margin-bottom: 12px;
+    }
+
+    .oteldetay-page > #reservationConfirmModal .detail-confirm-modal__head-copy {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+        min-width: 0;
+        flex: 1 1 auto;
     }
 
     .oteldetay-page > #reservationConfirmModal .detail-confirm-modal__badge {
+        display: inline-flex;
+        align-items: center;
+        width: fit-content;
+        padding: 4px 10px;
+        border-radius: 999px;
+        background: rgba(227, 10, 23, 0.08);
+        border: 1px solid rgba(227, 10, 23, 0.12);
         font-size: 10px;
         font-weight: 800;
         letter-spacing: 0.08em;
@@ -2926,20 +3041,53 @@
     .oteldetay-page > #reservationConfirmModal .detail-confirm-modal__head h3 {
         font-size: 18px;
         line-height: 1.25;
-        margin: 4px 0 0;
+        font-weight: 900;
+        letter-spacing: -0.02em;
+        color: var(--od-dark, #1A1919);
+        margin: 0;
+    }
+
+    .oteldetay-page > #reservationConfirmModal .detail-confirm-modal__close {
+        flex: 0 0 auto;
+        width: 36px;
+        height: 36px;
+        min-width: 36px;
+        min-height: 36px;
+        margin: 0;
+        padding: 0;
+        border: 0;
+        border-radius: 999px;
+        background: rgba(26, 25, 25, 0.06);
+        color: var(--od-dark, #1A1919);
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        box-shadow: none;
+    }
+
+    .oteldetay-page > #reservationConfirmModal .detail-confirm-modal__close i {
+        font-size: 14px;
     }
 
     .oteldetay-page > #reservationConfirmModal .detail-confirm-modal__lead {
-        margin: 0;
+        flex: 0 0 auto;
+        margin: 0 0 12px;
         font-size: 12px;
-        line-height: 1.45;
+        line-height: 1.5;
         color: var(--od-muted, #6E6E77);
+    }
+
+    .oteldetay-page > #reservationConfirmModal .reservation-confirm-summary {
+        flex: 1 1 auto;
+        min-height: 0;
+        overflow: hidden;
+        margin: 0 0 12px;
     }
 
     .oteldetay-page > #reservationConfirmModal .reservation-confirm-stack {
         display: flex;
         flex-direction: column;
-        gap: 8px;
+        gap: 10px;
         max-height: min(42vh, 320px);
         overflow-y: auto;
         -webkit-overflow-scrolling: touch;
@@ -2948,28 +3096,174 @@
 
     .oteldetay-page > #reservationConfirmModal .reservation-confirm-card {
         display: grid;
-        grid-template-columns: 36px minmax(0, 1fr);
-        gap: 10px;
-        padding: 10px;
+        grid-template-columns: 40px minmax(0, 1fr);
+        gap: 12px;
+        align-items: start;
+        padding: 12px;
         border: 1px solid var(--od-border, #EBE9E4);
-        border-radius: 12px;
+        border-radius: 14px;
         background: #fff;
+        box-shadow: 0 1px 0 rgba(26, 25, 25, 0.03);
+    }
+
+    .oteldetay-page > #reservationConfirmModal .reservation-confirm-card--payment {
+        background: linear-gradient(180deg, #fff 0%, rgba(252, 251, 249, 0.95) 100%);
+    }
+
+    .oteldetay-page > #reservationConfirmModal .reservation-confirm-card__icon {
+        width: 40px;
+        height: 40px;
+        border-radius: 12px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        background: rgba(227, 10, 23, 0.08);
+        color: var(--od-crimson, #E30A17);
+        border: 1px solid rgba(227, 10, 23, 0.1);
+    }
+
+    .oteldetay-page > #reservationConfirmModal .reservation-confirm-card__icon i {
+        font-size: 15px;
+    }
+
+    .oteldetay-page > #reservationConfirmModal .reservation-confirm-card__body {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+        min-width: 0;
+    }
+
+    .oteldetay-page > #reservationConfirmModal .reservation-confirm-card__room-head {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+        min-width: 0;
+    }
+
+    .oteldetay-page > #reservationConfirmModal .reservation-confirm-card__label {
+        display: block;
+        font-size: 10px;
+        font-weight: 800;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+        color: var(--od-muted, #6E6E77);
+        line-height: 1.3;
+    }
+
+    .oteldetay-page > #reservationConfirmModal .reservation-confirm-card__title {
+        display: block;
+        font-size: 15px;
+        font-weight: 800;
+        line-height: 1.35;
+        color: var(--od-dark, #1A1919);
+        word-break: break-word;
+    }
+
+    .oteldetay-page > #reservationConfirmModal .reservation-confirm-card__dates {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        margin-top: 4px;
+        padding-top: 8px;
+        border-top: 1px solid rgba(235, 233, 228, 0.9);
+    }
+
+    .oteldetay-page > #reservationConfirmModal .reservation-confirm-date {
+        display: flex;
+        align-items: baseline;
+        justify-content: space-between;
+        gap: 10px;
+        min-width: 0;
+    }
+
+    .oteldetay-page > #reservationConfirmModal .reservation-confirm-date__tag {
+        flex: 0 0 auto;
+        display: inline-block;
+        font-size: 11px;
+        font-weight: 700;
+        color: var(--od-muted, #6E6E77);
+        white-space: nowrap;
+    }
+
+    .oteldetay-page > #reservationConfirmModal .reservation-confirm-date time {
+        flex: 1 1 auto;
+        display: block;
+        font-size: 13px;
+        font-weight: 700;
+        line-height: 1.35;
+        color: var(--od-dark, #1A1919);
+        text-align: right;
+        font-variant-numeric: tabular-nums;
+    }
+
+    .oteldetay-page > #reservationConfirmModal .reservation-confirm-date-sep {
+        display: none !important;
+    }
+
+    .oteldetay-page > #reservationConfirmModal .reservation-confirm-card__meta {
+        display: block;
+        font-size: 12px;
+        font-weight: 800;
+        color: var(--od-crimson, #E30A17);
+        line-height: 1.3;
+    }
+
+    .oteldetay-page > #reservationConfirmModal .reservation-confirm-card__note {
+        display: block;
+        margin: 0;
+        font-size: 11px;
+        line-height: 1.45;
+        color: var(--od-muted, #6E6E77);
     }
 
     .oteldetay-page > #reservationConfirmModal .detail-confirm-modal__footer {
+        flex: 0 0 auto;
         margin-top: auto;
-        padding-top: 8px;
+        padding-top: 12px;
         border-top: 1px solid var(--od-border, #EBE9E4);
         display: flex;
         flex-direction: column;
-        gap: 10px;
+        gap: 12px;
     }
 
     .oteldetay-page > #reservationConfirmModal .detail-confirm-modal__total {
         display: flex;
         align-items: center;
         justify-content: space-between;
-        gap: 10px;
+        gap: 12px;
+        padding: 10px 12px;
+        border-radius: 12px;
+        background: rgba(227, 10, 23, 0.04);
+        border: 1px solid rgba(227, 10, 23, 0.1);
+    }
+
+    .oteldetay-page > #reservationConfirmModal .detail-confirm-modal__total-copy {
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+        min-width: 0;
+    }
+
+    .oteldetay-page > #reservationConfirmModal .detail-confirm-modal__total-label {
+        font-size: 12px;
+        font-weight: 800;
+        color: var(--od-dark, #1A1919);
+    }
+
+    .oteldetay-page > #reservationConfirmModal .detail-confirm-modal__total-hint {
+        font-size: 10px;
+        font-weight: 600;
+        color: var(--od-muted, #6E6E77);
+    }
+
+    .oteldetay-page > #reservationConfirmModal .detail-confirm-modal__total-value {
+        flex: 0 0 auto;
+        font-size: 20px;
+        font-weight: 900;
+        letter-spacing: -0.02em;
+        color: var(--od-crimson, #E30A17);
+        font-variant-numeric: tabular-nums;
+        white-space: nowrap;
     }
 
     .oteldetay-page > #reservationConfirmModal .detail-confirm-modal__actions {
@@ -2978,11 +3272,326 @@
         gap: 8px;
     }
 
-    .oteldetay-page > #reservationConfirmModal .detail-confirm-modal__actions .detail-modal-primary,
-    .oteldetay-page > #reservationConfirmModal .detail-confirm-modal__actions .detail-modal-secondary {
+    .oteldetay-page > #reservationConfirmModal .detail-confirm-modal__actions .detail-modal-secondary,
+    .oteldetay-page > #reservationConfirmModal .detail-confirm-modal__btn-back {
         width: 100%;
         min-height: 44px;
+        padding: 0 16px;
+        border-radius: 12px;
+        border: 1px solid var(--od-border, #EBE9E4);
+        background: #fff;
+        color: var(--od-dark, #1A1919);
+        font-size: 14px;
+        font-weight: 700;
+        display: inline-flex;
+        align-items: center;
         justify-content: center;
+    }
+
+    .oteldetay-page > #reservationConfirmModal .detail-confirm-modal__actions .detail-modal-primary,
+    .oteldetay-page > #reservationConfirmModal .detail-confirm-modal__btn-submit {
+        width: 100%;
+        min-height: 48px;
+        padding: 0 16px;
+        border-radius: 12px;
+        border: 0;
+        background: var(--od-crimson, #E30A17);
+        color: #fff;
+        font-size: 15px;
+        font-weight: 800;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        box-shadow: 0 8px 20px rgba(227, 10, 23, 0.22);
+    }
+
+    .oteldetay-page > #profileCompletionModal.detail-profile-modal {
+        max-height: min(92vh, 780px) !important;
+    }
+
+    .oteldetay-page > #profileCompletionModal.detail-profile-modal.is-open {
+        padding: 0 !important;
+        overflow: hidden !important;
+    }
+
+    .oteldetay-page > #profileCompletionModal .detail-profile-modal__shell {
+        display: flex;
+        flex-direction: column;
+        gap: 0;
+        min-height: 0;
+        max-height: min(92vh, 780px);
+        padding: 16px 16px calc(14px + env(safe-area-inset-bottom, 0px));
+        overflow: hidden;
+    }
+
+    .oteldetay-page > #profileCompletionModal .detail-profile-modal__head {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 12px;
+        flex: 0 0 auto;
+        padding-bottom: 12px;
+        border-bottom: 1px solid var(--od-border, #EBE9E4);
+        margin-bottom: 12px;
+    }
+
+    .oteldetay-page > #profileCompletionModal .detail-profile-modal__head-copy {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+        min-width: 0;
+        flex: 1 1 auto;
+    }
+
+    .oteldetay-page > #profileCompletionModal .detail-profile-modal__badge {
+        display: inline-flex;
+        align-items: center;
+        width: fit-content;
+        padding: 4px 10px;
+        border-radius: 999px;
+        background: rgba(227, 10, 23, 0.08);
+        border: 1px solid rgba(227, 10, 23, 0.12);
+        font-size: 10px;
+        font-weight: 800;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        color: var(--od-crimson, #E30A17);
+    }
+
+    .oteldetay-page > #profileCompletionModal .detail-profile-modal__head h3 {
+        margin: 0;
+        font-size: 18px;
+        line-height: 1.25;
+        font-weight: 900;
+        letter-spacing: -0.02em;
+        color: var(--od-dark, #1A1919);
+    }
+
+    .oteldetay-page > #profileCompletionModal .detail-profile-modal__close {
+        flex: 0 0 auto;
+        width: 36px;
+        height: 36px;
+        min-width: 36px;
+        min-height: 36px;
+        margin: 0;
+        padding: 0;
+        border: 0;
+        border-radius: 999px;
+        background: rgba(26, 25, 25, 0.06);
+        color: var(--od-dark, #1A1919);
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        box-shadow: none;
+    }
+
+    .oteldetay-page > #profileCompletionModal .detail-profile-modal__lead {
+        flex: 0 0 auto;
+        margin: 0 0 12px;
+        font-size: 12px;
+        line-height: 1.5;
+        color: var(--od-muted, #6E6E77);
+    }
+
+    .oteldetay-page > #profileCompletionModal .detail-profile-form {
+        flex: 1 1 auto;
+        min-height: 0;
+        display: flex;
+        flex-direction: column;
+        gap: 0;
+        overflow: hidden;
+    }
+
+    .oteldetay-page > #profileCompletionModal .detail-profile-form__fields {
+        flex: 1 1 auto;
+        min-height: 0;
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 12px;
+        overflow-y: auto;
+        -webkit-overflow-scrolling: touch;
+        padding-right: 2px;
+        margin-bottom: 12px;
+    }
+
+    .oteldetay-page > #profileCompletionModal .detail-profile-form label {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+        min-width: 0;
+    }
+
+    .oteldetay-page > #profileCompletionModal .detail-profile-form label > span {
+        font-size: 11px;
+        font-weight: 700;
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+        color: var(--od-muted, #6E6E77);
+        line-height: 1.3;
+    }
+
+    .oteldetay-page > #profileCompletionModal .detail-profile-form input,
+    .oteldetay-page > #profileCompletionModal .detail-profile-form select,
+    .oteldetay-page > #profileCompletionModal .detail-profile-form textarea {
+        width: 100%;
+        min-height: 44px;
+        padding: 10px 12px;
+        border: 1px solid var(--od-border, #EBE9E4);
+        border-radius: 12px;
+        background: #fff;
+        color: var(--od-dark, #1A1919);
+        font-size: 14px;
+        font-weight: 600;
+        line-height: 1.35;
+        box-sizing: border-box;
+        appearance: none;
+    }
+
+    .oteldetay-page > #profileCompletionModal .detail-profile-form textarea {
+        min-height: 88px;
+        resize: vertical;
+    }
+
+    .oteldetay-page > #profileCompletionModal .detail-profile-form select {
+        padding-right: 36px;
+        background-image: linear-gradient(45deg, transparent 50%, #6E6E77 50%), linear-gradient(135deg, #6E6E77 50%, transparent 50%);
+        background-position: calc(100% - 18px) calc(50% + 2px), calc(100% - 12px) calc(50% + 2px);
+        background-size: 6px 6px, 6px 6px;
+        background-repeat: no-repeat;
+    }
+
+    .oteldetay-page > #profileCompletionModal .detail-profile-form input:focus,
+    .oteldetay-page > #profileCompletionModal .detail-profile-form select:focus,
+    .oteldetay-page > #profileCompletionModal .detail-profile-form textarea:focus {
+        outline: none;
+        border-color: rgba(227, 10, 23, 0.35);
+        box-shadow: 0 0 0 3px rgba(227, 10, 23, 0.08);
+    }
+
+    .oteldetay-page > #profileCompletionModal .detail-profile-form-field--locked > span {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 6px;
+    }
+
+    .oteldetay-page > #profileCompletionModal .detail-profile-form-lock-hint {
+        display: inline-flex;
+        align-items: center;
+        padding: 2px 8px;
+        border-radius: 999px;
+        background: rgba(22, 163, 74, 0.1);
+        border: 1px solid rgba(22, 163, 74, 0.16);
+        color: #15803d;
+        font-size: 10px;
+        font-weight: 800;
+        letter-spacing: 0.02em;
+        text-transform: none;
+    }
+
+    .oteldetay-page > #profileCompletionModal .detail-profile-form-optional-hint {
+        display: inline-flex;
+        align-items: center;
+        padding: 2px 8px;
+        border-radius: 999px;
+        background: rgba(110, 110, 119, 0.08);
+        border: 1px solid rgba(110, 110, 119, 0.12);
+        color: var(--od-muted, #6E6E77);
+        font-size: 10px;
+        font-weight: 700;
+        letter-spacing: 0.02em;
+        text-transform: none;
+    }
+
+    .oteldetay-page > #profileCompletionModal .detail-profile-form-input--locked,
+    .oteldetay-page > #profileCompletionModal .detail-profile-form input[readonly] {
+        background: rgba(252, 251, 249, 0.95);
+        color: var(--od-muted, #6E6E77);
+        border-color: rgba(235, 233, 228, 0.95);
+        cursor: not-allowed;
+        user-select: all;
+        box-shadow: none;
+    }
+
+    .oteldetay-page > #profileCompletionModal .detail-profile-form-input--locked:focus,
+    .oteldetay-page > #profileCompletionModal .detail-profile-form input[readonly]:focus {
+        border-color: rgba(235, 233, 228, 0.95);
+        box-shadow: none;
+    }
+
+    .oteldetay-page > #profileCompletionModal .detail-profile-form-span {
+        grid-column: auto;
+    }
+
+    .oteldetay-page > #profileCompletionModal .detail-profile-form__footer {
+        flex: 0 0 auto;
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        padding-top: 12px;
+        border-top: 1px solid var(--od-border, #EBE9E4);
+        background: #fff;
+    }
+
+    .oteldetay-page > #profileCompletionModal .detail-profile-modal__actions {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 8px;
+        width: 100%;
+    }
+
+    .oteldetay-page > #profileCompletionModal .detail-profile-modal__btn-cancel {
+        width: 100%;
+        min-height: 44px;
+        padding: 0 16px;
+        border-radius: 12px;
+        border: 1px solid var(--od-border, #EBE9E4);
+        background: #fff;
+        color: var(--od-dark, #1A1919);
+        font-size: 14px;
+        font-weight: 700;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .oteldetay-page > #profileCompletionModal .detail-profile-modal__btn-submit {
+        width: 100%;
+        min-height: 48px;
+        padding: 0 16px;
+        border-radius: 12px;
+        border: 0;
+        background: var(--od-crimson, #E30A17);
+        color: #fff;
+        font-size: 15px;
+        font-weight: 800;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        box-shadow: 0 8px 20px rgba(227, 10, 23, 0.22);
+    }
+
+    .oteldetay-page > #profileCompletionModal .detail-profile-modal__meta {
+        margin: 0;
+        font-size: 11px;
+        line-height: 1.45;
+        color: var(--od-muted, #6E6E77);
+        text-align: center;
+    }
+
+    .oteldetay-page > #profileCompletionModal .detail-profile-modal__feedback {
+        margin: 0;
+        padding: 8px 10px;
+        border-radius: 10px;
+        font-size: 12px;
+        line-height: 1.45;
+        text-align: center;
+    }
+
+    .oteldetay-page > #profileCompletionModal .detail-profile-modal__feedback:not([hidden]) {
+        background: rgba(227, 10, 23, 0.08);
+        color: var(--od-crimson, #E30A17);
+        border: 1px solid rgba(227, 10, 23, 0.12);
     }
 
     .oteldetay-page .multi-room-item-head {
@@ -3462,16 +4071,28 @@
     .oteldetay-page.otel-detail-template-v41.otel-detail-tabler .room-quantity-control {
         display: flex;
         align-items: center;
-        gap: 10px;
+        justify-content: space-between;
+        gap: 8px;
+        width: 100%;
+        max-width: 100%;
+        min-width: 0;
+        box-sizing: border-box;
     }
 
     .oteldetay-page.otel-detail-template-v41.otel-detail-tabler .room-quantity-control input {
+        flex: 0 0 48px;
         width: 48px;
+        min-width: 0;
+        max-width: 56px;
         text-align: center;
         border: var(--od-m-border);
         border-radius: var(--od-m-radius);
         min-height: var(--od-m-step);
         font-weight: 800;
+    }
+
+    .oteldetay-page.otel-detail-template-v41.otel-detail-tabler .room-quantity-control button {
+        flex: 0 0 auto;
     }
 
     .oteldetay-page.otel-detail-template-v41.otel-detail-tabler .multi-room-add {
@@ -4012,6 +4633,39 @@
         color: var(--od-crimson, #E30A17);
         letter-spacing: -0.02em;
         font-variant-numeric: tabular-nums;
+    }
+
+    .oteldetay-page .booking-price-original {
+        flex: 0 0 auto;
+        font-size: 18px;
+        font-weight: 800;
+        line-height: 1.1;
+        color: var(--od-muted, #6E6E77);
+        text-decoration: line-through;
+        font-variant-numeric: tabular-nums;
+    }
+
+    .oteldetay-page .booking-price-dawn-pill {
+        display: inline-flex;
+        align-items: center;
+        align-self: flex-start;
+        margin-top: 2px;
+        padding: 3px 8px;
+        border-radius: 999px;
+        background: #fef3c7;
+        color: #92400e;
+        font-size: 10px;
+        font-weight: 800;
+        line-height: 1.2;
+        white-space: nowrap;
+    }
+
+    .oteldetay-page .booking-price-dawn-pill[hidden] {
+        display: none !important;
+    }
+
+    .oteldetay-page .booking-price-line--original[hidden] {
+        display: none !important;
     }
 
     .oteldetay-page .booking-price-meta {

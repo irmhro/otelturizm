@@ -415,19 +415,19 @@ public class EmailTemplateService : IEmailTemplateService
                          <meta name="viewport" content="width=device-width, initial-scale=1.0" />
                          <title>E-posta Adresinizi Onaylayın</title>
                      </head>
-                     <body style="margin:0;padding:0;background:#f5f7fb;font-family:Arial,sans-serif;color:#10203a;">
+                     <body style="margin:0;padding:0;background:#F3F1ED;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Inter,Helvetica,Arial,sans-serif;color:#1A1919;">
                          <div style="max-width:620px;margin:0 auto;padding:32px 16px;">
-                             <div style="background:#ffffff;border-radius:20px;padding:32px;border:1px solid #dbe4f0;">
-                                 <p style="margin:0 0 12px;font-size:13px;font-weight:700;letter-spacing:.08em;color:#2f6fed;">OTELTURIZM</p>
-                                 <h1 style="margin:0 0 16px;font-size:28px;line-height:1.2;color:#10203a;">E-posta adresinizi onaylayın</h1>
+                             <div style="background:#FFFFFF;border-radius:20px;padding:32px;border:1px solid #EBE9E4;border-top:4px solid #E30A17;">
+                                 <p style="margin:0 0 12px;font-size:12px;font-weight:800;letter-spacing:.14em;color:#E30A17;text-transform:uppercase;">OTELTURIZM</p>
+                                 <h1 style="margin:0 0 16px;font-size:24px;line-height:1.25;color:#1A1919;">E-posta adresinizi onaylayın</h1>
                                  <p style="margin:0 0 12px;font-size:16px;line-height:1.6;">Merhaba {{firstName}},</p>
-                                 <p style="margin:0 0 12px;font-size:16px;line-height:1.6;">{{email}} adresiyle oluşturduğunuz hesabı tamamlamak için aşağıdaki kodu kullanabilir veya bağlantıya tıklayabilirsiniz.</p>
-                                 <div style="margin:0 0 20px;padding:18px 24px;border-radius:16px;background:#edf4ff;border:1px solid #c7dbff;text-align:center;">
-                                     <span style="display:block;font-size:34px;font-weight:800;letter-spacing:.18em;color:#174ea6;">{{verificationCode}}</span>
+                                 <p style="margin:0 0 12px;font-size:15px;line-height:1.7;">{{email}} adresiyle oluşturduğunuz hesabı tamamlamak için aşağıdaki kodu kullanabilir veya bağlantıya tıklayabilirsiniz.</p>
+                                 <div style="margin:0 0 20px;padding:18px 24px;border-radius:14px;background:#FCFBF9;border:1px solid #EBE9E4;text-align:center;">
+                                     <span style="display:block;font-size:32px;font-weight:800;letter-spacing:.18em;color:#E30A17;">{{verificationCode}}</span>
                                  </div>
-                                 <p style="margin:0 0 16px;font-size:14px;line-height:1.6;color:#4d5f7a;">Kayıt zamanı: {{registrationDate}}</p>
+                                 <p style="margin:0 0 16px;font-size:14px;line-height:1.6;color:#6E6E77;">Kayıt zamanı: {{registrationDate}}</p>
                                  <p style="margin:0;">
-                                     <a href="{{verificationLink}}" style="display:inline-block;padding:14px 22px;border-radius:999px;background:#174ea6;color:#ffffff;font-weight:700;text-decoration:none;">E-postamı doğrula</a>
+                                     <a href="{{verificationLink}}" style="display:inline-block;min-height:48px;line-height:48px;padding:0 24px;border-radius:999px;background:#E30A17;color:#ffffff;font-weight:800;text-decoration:none;">E-postamı doğrula</a>
                                  </p>
                              </div>
                          </div>
@@ -452,17 +452,17 @@ public class EmailTemplateService : IEmailTemplateService
                          <meta name="viewport" content="width=device-width, initial-scale=1.0" />
                          <title>Şifre Sıfırlama Talebi</title>
                      </head>
-                     <body style="margin:0;padding:0;background:#f5f7fb;font-family:Arial,sans-serif;color:#10203a;">
+                     <body style="margin:0;padding:0;background:#F3F1ED;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Inter,Helvetica,Arial,sans-serif;color:#1A1919;">
                          <div style="max-width:620px;margin:0 auto;padding:32px 16px;">
-                             <div style="background:#ffffff;border-radius:20px;padding:32px;border:1px solid #dbe4f0;">
-                                 <p style="margin:0 0 12px;font-size:13px;font-weight:700;letter-spacing:.08em;color:#2f6fed;">OTELTURIZM</p>
-                                 <h1 style="margin:0 0 16px;font-size:28px;line-height:1.2;color:#10203a;">Şifre sıfırlama bağlantınız hazır</h1>
+                             <div style="background:#FFFFFF;border-radius:20px;padding:32px;border:1px solid #EBE9E4;border-top:4px solid #E30A17;">
+                                 <p style="margin:0 0 12px;font-size:12px;font-weight:800;letter-spacing:.14em;color:#E30A17;text-transform:uppercase;">OTELTURIZM</p>
+                                 <h1 style="margin:0 0 16px;font-size:24px;line-height:1.25;color:#1A1919;">Şifre sıfırlama bağlantınız hazır</h1>
                                  <p style="margin:0 0 12px;font-size:16px;line-height:1.6;">Merhaba {{firstName}},</p>
-                                 <p style="margin:0 0 12px;font-size:16px;line-height:1.6;">{{email}} hesabınız için bir şifre sıfırlama talebi aldık. İşlem size aitse aşağıdaki bağlantıyla yeni şifrenizi oluşturabilirsiniz.</p>
+                                 <p style="margin:0 0 12px;font-size:15px;line-height:1.7;">{{email}} hesabınız için bir şifre sıfırlama talebi aldık. İşlem size aitse aşağıdaki bağlantıyla yeni şifrenizi oluşturabilirsiniz.</p>
                                  <p style="margin:0 0 20px;">
-                                     <a href="{{resetLink}}" style="display:inline-block;padding:14px 22px;border-radius:999px;background:#174ea6;color:#ffffff;font-weight:700;text-decoration:none;">Şifremi sıfırla</a>
+                                     <a href="{{resetLink}}" style="display:inline-block;min-height:48px;line-height:48px;padding:0 24px;border-radius:999px;background:#E30A17;color:#ffffff;font-weight:800;text-decoration:none;">Şifremi sıfırla</a>
                                  </p>
-                                 <p style="margin:0;font-size:14px;line-height:1.6;color:#4d5f7a;">İstek IP adresi: {{requestIp}}. Bu işlemi siz yapmadıysanız bu e-postayı dikkate almayabilirsiniz.</p>
+                                 <p style="margin:0;font-size:14px;line-height:1.6;color:#6E6E77;">İstek IP adresi: {{requestIp}}. Bu işlemi siz yapmadıysanız bu e-postayı dikkate almayabilirsiniz.</p>
                              </div>
                          </div>
                      </body>
@@ -484,18 +484,18 @@ public class EmailTemplateService : IEmailTemplateService
                          <meta name="viewport" content="width=device-width, initial-scale=1.0" />
                          <title>Giriş Güvenlik Kodunuz</title>
                      </head>
-                     <body style="margin:0;padding:0;background:#f5f7fb;font-family:Arial,sans-serif;color:#10203a;">
+                     <body style="margin:0;padding:0;background:#F3F1ED;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Inter,Helvetica,Arial,sans-serif;color:#1A1919;">
                          <div style="max-width:620px;margin:0 auto;padding:32px 16px;">
-                             <div style="background:#ffffff;border-radius:20px;padding:32px;border:1px solid #dbe4f0;">
-                                 <p style="margin:0 0 12px;font-size:13px;font-weight:700;letter-spacing:.08em;color:#2f6fed;">OTELTURIZM</p>
-                                 <h1 style="margin:0 0 16px;font-size:28px;line-height:1.2;color:#10203a;">Giriş güvenlik kodunuz hazır</h1>
+                             <div style="background:#FFFFFF;border-radius:20px;padding:32px;border:1px solid #EBE9E4;border-top:4px solid #E30A17;">
+                                 <p style="margin:0 0 12px;font-size:12px;font-weight:800;letter-spacing:.14em;color:#E30A17;text-transform:uppercase;">OTELTURIZM</p>
+                                 <h1 style="margin:0 0 16px;font-size:24px;line-height:1.25;color:#1A1919;">Giriş güvenlik kodunuz hazır</h1>
                                  <p style="margin:0 0 12px;font-size:16px;line-height:1.6;">Merhaba {{firstName}},</p>
-                                 <p style="margin:0 0 20px;font-size:16px;line-height:1.6;">Hesabınıza giriş yapmak için aşağıdaki tek kullanımlık güvenlik kodunu kullanın.</p>
-                                 <div style="margin:0 0 20px;padding:18px 24px;border-radius:16px;background:#edf4ff;border:1px solid #c7dbff;text-align:center;">
-                                     <span style="display:block;font-size:34px;font-weight:800;letter-spacing:.28em;color:#174ea6;">{{code}}</span>
+                                 <p style="margin:0 0 20px;font-size:15px;line-height:1.7;">Hesabınıza giriş yapmak için aşağıdaki tek kullanımlık güvenlik kodunu kullanın.</p>
+                                 <div style="margin:0 0 20px;padding:18px 24px;border-radius:14px;background:#FCFBF9;border:1px solid #EBE9E4;text-align:center;">
+                                     <span style="display:block;font-size:32px;font-weight:800;letter-spacing:.28em;color:#E30A17;">{{code}}</span>
                                  </div>
-                                 <p style="margin:0 0 8px;font-size:14px;line-height:1.6;color:#4d5f7a;">Kod oluşturulma zamanı: {{loginTime}}</p>
-                                 <p style="margin:0;font-size:14px;line-height:1.6;color:#4d5f7a;">Bu işlemi siz yapmadıysanız hesabınızın şifresini değiştirin.</p>
+                                 <p style="margin:0 0 8px;font-size:14px;line-height:1.6;color:#6E6E77;">Kod oluşturulma zamanı: {{loginTime}}</p>
+                                 <p style="margin:0;font-size:14px;line-height:1.6;color:#6E6E77;">Bu işlemi siz yapmadıysanız hesabınızın şifresini değiştirin.</p>
                              </div>
                          </div>
                      </body>
@@ -519,17 +519,17 @@ public class EmailTemplateService : IEmailTemplateService
                          <meta name="viewport" content="width=device-width, initial-scale=1.0" />
                          <title>{{title}}</title>
                      </head>
-                     <body style="margin:0;padding:0;background:#f5f7fb;font-family:Arial,sans-serif;color:#10203a;">
+                     <body style="margin:0;padding:0;background:#F3F1ED;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Inter,Helvetica,Arial,sans-serif;color:#1A1919;">
                          <div style="max-width:680px;margin:0 auto;padding:32px 16px;">
-                             <div style="background:#ffffff;border-radius:20px;padding:32px;border:1px solid #dbe4f0;">
-                                 <p style="margin:0 0 12px;font-size:13px;font-weight:700;letter-spacing:.08em;color:#2f6fed;">OTELTURIZM</p>
-                                 <h1 style="margin:0 0 16px;font-size:28px;line-height:1.2;color:#10203a;">{{title}}</h1>
+                             <div style="background:#FFFFFF;border-radius:20px;padding:32px;border:1px solid #EBE9E4;border-top:4px solid #E30A17;">
+                                 <p style="margin:0 0 12px;font-size:12px;font-weight:800;letter-spacing:.14em;color:#E30A17;text-transform:uppercase;">OTELTURIZM</p>
+                                 <h1 style="margin:0 0 16px;font-size:24px;line-height:1.25;color:#1A1919;">{{title}}</h1>
                                  <p style="margin:0 0 12px;font-size:16px;line-height:1.6;">Merhaba {{recipientName}},</p>
-                                 <p style="margin:0 0 20px;font-size:16px;line-height:1.6;">{{moduleLabel}} hesabınız için geçerli sözleşme ve KVKK içeriklerini aşağıda bulabilirsiniz.</p>
+                                 <p style="margin:0 0 20px;font-size:15px;line-height:1.7;">{{moduleLabel}} hesabınız için geçerli sözleşme ve KVKK içeriklerini aşağıda bulabilirsiniz.</p>
                                  <div style="margin:0 0 20px;">{{sectionsHtml}}</div>
-                                 <p style="margin:0;font-size:14px;line-height:1.6;color:#4d5f7a;">
+                                 <p style="margin:0;font-size:14px;line-height:1.6;color:#6E6E77;">
                                      Tüm içeriklere buradan da erişebilirsiniz:
-                                     <a href="{{primaryUrl}}" style="color:#174ea6;font-weight:700;text-decoration:none;">Sözleşmeyi görüntüle</a>
+                                     <a href="{{primaryUrl}}" style="color:#E30A17;font-weight:700;text-decoration:none;">Sözleşmeyi görüntüle</a>
                                  </p>
                              </div>
                          </div>

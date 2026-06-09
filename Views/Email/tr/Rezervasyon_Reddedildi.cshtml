@@ -1,67 +1,45 @@
-<!DOCTYPE html>
-<html lang="tr">
-<head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Otelturizm · Rezervasyon Talebin Reddedildi</title>
-</head>
-<body style="margin:0;padding:0;background:#E8ECF2;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Inter,Helvetica,Arial,sans-serif;color:#1A1F26;">
-    <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="background:#E8ECF2;padding:36px 12px;">
-        <tr>
-            <td align="center">
-                <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="600" style="max-width:600px;background:#FFFFFF;border-radius:24px;overflow:hidden;box-shadow:0 10px 34px rgba(15,23,42,0.10);">
+@* Layout: _EmailMaster *@
+@* EmailTitle: Otelturizm · Rezervasyon Talebin Reddedildi *@
+@* Preheader: Uygun alternatifler için panelini kontrol edebilirsin *@
+@* HeaderTagline: Rezervasyon Merkezi *@
+@* HeaderTitle: Rezervasyon Talebin Reddedildi *@
+@* HeaderSubtitle: Uygun alternatifler için panelini kontrol edebilirsin *@
+@* FooterLine1: 7/24 destek: destek@otelturizm.com *@
+@* FooterLine2: Rezervasyon No: #{{booking_reference}} *@
+@* FooterLegal: Bu e-posta bilgilendirme amaçlıdır. Yanıtlamayın. *@
                     <tr>
-                        <td style="background:linear-gradient(135deg,#7f1429 0%,#a41533 100%);padding:34px 28px;color:#ffffff;text-align:center;">
-                            <div style="font-size:13px;letter-spacing:.16em;text-transform:uppercase;opacity:.92;font-weight:800;">Rezervasyon Merkezi</div>
-                            <div style="margin-top:10px;font-size:22px;font-weight:900;">Rezervasyon Talebin Reddedildi</div>
-                            <div style="margin-top:8px;font-size:14px;opacity:.92;">Uygun alternatifler için panelini kontrol edebilirsin</div>
-                        </td>
-                    </tr>
-                    <tr>
-                        <td style="padding:28px;">
-                            <p style="margin:0 0 12px;font-size:18px;">Merhaba <strong>{{user_first_name}}</strong>,</p>
-                            <p style="margin:0 0 18px;font-size:15px;line-height:1.7;color:#334155;">
+                        <td class="email-pad">
+                            <p class="email-greeting">Merhaba <strong>{{user_first_name}}</strong>,</p>
+                            <p class="email-lead">
                                 <strong>{{hotel_name}}</strong> için oluşturduğun rezervasyon talebi otel tarafından onaylanamadı. Rezervasyon numaran:
-                                <strong style="font-size:18px;color:#003B95;">#{{booking_reference}}</strong>
+                                <strong class="email-ref">#{{booking_reference}}</strong>
                             </p>
 
-                            <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="background:#F5F7FA;border:1px solid #E7E9EC;border-radius:16px;margin:0 0 16px;">
+                            <table role="presentation" cellpadding="0" cellspacing="0" border="0" class="email-card">
                                 <tr>
-                                    <td style="padding:16px 16px;">
-                                        <div style="font-size:12px;color:#6B7380;text-transform:uppercase;letter-spacing:.08em;font-weight:800;">Rezervasyon Detayları</div>
-                                        <div style="margin-top:10px;font-size:14px;color:#1A1F26;"><strong>Konaklama:</strong> {{check_in_date}} → {{check_out_date}}</div>
-                                        <div style="margin-top:6px;font-size:14px;color:#1A1F26;"><strong>Oda:</strong> {{room_type_name}}</div>
-                                        <div style="margin-top:6px;font-size:14px;color:#1A1F26;"><strong>Toplam:</strong> ₺{{total_price}}</div>
+                                    <td class="email-card__cell">
+                                        <p class="email-card__label">Rezervasyon Detayları</p>
+                                        <p class="email-card__row"><strong>Konaklama:</strong> {{check_in_date}} → {{check_out_date}}</p>
+                                        <p class="email-card__row"><strong>Oda:</strong> {{room_type_name}}</p>
+                                        <p class="email-card__row"><strong>Toplam:</strong> ₺{{total_price}}</p>
                                     </td>
                                 </tr>
                             </table>
 
-                            <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="background:rgba(127,20,41,0.08);border:1px solid rgba(127,20,41,0.22);border-radius:14px;margin:0 0 16px;">
+                            <table role="presentation" cellpadding="0" cellspacing="0" border="0" class="email-note email-note--danger">
                                 <tr>
-                                    <td style="padding:14px 16px;font-size:13px;line-height:1.65;color:#7b2436;">
+                                    <td class="email-note__cell">
                                         <strong>Bilgi:</strong> Ödeme alındıysa iade süreci otomatik olarak başlatılır. Detayları hesabındaki rezervasyon panelinden takip edebilirsin.
                                     </td>
                                 </tr>
                             </table>
 
-                            <table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin:0;">
+                            <table role="presentation" cellpadding="0" cellspacing="0" border="0" class="email-cta">
                                 <tr>
-                                    <td style="border-radius:999px;background:linear-gradient(135deg,#003B95 0%,#0c5adb 100%);">
-                                        <a href="{{booking_details_link}}" style="display:inline-block;padding:14px 22px;color:#ffffff !important;text-decoration:none;font-size:15px;font-weight:900;border-radius:999px;">Rezervasyonumu Görüntüle</a>
+                                    <td>
+                                        <a href="{{booking_details_link}}" class="email-cta__btn">Rezervasyonumu Görüntüle</a>
                                     </td>
                                 </tr>
                             </table>
                         </td>
                     </tr>
-                    <tr>
-                        <td style="padding:18px 22px;background:#F5F7FA;border-top:1px solid #E7E9EC;color:#6B7380;text-align:center;">
-                            <p style="margin:0;font-size:12px;">7/24 destek: destek@otelturizm.com</p>
-                            <p style="margin:8px 0 0;font-size:12px;">© 2026 Otelturizm · Rezervasyon No: #{{booking_reference}}</p>
-                        </td>
-                    </tr>
-                </table>
-            </td>
-        </tr>
-    </table>
-</body>
-</html>

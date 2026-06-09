@@ -15,5 +15,6 @@ public interface IPublicReservationService
         string? guestCheckOutTime = null,
         bool applyLateCheckoutSurcharge = true,
         CancellationToken cancellationToken = default);
+    Task SaveBookingDraftAsync(long? userId, string sessionKey, long hotelId, string hotelSlug, PublicHotelReservationForm form, CancellationToken cancellationToken = default);
     void ApplyDawnSurpriseToQuote(PublicReservationPriceQuoteViewModel quote);
 }

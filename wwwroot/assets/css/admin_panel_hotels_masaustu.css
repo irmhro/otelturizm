@@ -204,6 +204,31 @@
     margin-top: 12px;
 }
 
+.admin-hotel-autosave-status {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 14px;
+    border-radius: 999px;
+    font-size: 13px;
+    font-weight: 600;
+    border: 1px solid rgba(125, 164, 215, .35);
+    background: rgba(230, 244, 255, .85);
+    color: #1e3a5f;
+}
+
+.admin-hotel-autosave-status[data-tone="success"] {
+    border-color: rgba(34, 197, 94, .35);
+    background: rgba(236, 253, 245, .92);
+    color: #166534;
+}
+
+.admin-hotel-autosave-status[data-tone="danger"] {
+    border-color: rgba(239, 68, 68, .35);
+    background: rgba(254, 242, 242, .95);
+    color: #991b1b;
+}
+
 .partner-completeness-alert {
     border-left: 4px solid #f59e0b;
 }
