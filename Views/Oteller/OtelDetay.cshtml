@@ -883,10 +883,6 @@
                     <div class="tabler-section-titles">
                         <h2>@SharedLocalizer["Detail.About.Title"].Value</h2>
                     </div>
-                    @if (Model.Weather is not null && Model.Weather.Days.Count > 0)
-                    {
-                        @await Html.PartialAsync("_OtelDetayWeatherStrip", (Model.Weather, weatherThemeClass, "about", "weatherAboutOpen"))
-                    }
                 </div>
             </div>
             <div class="detail-about__body">
@@ -2390,7 +2386,6 @@
             const weatherPopupBackdrop = document.getElementById('weatherPopupBackdrop');
             const weatherPopupOpen = document.getElementById('weatherPopupOpen');
             const weatherTopbarOpen = document.getElementById('weatherTopbarOpen');
-            const weatherAboutOpen = document.getElementById('weatherAboutOpen');
             const weatherPopupClose = document.getElementById('weatherPopupClose');
             const shareButton = document.getElementById('shareHotelBtn');
             const shareMenu = document.getElementById('shareMenu');
@@ -3438,15 +3433,14 @@
             }
 
             function bindWeatherPopupTriggers() {
-                [weatherPopupOpen, weatherTopbarOpen, weatherAboutOpen].forEach(function (trigger) {
+                [weatherPopupOpen, weatherTopbarOpen].forEach(function (trigger) {
                     trigger?.addEventListener('click', openWeatherPopup);
                 });
             }
 
             function openWeatherPopup() {
                 const hasWeather = (weatherPopupOpen?.getAttribute('data-has-weather') === 'true')
-                    || (weatherTopbarOpen?.getAttribute('data-has-weather') === 'true')
-                    || (weatherAboutOpen?.getAttribute('data-has-weather') === 'true');
+                    || (weatherTopbarOpen?.getAttribute('data-has-weather') === 'true');
                 if (!hasWeather || !weatherPopup || !weatherPopupBackdrop) {
                     showInfoModal('Hava durumu verisi şu an yüklenemedi. Birkaç saniye sonra tekrar deneyin.', false);
                     return;
