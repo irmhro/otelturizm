@@ -184,6 +184,42 @@ public class PublicReservationService : IPublicReservationService
         };
     }
 
+    public static PublicReservationPriceQuoteViewModel PrepareQuoteForCache(PublicReservationPriceQuoteViewModel quote)
+    {
+        var snapshot = ClonePriceQuote(quote);
+        ResetQuoteToPreDawnBase(snapshot);
+        return snapshot;
+    }
+
+    private static void ResetQuoteToPreDawnBase(PublicReservationPriceQuoteViewModel quote)
+    {
+        var baseTotal = quote.TotalAmount;
+        if (quote.DawnSurprisePercent > 0 && quote.DawnSurpriseDiscountAmount > 0m)
+        {
+            baseTotal = quote.OriginalTotalAmount > quote.TotalAmount
+                ? quote.OriginalTotalAmount
+                : quote.TotalAmount + quote.DawnSurpriseDiscountAmount;
+        }
+        else if (quote.OriginalTotalAmount > quote.TotalAmount)
+        {
+            baseTotal = quote.OriginalTotalAmount;
+        }
+
+        if (quote.TotalAmount > 0m && baseTotal > quote.TotalAmount)
+        {
+            var scale = baseTotal / quote.TotalAmount;
+            quote.NetRoomAmount = Math.Round(quote.NetRoomAmount * scale, 2, MidpointRounding.AwayFromZero);
+            quote.VatAmount = Math.Round(quote.VatAmount * scale, 2, MidpointRounding.AwayFromZero);
+            quote.AccommodationTaxAmount = Math.Round(quote.AccommodationTaxAmount * scale, 2, MidpointRounding.AwayFromZero);
+            quote.TaxAmount = quote.VatAmount + quote.AccommodationTaxAmount;
+            quote.TotalAmount = baseTotal;
+        }
+
+        quote.OriginalTotalAmount = quote.TotalAmount;
+        quote.DawnSurprisePercent = 0;
+        quote.DawnSurpriseDiscountAmount = 0m;
+    }
+
     public void ApplyDawnSurpriseToQuote(PublicReservationPriceQuoteViewModel quote)
     {
         if (!quote.IsAvailable)
@@ -194,9 +230,9 @@ public class PublicReservationService : IPublicReservationService
             return;
         }
 
-        var baseTotal = quote.OriginalTotalAmount > 0m ? quote.OriginalTotalAmount : quote.TotalAmount;
+        ResetQuoteToPreDawnBase(quote);
+        var baseTotal = quote.TotalAmount;
         quote.OriginalTotalAmount = baseTotal;
-        quote.TotalAmount = baseTotal;
         quote.DawnSurprisePercent = 0;
         quote.DawnSurpriseDiscountAmount = 0m;
 

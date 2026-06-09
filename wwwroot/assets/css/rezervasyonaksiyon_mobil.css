@@ -468,7 +468,8 @@
 
     .oteldetay-page .rezervasyon-aksiyon .multi-room-item {
         display: grid;
-        grid-template-columns: minmax(0, 1fr);
+        grid-template-columns: minmax(0, 1fr) minmax(108px, 34%);
+        column-gap: 10px;
         row-gap: 10px;
         width: 100%;
         max-width: 100%;
@@ -529,7 +530,7 @@
         align-items: center;
         justify-content: space-between;
         gap: 10px;
-        grid-column: 1 / -1;
+        grid-column: 1;
         width: 100%;
         min-width: 0;
     }
@@ -548,7 +549,9 @@
     }
 
     .oteldetay-page .rezervasyon-aksiyon .od-booking-counters-band--item {
-        grid-column: 1;
+        grid-column: 2;
+        grid-row: auto;
+        align-self: end;
         margin-top: 0;
         width: 100%;
         min-width: 0;

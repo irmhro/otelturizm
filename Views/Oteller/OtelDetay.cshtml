@@ -2436,6 +2436,7 @@
             let adultsPerRoom = Math.max(1, adults);
             let childrenPerRoom = Math.max(0, children);
             let latestQuoteRequest = null;
+            let activeDawnPercent = @initialDawnPercent;
             let activeGalleryIndex = 0;
             let activeRoomDetailGalleryItems = [];
             let activeRoomDetailName = 'Oda';
@@ -4289,6 +4290,54 @@
                 }
             }
 
+            function ensureDawnOnTotals(totals) {
+                const total = Number(totals.totalAmount || 0);
+                const percent = Number(totals.dawnSurprisePercent || 0);
+                const discount = Number(totals.dawnSurpriseDiscountAmount || 0);
+                const original = Number(totals.originalTotalAmount || 0);
+
+                if (percent > 0 && discount > 0 && original > total) {
+                    activeDawnPercent = percent;
+                    return totals;
+                }
+
+                if (activeDawnPercent > 0 && total > 0) {
+                    const baseTotal = original > total ? original : total;
+                    const dawnDiscount = Math.round(baseTotal * activeDawnPercent / 100);
+                    if (dawnDiscount > 0 && dawnDiscount < baseTotal) {
+                        totals.originalTotalAmount = baseTotal;
+                        totals.totalAmount = baseTotal - dawnDiscount;
+                        totals.dawnSurprisePercent = activeDawnPercent;
+                        totals.dawnSurpriseDiscountAmount = dawnDiscount;
+                    }
+                }
+
+                return totals;
+            }
+
+            async function bootstrapActiveDawnPercent() {
+                if (activeDawnPercent > 0) {
+                    return;
+                }
+
+                try {
+                    const response = await fetch('/api/dawn-surprise/status', {
+                        credentials: 'same-origin',
+                        headers: { 'X-Requested-With': 'XMLHttpRequest' }
+                    });
+                    if (!response.ok) {
+                        return;
+                    }
+
+                    const payload = await response.json();
+                    if (payload && payload.active && Number(payload.percent || 0) > 0) {
+                        activeDawnPercent = Number(payload.percent);
+                    }
+                } catch (_error) {
+                    // ignore
+                }
+            }
+
             async function refreshPriceQuote() {
                 if (!bookingPrice || !breakdown) {
                     return;
@@ -4382,6 +4431,7 @@
                         totals.dawnSurpriseDiscountAmount += Number(quote.dawnSurpriseDiscountAmount || 0);
                         if (Number(quote.dawnSurprisePercent || 0) > 0) {
                             totals.dawnSurprisePercent = Number(quote.dawnSurprisePercent);
+                            activeDawnPercent = totals.dawnSurprisePercent;
                         }
                         if (Number(quote.lateCheckoutSurchargeAmount || 0) > 0) {
                             totals.lateCheckoutSurchargeAmount += Number(quote.lateCheckoutSurchargeAmount);
@@ -4443,6 +4493,8 @@
                 if (latestQuoteRequest !== requestKey) {
                     return;
                 }
+
+                ensureDawnOnTotals(totals);
 
                 const firstItem = items[0];
                 const nightsForNightly = firstItem
@@ -5444,14 +5496,18 @@
             syncGuestInputs();
             ensureGuestCapacity(false);
             syncPaymentMethodState();
-            refreshPriceQuote();
+            bootstrapActiveDawnPercent().finally(function () {
+                refreshPriceQuote();
+            });
             if (window.otelturizmBookingDates && typeof window.otelturizmBookingDates.initAll === 'function') {
                 window.otelturizmBookingDates.initAll();
                 getRoomItemNodes().forEach(function (item) {
                     updateRoomItemSummary(item);
                 });
                 syncRoomsJsonAndHiddenFields();
-                refreshPriceQuote();
+                bootstrapActiveDawnPercent().finally(function () {
+                    refreshPriceQuote();
+                });
             }
             initReviewReadMore();
             initRoomFeaturePanels();

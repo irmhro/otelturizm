@@ -546,7 +546,7 @@ public class OtellerController : Controller
         if (_memoryCache.TryGetValue(shieldKey, out PublicReservationPriceQuoteViewModel? cachedQuote) && cachedQuote is not null)
         {
             _logger.LogInformation("QUOTE_SHIELD_HIT slug={Slug} roomTypeId={RoomTypeId}", slug, roomTypeId);
-            quote = PublicReservationService.ClonePriceQuote(cachedQuote);
+            quote = PublicReservationService.PrepareQuoteForCache(cachedQuote);
         }
         else
         {
@@ -560,7 +560,7 @@ public class OtellerController : Controller
                 cancellationToken);
             _memoryCache.Set(
                 shieldKey,
-                PublicReservationService.ClonePriceQuote(quote),
+                PublicReservationService.PrepareQuoteForCache(quote),
                 new MemoryCacheEntryOptions { AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(22) });
         }
 
