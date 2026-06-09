@@ -4053,25 +4053,41 @@
     }
 
     .oteldetay-page .mobile-booking-loyalty {
-        align-self: center;
-        flex: 0 0 auto;
+        display: none !important;
+    }
+
+    .oteldetay-page .gallery-mobile-loyalty {
         display: inline-flex;
         align-items: center;
-        gap: 3px;
+        gap: 6px;
         margin: 0;
-        margin-left: auto;
-        padding: 2px 7px;
+        padding: 8px 12px;
         border-radius: 999px;
-        background: rgba(15, 118, 110, 0.08);
-        border: 1px solid rgba(15, 118, 110, 0.16);
+        background: rgba(255, 255, 255, 0.94);
+        backdrop-filter: blur(8px);
+        -webkit-backdrop-filter: blur(8px);
+        border: 1px solid rgba(255, 255, 255, 0.72);
+        box-shadow: 0 8px 22px rgba(15, 23, 42, 0.2);
         color: #0f766e;
-        font-size: 9px;
+        font-size: 12px;
         font-weight: 800;
         line-height: 1.15;
         white-space: nowrap;
-        max-width: 42%;
+        max-width: min(220px, 58vw);
         overflow: hidden;
         text-overflow: ellipsis;
+        flex: 0 1 auto;
+        min-width: 0;
+    }
+
+    .oteldetay-page .gallery-mobile-loyalty[hidden] {
+        display: none !important;
+    }
+
+    .oteldetay-page .gallery-mobile-loyalty i {
+        color: var(--od-crimson, #E30A17);
+        font-size: 12px;
+        flex-shrink: 0;
     }
 
     .oteldetay-page .mobile-booking-price-labels {
@@ -4087,8 +4103,7 @@
     }
 
     .oteldetay-page .mobile-booking-loyalty i {
-        color: var(--od-crimson, #E30A17);
-        font-size: 9px;
+        display: none;
     }
 
     .oteldetay-page .mobile-booking-price-main {
@@ -5133,11 +5148,17 @@
 
     .oteldetay-page .gallery-mobile-overlay-bottom {
         display: flex;
-        flex-direction: column;
+        flex-direction: row;
         align-items: flex-end;
-        gap: 8px;
+        justify-content: space-between;
+        gap: 10px;
         width: 100%;
         z-index: 4;
+    }
+
+    .oteldetay-page .gallery-mobile-overlay-bottom .gallery-mobile-rating {
+        flex: 0 0 auto;
+        margin-left: auto;
     }
 
     .oteldetay-page .gallery-mobile-stars-corner {

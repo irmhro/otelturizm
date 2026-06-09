@@ -543,6 +543,10 @@
                     </button>
                 </div>
                 <div class="gallery-mobile-overlay-bottom">
+                    <span class="gallery-mobile-loyalty" id="mobileBookingLoyalty" data-loyalty-hook="detail-mobile-gallery" @(initialEarnPoints <= 0 ? "hidden" : null)>
+                        <i class="fas fa-gift" aria-hidden="true"></i>
+                        +@initialEarnPoints puan kazanın
+                    </span>
                     <button type="button"
                             class="gallery-mobile-rating gallery-mobile-rating--compact"
                             data-rating-jump
@@ -1803,10 +1807,6 @@
             <div class="mobile-booking-price-stack">
                 <div class="mobile-booking-room-row">
                     <span class="mobile-booking-room-name" id="mobileBookingRoomName">@selectedRoomSeed?.Name</span>
-                    <span class="mobile-booking-loyalty" id="mobileBookingLoyalty" data-loyalty-hook="detail-mobile-bar" @(initialEarnPoints <= 0 ? "hidden" : null)>
-                        <i class="fas fa-gift" aria-hidden="true"></i>
-                        +@initialEarnPoints puan kazanın
-                    </span>
                 </div>
                 <div class="mobile-booking-price-main">
                     <div class="mobile-booking-price-labels">
