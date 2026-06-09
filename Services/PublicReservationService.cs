@@ -148,29 +148,6 @@ public class PublicReservationService : IPublicReservationService
     private PublicReservationPriceQuoteViewModel MapPriceQuoteViewModel(PriceSummary pricing)
     {
         var originalTotal = pricing.TotalAmount;
-        var dawnPercent = _httpContextAccessor.HttpContext is { } httpContext
-            && _dawnSurpriseService.IsEligible(httpContext)
-            ? _dawnSurpriseService.GetActive(httpContext)?.Percent ?? 0
-            : 0;
-        var discountAmount = 0m;
-        if (pricing.IsAvailable && dawnPercent > 0)
-        {
-            var total = pricing.TotalAmount;
-            var net = pricing.NetRoomAmount;
-            var vat = pricing.VatAmount;
-            var acc = pricing.AccommodationTaxAmount;
-            var tax = pricing.TaxAmount;
-            if (DawnSurprisePricing.TryApplyPercent(ref total, ref net, ref vat, ref acc, ref tax, dawnPercent))
-            {
-                pricing.TotalAmount = total;
-                pricing.NetRoomAmount = net;
-                pricing.VatAmount = vat;
-                pricing.AccommodationTaxAmount = acc;
-                pricing.TaxAmount = tax;
-                discountAmount = originalTotal - total;
-            }
-        }
-
         return new PublicReservationPriceQuoteViewModel
         {
             NightCount = pricing.NightlyBreakdown.Count > 0
@@ -185,9 +162,9 @@ public class PublicReservationService : IPublicReservationService
             AccommodationTaxAmount = pricing.AccommodationTaxAmount,
             TaxAmount = pricing.TaxAmount,
             OriginalTotalAmount = originalTotal,
-            DawnSurprisePercent = dawnPercent,
-            DawnSurpriseDiscountAmount = discountAmount,
-            TotalAmount = pricing.TotalAmount,
+            DawnSurprisePercent = 0,
+            DawnSurpriseDiscountAmount = 0m,
+            TotalAmount = originalTotal,
             IsAvailable = pricing.IsAvailable,
             AvailabilityMessage = pricing.AvailabilityMessage,
             NightlyBreakdown = pricing.NightlyBreakdown
@@ -200,6 +177,95 @@ public class PublicReservationService : IPublicReservationService
                     DiscountPrice = item.DiscountPrice,
                     PriceText = item.EffectivePrice.ToString("N0", CultureInfo.GetCultureInfo("tr-TR")),
                     IsDiscounted = item.DiscountPrice.HasValue && item.DiscountPrice.Value > 0m && item.DiscountPrice.Value < item.BasePrice,
+                    IsClosed = item.IsClosed,
+                    RemainingRooms = item.RemainingRooms
+                })
+                .ToList()
+        };
+    }
+
+    public void ApplyDawnSurpriseToQuote(PublicReservationPriceQuoteViewModel quote)
+    {
+        if (!quote.IsAvailable)
+        {
+            quote.OriginalTotalAmount = quote.TotalAmount;
+            quote.DawnSurprisePercent = 0;
+            quote.DawnSurpriseDiscountAmount = 0m;
+            return;
+        }
+
+        var baseTotal = quote.OriginalTotalAmount > 0m ? quote.OriginalTotalAmount : quote.TotalAmount;
+        quote.OriginalTotalAmount = baseTotal;
+        quote.TotalAmount = baseTotal;
+        quote.DawnSurprisePercent = 0;
+        quote.DawnSurpriseDiscountAmount = 0m;
+
+        if (_httpContextAccessor.HttpContext is not { } httpContext)
+        {
+            return;
+        }
+
+        if (!_dawnSurpriseService.IsEligible(httpContext))
+        {
+            return;
+        }
+
+        var dawnPercent = _dawnSurpriseService.GetActive(httpContext)?.Percent ?? 0;
+        if (dawnPercent <= 0)
+        {
+            return;
+        }
+
+        var total = baseTotal;
+        var net = quote.NetRoomAmount;
+        var vat = quote.VatAmount;
+        var acc = quote.AccommodationTaxAmount;
+        var tax = quote.TaxAmount;
+        if (!DawnSurprisePricing.TryApplyPercent(ref total, ref net, ref vat, ref acc, ref tax, dawnPercent))
+        {
+            return;
+        }
+
+        quote.TotalAmount = total;
+        quote.NetRoomAmount = net;
+        quote.VatAmount = vat;
+        quote.AccommodationTaxAmount = acc;
+        quote.TaxAmount = tax;
+        quote.DawnSurprisePercent = dawnPercent;
+        quote.DawnSurpriseDiscountAmount = baseTotal - total;
+    }
+
+    public static PublicReservationPriceQuoteViewModel ClonePriceQuote(PublicReservationPriceQuoteViewModel source)
+    {
+        return new PublicReservationPriceQuoteViewModel
+        {
+            NightCount = source.NightCount,
+            NightlyPrice = source.NightlyPrice,
+            RoomTotal = source.RoomTotal,
+            NetRoomAmount = source.NetRoomAmount,
+            VatRate = source.VatRate,
+            VatAmount = source.VatAmount,
+            AccommodationTaxRate = source.AccommodationTaxRate,
+            AccommodationTaxAmount = source.AccommodationTaxAmount,
+            TaxAmount = source.TaxAmount,
+            TotalAmount = source.TotalAmount,
+            OriginalTotalAmount = source.OriginalTotalAmount,
+            DawnSurprisePercent = source.DawnSurprisePercent,
+            DawnSurpriseDiscountAmount = source.DawnSurpriseDiscountAmount,
+            IsAvailable = source.IsAvailable,
+            AvailabilityMessage = source.AvailabilityMessage,
+            LateCheckoutApplied = source.LateCheckoutApplied,
+            LateCheckoutSurchargeAmount = source.LateCheckoutSurchargeAmount,
+            NightlyBreakdown = source.NightlyBreakdown
+                .Select(item => new PublicReservationNightlyBreakdownItemViewModel
+                {
+                    Date = item.Date,
+                    DateText = item.DateText,
+                    Price = item.Price,
+                    BasePrice = item.BasePrice,
+                    DiscountPrice = item.DiscountPrice,
+                    PriceText = item.PriceText,
+                    IsDiscounted = item.IsDiscounted,
                     IsClosed = item.IsClosed,
                     RemainingRooms = item.RemainingRooms
                 })

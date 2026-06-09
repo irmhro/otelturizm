@@ -486,9 +486,13 @@
             card.addEventListener('mouseenter', () => {
                 idx = 1;
                 timer = window.setInterval(() => {
-                    img.src = images[idx % images.length];
-                    idx += 1;
-                }, 900);
+                    img.classList.add('is-gallery-fading');
+                    window.setTimeout(() => {
+                        img.src = images[idx % images.length];
+                        img.classList.remove('is-gallery-fading');
+                        idx += 1;
+                    }, 180);
+                }, 5000);
             });
             card.addEventListener('mouseleave', () => {
                 if (timer) window.clearInterval(timer);

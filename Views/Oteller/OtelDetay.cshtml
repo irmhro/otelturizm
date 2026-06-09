@@ -484,29 +484,16 @@
                 }
             </div>
             <div class="gallery-mobile-overlay@(Model.StarCount.HasValue && Model.StarCount.Value > 0 ? " has-stars" : string.Empty)">
-                @if (Model.StarCount.HasValue && Model.StarCount.Value > 0)
-                {
-                    <div class="gallery-mobile-stars-corner" aria-label="@($"{Model.StarCount.Value} yıldızlı otel")">
-                        @for (var starIndex = 0; starIndex < Model.StarCount.Value; starIndex++)
-                        {
-                            <i class="fas fa-star" aria-hidden="true"></i>
-                        }
-                    </div>
-                }
-                <div class="gallery-mobile-overlay-top">
-                    <div class="gallery-mobile-overlay-main">
-                        <h1 class="gallery-mobile-hotel-name">@Model.Name</h1>
-                        <div class="gallery-mobile-location-row">
-                            <p class="gallery-mobile-location" role="text">
-                                <i class="fas fa-location-dot" aria-hidden="true"></i>
-                                <span>@headerLocationText</span>
-                            </p>
-                            @if (Model.Weather is not null && Model.Weather.Days.Count > 0)
+                <div class="gallery-mobile-top-chrome">
+                    @if (Model.StarCount.HasValue && Model.StarCount.Value > 0)
+                    {
+                        <div class="gallery-mobile-stars-corner" aria-label="@($"{Model.StarCount.Value} yıldızlı otel")">
+                            @for (var starIndex = 0; starIndex < Model.StarCount.Value; starIndex++)
                             {
-                                @await Html.PartialAsync("_OtelDetayWeatherStrip", (Model.Weather, weatherThemeClass, "gallery"))
+                                <i class="fas fa-star" aria-hidden="true"></i>
                             }
                         </div>
-                    </div>
+                    }
                     <button type="button"
                             class="gallery-mobile-all-photos"
                             data-gallery-index="0"
@@ -1759,15 +1746,17 @@
     <div class="mobile-booking-bar od-mobile-bottom-dock od-sticky-cta mob-sticky-cta fe-world-safe-bottom" id="mobileBookingBar" role="region" aria-label="@SharedLocalizer["Booking.MobileSummary"].Value">
         <div class="mobile-booking-bar__row mobile-booking-bar__row--price">
             <div class="mobile-booking-price-stack">
-                <div class="mobile-booking-price-main">
-                    <div class="mobile-booking-price-labels">
-                        <span class="mobile-booking-room-name" id="mobileBookingRoomName">@selectedRoomSeed?.Name</span>
-                        <span class="mobile-booking-loyalty" id="mobileBookingLoyalty" data-loyalty-hook="detail-mobile-bar" @(initialEarnPoints <= 0 ? "hidden" : null)>
-                            <i class="fas fa-gift" aria-hidden="true"></i>
-                            +@initialEarnPoints puan kazanın
-                        </span>
-                        <span class="mobile-booking-label">@SharedLocalizer["Detail.Booking.Total"].Value</span>
-                    </div>
+                    <div class="mobile-booking-price-main">
+                        <div class="mobile-booking-price-labels">
+                            <div class="mobile-booking-room-row">
+                                <span class="mobile-booking-room-name" id="mobileBookingRoomName">@selectedRoomSeed?.Name</span>
+                                <span class="mobile-booking-loyalty" id="mobileBookingLoyalty" data-loyalty-hook="detail-mobile-bar" @(initialEarnPoints <= 0 ? "hidden" : null)>
+                                    <i class="fas fa-gift" aria-hidden="true"></i>
+                                    +@initialEarnPoints puan kazanın
+                                </span>
+                            </div>
+                            <span class="mobile-booking-label">@SharedLocalizer["Detail.Booking.Total"].Value</span>
+                        </div>
                     <div class="mobile-booking-total-wrap">
                         <del class="mobile-booking-original" id="mobileBookingOriginal" hidden aria-hidden="true"></del>
                         <strong id="mobileBookingPrice" class="mobile-booking-total">@(initialTotal > 0m ? $"₺{initialTotal:N0}" : (Model.LowestRoomPrice > 0m ? $"₺{Model.GuestInclusiveNightlyFromStoredNet(Model.LowestRoomPrice):N0}" : "—"))</strong>

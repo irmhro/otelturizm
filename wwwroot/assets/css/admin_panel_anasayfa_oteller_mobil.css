@@ -1,0 +1,47 @@
+@media (max-width: 991px) {
+    .anasayfa-oteller-page .admin-section-card,
+    .anasayfa-oteller-page .ao-panel-toggle {
+        padding: 16px;
+    }
+
+    .anasayfa-oteller-page .ao-panel-body {
+        padding: 0 16px 16px;
+    }
+
+    .anasayfa-oteller-page .admin-table thead {
+        display: none;
+    }
+
+    .anasayfa-oteller-page .admin-table tbody tr {
+        display: grid;
+        gap: 8px;
+        padding: 14px;
+        margin-bottom: 12px;
+        border: 1px solid #e2e8f0;
+        border-radius: 14px;
+        background: #fff;
+    }
+
+    .anasayfa-oteller-page .admin-table tbody td {
+        display: flex;
+        justify-content: space-between;
+        gap: 12px;
+        border: 0;
+        padding: 0;
+    }
+
+    .anasayfa-oteller-page .admin-table tbody td::before {
+        content: attr(data-label);
+        font-weight: 700;
+        color: #64748b;
+        flex-shrink: 0;
+    }
+
+    .anasayfa-oteller-page .admin-table tbody td.ao-row-actions {
+        justify-content: flex-start;
+    }
+
+    .anasayfa-oteller-page .admin-table tbody td.ao-row-actions::before {
+        display: none;
+    }
+}

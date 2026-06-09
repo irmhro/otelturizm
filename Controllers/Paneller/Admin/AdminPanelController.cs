@@ -1550,7 +1550,7 @@ public class AdminPanelController : Controller
 
         var model = await _adminHomepageHotelsService.GetPageAsync(GetFullName(), GetEmail(), GetUserRole(), sectionId, cancellationToken);
         ViewData["Title"] = model.Shell.PanelTitle;
-        ViewData["PageCssPath"] = "admin_panel_section_masaustu";
+        ViewData["PageCssPath"] = "admin_panel_anasayfa_oteller_masaustu";
         return View("~/Views/Paneller/Admin/AnasayfaOteller.cshtml", model);
     }
 

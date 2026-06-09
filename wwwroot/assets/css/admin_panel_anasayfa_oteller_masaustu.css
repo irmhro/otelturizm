@@ -1,0 +1,470 @@
+.anasayfa-oteller-page {
+    display: grid;
+    gap: 18px;
+}
+
+.anasayfa-oteller-page .admin-section-card {
+    padding: 18px;
+    border: 1px solid #dbe5f0;
+    border-radius: 16px;
+    background: #fff;
+    box-shadow: 0 16px 36px rgba(15, 23, 42, 0.06);
+}
+
+.anasayfa-oteller-page .admin-section-head {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 14px;
+    margin-bottom: 0;
+}
+
+.anasayfa-oteller-page .admin-section-head h2,
+.anasayfa-oteller-page .admin-section-head h3 {
+    margin: 3px 0;
+    color: #0f172a;
+    font-size: 1.15rem;
+    font-weight: 950;
+}
+
+.anasayfa-oteller-page .admin-section-head span {
+    display: block;
+    margin-top: 6px;
+    color: #64748b;
+    line-height: 1.55;
+}
+
+.anasayfa-oteller-page .mini-caption {
+    margin: 0 0 4px;
+    color: #2563eb;
+    font-size: 11px;
+    font-weight: 950;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+}
+
+.anasayfa-oteller-page .ao-intro-card .admin-section-head {
+    margin-bottom: 0;
+}
+
+.anasayfa-oteller-layout {
+    display: grid;
+    grid-template-columns: minmax(260px, 300px) minmax(0, 1fr);
+    gap: 18px;
+    align-items: start;
+}
+
+.anasayfa-oteller-sidebar {
+    position: sticky;
+    top: 96px;
+}
+
+.anasayfa-oteller-main {
+    display: grid;
+    gap: 18px;
+    min-width: 0;
+}
+
+.anasayfa-oteller-section-list {
+    display: grid;
+    gap: 10px;
+    margin-top: 4px;
+}
+
+.anasayfa-oteller-section-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 10px;
+    padding: 12px 14px;
+    border: 1px solid #e2e8f0;
+    border-radius: 14px;
+    text-decoration: none;
+    color: inherit;
+    background: #f8fafc;
+    transition: border-color 0.16s ease, box-shadow 0.16s ease, background 0.16s ease;
+}
+
+.anasayfa-oteller-section-item:hover {
+    border-color: #bfdbfe;
+    background: #fff;
+    box-shadow: 0 10px 24px rgba(15, 23, 42, 0.06);
+}
+
+.anasayfa-oteller-section-item.is-active {
+    border-color: rgba(37, 99, 235, 0.45);
+    background: linear-gradient(135deg, rgba(239, 246, 255, 0.95), #fff);
+    box-shadow: 0 0 0 1px rgba(37, 99, 235, 0.12);
+}
+
+.anasayfa-oteller-section-item strong {
+    display: block;
+    color: #0f172a;
+    font-size: 0.95rem;
+}
+
+.anasayfa-oteller-section-meta {
+    display: block;
+    margin-top: 4px;
+    color: #64748b;
+    font-size: 0.76rem;
+    font-weight: 700;
+}
+
+.anasayfa-oteller-sidebar-actions {
+    margin-top: 14px;
+}
+
+.anasayfa-oteller-page .ao-panel {
+    padding: 0;
+    overflow: hidden;
+}
+
+.anasayfa-oteller-page .ao-panel-toggle {
+    width: 100%;
+    margin: 0;
+    padding: 18px;
+    border: 0;
+    background: linear-gradient(135deg, rgba(248, 250, 252, 0.98), rgba(239, 246, 255, 0.72));
+    text-align: left;
+    cursor: pointer;
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 14px;
+}
+
+.anasayfa-oteller-page .ao-panel-toggle:hover {
+    background: linear-gradient(135deg, rgba(248, 250, 252, 1), rgba(219, 234, 254, 0.55));
+}
+
+.anasayfa-oteller-page .ao-panel-toggle .admin-section-head {
+    flex: 1 1 auto;
+}
+
+.anasayfa-oteller-page .ao-panel-chevron {
+    flex: 0 0 auto;
+    margin-top: 6px;
+    color: #64748b;
+    transition: transform 0.18s ease;
+}
+
+.anasayfa-oteller-page .ao-panel-toggle.is-expanded .ao-panel-chevron {
+    transform: rotate(180deg);
+}
+
+.anasayfa-oteller-page .ao-panel-body {
+    display: none;
+    padding: 0 18px 18px;
+    border-top: 1px solid #e2e8f0;
+}
+
+.anasayfa-oteller-page .ao-panel-body.is-open {
+    display: block;
+}
+
+.anasayfa-oteller-page .ao-collapse {
+    display: none;
+    margin-top: 14px;
+    padding-top: 14px;
+    border-top: 1px dashed #dbe5f0;
+}
+
+.anasayfa-oteller-page .ao-collapse.is-open {
+    display: block;
+}
+
+.anasayfa-oteller-page .admin-form-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 14px;
+}
+
+.anasayfa-oteller-page .admin-form-grid label {
+    display: grid;
+    gap: 8px;
+    margin: 0;
+    font-weight: 700;
+    color: #0f172a;
+}
+
+.anasayfa-oteller-page .admin-form-grid label > span {
+    font-size: 0.82rem;
+    color: #334155;
+}
+
+.anasayfa-oteller-page .admin-form-grid input,
+.anasayfa-oteller-page .admin-form-grid select,
+.anasayfa-oteller-page .admin-form-grid textarea,
+.anasayfa-oteller-page .form-control {
+    width: 100%;
+    border: 1px solid #d6dfeb;
+    border-radius: 14px;
+    padding: 11px 14px;
+    background: #f8fbff;
+    color: #0f172a;
+    font: inherit;
+    transition: border-color 0.16s ease, box-shadow 0.16s ease, background 0.16s ease;
+}
+
+.anasayfa-oteller-page .admin-form-grid input:focus,
+.anasayfa-oteller-page .admin-form-grid select:focus,
+.anasayfa-oteller-page .admin-form-grid textarea:focus,
+.anasayfa-oteller-page .form-control:focus {
+    border-color: rgba(37, 99, 235, 0.45);
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
+    outline: none;
+    background: #fff;
+}
+
+.anasayfa-oteller-page label.checkbox-inline {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding-top: 28px;
+}
+
+.anasayfa-oteller-page label.checkbox-inline input {
+    width: auto;
+    margin: 0;
+}
+
+.anasayfa-oteller-page .ao-section-edit-form {
+    margin-top: 4px;
+}
+
+.anasayfa-oteller-page .ao-form-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    align-items: center;
+    margin-top: 4px;
+}
+
+.anasayfa-oteller-page .ao-hotel-search {
+    position: relative;
+}
+
+.anasayfa-oteller-page .ao-search-results {
+    position: absolute;
+    z-index: 20;
+    left: 0;
+    right: 0;
+    top: calc(100% + 0.35rem);
+    background: #fff;
+    border: 1px solid #dbe5f0;
+    border-radius: 14px;
+    max-height: 320px;
+    overflow: auto;
+    box-shadow: 0 16px 36px rgba(15, 23, 42, 0.12);
+}
+
+.anasayfa-oteller-page .ao-search-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 14px;
+    border-bottom: 1px solid #eef2f7;
+}
+
+.anasayfa-oteller-page .ao-search-item:last-child {
+    border-bottom: 0;
+}
+
+.anasayfa-oteller-page .admin-table-wrap {
+    width: 100%;
+    overflow-x: auto;
+}
+
+.anasayfa-oteller-page .admin-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.anasayfa-oteller-page .admin-table th,
+.anasayfa-oteller-page .admin-table td {
+    padding: 12px 10px;
+    border-bottom: 1px solid #e2e8f0;
+    text-align: left;
+    vertical-align: middle;
+}
+
+.anasayfa-oteller-page .admin-table th {
+    color: #64748b;
+    font-size: 12px;
+    font-weight: 950;
+    text-transform: uppercase;
+    background: #f8fafc;
+}
+
+.anasayfa-oteller-page .admin-table td {
+    color: #0f172a;
+    font-weight: 650;
+}
+
+.anasayfa-oteller-page .ao-row-actions {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    gap: 6px;
+}
+
+.anasayfa-oteller-page .ao-row-actions form {
+    margin: 0;
+}
+
+.anasayfa-oteller-page .btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    min-height: 36px;
+    padding: 0 14px;
+    border-radius: 10px;
+    border: 1px solid transparent;
+    font-size: 13px;
+    font-weight: 700;
+    line-height: 1.2;
+    text-decoration: none;
+    cursor: pointer;
+    transition: background 0.16s ease, border-color 0.16s ease, color 0.16s ease;
+}
+
+.anasayfa-oteller-page .btn-sm {
+    min-height: 32px;
+    padding: 0 10px;
+    font-size: 12px;
+}
+
+.anasayfa-oteller-page .btn-primary {
+    background: #2563eb;
+    color: #fff;
+    border-color: #2563eb;
+}
+
+.anasayfa-oteller-page .btn-primary:hover {
+    background: #1d4ed8;
+    border-color: #1d4ed8;
+}
+
+.anasayfa-oteller-page .btn-outline-primary {
+    background: #fff;
+    color: #2563eb;
+    border-color: rgba(37, 99, 235, 0.35);
+}
+
+.anasayfa-oteller-page .btn-outline-primary:hover {
+    background: #eff6ff;
+}
+
+.anasayfa-oteller-page .btn-outline-secondary {
+    background: #fff;
+    color: #475569;
+    border-color: #cbd5e1;
+}
+
+.anasayfa-oteller-page .btn-outline-secondary:hover {
+    background: #f8fafc;
+}
+
+.anasayfa-oteller-page .btn-outline-danger {
+    background: #fff;
+    color: #b91c1c;
+    border-color: rgba(239, 68, 68, 0.35);
+}
+
+.anasayfa-oteller-page .btn-outline-danger:hover {
+    background: #fef2f2;
+}
+
+.anasayfa-oteller-page .badge {
+    display: inline-flex;
+    align-items: center;
+    min-height: 24px;
+    padding: 4px 10px;
+    border-radius: 999px;
+    font-size: 11px;
+    font-weight: 800;
+    line-height: 1;
+}
+
+.anasayfa-oteller-page .badge.bg-success {
+    background: #dcfce7;
+    color: #047857;
+}
+
+.anasayfa-oteller-page .badge.bg-warning {
+    background: #fef3c7;
+    color: #b45309;
+}
+
+.anasayfa-oteller-page .badge.bg-secondary {
+    background: #e2e8f0;
+    color: #475569;
+}
+
+.anasayfa-oteller-page .badge.bg-light {
+    background: #f1f5f9;
+    color: #334155;
+}
+
+.anasayfa-oteller-page .text-muted {
+    color: #64748b !important;
+}
+
+.anasayfa-oteller-page .text-end {
+    text-align: right;
+}
+
+.anasayfa-oteller-page .d-block {
+    display: block;
+}
+
+.anasayfa-oteller-page .d-inline {
+    display: inline;
+}
+
+.anasayfa-oteller-page .small {
+    font-size: 0.85rem;
+}
+
+.anasayfa-oteller-page .w-100 {
+    width: 100%;
+}
+
+.anasayfa-oteller-page .mt-2 {
+    margin-top: 0.5rem;
+}
+
+.anasayfa-oteller-page .mt-3 {
+    margin-top: 0.75rem;
+}
+
+.anasayfa-oteller-page .mb-0 {
+    margin-bottom: 0;
+}
+
+@media (max-width: 1100px) {
+    .anasayfa-oteller-page .admin-form-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
+@media (max-width: 760px) {
+    .anasayfa-oteller-layout {
+        grid-template-columns: 1fr;
+    }
+
+    .anasayfa-oteller-sidebar {
+        position: static;
+    }
+
+    .anasayfa-oteller-page .admin-form-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .anasayfa-oteller-page label.checkbox-inline {
+        padding-top: 0;
+    }
+}

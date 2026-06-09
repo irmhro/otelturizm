@@ -1,6 +1,5 @@
 @using System.Security.Claims
 @using otelturizmnew.Constants
-@using otelturizmnew.Services
 @{
     var headerPath = Context.Request.Path.Value ?? "/";
     var isHomeActive = headerPath == "/" || string.Equals(headerPath, "/anasayfa", StringComparison.OrdinalIgnoreCase);

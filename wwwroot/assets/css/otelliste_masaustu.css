@@ -746,7 +746,11 @@
     height: 100%;
     object-fit: cover;
     display: block;
-    transition: transform 0.35s ease;
+    transition: transform 0.35s ease, opacity 0.35s ease;
+}
+
+.otelliste-page .otelliste-card-media img.is-gallery-fading {
+    opacity: 0.15;
 }
 
 .otelliste-page .otelliste-hotel-card:hover .otelliste-card-media img {

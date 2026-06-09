@@ -310,7 +310,7 @@
         position: relative;
         overflow: hidden;
         padding-top: 0 !important;
-        height: var(--home-card-media-h);
+        height: calc(var(--home-card-media-h) * 0.85);
         margin-bottom: 0;
         border-radius: 0;
     }
@@ -1091,7 +1091,7 @@
 
     .anasayfa-page .hotel-grid .img-holder {
         padding-top: 0 !important;
-        height: var(--home-card-media-h);
+        height: calc(var(--home-card-media-h) * 0.85);
         margin-bottom: 0;
         border-radius: 0;
     }

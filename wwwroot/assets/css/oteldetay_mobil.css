@@ -3084,23 +3084,52 @@
         min-width: 0;
     }
 
+    .oteldetay-page .mobile-booking-price-labels {
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+        min-width: 0;
+        flex: 1;
+    }
+
+    .oteldetay-page .mobile-booking-room-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 8px;
+        min-width: 0;
+        width: 100%;
+    }
+
+    .oteldetay-page .mobile-booking-room-name {
+        font-size: 11px;
+        font-weight: 800;
+        color: var(--od-dark, #1A1919);
+        line-height: 1.25;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        min-width: 0;
+        flex: 1 1 auto;
+    }
+
     .oteldetay-page .mobile-booking-loyalty {
-        align-self: flex-start;
+        align-self: auto;
+        flex: 0 0 auto;
         display: inline-flex;
         align-items: center;
         gap: 3px;
         margin: 0;
-        padding: 1px 6px;
+        padding: 2px 7px;
         border-radius: 999px;
         background: rgba(15, 118, 110, 0.08);
         border: 1px solid rgba(15, 118, 110, 0.16);
         color: #0f766e;
-        font-size: 8px;
+        font-size: 9px;
         font-weight: 800;
         line-height: 1.15;
         white-space: nowrap;
-        flex-shrink: 0;
-        max-width: 100%;
+        max-width: min(46%, 168px);
         overflow: hidden;
         text-overflow: ellipsis;
     }
@@ -3111,7 +3140,7 @@
 
     .oteldetay-page .mobile-booking-loyalty i {
         color: var(--od-crimson, #E30A17);
-        font-size: 8px;
+        font-size: 9px;
     }
 
     .oteldetay-page .mobile-booking-price-main {
@@ -3121,25 +3150,6 @@
         gap: 10px;
         flex: 1;
         min-width: 0;
-    }
-
-    .oteldetay-page .mobile-booking-price-labels {
-        display: flex;
-        flex-direction: column;
-        gap: 1px;
-        min-width: 0;
-        flex: 1;
-    }
-
-    .oteldetay-page .mobile-booking-room-name {
-        font-size: 10px;
-        font-weight: 800;
-        color: var(--od-dark, #1A1919);
-        line-height: 1.25;
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        max-width: 100%;
     }
 
     .oteldetay-page .mobile-booking-from-line {
@@ -3195,7 +3205,7 @@
     }
 
     .oteldetay-page .mobile-booking-label {
-        font-size: 11px;
+        font-size: 12px;
         font-weight: 700;
         color: var(--od-dark, #1A1919);
         line-height: 1.2;
@@ -4065,7 +4075,7 @@
     }
 
     .oteldetay-page .gallery-mobile-strip {
-        order: -3;
+        order: -1;
         margin: 0 !important;
         border-bottom: 0 !important;
         border-radius: 0 !important;
@@ -4081,10 +4091,10 @@
     .oteldetay-page .gallery-mobile-overlay {
         display: flex;
         flex-direction: column;
-        justify-content: space-between;
+        justify-content: flex-end;
         gap: 10px;
         padding: 12px;
-        background: linear-gradient(180deg, rgba(0, 0, 0, 0.58) 0%, rgba(0, 0, 0, 0.08) 38%, rgba(0, 0, 0, 0.55) 100%);
+        background: linear-gradient(180deg, rgba(0, 0, 0, 0.08) 0%, rgba(0, 0, 0, 0) 42%, rgba(0, 0, 0, 0.55) 100%);
         pointer-events: none;
     }
 
@@ -4093,18 +4103,36 @@
     }
 
     .oteldetay-page .gallery-mobile-overlay-top {
-        display: flex;
-        align-items: flex-start;
-        justify-content: space-between;
-        gap: 10px;
-        width: 100%;
-        min-width: 0;
-        margin-top: 0;
-        z-index: 4;
+        display: none !important;
     }
 
-    .oteldetay-page .gallery-mobile-overlay.has-stars .gallery-mobile-overlay-top {
-        padding-top: 34px;
+    .oteldetay-page .gallery-mobile-top-chrome {
+        position: absolute;
+        top: 12px;
+        left: 12px;
+        z-index: 6;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        max-width: calc(100% - 24px);
+        pointer-events: auto;
+    }
+
+    .oteldetay-page .gallery-mobile-top-chrome .gallery-mobile-stars-corner {
+        position: static;
+        top: auto;
+        left: auto;
+        flex: 0 0 auto;
+    }
+
+    .oteldetay-page .gallery-mobile-top-chrome .gallery-mobile-all-photos {
+        position: static;
+        top: auto;
+        right: auto;
+        bottom: auto;
+        flex: 0 1 auto;
+        min-width: 0;
+        max-width: min(168px, 46vw);
     }
 
     .oteldetay-page .gallery-mobile-overlay-bottom {
@@ -4395,20 +4423,133 @@
         color: #64748b;
     }
 
-    .oteldetay-page .detail-header.hotel-title-section .detail-hero-head,
     .oteldetay-page .detail-header.hotel-title-section .header-right-stack--desktop-only,
     .oteldetay-page .detail-quick-facts--desktop-only {
         display: none !important;
     }
 
+    .oteldetay-page .detail-header.hotel-title-section .detail-hero-head {
+        display: block !important;
+    }
+
+    .oteldetay-page .detail-header.hotel-title-section .detail-rating-chip--desktop,
+    .oteldetay-page .detail-header.hotel-title-section .detail-title-subnav,
+    .oteldetay-page .detail-header.hotel-title-section .detail-business-trust,
+    .oteldetay-page .detail-header.hotel-title-section .detail-intent {
+        display: none !important;
+    }
+
+    .oteldetay-page .detail-header.hotel-title-section .hotel-name {
+        display: flex !important;
+        flex-direction: column;
+        gap: 6px;
+        min-width: 0;
+    }
+
+    .oteldetay-page .hotel-title-heading--header {
+        position: static;
+        width: auto;
+        height: auto;
+        padding: 0;
+        margin: 0;
+        overflow: visible;
+        clip: auto;
+        white-space: normal;
+        border: 0;
+        color: var(--od-dark, #1A1919);
+        font-size: clamp(1.1rem, 5.2vw, 1.35rem);
+        line-height: 1.2;
+        font-weight: 800;
+    }
+
+    .oteldetay-page .detail-header.hotel-title-section .detail-header-location-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
+        min-width: 0;
+    }
+
+    .oteldetay-page .detail-header.hotel-title-section .detail-header-location {
+        flex: 1 1 auto;
+        min-width: 0;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        margin: 0;
+        padding: 0;
+        border: 0;
+        background: transparent;
+        color: var(--od-muted, #6E6E77);
+        font-size: 0.82rem;
+        font-weight: 600;
+        text-decoration: none;
+    }
+
+    .oteldetay-page .detail-header.hotel-title-section .detail-weather-strip--header {
+        flex: 0 0 auto;
+        display: flex !important;
+        align-items: stretch;
+        margin: 0;
+        padding: 6px 8px;
+        border: 1px solid var(--od-border, #EBE9E4);
+        border-radius: 12px;
+        background: rgba(255, 255, 255, 0.96);
+        color: var(--od-dark, #1A1919);
+        box-shadow: 0 4px 14px rgba(26, 25, 25, 0.05);
+        cursor: pointer;
+    }
+
+    .oteldetay-page .detail-header.hotel-title-section .detail-weather-strip--header .detail-weather-strip__days {
+        justify-content: flex-end;
+    }
+
+    .oteldetay-page .detail-header.hotel-title-section .detail-weather-strip--header .detail-weather-strip__day {
+        border-left-color: var(--od-border, #EBE9E4);
+        padding: 0 6px;
+    }
+
+    .oteldetay-page .detail-header.hotel-title-section .detail-weather-strip--header .detail-weather-strip__label {
+        color: var(--od-muted, #6E6E77);
+        opacity: 1;
+    }
+
+    .oteldetay-page .detail-header.hotel-title-section .detail-weather-strip--header .detail-weather-strip__day.is-rainy i {
+        color: #2563eb;
+    }
+
+    .oteldetay-page .detail-header.hotel-title-section .detail-weather-strip--header .detail-weather-strip__day.is-sunny i {
+        color: #f59e0b;
+    }
+
+    .oteldetay-page .detail-header.hotel-title-section .detail-weather-strip--header .detail-weather-strip__day.is-snowy i {
+        color: #38bdf8;
+    }
+
+    .oteldetay-page .detail-header.hotel-title-section .detail-weather-strip--header .detail-weather-strip__day.is-cloudy i {
+        color: #64748b;
+    }
+
+    .oteldetay-page .detail-header.hotel-title-section .detail-header-location span {
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
     .oteldetay-page .detail-header.hotel-title-section {
-        padding: 0 !important;
+        padding: 12px 14px 10px !important;
         min-height: 0 !important;
         border: 0 !important;
+        border-bottom: 1px solid var(--od-border, #EBE9E4) !important;
+        background: #fff !important;
     }
 
     .oteldetay-page .detail-breadcrumb.detail-breadcrumb-with-weather {
-        order: 0;
+        order: -3;
+    }
+
+    .oteldetay-page .detail-header.hotel-title-section {
+        order: -2;
     }
 
     .oteldetay-page .detail-share-wrap {

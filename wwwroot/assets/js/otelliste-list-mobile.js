@@ -9,7 +9,7 @@
     const mobileBar = document.getElementById('otellisteMobileBar');
     const filterCountEl = document.getElementById('otellisteActiveFilterCount');
     const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    const galleryIntervalMs = 4000;
+    const galleryIntervalMs = 5000;
 
     /* Sticky bar — scroll-down compact mod */
     if (mobileBar) {

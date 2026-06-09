@@ -465,25 +465,30 @@ public class OtellerController : Controller
         }
 
         var normalizedCheckOutTime = string.IsNullOrWhiteSpace(checkOutTime) ? string.Empty : checkOutTime.Trim();
-        var shieldKey = $"currency-shield:v1:{slug}:{roomTypeId}:{checkInDate:O}:{checkOutDate:O}:{roomCount}:{normalizedCheckOutTime}:{applyLateCheckoutSurcharge}";
+        var shieldKey = $"currency-shield:v2:{slug}:{roomTypeId}:{checkInDate:O}:{checkOutDate:O}:{roomCount}:{normalizedCheckOutTime}:{applyLateCheckoutSurcharge}";
+        PublicReservationPriceQuoteViewModel quote;
         if (_memoryCache.TryGetValue(shieldKey, out PublicReservationPriceQuoteViewModel? cachedQuote) && cachedQuote is not null)
         {
             _logger.LogInformation("QUOTE_SHIELD_HIT slug={Slug} roomTypeId={RoomTypeId}", slug, roomTypeId);
-            return Json(BuildPriceQuotePayload(cachedQuote));
+            quote = PublicReservationService.ClonePriceQuote(cachedQuote);
+        }
+        else
+        {
+            quote = await _publicReservationService.GetPriceQuoteAsync(
+                roomTypeId,
+                checkInDate,
+                checkOutDate,
+                Math.Max(1, roomCount),
+                normalizedCheckOutTime,
+                applyLateCheckoutSurcharge,
+                cancellationToken);
+            _memoryCache.Set(
+                shieldKey,
+                PublicReservationService.ClonePriceQuote(quote),
+                new MemoryCacheEntryOptions { AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(22) });
         }
 
-        var quote = await _publicReservationService.GetPriceQuoteAsync(
-            roomTypeId,
-            checkInDate,
-            checkOutDate,
-            Math.Max(1, roomCount),
-            normalizedCheckOutTime,
-            applyLateCheckoutSurcharge,
-            cancellationToken);
-        _memoryCache.Set(
-            shieldKey,
-            quote,
-            new MemoryCacheEntryOptions { AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(22) });
+        _publicReservationService.ApplyDawnSurpriseToQuote(quote);
 
         var correlationId = HttpContext.Items.TryGetValue("CorrelationId", out var cidObj) ? cidObj as string : null;
         _logger.LogInformation("QUOTE cid={CorrelationId} slug={Slug} roomTypeId={RoomTypeId} in={CheckIn} out={CheckOut} rooms={RoomCount} ok={Ok}",
