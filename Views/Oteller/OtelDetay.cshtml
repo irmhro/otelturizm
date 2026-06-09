@@ -566,21 +566,22 @@
     </section>
 }
 
-@if (Model.Weather is not null && Model.Weather.Days.Count > 0 && gallery.Count == 0)
-{
-    <section class="detail-weather-topbar detail-weather-topbar--standalone" aria-label="Hava durumu özeti">
-        @await Html.PartialAsync("_OtelDetayWeatherStrip", (Model.Weather, weatherThemeClass, "standalone"))
-    </section>
-}
-
 <section class="detail-header hotel-title-section">
     <div class="detail-hero-head">
     <div class="hotel-name">
         <h1 class="hotel-title-heading hotel-title-heading--header">@Model.Name</h1>
-        <p class="detail-location od-header__location-pill" role="text">
-            <i class="fas fa-location-dot" aria-hidden="true"></i>
-            <span>@headerLocationText</span>
-        </p>
+        <div class="detail-header-location-row">
+            <a class="detail-back-link detail-region-link detail-header-location"
+               href="@regionListingUrl"
+               aria-label="@regionListingLabel bölgesindeki otelleri listele">
+                <i class="fas fa-location-dot" aria-hidden="true"></i>
+                <span>@headerLocationText</span>
+            </a>
+            @if (Model.Weather is not null && Model.Weather.Days.Count > 0)
+            {
+                @await Html.PartialAsync("_OtelDetayWeatherStrip", (Model.Weather, weatherThemeClass, "header"))
+            }
+        </div>
         <partial name="~/Views/Oteller/_OtelDetayBusinessTrust.cshtml" model="Model" />
         <div class="detail-title-subnav" aria-label="Hızlı gezinme">
             @if (!string.IsNullOrWhiteSpace(Model.VideoUrl))

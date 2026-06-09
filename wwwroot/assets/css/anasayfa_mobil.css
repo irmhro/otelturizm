@@ -675,7 +675,7 @@
     }
 
     .hero-stage .hero-top-grid--solo {
-        margin-bottom: 0;
+        margin-bottom: 10px;
     }
 
     .hero-top-grid .hero-campaigns {
@@ -777,7 +777,7 @@
 
     .hero-title.hero-title-pro {
         font-size: clamp(28px, 7.8vw, 40px);
-        line-height: 1.1;
+        line-height: 1.16;
         gap: 4px;
         letter-spacing: -0.03em;
     }

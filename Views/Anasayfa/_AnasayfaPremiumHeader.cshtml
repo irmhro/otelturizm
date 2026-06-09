@@ -37,19 +37,7 @@
         ? InternationalSeoPaths.ResolveCultureFromPath(headerPath)
         : "tr";
 
-    var currentCurrency = (Context.Request.Cookies[UserPreferenceService.CurrencyCookieName] ?? "TRY").Trim().ToUpperInvariant();
-    if (currentCurrency is not ("TRY" or "USD" or "EUR"))
-    {
-        currentCurrency = "TRY";
-    }
-
     var currentLangLabel = currentLang.ToUpperInvariant();
-    var currentCurrencyLabel = currentCurrency switch
-    {
-        "USD" => "$",
-        "EUR" => "EUR",
-        _ => "TL"
-    };
 
     string BuildPrefLangUrl(string langCode)
     {
@@ -81,14 +69,8 @@
         ("de", "DE", "Deutsch (DE)")
     };
 
-    var prefCurrencies = new (string Code, string Label, string Title)[]
-    {
-        ("TRY", "TL", "TRY (TL)"),
-        ("USD", "$", "USD ($)"),
-        ("EUR", "EUR", "EUR")
-    };
 }
-<div class="home-header-shell" data-current-lang="@currentLang" data-current-currency="@currentCurrency">
+<div class="home-header-shell" data-current-lang="@currentLang">
 <div class="utility-bar">
     <div class="container utility-container">
         <div class="utility-left">
@@ -143,19 +125,6 @@
                         {
                             var isActiveLang = string.Equals(lang.Code, currentLang, StringComparison.OrdinalIgnoreCase);
                             <a class="nav-pref-option@(isActiveLang ? " active" : string.Empty)" href="@BuildPrefLangUrl(lang.Code)" data-pref-label="@lang.Label">@lang.Title</a>
-                        }
-                    </div>
-                </div>
-                <div class="nav-pref-dropdown" data-nav-pref-dropdown>
-                    <button type="button" class="nav-pref-icon-btn nav-pref-icon-btn--currency" data-nav-pref-trigger aria-haspopup="listbox" aria-expanded="false" aria-label="Para birimi seçimi">
-                        <i class="fas fa-coins" aria-hidden="true"></i>
-                        <span class="nav-pref-icon-code" data-pref-value>@currentCurrencyLabel</span>
-                    </button>
-                    <div class="nav-pref-menu" data-nav-pref-menu role="listbox" aria-label="Para birimi seçenekleri" hidden>
-                        @foreach (var currency in prefCurrencies)
-                        {
-                            var isActiveCurrency = string.Equals(currency.Code, currentCurrency, StringComparison.OrdinalIgnoreCase);
-                            <button type="button" class="nav-pref-option@(isActiveCurrency ? " active" : string.Empty)" data-pref-label="@currency.Label" data-currency="@currency.Code">@currency.Title</button>
                         }
                     </div>
                 </div>
@@ -269,25 +238,6 @@
                             {
                                 var isActiveLang = string.Equals(lang.Code, currentLang, StringComparison.OrdinalIgnoreCase);
                                 <a class="home-pref-btn@(isActiveLang ? " active" : string.Empty)" href="@BuildPrefLangUrl(lang.Code)" data-pref-label="@lang.Label">@lang.Label</a>
-                            }
-                        </div>
-                    </div>
-                </div>
-                <div class="home-pref-accordion" data-pref-accordion>
-                    <button type="button" class="home-pref-trigger" data-pref-trigger aria-expanded="false">
-                        <span class="home-pref-trigger-main">
-                            <i class="fas fa-coins" aria-hidden="true"></i>
-                            <span>Para</span>
-                        </span>
-                        <span class="home-pref-trigger-value" data-pref-value>@currentCurrencyLabel</span>
-                        <i class="fas fa-chevron-down home-pref-chevron" aria-hidden="true"></i>
-                    </button>
-                    <div class="home-pref-panel" data-pref-panel hidden>
-                        <div class="home-pref-options">
-                            @foreach (var currency in prefCurrencies)
-                            {
-                                var isActiveCurrency = string.Equals(currency.Code, currentCurrency, StringComparison.OrdinalIgnoreCase);
-                                <button class="home-pref-btn@(isActiveCurrency ? " active" : string.Empty)" type="button" data-pref-label="@currency.Label" data-currency="@currency.Code">@currency.Label</button>
                             }
                         </div>
                     </div>

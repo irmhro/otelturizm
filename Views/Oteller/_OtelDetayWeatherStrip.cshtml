@@ -34,7 +34,9 @@
 
     var variantClass = string.Equals(Model.Variant, "standalone", StringComparison.OrdinalIgnoreCase)
         ? "detail-weather-strip--standalone"
-        : "detail-weather-strip--gallery";
+        : string.Equals(Model.Variant, "header", StringComparison.OrdinalIgnoreCase)
+            ? "detail-weather-strip--header"
+            : "detail-weather-strip--gallery";
 }
 
 <button type="button"

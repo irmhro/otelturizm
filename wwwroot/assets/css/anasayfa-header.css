@@ -410,10 +410,6 @@ header.navbar {
     outline: none;
 }
 
-.nav-pref-icon-btn--currency i {
-    color: var(--anatolian-sun);
-}
-
 .nav-pref-menu {
     position: absolute;
     top: calc(100% + 6px);

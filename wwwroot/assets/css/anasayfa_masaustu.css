@@ -1960,7 +1960,8 @@ a.eco-pill:hover {
     max-width: none;
     margin: 0 auto;
     font-size: clamp(32px, 3.6vw, 56px);
-    line-height: 1.1;
+    line-height: 1.16;
+    padding-bottom: 0.04em;
     letter-spacing: -0.028em;
     text-align: center;
     text-wrap: balance;
@@ -1969,7 +1970,8 @@ a.eco-pill:hover {
 .hero-title-row--line {
     flex-wrap: nowrap;
     max-width: 100%;
-    overflow: hidden;
+    overflow-x: clip;
+    overflow-y: visible;
 }
 
 .hero-title-row--line .hero-title-word {
@@ -2694,7 +2696,7 @@ a.eco-pill:hover {
         width: 100%;
         max-width: none;
         font-size: clamp(36px, 3.6vw, 56px);
-        line-height: 1.1;
+        line-height: 1.16;
         gap: clamp(4px, 0.6vw, 8px);
     }
 

@@ -108,8 +108,8 @@ public class OtellerController : Controller
     [OutputCache(PolicyName = "public-short")]
     public async Task<IActionResult> HaritaOteller([FromQuery] string? q, [FromQuery] string? city, [FromQuery] string? etiket, [FromQuery] string? filter, [FromQuery] string? kampanya, [FromQuery] decimal? minPrice, [FromQuery] decimal? maxPrice, [FromQuery] long? ilceId, [FromQuery] long? sehirId, CancellationToken cancellationToken)
     {
-        ViewData["PageCss"] = "haritaoteller";
-        ViewData["PageCssMobile"] = "haritaoteller.mobile";
+        ViewData["PageCss"] = "haritaoteller_masaustu";
+        ViewData["PageCssMobile"] = "haritaoteller_mobil";
         var searchTermRaw = !string.IsNullOrWhiteSpace(q) ? q : city;
         var searchTerm = SearchTextNormalizer.Normalize(searchTermRaw);
         var etiketN = HotelService.ResolveListingCampaignTag(etiket, filter);
