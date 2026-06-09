@@ -223,6 +223,14 @@ public class HotelDetailPageViewModel
     /// <summary>`OTEL_KOSULLARI` — iptal, sigara, evcil hayvan vb.</summary>
     public HotelDetailConditionsViewModel? Conditions { get; set; }
 
+    /// <summary>`OTELLER.TURIZM_BELGE_NO` — yasal işletme kayıt numarası (doluysa vitrinde gösterilir).</summary>
+    public string? TourismDocumentNo { get; set; }
+
+    /// <summary>`OTELLER.TURIZM_BELGE_TURU` — işletme kayıt türü (opsiyonel alt metin).</summary>
+    public string? TourismDocumentType { get; set; }
+
+    public bool ShowBusinessLicense => !string.IsNullOrWhiteSpace(TourismDocumentNo);
+
     public bool HasFreeCancellation => Conditions?.HasFreeCancellation == true;
 }
 

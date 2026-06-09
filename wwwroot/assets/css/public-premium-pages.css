@@ -4,7 +4,7 @@
     --utility-bar-height: 32px;
     --header-height: 72px;
     --header-height-mobile: 64px;
-    --home-header-sticky-h: 88px;
+    --home-header-sticky-h: var(--home-header-bar-h, 58px);
     --page-max-width: 1240px;
     --page-content-gutter: 24px;
     --page-content-inset: 48px;

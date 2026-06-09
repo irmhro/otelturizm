@@ -1,0 +1,21 @@
+@model otelturizmnew.Models.Oteller.HotelDetailPageViewModel
+@if (Model.ShowBusinessLicense)
+{
+    var licenseType = Model.TourismDocumentType?.Trim();
+    var showType = !string.IsNullOrWhiteSpace(licenseType)
+        && !licenseType.Contains("Belgesiz", StringComparison.OrdinalIgnoreCase);
+    <div class="detail-business-trust" aria-label="Kayıtlı konaklama tesis onayı">
+        <span class="detail-business-trust__icon" aria-hidden="true">
+            <i class="fas fa-shield-check"></i>
+        </span>
+        <div class="detail-business-trust__copy">
+            <strong class="detail-business-trust__title">Kayıtlı konaklama tesis onayı</strong>
+            <span class="detail-business-trust__value">Onay kayıt no: @Model.TourismDocumentNo</span>
+            @if (showType)
+            {
+                <span class="detail-business-trust__type">@licenseType</span>
+            }
+            <span class="detail-business-trust__hint">Yasal işletme bilgisi tesis tarafından paylaşılmıştır.</span>
+        </div>
+    </div>
+}

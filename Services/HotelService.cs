@@ -1176,7 +1176,9 @@ public class HotelService : IHotelService
             Weather = src.Weather,
             ActiveViewerBand = src.ActiveViewerBand,
             LivePresenceCount = src.LivePresenceCount,
-            IntentSegmentLabel = src.IntentSegmentLabel
+            IntentSegmentLabel = src.IntentSegmentLabel,
+            TourismDocumentNo = src.TourismDocumentNo,
+            TourismDocumentType = src.TourismDocumentType
         };
     }
 
@@ -2077,7 +2079,9 @@ public class HotelService : IHotelService
                 o.ilce_id,
                 o.mahalle_id,
                 COALESCE(NULLIF(o.video_url, ''), '') AS video_url,
-                COALESCE(NULLIF(o.kapak_fotografi, ''), '') AS gorsel_url
+                COALESCE(NULLIF(o.kapak_fotografi, ''), '') AS gorsel_url,
+                COALESCE(NULLIF(LTRIM(RTRIM(o.turizm_belge_no)), ''), '') AS turizm_belge_no,
+                COALESCE(NULLIF(LTRIM(RTRIM(o.turizm_belge_turu)), ''), '') AS turizm_belge_turu
             FROM oteller o
             WHERE o.id = @hotelId;
             """;
@@ -2117,7 +2121,9 @@ public class HotelService : IHotelService
                 IlceId = reader.IsDBNull(reader.GetOrdinal("ilce_id")) ? null : reader.GetInt64(reader.GetOrdinal("ilce_id")),
                 MahalleId = reader.IsDBNull(reader.GetOrdinal("mahalle_id")) ? null : reader.GetInt64(reader.GetOrdinal("mahalle_id")),
                 VideoUrl = NormalizeMediaUrl(reader.GetString(reader.GetOrdinal("video_url"))),
-                MainImageUrl = NormalizeHotelImageUrl(reader.GetInt64(reader.GetOrdinal("id")), reader.GetString(reader.GetOrdinal("gorsel_url")))
+                MainImageUrl = NormalizeHotelImageUrl(reader.GetInt64(reader.GetOrdinal("id")), reader.GetString(reader.GetOrdinal("gorsel_url"))),
+                TourismDocumentNo = NullIfWhiteSpace(reader.GetString(reader.GetOrdinal("turizm_belge_no"))),
+                TourismDocumentType = NullIfWhiteSpace(reader.GetString(reader.GetOrdinal("turizm_belge_turu")))
             };
         }
 
@@ -2967,6 +2973,9 @@ public class HotelService : IHotelService
 
         return MediaStoragePaths.RoomImagesUrl(hotelId, roomId, normalized);
     }
+
+    private static string? NullIfWhiteSpace(string? value)
+        => string.IsNullOrWhiteSpace(value) ? null : value.Trim();
 
     private static string NormalizeTurkishText(string? value)
     {
