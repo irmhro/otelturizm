@@ -42,7 +42,6 @@
             <i class="fas fa-heart"></i>
             <span>@Model.FavoriteCount</span>
         </a>
-        <partial name="~/Views/Paneller/Common/_DeveloperFeedbackWidget.cshtml" />
         <div class="header-bildiri partner-header-bildiri" data-header-bildiri data-panel-key="@headerBildiri.PanelKey" data-unread-count="@headerBildiri.UnreadCount" data-open="false">
             @Html.AntiForgeryToken()
             <button class="header-bildiri-btn utility-btn" type="button" data-header-bildiri-toggle aria-expanded="false" aria-label="Bildirimleri aç">
