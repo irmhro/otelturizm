@@ -1002,6 +1002,16 @@
         background: rgba(227, 10, 23, 0.05);
     }
 
+    .otelliste-page .otelliste-filter-drawer-body .otelliste-smart-route-pills {
+        max-height: 240px;
+        gap: 8px;
+    }
+
+    .otelliste-page .otelliste-filter-drawer-body .otelliste-filter-smart-route {
+        min-height: 36px;
+        font-size: 12px;
+    }
+
     .otelliste-page .otelliste-filter-drawer-foot {
         flex-shrink: 0;
         display: grid;

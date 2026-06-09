@@ -397,6 +397,57 @@
     accent-color: var(--otl-crimson);
 }
 
+.otelliste-page .otelliste-smart-route-pills {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    max-height: 220px;
+    overflow-y: auto;
+    scrollbar-width: thin;
+    padding-right: 2px;
+}
+
+.otelliste-page .otelliste-filter-smart-route {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 11px;
+    font-weight: 700;
+    background: #fff;
+    border: 1px solid var(--otl-border, #e5e7eb);
+    padding: 5px 10px;
+    border-radius: 999px;
+    cursor: pointer;
+    color: var(--otl-muted, #64748b);
+    transition: border-color 0.15s ease, color 0.15s ease, background 0.15s ease;
+    user-select: none;
+}
+
+.otelliste-page .otelliste-filter-smart-route input {
+    position: absolute;
+    opacity: 0;
+    pointer-events: none;
+}
+
+.otelliste-page .otelliste-filter-smart-route .ai-pill-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    flex-shrink: 0;
+}
+
+.otelliste-page .otelliste-filter-smart-route.active {
+    border-color: var(--otl-dark, #0f172a);
+    color: var(--otl-dark, #0f172a);
+}
+
+.otelliste-page .ai-pill--sage .ai-pill-dot { background: #22c55e; }
+.otelliste-page .ai-pill--amber .ai-pill-dot { background: #f59e0b; }
+.otelliste-page .ai-pill--wine .ai-pill-dot { background: #db2777; }
+.otelliste-page .ai-pill--sky .ai-pill-dot { background: #0ea5e9; }
+.otelliste-page .ai-pill--ocean .ai-pill-dot { background: #2563eb; }
+.otelliste-page .ai-pill--violet .ai-pill-dot { background: #8b5cf6; }
+
 .otelliste-page .otelliste-btn-reset,
 .otelliste-page .otelliste-btn-apply {
     width: 100%;

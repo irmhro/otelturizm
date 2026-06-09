@@ -2810,6 +2810,38 @@
         padding-bottom: 2px;
     }
 
+    .oteldetay-page .mobile-booking-price-stack {
+        display: flex;
+        flex-direction: column;
+        align-items: stretch;
+        gap: 4px;
+        flex: 1;
+        min-width: 0;
+    }
+
+    .oteldetay-page .mobile-booking-loyalty {
+        align-self: flex-end;
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        margin: 0;
+        padding: 2px 7px;
+        border-radius: 999px;
+        background: rgba(15, 118, 110, 0.08);
+        border: 1px solid rgba(15, 118, 110, 0.16);
+        color: #0f766e;
+        font-size: 9px;
+        font-weight: 800;
+        line-height: 1.2;
+        white-space: nowrap;
+        flex-shrink: 0;
+    }
+
+    .oteldetay-page .mobile-booking-loyalty i {
+        color: var(--od-crimson, #E30A17);
+        font-size: 8px;
+    }
+
     .oteldetay-page .mobile-booking-price-main {
         display: flex;
         align-items: flex-end;
@@ -2839,10 +2871,7 @@
     }
 
     .oteldetay-page .mobile-booking-from-line {
-        display: inline-flex;
-        align-items: baseline;
-        gap: 4px;
-        flex-wrap: wrap;
+        display: none !important;
     }
 
     .oteldetay-page .mobile-booking-nightly {

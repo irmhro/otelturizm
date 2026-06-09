@@ -480,7 +480,14 @@ public class OtellerController : Controller
         return Json(BuildPriceQuotePayload(quote));
     }
 
-    private static object BuildPriceQuotePayload(PublicReservationPriceQuoteViewModel quote)
+    [HttpGet("puan-tahmini")]
+    public IActionResult EstimateLoyaltyPoints([FromQuery] decimal amount)
+    {
+        var earnPoints = _hotelPointsService.CalculateEarnPoints(amount);
+        return Json(new { earnPoints });
+    }
+
+    private object BuildPriceQuotePayload(PublicReservationPriceQuoteViewModel quote)
     {
         if (!quote.IsAvailable)
         {
@@ -514,6 +521,7 @@ public class OtellerController : Controller
             dawnSurprisePercent = quote.DawnSurprisePercent,
             dawnSurpriseDiscountAmount = quote.DawnSurpriseDiscountAmount,
             totalAmount = quote.TotalAmount,
+            earnPoints = _hotelPointsService.CalculateEarnPoints(quote.TotalAmount),
             nightlyBreakdown = quote.NightlyBreakdown.Select(item => new
             {
                 date = item.Date.ToString("yyyy-MM-dd"),

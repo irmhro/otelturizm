@@ -19,16 +19,18 @@ public class HotelService : IHotelService
 {
     private readonly IConfiguration _configuration;
     private readonly IHotelPricingReadService _hotelPricingReadService;
+    private readonly ISmartRouteService _smartRouteService;
     private readonly ICacheSingleFlight _cache;
     private readonly ILogger<HotelService> _logger;
 
     private const string PublishStatusSql = "LOWER(REPLACE(LTRIM(RTRIM(o.yayin_durumu)), NCHAR(0x0131), N'i')) = N'yayinda'";
     private const string ApprovalStatusSql = "LOWER(REPLACE(LTRIM(RTRIM(o.onay_durumu)), NCHAR(0x0131), N'i')) IN (N'onaylandi', N'onaylanmis', N'onayli')";
 
-    public HotelService(IConfiguration configuration, IHotelPricingReadService hotelPricingReadService, ICacheSingleFlight cache, ILogger<HotelService> logger)
+    public HotelService(IConfiguration configuration, IHotelPricingReadService hotelPricingReadService, ISmartRouteService smartRouteService, ICacheSingleFlight cache, ILogger<HotelService> logger)
     {
         _configuration = configuration;
         _hotelPricingReadService = hotelPricingReadService;
+        _smartRouteService = smartRouteService;
         _cache = cache;
         _logger = logger;
     }
@@ -623,6 +625,16 @@ public class HotelService : IHotelService
                 HotelCount = x.HotelCount,
                 IsActive = x.IsActive
             }).ToList(),
+            SmartRoutes = src.SmartRoutes.Select(x => new SmartRouteFilterViewModel
+            {
+                Id = x.Id,
+                Slug = x.Slug,
+                DisplayName = x.DisplayName,
+                Hashtag = x.Hashtag,
+                SearchText = x.SearchText,
+                ColorClass = x.ColorClass,
+                HotelCount = x.HotelCount
+            }).ToList(),
             QuickLinks = src.QuickLinks.Select(x => new HotelListingQuickLinkViewModel
             {
                 Title = x.Title,
@@ -664,6 +676,7 @@ public class HotelService : IHotelService
                     Name = a.Name,
                     IconClass = a.IconClass
                 }).ToList(),
+                SmartRouteSlugs = new List<string>(h.SmartRouteSlugs),
                 Tags = new List<string>(h.Tags),
                 CampaignNames = new List<string>(h.CampaignNames),
                 CampaignSlugs = new List<string>(h.CampaignSlugs),
@@ -709,6 +722,7 @@ public class HotelService : IHotelService
                     Name = a.Name,
                     IconClass = a.IconClass
                 }).ToList(),
+                SmartRouteSlugs = new List<string>(h.SmartRouteSlugs),
                 Tags = new List<string>(h.Tags),
                 CampaignNames = new List<string>(h.CampaignNames),
                 CampaignSlugs = new List<string>(h.CampaignSlugs),
@@ -1740,6 +1754,8 @@ public class HotelService : IHotelService
 
         await reader.DisposeAsync();
 
+        await _smartRouteService.EnrichListingCardsAsync(model.Hotels, cancellationToken);
+
         model.Hotels = ApplyCampaignFilter(model.Hotels, model.ActiveTag).ToList();
         var filteredHotels = model.Hotels.ToList();
 
@@ -1761,6 +1777,7 @@ public class HotelService : IHotelService
         model.PropertyTypes = filteredHotels.Select(x => x.PropertyType).Where(x => !string.IsNullOrWhiteSpace(x)).Distinct(StringComparer.OrdinalIgnoreCase).OrderBy(x => x).ToList();
         model.StarOptions = new List<int> { 5, 4, 3, 2, 1 };
         model.Campaigns = await LoadListingCampaignFiltersAsync(connection, model.CampaignSlug, cancellationToken);
+        model.SmartRoutes = await _smartRouteService.GetListingFiltersAsync(cancellationToken);
 
         if (!string.IsNullOrWhiteSpace(model.CampaignSlug))
         {

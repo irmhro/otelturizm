@@ -11,12 +11,47 @@ public class DeneyimlerService : IDeneyimlerService
         {
             HeroEyebrow = "Otelturizm Deneyim Atölyesi",
             HeroTitle = "Konaklamayı anıya dönüştüren rotalar",
-            HeroLead = "Şehir kaçamaklarından sahil ritüellerine; otelinizin ötesinde, size özel kurgulanmış deneyim koleksiyonları. İçerikler yakında zenginleştirilecek.",
+            HeroLead = "Şehir kaçamaklarından spa ritüellerine — ruh halinize uygun otelleri Akıllı Rota etiketleriyle keşfedin, koleksiyonlardan ilham alın.",
             Stats =
             [
-                new() { Value = "12+", Label = "Deneyim teması" },
+                new() { Value = "50+", Label = "Akıllı rota etiketi" },
                 new() { Value = "48", Label = "Şehir & bölge" },
                 new() { Value = "4,8", Label = "Misafir puanı" }
+            ],
+            LiveTicker =
+            [
+                "🌅 Kapadokya safak balonu — bu hafta en çok aranan",
+                "🫧 Antalya thalasso günü — spa otelleri yükselişte",
+                "👨‍👩‍👧 Aile dostu hafta sonu — Uludağ & Bodrum",
+                "🍽️ Gurme rotası — İzmir & İstanbul seçkisi",
+                "🌊 Denize sıfır kaçamak — Ege koyları"
+            ],
+            MoodPicks =
+            [
+                new() { CategoryKey = "sehir", Label = "Şehir keşfi", Emoji = "🏙️", Hint = "Müze, teras, gece yürüyüşü" },
+                new() { CategoryKey = "sahil", Label = "Sahil molası", Emoji = "🌊", Hint = "Koy, marina, gün batımı" },
+                new() { CategoryKey = "spa", Label = "Spa & dinlenme", Emoji = "🫧", Hint = "Thalasso, masaj, sessizlik" },
+                new() { CategoryKey = "gastronomi", Label = "Lezzet turu", Emoji = "🍽️", Hint = "Yerel tat, fine dining" },
+                new() { CategoryKey = "aile", Label = "Aile kaçamağı", Emoji = "👨‍👩‍👧", Hint = "Çocuk kulübü, kayak, havuz" },
+                new() { CategoryKey = "macera", Label = "Macera", Emoji = "⛰️", Hint = "Balon, yayla, doğa yürüyüşü" }
+            ],
+            Spotlight = new DeneyimSpotlightViewModel
+            {
+                Badge = "Haftanın rotası",
+                Title = "Kapadokya safak + mağara konaklama",
+                Subtitle = "Gün doğumunda balon, akşam mağara suit — 2 gece önerilen paket akışı",
+                Location = "Nevşehir",
+                Duration = "2 gece",
+                LinkUrl = "/oteller?q=Kapadokya",
+                Accent = "#FF385C",
+                Emoji = "🎈"
+            },
+            SmartRoutes = BuildSmartRoutes(),
+            CampaignHighlights =
+            [
+                new() { Title = "Şehir Otelleri Kampanyası", Tag = "−%15'e varan", LinkUrl = "/kampanyalar" },
+                new() { Title = "Hafta Sonu Kaçamakları", Tag = "Club özel", LinkUrl = "/oteller?etiket=hafta-sonu-firsatlari" },
+                new() { Title = "Spa & Wellness Otelleri", Tag = "Wellness", LinkUrl = "/oteller?q=spa+wellness" }
             ],
             Categories =
             [
@@ -162,6 +197,34 @@ public class DeneyimlerService : IDeneyimlerService
                     Accent = "#db2777",
                     Gradient = "linear-gradient(135deg, #831843 0%, #f472b6 100%)",
                     LinkUrl = "/oteller?q=Marmaris"
+                },
+                new()
+                {
+                    Key = "bursa-termal",
+                    CategoryKey = "spa",
+                    Title = "Bursa termal hafta sonu",
+                    Subtitle = "Hamam ritüeli ve osmanlı çarşı turu",
+                    Mood = "Termal · Kültür",
+                    Location = "Bursa",
+                    Duration = "2 gece",
+                    Stamp = "TERMAL",
+                    Accent = "#0891b2",
+                    Gradient = "linear-gradient(135deg, #164e63 0%, #67e8f9 100%)",
+                    LinkUrl = "/oteller?q=Bursa+termal"
+                },
+                new()
+                {
+                    Key = "fethiye-dalis",
+                    CategoryKey = "macera",
+                    Title = "Fethiye mavi yolculuk",
+                    Subtitle = "Koy atlama, dalış ve gün batımı",
+                    Mood = "Macera · Deniz",
+                    Location = "Muğla",
+                    Duration = "3 gün",
+                    Stamp = "DENİZ",
+                    Accent = "#2563eb",
+                    Gradient = "linear-gradient(135deg, #1e3a8a 0%, #93c5fd 100%)",
+                    LinkUrl = "/oteller?q=Fethiye"
                 }
             ],
             Stories =
@@ -198,5 +261,32 @@ public class DeneyimlerService : IDeneyimlerService
                 new() { Step = 3, Title = "Anıyı yaşayın", Text = "Check-in sonrası önerilen rotalar ve yerel ipuçlarıyla yolculuğunuzu tamamlayın.", Icon = "fa-star" }
             ]
         };
+    }
+
+    private static List<DeneyimSmartRouteViewModel> BuildSmartRoutes()
+    {
+        (string hashtag, string query, string color)[] tags =
+        [
+            ("#SakinlikArayanlar", "sakin huzurlu ortam", "sage"),
+            ("#ÇocukDostu", "çocuk dostu aile oteli", "amber"),
+            ("#GurmeDeneyimi", "gurme fine dining", "wine"),
+            ("#ÖzelHavuzlu", "özel havuz suite", "sky"),
+            ("#DenizeSıfır", "denize sıfır plaj", "ocean"),
+            ("#SpaWellness", "spa wellness", "violet"),
+            ("#Balayı", "balayı romantik", "wine"),
+            ("#İşSeyahati", "iş seyahati merkezi", "sage"),
+            ("#PetDostu", "evcil hayvan dostu", "amber"),
+            ("#ButikOtel", "butik otel", "sky"),
+            ("#TermalRahat", "termal kaplıca", "violet"),
+            ("#KayakKış", "kayak kış oteli", "ocean")
+        ];
+
+        return tags.Select(t => new DeneyimSmartRouteViewModel
+        {
+            Hashtag = t.hashtag,
+            SearchQuery = t.query,
+            ColorClass = t.color,
+            LinkUrl = $"/oteller?q={Uri.EscapeDataString(t.query)}"
+        }).ToList();
     }
 }

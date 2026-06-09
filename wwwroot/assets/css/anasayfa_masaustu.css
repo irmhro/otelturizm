@@ -758,6 +758,100 @@
 
 .hotel-grid { gap: 24px; }
 
+/* Anasayfa — kategori bazlı yatay otel şeritleri */
+.hotel-section {
+    margin-bottom: 4px;
+}
+
+.hotel-section__subtitle {
+    margin: -6px 0 12px;
+}
+
+.hotel-section__shell {
+    display: flex;
+    align-items: stretch;
+    gap: 8px;
+    max-width: 100%;
+}
+
+.hotel-section__scroll {
+    flex: 1;
+    min-width: 0;
+    overflow-x: auto;
+    overflow-y: hidden;
+    -webkit-overflow-scrolling: touch;
+    scroll-snap-type: x mandatory;
+    scroll-behavior: smooth;
+    scrollbar-width: none;
+    padding-bottom: 4px;
+}
+
+.hotel-section__scroll::-webkit-scrollbar {
+    display: none;
+}
+
+.hotel-grid--scroll {
+    display: flex;
+    flex-direction: row;
+    align-items: stretch;
+    gap: 16px;
+    width: max-content;
+    min-width: 100%;
+}
+
+.hotel-grid--scroll .hotel-card {
+    flex: 0 0 280px;
+    width: 280px;
+    scroll-snap-align: start;
+}
+
+.hotel-section__nav {
+    flex-shrink: 0;
+    align-self: center;
+    width: 34px;
+    height: 34px;
+    border-radius: 50%;
+    border: 1px solid var(--border-subtle);
+    background: #fff;
+    color: var(--text-muted);
+    cursor: pointer;
+    display: grid;
+    place-items: center;
+    font-size: 12px;
+    transition: border-color 0.2s, color 0.2s, box-shadow 0.2s;
+}
+
+.hotel-section__nav:hover:not(:disabled) {
+    border-color: var(--flag-crimson);
+    color: var(--flag-crimson);
+    box-shadow: 0 4px 12px rgba(227, 10, 23, 0.12);
+}
+
+.hotel-section__nav:disabled {
+    opacity: 0.35;
+    cursor: default;
+}
+
+@media (max-width: 900px) {
+    .hotel-section__nav {
+        display: none !important;
+    }
+
+    .hotel-section__scroll {
+        margin-inline: -16px;
+        padding-inline: 16px;
+    }
+
+    .hotel-grid--scroll {
+        gap: 12px;
+    }
+
+    .hotel-grid--scroll .hotel-card {
+        flex-basis: min(78vw, 300px);
+        width: min(78vw, 300px);
+    }
+}
+
 .hotel-card {
     background: #fff;
     border: 1px solid var(--border-subtle);

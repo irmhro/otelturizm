@@ -23,8 +23,9 @@ public class PartnerPanelController : Controller
     private readonly ISecureFileService _secureFileService;
     private readonly IPlatformPackageService _platformPackageService;
     private readonly IHotelPointsService _hotelPointsService;
+    private readonly ISmartRouteService _smartRouteService;
 
-    public PartnerPanelController(IPartnerService partnerService, IAuthService authService, IUserPanelService userPanelService, IOutputCacheStore outputCacheStore, IPanelThemeService panelThemeService, ISecureFileService secureFileService, IPlatformPackageService platformPackageService, IHotelPointsService hotelPointsService)
+    public PartnerPanelController(IPartnerService partnerService, IAuthService authService, IUserPanelService userPanelService, IOutputCacheStore outputCacheStore, IPanelThemeService panelThemeService, ISecureFileService secureFileService, IPlatformPackageService platformPackageService, IHotelPointsService hotelPointsService, ISmartRouteService smartRouteService)
     {
         _partnerService = partnerService;
         _authService = authService;
@@ -34,6 +35,7 @@ public class PartnerPanelController : Controller
         _secureFileService = secureFileService;
         _platformPackageService = platformPackageService;
         _hotelPointsService = hotelPointsService;
+        _smartRouteService = smartRouteService;
     }
 
     private async Task EvictPublicOutputCacheAsync(CancellationToken cancellationToken)
@@ -1949,6 +1951,35 @@ public class PartnerPanelController : Controller
         var result = await _partnerService.UpdateHotelAmenitiesAsync(GetUserId(), request, cancellationToken);
         TempData[result.Success ? "PartnerSuccess" : "PartnerError"] = result.Message;
         return Redirect($"/panel/partner/tesis/ozellikler?otelId={request.HotelId}#ozellikler");
+    }
+
+    [HttpGet("akilli-rotalar")]
+    public async Task<IActionResult> SmartRoutes(long? otelId, CancellationToken cancellationToken)
+    {
+        if (!IsPartnerUser()) return Redirect("/partner-giris");
+        try
+        {
+            var model = await _smartRouteService.GetPartnerPageAsync(GetUserId(), otelId, cancellationToken);
+            ViewData["Title"] = "Akıllı Rota Etiketleri";
+            ViewData["PageCssPath"] = "paneller/partner/smart-routes";
+            return View("~/Views/Paneller/Partner/SmartRoutes.cshtml", model);
+        }
+        catch (InvalidOperationException ex) when (ex.Message.Contains("yetkili otel", StringComparison.OrdinalIgnoreCase))
+        {
+            ViewData["Title"] = "Akıllı Rota Etiketleri";
+            ViewData["PageCssPath"] = "paneller/partner/smart-routes";
+            return View("~/Views/Paneller/Partner/NoHotelAssigned.cshtml");
+        }
+    }
+
+    [HttpPost("akilli-rotalar/toggle")]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> ToggleSmartRoute(PartnerSmartRouteToggleRequest request, CancellationToken cancellationToken)
+    {
+        if (!IsPartnerUser()) return Redirect("/partner-giris");
+        var result = await _smartRouteService.ToggleMembershipAsync(GetUserId(), request, cancellationToken);
+        TempData[result.Success ? "PartnerSuccess" : "PartnerError"] = result.Message;
+        return Redirect($"/panel/partner/akilli-rotalar?otelId={request.HotelId}#akilli-rotalar");
     }
 
     [HttpGet("tesis/konum")]

@@ -1,0 +1,77 @@
+.partner-smart-route-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+    gap: 16px;
+}
+
+.partner-smart-route-card {
+    border: 1px solid var(--tblr-border-color, #e6e7e9);
+    border-radius: 12px;
+    padding: 16px;
+    background: #fff;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.partner-smart-route-card.is-joined {
+    border-color: rgba(34, 197, 94, 0.35);
+    background: rgba(34, 197, 94, 0.04);
+}
+
+.partner-smart-route-card-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+}
+
+.partner-smart-route-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12px;
+    font-weight: 700;
+    padding: 4px 10px;
+    border-radius: 999px;
+    border: 1px solid var(--tblr-border-color, #e6e7e9);
+    background: #fff;
+}
+
+.partner-smart-route-pill .ai-pill-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+}
+
+.ai-pill--sage .ai-pill-dot { background: #22c55e; }
+.ai-pill--amber .ai-pill-dot { background: #f59e0b; }
+.ai-pill--wine .ai-pill-dot { background: #db2777; }
+.ai-pill--sky .ai-pill-dot { background: #0ea5e9; }
+.ai-pill--ocean .ai-pill-dot { background: #2563eb; }
+.ai-pill--violet .ai-pill-dot { background: #8b5cf6; }
+
+.partner-smart-route-desc {
+    margin: 0;
+    font-size: 13px;
+    color: var(--tblr-secondary, #667382);
+    line-height: 1.45;
+}
+
+.partner-smart-route-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px 12px;
+    font-size: 12px;
+    color: var(--tblr-secondary, #667382);
+}
+
+.partner-smart-route-form {
+    margin-top: auto;
+}
+
+@media (max-width: 767px) {
+    .partner-smart-route-grid {
+        grid-template-columns: 1fr;
+    }
+}

@@ -4,14 +4,7 @@
     var scope = ViewData["FilterScope"] as string ?? "desktop";
     var prefix = scope == "mobile" ? "otelliste-m-" : "otelliste-";
     var hotels = Model.Hotels ?? new List<otelturizmnew.Models.Oteller.HotelListingCardViewModel>();
-    var amenityCounts = hotels
-        .SelectMany(h => h.Amenities ?? new List<string>())
-        .Where(a => !string.IsNullOrWhiteSpace(a))
-        .GroupBy(a => a, StringComparer.OrdinalIgnoreCase)
-        .OrderByDescending(g => g.Count())
-        .ThenBy(g => g.Key)
-        .Take(10)
-        .ToList();
+    var smartRoutes = Model.SmartRoutes ?? new List<otelturizmnew.Models.Oteller.SmartRouteFilterViewModel>();
     var cityOptions = (Model.Cities?.Any() == true
         ? Model.Cities
         : hotels.Select(h => h.City).Where(x => !string.IsNullOrWhiteSpace(x)).Distinct(StringComparer.OrdinalIgnoreCase))
@@ -135,16 +128,20 @@
         </div>
     }
 
-    @if (amenityCounts.Count > 0)
+    @if (smartRoutes.Count > 0)
     {
-        <div class="otelliste-filter-group">
-            <span class="otelliste-filter-label">Özellikler</span>
-            <div class="otelliste-check-list otelliste-filter-amenities">
-                @foreach (var amenity in amenityCounts)
+        <div class="otelliste-filter-group otelliste-filter-group--smart-routes">
+            <span class="otelliste-filter-label">Akıllı Rota</span>
+            <div class="otelliste-smart-route-pills otelliste-filter-smart-routes" role="group" aria-label="Akıllı Rota etiketleri">
+                @foreach (var tag in smartRoutes)
                 {
-                    <label class="otelliste-check">
-                        <input type="checkbox" class="otelliste-filter-amenity" value="@amenity.Key.ToLowerInvariant()" />
-                        <span>@amenity.Key</span>
+                    <label class="ai-pill ai-pill--@tag.ColorClass otelliste-filter-smart-route">
+                        <input type="checkbox"
+                               class="otelliste-filter-smart-route-input"
+                               value="@tag.Slug"
+                               aria-label="@tag.Hashtag" />
+                        <span class="ai-pill-dot" aria-hidden="true"></span>
+                        <span class="otelliste-smart-route-label">@tag.Hashtag</span>
                     </label>
                 }
             </div>

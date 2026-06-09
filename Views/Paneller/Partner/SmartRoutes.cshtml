@@ -1,0 +1,88 @@
+@model otelturizmnew.Models.Paneller.Partner.PartnerSmartRoutesPageViewModel
+@{
+    Layout = "~/Views/Paneller/Partner/_PartnerPanelLayout.cshtml";
+    ViewData["PartnerShell"] = Model.Shell;
+    ViewData["PageCssPath"] = "paneller/partner/smart-routes";
+    var joinedCount = Model.Tags.Count(x => x.IsJoined);
+}
+
+<div class="page-header d-print-none">
+    <div class="row g-2 align-items-center">
+        <div class="col">
+            <div class="page-pretitle">Kanal & pazarlama</div>
+            <h2 class="page-title">Akıllı Rota Etiketleri</h2>
+            <div class="text-muted mt-1">Tesisinizi otel listeleme filtrelerinde görünen #etiketlere ekleyin veya çıkarın.</div>
+        </div>
+        <div class="col-auto ms-auto d-print-none">
+            <span class="badge bg-primary-lt">@joinedCount / @Model.Tags.Count aktif</span>
+        </div>
+    </div>
+</div>
+
+@if (!Model.TablesReady)
+{
+    <div class="alert alert-warning" role="alert">
+        Akıllı Rota tabloları henüz kurulmamış. Veritabanı migration dosyalarını uygulayın.
+    </div>
+}
+else if (Model.HotelId <= 0)
+{
+    <div class="alert alert-info" role="alert">Önce bir tesis seçin.</div>
+}
+else
+{
+    <div class="row row-cards">
+        <div class="col-12">
+            <div class="card" id="akilli-rotalar">
+                <div class="card-header">
+                    <div>
+                        <h3 class="card-title mb-0">@Model.HotelName</h3>
+                        <div class="text-muted small">Etiket seçimi anında kaydedilir.</div>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="partner-smart-route-grid">
+                        @foreach (var tag in Model.Tags)
+                        {
+                            <div class="partner-smart-route-card @(tag.IsJoined ? "is-joined" : string.Empty)">
+                                <div class="partner-smart-route-card-head">
+                                    <span class="ai-pill ai-pill--@tag.ColorClass partner-smart-route-pill">
+                                        <span class="ai-pill-dot" aria-hidden="true"></span>
+                                        @tag.Hashtag
+                                    </span>
+                                    @if (tag.IsJoined)
+                                    {
+                                        <span class="badge bg-success-lt">Katıldı</span>
+                                    }
+                                </div>
+                                @if (!string.IsNullOrWhiteSpace(tag.SearchText))
+                                {
+                                    <p class="partner-smart-route-desc">@tag.SearchText</p>
+                                }
+                                @if (tag.IsJoined && tag.JoinDate.HasValue)
+                                {
+                                    <div class="partner-smart-route-meta">
+                                        <span>Katılım: @tag.JoinDate.Value.ToString("dd.MM.yyyy")</span>
+                                        @if (tag.EndDate.HasValue)
+                                        {
+                                            <span>Bitiş: @tag.EndDate.Value.ToString("dd.MM.yyyy")</span>
+                                        }
+                                    </div>
+                                }
+                                <form method="post" action="/panel/partner/akilli-rotalar/toggle" class="partner-smart-route-form">
+                                    @Html.AntiForgeryToken()
+                                    <input type="hidden" name="HotelId" value="@Model.HotelId" />
+                                    <input type="hidden" name="SmartRouteId" value="@tag.Id" />
+                                    <input type="hidden" name="Join" value="@(tag.IsJoined ? "false" : "true")" />
+                                    <button type="submit" class="btn btn-sm @(tag.IsJoined ? "btn-outline-danger" : "btn-primary")">
+                                        @(tag.IsJoined ? "Etiketten Ayrıl" : "Etikete Katıl")
+                                    </button>
+                                </form>
+                            </div>
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+}

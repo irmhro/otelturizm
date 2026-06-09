@@ -1,0 +1,102 @@
+@model otelturizmnew.Models.Anasayfa.HomeHotelSectionRenderModel
+@{
+    var hotels = Model.Hotels ?? new List<otelturizmnew.Models.Anasayfa.HomeHotelCardViewModel>();
+    var fallbackImages = Model.FallbackImages?.Length > 0
+        ? Model.FallbackImages
+        : new[]
+        {
+            "https://images.unsplash.com/photo-1566073771259-6a8506099945?w=700&auto=format&fit=crop&q=80",
+            "https://images.unsplash.com/photo-1520250497591-112f2f40a3f4?w=700&auto=format&fit=crop&q=80",
+            "https://images.unsplash.com/photo-1584132967334-10e028bd69f7?w=700&auto=format&fit=crop&q=80",
+            "https://images.unsplash.com/photo-1540555700478-4be289fbecef?w=700&auto=format&fit=crop&q=80"
+        };
+    var sectionId = string.IsNullOrWhiteSpace(Model.SectionKey)
+        ? $"home-hotels-{Guid.NewGuid():N}"
+        : Model.SectionKey;
+}
+
+<div class="hotel-section" data-home-hotel-section="@sectionId">
+    <h2 class="section-headline">
+        <span class="headline-left">@Model.Title</span>
+        <a class="headline-link" href="@Model.SeeAllUrl">Tümünü gör</a>
+    </h2>
+    @if (!string.IsNullOrWhiteSpace(Model.Subtitle))
+    {
+        <p class="section-subline hotel-section__subtitle">@Model.Subtitle</p>
+    }
+
+    <div class="hotel-section__shell">
+        <button type="button" class="hotel-section__nav hotel-section__nav--prev" data-hotel-scroll-prev aria-label="Önceki oteller" hidden>
+            <i class="fas fa-chevron-left" aria-hidden="true"></i>
+        </button>
+        <div class="hotel-section__scroll" data-hotel-scroll-track tabindex="0" role="region" aria-label="@Model.Title otelleri">
+            <section class="hotel-grid hotel-grid--scroll">
+                @if (hotels.Count > 0)
+                {
+                    var index = 0;
+                    foreach (var hotel in hotels)
+                    {
+                        var image = !string.IsNullOrWhiteSpace(hotel.ImageUrl) ? hotel.ImageUrl : fallbackImages[index % fallbackImages.Length];
+                        var detailUrl = string.IsNullOrWhiteSpace(hotel.DetailSlug) ? "/oteller" : $"/oteller/{Uri.EscapeDataString(hotel.DetailSlug)}";
+                        var location = !string.IsNullOrWhiteSpace(hotel.LocationText) ? hotel.LocationText : $"{hotel.District}, {hotel.City}".Trim(' ', ',');
+                        var hasDiscount = hotel.HasDiscount && hotel.OriginalPrice.HasValue && hotel.DiscountedPrice.HasValue;
+                        <article class="hotel-card">
+                            <a href="@detailUrl" class="home-premium-card-link" aria-label="@hotel.Name detay">
+                                <div class="img-holder">
+                                    <img src="@image" alt="@hotel.Name" loading="lazy" decoding="async" />
+                                    <span class="badge-lux">★★★★★</span>
+                                </div>
+                                <div class="hotel-card-body">
+                                    <h3 class="hotel-title">@hotel.Name</h3>
+                                    <p class="hotel-desc"><i class="fas fa-location-dot"></i> @location</p>
+                                    <div class="price-row">
+                                        <div class="price-inline">
+                                            @if (hasDiscount)
+                                            {
+                                                <strong>₺@hotel.DiscountedPrice!.Value.ToString("N0")</strong>
+                                                <small class="price-tax-note">Vergiler dahil · %@hotel.DiscountPercent indirim</small>
+                                            }
+                                            else if (hotel.StartingPrice.HasValue)
+                                            {
+                                                <strong>₺@hotel.StartingPrice.Value.ToString("N0")</strong>
+                                                <small class="price-tax-note">Vergiler dahil</small>
+                                            }
+                                            else
+                                            {
+                                                <strong>@hotel.PriceText</strong>
+                                                <small class="price-tax-note">Vergiler dahil</small>
+                                            }
+                                        </div>
+                                        <span class="card-link">İncele →</span>
+                                    </div>
+                                </div>
+                            </a>
+                        </article>
+                        index++;
+                    }
+                }
+                else if (Model.AllowEmptyFallback)
+                {
+                    var fallbackNames = new[] { "Bodrum Premium Resort", "Kapadokya Cave Suite", "İstanbul Boğaz Oteli", "Antalya Eko Resort" };
+                    var fallbackLocations = new[] { "Bodrum, Muğla", "Ürgüp, Nevşehir", "Beşiktaş, İstanbul", "Kemer, Antalya" };
+                    for (var i = 0; i < 4; i++)
+                    {
+                        <article class="hotel-card">
+                            <a href="/oteller" class="home-premium-card-link">
+                                <div class="img-holder"><img src="@fallbackImages[i % fallbackImages.Length]" alt="@fallbackNames[i]" loading="lazy" decoding="async" /><span class="badge-lux">★★★★★</span></div>
+                                <div class="hotel-card-body">
+                                    <h3 class="hotel-title">@fallbackNames[i]</h3>
+                                    <p class="hotel-desc"><i class="fas fa-location-dot"></i> @fallbackLocations[i]</p>
+                                    <div class="price-row"><div class="price-inline"><strong>₺3.900</strong><small class="price-tax-note">Vergiler dahil</small></div><span class="card-link">İncele →</span></div>
+                                </div>
+                            </a>
+                        </article>
+                    }
+                }
+            </section>
+        </div>
+        <button type="button" class="hotel-section__nav hotel-section__nav--next" data-hotel-scroll-next aria-label="Sonraki oteller" hidden>
+            <i class="fas fa-chevron-right" aria-hidden="true"></i>
+        </button>
+    </div>
+</div>

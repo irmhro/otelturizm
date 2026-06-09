@@ -49,7 +49,7 @@
         const stars = Array.from(root.querySelectorAll('.otelliste-star-btn.is-active'))
             .map(btn => parseInt(btn.getAttribute('data-star') || '0', 10))
             .filter(n => n > 0);
-        const amenities = Array.from(root.querySelectorAll('.otelliste-filter-amenity:checked'))
+        const smartRoutes = Array.from(root.querySelectorAll('.otelliste-filter-smart-route-input:checked'))
             .map(el => normalize(el.value));
         const campaigns = Array.from(root.querySelectorAll('.otelliste-filter-campaign:checked'))
             .map(el => normalize(el.value));
@@ -73,7 +73,7 @@
             defaultMax,
             priceFilterActive,
             stars,
-            amenities,
+            smartRoutes,
             campaigns
         };
     }
@@ -103,8 +103,9 @@
             const star = parseInt(btn.getAttribute('data-star') || '0', 10);
             btn.classList.toggle('is-active', state.stars.includes(star));
         });
-        root.querySelectorAll('.otelliste-filter-amenity').forEach(ch => {
-            ch.checked = state.amenities.includes(normalize(ch.value));
+        root.querySelectorAll('.otelliste-filter-smart-route-input').forEach(ch => {
+            ch.checked = state.smartRoutes.includes(normalize(ch.value));
+            ch.closest('.otelliste-filter-smart-route')?.classList.toggle('active', ch.checked);
         });
         root.querySelectorAll('.otelliste-filter-campaign').forEach(ch => {
             ch.checked = state.campaigns.includes(normalize(ch.value));
@@ -120,7 +121,7 @@
         return active || desktop || mobile || {
             keyword: '', city: '', district: '', neighborhood: '',
             minPrice: 0, maxPrice: Number.MAX_SAFE_INTEGER, priceFilterActive: false,
-            stars: [], amenities: [], campaigns: []
+            stars: [], smartRoutes: [], campaigns: []
         };
     }
 
@@ -169,7 +170,7 @@
         if (state.district) n++;
         if (state.neighborhood) n++;
         if (state.stars.length) n++;
-        if (state.amenities.length) n++;
+        if (state.smartRoutes.length) n++;
         if (state.campaigns.length) n++;
         if (state.priceFilterActive) n++;
         return n;
@@ -190,9 +191,9 @@
         const stars = parseInt(card.getAttribute('data-stars') || '0', 10);
         if (state.stars.length && !state.stars.includes(stars)) return false;
 
-        if (state.amenities.length) {
-            const cardAmenities = (card.getAttribute('data-amenities') || '').split(/\s+/).filter(Boolean);
-            if (!state.amenities.every(a => cardAmenities.includes(a))) return false;
+        if (state.smartRoutes.length) {
+            const cardRoutes = (card.getAttribute('data-smart-routes') || '').split(/\s+/).filter(Boolean);
+            if (!state.smartRoutes.some(r => cardRoutes.includes(r))) return false;
         }
 
         if (state.campaigns.length) {
@@ -301,7 +302,7 @@
                 maxPrice: desktop.maxPrice,
                 priceFilterActive: desktop.priceFilterActive,
                 stars: desktop.stars,
-                amenities: desktop.amenities,
+                smartRoutes: desktop.smartRoutes,
                 campaigns: desktop.campaigns
             });
         }
@@ -351,7 +352,7 @@
             maxPrice: mobile.maxPrice,
             priceFilterActive: mobile.priceFilterActive,
             stars: mobile.stars,
-            amenities: mobile.amenities,
+            smartRoutes: mobile.smartRoutes,
             campaigns: mobile.campaigns
         });
         syncSelectOptions('desktop');
@@ -378,8 +379,9 @@
                 if (scope === 'desktop') applyFilters();
             });
         });
-        root.querySelectorAll('.otelliste-filter-amenity, .otelliste-filter-campaign').forEach(el => {
+        root.querySelectorAll('.otelliste-filter-smart-route-input, .otelliste-filter-campaign').forEach(el => {
             el.addEventListener('change', () => {
+                el.closest('.otelliste-filter-smart-route')?.classList.toggle('active', el.checked);
                 if (scope === 'desktop') applyFilters();
             });
         });

@@ -204,6 +204,7 @@ builder.Services.AddScoped<IHotelPricingReadService, HotelPricingReadService>();
 builder.Services.AddScoped<IHeaderBildiriService, HeaderBildiriService>();
 builder.Services.AddScoped<IUtilityPulseService, UtilityPulseService>();
 builder.Services.AddScoped<IOzelGunService, OzelGunService>();
+builder.Services.AddScoped<ISmartRouteService, SmartRouteService>();
 builder.Services.AddScoped<IFavoritePriceAlertService, FavoritePriceAlertService>();
 builder.Services.AddScoped<IPhoneVerificationService, PhoneVerificationService>();
 builder.Services.AddScoped<IEmailTemplateService, EmailTemplateService>();

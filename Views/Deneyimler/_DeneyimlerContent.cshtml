@@ -37,6 +37,18 @@
         </div>
     </section>
 
+    @if (Model.LiveTicker.Count > 0)
+    {
+        <div class="dxp-ticker" aria-label="Canlı arama trendleri">
+            <div class="dxp-ticker__track" data-dxp-ticker>
+                @foreach (var item in Model.LiveTicker.Concat(Model.LiveTicker))
+                {
+                    <span class="dxp-ticker__item">@item</span>
+                }
+            </div>
+        </div>
+    }
+
     <div class="dxp-shell">
         <nav class="dxp-category-nav" aria-label="Deneyim kategorileri" data-dxp-filter-nav>
             @foreach (var cat in Model.Categories)
@@ -52,6 +64,91 @@
                 </button>
             }
         </nav>
+
+        @if (Model.MoodPicks.Count > 0)
+        {
+            <section class="dxp-section dxp-section--moods" aria-labelledby="dxp-mood-title">
+                <div class="dxp-section__head">
+                    <div>
+                        <p class="dxp-section__eyebrow">Ruh halin ne?</p>
+                        <h2 id="dxp-mood-title" class="dxp-section__title">Bugün nasıl hissediyorsun?</h2>
+                    </div>
+                </div>
+                <div class="dxp-mood-grid" data-dxp-mood-grid>
+                    @foreach (var mood in Model.MoodPicks)
+                    {
+                        <button type="button"
+                                class="dxp-mood-card"
+                                data-dxp-mood="@mood.CategoryKey"
+                                aria-pressed="false">
+                            <span class="dxp-mood-card__emoji" aria-hidden="true">@mood.Emoji</span>
+                            <strong>@mood.Label</strong>
+                            <small>@mood.Hint</small>
+                        </button>
+                    }
+                </div>
+            </section>
+        }
+
+        @if (Model.Spotlight != null)
+        {
+            var spot = Model.Spotlight;
+            <section class="dxp-spotlight" aria-labelledby="dxp-spotlight-title">
+                <a class="dxp-spotlight__link" href="@spot.LinkUrl" style="--dxp-accent:@spot.Accent;">
+                    <div class="dxp-spotlight__badge"><span aria-hidden="true">@spot.Emoji</span> @spot.Badge</div>
+                    <div class="dxp-spotlight__body">
+                        <h2 id="dxp-spotlight-title" class="dxp-spotlight__title">@spot.Title</h2>
+                        <p class="dxp-spotlight__subtitle">@spot.Subtitle</p>
+                        <div class="dxp-spotlight__meta">
+                            <span><i class="fas fa-location-dot" aria-hidden="true"></i> @spot.Location</span>
+                            <span><i class="fas fa-clock" aria-hidden="true"></i> @spot.Duration</span>
+                        </div>
+                        <span class="dxp-spotlight__cta">Rotayı keşfet <i class="fas fa-arrow-right" aria-hidden="true"></i></span>
+                    </div>
+                </a>
+            </section>
+        }
+
+        @if (Model.SmartRoutes.Count > 0)
+        {
+            <section class="dxp-section dxp-section--routes" aria-labelledby="dxp-routes-title">
+                <div class="dxp-section__head">
+                    <div>
+                        <p class="dxp-section__eyebrow">Akıllı Rota</p>
+                        <h2 id="dxp-routes-title" class="dxp-section__title">Etiketle otel bul</h2>
+                    </div>
+                    <span class="dxp-section__badge"><i class="fas fa-route" aria-hidden="true"></i> Anasayfa ile aynı sistem</span>
+                </div>
+                <div class="dxp-routes-rail" tabindex="0" aria-label="Akıllı rota etiketleri">
+                    @foreach (var route in Model.SmartRoutes)
+                    {
+                        <a class="dxp-route-pill dxp-route-pill--@route.ColorClass" href="@route.LinkUrl">
+                            <span class="dxp-route-pill__dot" aria-hidden="true"></span>
+                            @route.Hashtag
+                        </a>
+                    }
+                </div>
+            </section>
+        }
+
+        @if (Model.CampaignHighlights.Count > 0)
+        {
+            <section class="dxp-campaigns" aria-labelledby="dxp-campaigns-title">
+                <div class="dxp-campaigns__head">
+                    <h2 id="dxp-campaigns-title" class="dxp-campaigns__title"><i class="fas fa-tags" aria-hidden="true"></i> Kampanyalar</h2>
+                </div>
+                <div class="dxp-campaigns__rail">
+                    @foreach (var camp in Model.CampaignHighlights)
+                    {
+                        <a class="dxp-campaign-card" href="@camp.LinkUrl">
+                            <span class="dxp-campaign-card__tag">@camp.Tag</span>
+                            <strong>@camp.Title</strong>
+                            <span class="dxp-campaign-card__go">İncele <i class="fas fa-chevron-right" aria-hidden="true"></i></span>
+                        </a>
+                    }
+                </div>
+            </section>
+        }
 
         <section class="dxp-section" id="dxp-one-cikan" aria-labelledby="dxp-featured-title">
             <div class="dxp-section__head">
@@ -140,7 +237,7 @@
             </div>
             <p class="dxp-empty" data-dxp-empty hidden>
                 <i class="fas fa-compass" aria-hidden="true"></i>
-                Bu kategoride henüz deneyim yok. Yakında yeni rotalar eklenecek.
+                Bu kategoride henüz rota yok. Başka bir ruh hali seçin veya tümünü görüntüleyin.
             </p>
         </section>
 
@@ -149,7 +246,7 @@
                 <div class="dxp-journey__copy">
                     <p class="dxp-section__eyebrow">Nasıl çalışır?</p>
                     <h2 id="dxp-journey-title" class="dxp-section__title">3 adımda deneyim planı</h2>
-                    <p class="dxp-journey__lead">Rezervasyon akışınızı bozmadan, konaklamanızla uyumlu deneyim önerileri sunuyoruz. Detaylı içerikler ve partner rotaları yakında.</p>
+                    <p class="dxp-journey__lead">Rezervasyon akışınızı bozmadan, konaklamanızla uyumlu deneyim önerileri ve Akıllı Rota etiketleriyle otel keşfi.</p>
                 </div>
                 <ol class="dxp-journey__steps">
                     @foreach (var step in Model.JourneySteps)
@@ -171,7 +268,7 @@
             <div class="dxp-cta__inner">
                 <div>
                     <h2 class="dxp-cta__title">İlk rotanızı birlikte kuralım</h2>
-                    <p class="dxp-cta__text">Şimdilik otel aramasıyla başlayın; deneyim içerikleri ve canlı rotalar çok yakında burada olacak.</p>
+                    <p class="dxp-cta__text">Akıllı Rota etiketlerinden birini seçin veya koleksiyonlardan ilham alarak otel aramanıza başlayın.</p>
                 </div>
                 <div class="dxp-cta__actions">
                     <a href="/oteller" class="dxp-btn dxp-btn--light">Otelleri keşfet</a>

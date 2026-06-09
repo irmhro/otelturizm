@@ -255,6 +255,7 @@
                         var amenitiesSafe = hotel.Amenities ?? new List<string>();
                         var campaignSlugsSafe = hotel.CampaignSlugs ?? new List<string>();
                         var amenityText = string.Join(" ", amenitiesSafe.Select(NormalizeToken));
+                        var smartRouteText = string.Join(" ", (hotel.SmartRouteSlugs ?? new List<string>()).Select(NormalizeToken));
                         var keywords = NormalizeToken($"{hotel.Name} {hotel.City} {hotel.District} {hotel.Neighborhood} {hotel.PropertyType} {string.Join(" ", amenitiesSafe)}");
                         var locationText = string.IsNullOrWhiteSpace(hotel.Neighborhood)
                             ? $"{hotel.District} · {hotel.City}"
@@ -286,6 +287,7 @@
                                  data-rating="@hotel.Rating.ToString(CultureInfo.InvariantCulture)"
                                  data-stars="@(hotel.StarCount ?? 0)"
                                  data-amenities="@amenityText"
+                                 data-smart-routes="@smartRouteText"
                                  data-campaign-slugs="@string.Join(" ", campaignSlugsSafe.Where(x => !string.IsNullOrWhiteSpace(x)).Select(NormalizeToken).Distinct())"
                                  data-featured="@(hotel.IsFeatured ? "1" : "0")"
                                  data-gallery="@galleryJson">

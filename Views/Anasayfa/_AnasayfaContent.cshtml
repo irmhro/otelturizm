@@ -273,69 +273,18 @@
             </div>
         </div>
 
-        <h2 class="section-headline"><span class="headline-left">Seçilen Özel Rotalar</span><a class="headline-link" href="/oteller">Tümünü gör</a></h2>
-        <section class="hotel-grid">
-            @if (featuredHotels.Count > 0)
+        @{
+            var featuredSectionModel = new otelturizmnew.Models.Anasayfa.HomeHotelSectionRenderModel
             {
-                var index = 0;
-                foreach (var hotel in featuredHotels)
-                {
-                    var image = !string.IsNullOrWhiteSpace(hotel.ImageUrl) ? hotel.ImageUrl : fallbackImages[index % fallbackImages.Length];
-                    var detailUrl = string.IsNullOrWhiteSpace(hotel.DetailSlug) ? "/oteller" : $"/oteller/{Uri.EscapeDataString(hotel.DetailSlug)}";
-                    var location = !string.IsNullOrWhiteSpace(hotel.LocationText) ? hotel.LocationText : $"{hotel.District}, {hotel.City}".Trim(' ', ',');
-                    var hasDiscount = hotel.HasDiscount && hotel.OriginalPrice.HasValue && hotel.DiscountedPrice.HasValue;
-                    <article class="hotel-card">
-                        <a href="@detailUrl" class="home-premium-card-link" aria-label="@hotel.Name detay">
-                            <div class="img-holder">
-                                <img src="@image" alt="@hotel.Name" loading="lazy" decoding="async" />
-                                <span class="badge-lux">★★★★★</span>
-                            </div>
-                            <div class="hotel-card-body">
-                                <h3 class="hotel-title">@hotel.Name</h3>
-                                <p class="hotel-desc"><i class="fas fa-location-dot"></i> @location</p>
-                                <div class="price-row">
-                                    <div class="price-inline">
-                                        @if (hasDiscount)
-                                        {
-                                            <strong>₺@hotel.DiscountedPrice!.Value.ToString("N0")</strong>
-                                            <small class="price-tax-note">Vergiler dahil · %@hotel.DiscountPercent indirim</small>
-                                        }
-                                        else if (hotel.StartingPrice.HasValue)
-                                        {
-                                            <strong>₺@hotel.StartingPrice.Value.ToString("N0")</strong>
-                                            <small class="price-tax-note">Vergiler dahil</small>
-                                        }
-                                        else
-                                        {
-                                            <strong>@hotel.PriceText</strong>
-                                            <small class="price-tax-note">Vergiler dahil</small>
-                                        }
-                                    </div>
-                                    <span class="card-link">İncele →</span>
-                                </div>
-                            </div>
-                        </a>
-                    </article>
-                    index++;
-                }
-            }
-            else
-            {
-                for (var i = 0; i < 4; i++)
-                {
-                    <article class="hotel-card">
-                        <a href="/oteller" class="home-premium-card-link">
-                            <div class="img-holder"><img src="@fallbackImages[i]" alt="@fallbackNames[i]" loading="lazy" decoding="async" /><span class="badge-lux">★★★★★</span></div>
-                            <div class="hotel-card-body">
-                                <h3 class="hotel-title">@fallbackNames[i]</h3>
-                                <p class="hotel-desc"><i class="fas fa-location-dot"></i> @fallbackLocations[i]</p>
-                                <div class="price-row"><div class="price-inline"><strong>₺3.900</strong><small class="price-tax-note">Vergiler dahil</small></div><span class="card-link">İncele →</span></div>
-                            </div>
-                        </a>
-                    </article>
-                }
-            }
-        </section>
+                SectionKey = "ozel-rotalar",
+                Title = "Seçilen Özel Rotalar",
+                SeeAllUrl = "/oteller",
+                Hotels = featuredHotels,
+                FallbackImages = fallbackImages,
+                AllowEmptyFallback = true
+            };
+        }
+        <partial name="~/Views/Anasayfa/_HomeHotelCategorySection.cshtml" model="featuredSectionModel" />
 
         @foreach (var customSection in customHomeSections)
         {
@@ -344,56 +293,16 @@
                 continue;
             }
 
-            <h2 class="section-headline"><span class="headline-left">@customSection.Title</span><a class="headline-link" href="/oteller">Tümünü gör</a></h2>
-            @if (!string.IsNullOrWhiteSpace(customSection.Etiket))
+            var customSectionModel = new otelturizmnew.Models.Anasayfa.HomeHotelSectionRenderModel
             {
-                <p class="section-subline">@customSection.Etiket</p>
-            }
-            <section class="hotel-grid">
-                @{
-                    var customIndex = 0;
-                }
-                @foreach (var hotel in customSection.Hotels)
-                {
-                    var image = !string.IsNullOrWhiteSpace(hotel.ImageUrl) ? hotel.ImageUrl : fallbackImages[customIndex % fallbackImages.Length];
-                    var detailUrl = string.IsNullOrWhiteSpace(hotel.DetailSlug) ? "/oteller" : $"/oteller/{Uri.EscapeDataString(hotel.DetailSlug)}";
-                    var location = !string.IsNullOrWhiteSpace(hotel.LocationText) ? hotel.LocationText : $"{hotel.District}, {hotel.City}".Trim(' ', ',');
-                    var hasDiscount = hotel.HasDiscount && hotel.OriginalPrice.HasValue && hotel.DiscountedPrice.HasValue;
-                    <article class="hotel-card">
-                        <a href="@detailUrl" class="home-premium-card-link" aria-label="@hotel.Name detay">
-                            <div class="img-holder">
-                                <img src="@image" alt="@hotel.Name" loading="lazy" decoding="async" />
-                                <span class="badge-lux">★★★★★</span>
-                            </div>
-                            <div class="hotel-card-body">
-                                <h3 class="hotel-title">@hotel.Name</h3>
-                                <p class="hotel-desc"><i class="fas fa-location-dot"></i> @location</p>
-                                <div class="price-row">
-                                    <div class="price-inline">
-                                        @if (hasDiscount)
-                                        {
-                                            <strong>₺@hotel.DiscountedPrice!.Value.ToString("N0")</strong>
-                                            <small class="price-tax-note">Vergiler dahil · %@hotel.DiscountPercent indirim</small>
-                                        }
-                                        else if (hotel.StartingPrice.HasValue)
-                                        {
-                                            <strong>₺@hotel.StartingPrice.Value.ToString("N0")</strong>
-                                            <small class="price-tax-note">Vergiler dahil</small>
-                                        }
-                                        else
-                                        {
-                                            <strong>@hotel.PriceText</strong>
-                                            <small class="price-tax-note">Vergiler dahil</small>
-                                        }
-                                    </div>
-                                    <span class="card-link">İncele →</span>
-                                </div>
-                            </div>
-                        </a>
-                    </article>
-                    customIndex++;
-                }
-            </section>
+                SectionKey = customSection.Key,
+                Title = customSection.Title,
+                Subtitle = string.IsNullOrWhiteSpace(customSection.Etiket) ? null : customSection.Etiket,
+                SeeAllUrl = "/oteller",
+                Hotels = customSection.Hotels,
+                FallbackImages = fallbackImages
+            };
+            <partial name="~/Views/Anasayfa/_HomeHotelCategorySection.cshtml" model="customSectionModel" />
         }
 
         <div class="section-headline"><span class="headline-left">Güncel Fırsatlar</span></div>

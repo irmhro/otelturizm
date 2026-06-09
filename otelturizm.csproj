@@ -12,7 +12,7 @@
     <GenerateTargetFrameworkAttribute>false</GenerateTargetFrameworkAttribute>
     <GenerateMvcApplicationPartsAssemblyAttributes>false</GenerateMvcApplicationPartsAssemblyAttributes>
     <ErrorOnDuplicatePublishOutputFiles>false</ErrorOnDuplicatePublishOutputFiles>
-    <DefaultItemExcludes>$(DefaultItemExcludes);bin\**;bin/**;obj\**;obj/**;artifacts\**;artifacts/**;.codex_obj\**;.codex_obj/**;publish\**;publish/**;tmp\**;tmp/**;23.05.2026\**;23.05.2026/**;wwwroot\paneltematabler\**;wwwroot/paneltematabler/**;Database\Backups\**;Database/Backups/**;App_Data\imports\**;App_Data/imports/**;App_Data\logs\**;App_Data/logs/**</DefaultItemExcludes>
+    <DefaultItemExcludes>$(DefaultItemExcludes);bin\**;bin/**;obj\**;obj/**;artifacts\**;artifacts/**;.codex_obj\**;.codex_obj/**;publish\**;publish/**;tmp\**;tmp/**;tmp-server-appdata\**;tmp-server-appdata/**;tmp-build-verify\**;tmp-build-verify/**;_build_verify_akilli_rota\**;_build_verify_akilli_rota/**;23.05.2026\**;23.05.2026/**;wwwroot\paneltematabler\**;wwwroot/paneltematabler/**;Database\Backups\**;Database/Backups/**;App_Data\imports\**;App_Data/imports/**;App_Data\logs\*.json;App_Data\logs\*.log</DefaultItemExcludes>
     <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
     <NoWarn>$(NoWarn);NU1902</NoWarn>
   </PropertyGroup>
@@ -79,7 +79,10 @@
     <None Remove="publish\\**\\*" />
     <None Remove="Database\\Backups\\**\\*" />
     <None Remove="App_Data\\imports\\**\\*" />
-    <None Remove="App_Data\\logs\\**\\*" />
+    <None Remove="App_Data\\logs\\*.json" />
+    <None Remove="App_Data\\logs\\*.log" />
+    <None Remove="_build_verify_akilli_rota\\**\\*" />
+    <None Remove="tmp-build-verify\\**\\*" />
   </ItemGroup>
 
   <ItemGroup>
@@ -89,6 +92,9 @@
     <Content Update="wwwroot\**\*" CopyToPublishDirectory="PreserveNewest" />
     <Content Include="Dokumanlar\Arsiv\ilk-200-gelistirme-plani.md">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+    </Content>
+    <Content Include="App_Data\logs\.gitkeep">
       <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
     </Content>
   </ItemGroup>
@@ -105,6 +111,7 @@
 
   <ItemGroup>
     <Folder Include="logs\" />
+    <Folder Include="App_Data\logs\" />
   </ItemGroup>
 
   <!-- dotnet watch: sadece C# degisikliklerinde rebuild; view/css/js anlik -->

@@ -7,44 +7,4 @@
         <span class="utility-pulse__time" data-utility-time>@Model.LocalTimeLabel</span>
         <span class="utility-pulse__tz">TR</span>
     </div>
-
-    @if (Model.TopDestinations.Count > 0)
-    {
-        <span class="utility-pulse__divider" aria-hidden="true"></span>
-        <nav class="utility-pulse__destinations" aria-label="Popüler destinasyonlar">
-            @foreach (var destination in Model.TopDestinations)
-            {
-                <a class="utility-pulse__dest" href="@destination.ListingUrl" title="@destination.City otelleri">
-                    <i class="fas fa-location-dot" aria-hidden="true"></i>
-                    @destination.City
-                </a>
-            }
-        </nav>
-    }
-
-    @if (Model.Insights.Count > 0)
-    {
-        <span class="utility-pulse__divider" aria-hidden="true"></span>
-        <div class="utility-pulse__rotator" data-utility-rotator aria-live="polite">
-            @for (var i = 0; i < Model.Insights.Count; i++)
-            {
-                var insight = Model.Insights[i];
-                var isActive = i == 0 ? " is-active" : string.Empty;
-                if (!string.IsNullOrWhiteSpace(insight.LinkUrl))
-                {
-                    <a class="utility-pulse__insight@isActive" href="@insight.LinkUrl" data-utility-insight>
-                        <i class="@insight.IconClass" aria-hidden="true"></i>
-                        @insight.Text
-                    </a>
-                }
-                else
-                {
-                    <span class="utility-pulse__insight@isActive" data-utility-insight>
-                        <i class="@insight.IconClass" aria-hidden="true"></i>
-                        @insight.Text
-                    </span>
-                }
-            }
-        </div>
-    }
 </div>

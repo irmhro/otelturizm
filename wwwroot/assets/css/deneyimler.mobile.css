@@ -92,6 +92,25 @@
     .dxp-section__badge {
         display: none;
     }
+
+    .dxp-mood-grid {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+
+    .dxp-spotlight__link {
+        grid-template-columns: 1fr;
+    }
+
+    .dxp-spotlight__badge {
+        flex-direction: row;
+        align-self: flex-start;
+        min-width: 0;
+        padding: 8px 12px;
+    }
+
+    .dxp-campaigns__rail {
+        grid-template-columns: 1fr;
+    }
 }
 
 @media (max-width: 480px) {
@@ -109,5 +128,9 @@
         min-height: 36px;
         padding: 0 11px;
         font-size: 11px;
+    }
+
+    .dxp-mood-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
     }
 }

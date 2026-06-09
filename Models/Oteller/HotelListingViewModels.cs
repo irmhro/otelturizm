@@ -29,6 +29,7 @@ public class HotelListingPageViewModel
     public List<int> StarOptions { get; set; } = new();
     public List<string> PropertyTypes { get; set; } = new();
     public List<HotelListingCampaignFilterViewModel> Campaigns { get; set; } = new();
+    public List<SmartRouteFilterViewModel> SmartRoutes { get; set; } = new();
     public List<HotelListingQuickLinkViewModel> QuickLinks { get; set; } = new();
 
     /// <summary>Wave-XIV: liste kartlarında sadakat rozeti veya placeholder göster.</summary>
@@ -94,6 +95,7 @@ public class HotelListingCardViewModel
     public bool IsFavorite { get; set; }
     public List<string> Amenities { get; set; } = new();
     public List<HotelAmenityViewModel> AmenityItems { get; set; } = new();
+    public List<string> SmartRouteSlugs { get; set; } = new();
     public List<string> Tags { get; set; } = new();
     public List<string> CampaignNames { get; set; } = new();
     public List<string> CampaignSlugs { get; set; } = new();

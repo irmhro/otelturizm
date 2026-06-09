@@ -3,6 +3,7 @@
 @using otelturizmnew.Constants
 @using Microsoft.Extensions.Configuration
 @inject otelturizmnew.Services.Abstractions.IReservationDraftService ReservationDraftService
+@inject otelturizmnew.Services.Abstractions.IHotelPointsService HotelPointsService
 
 @{
     ViewData["Title"] = Model.Name;
@@ -230,6 +231,7 @@
     var initialInclusiveNightly = initialNightCount > 0 && initialRooms > 0
         ? Math.Round(initialTotal / initialNightCount / initialRooms, 0)
         : 0m;
+    var initialEarnPoints = initialTotal > 0m ? HotelPointsService.CalculateEarnPoints(initialTotal) : 0;
     var todayWeather = Model.Weather?.Days.FirstOrDefault();
     string? ExtractNeighborhoodFromAddress(string? address)
     {
@@ -1770,22 +1772,21 @@
 
     <div class="mobile-booking-bar od-mobile-bottom-dock od-sticky-cta mob-sticky-cta fe-world-safe-bottom" id="mobileBookingBar" role="region" aria-label="@SharedLocalizer["Booking.MobileSummary"].Value">
         <div class="mobile-booking-bar__row mobile-booking-bar__row--price">
-            <div class="mobile-booking-price-main">
-                <div class="mobile-booking-price-labels">
-                    <span class="mobile-booking-room-name" id="mobileBookingRoomName">@selectedRoomSeed?.Name</span>
-                    @if (initialInclusiveNightly > 0m)
-                    {
-                        <span class="mobile-booking-from-line">
-                            <span class="mobile-booking-from">@SharedLocalizer["Detail.Booking.FromNight"].Value</span>
-                            <strong id="mobileBookingNightly" class="mobile-booking-nightly">₺@initialInclusiveNightly.ToString("N0")</strong>
-                        </span>
-                    }
-                    <span class="mobile-booking-label">@SharedLocalizer["Detail.Booking.Total"].Value</span>
-                </div>
-                <div class="mobile-booking-total-wrap">
-                    <del class="mobile-booking-original" id="mobileBookingOriginal" hidden aria-hidden="true"></del>
-                    <strong id="mobileBookingPrice" class="mobile-booking-total">@(initialTotal > 0m ? $"₺{initialTotal:N0}" : (Model.LowestRoomPrice > 0m ? $"₺{Model.GuestInclusiveNightlyFromStoredNet(Model.LowestRoomPrice):N0}" : "—"))</strong>
-                    <span class="mobile-booking-dawn-pill" id="mobileBookingDawn" hidden></span>
+            <div class="mobile-booking-price-stack">
+                <span class="mobile-booking-loyalty" id="mobileBookingLoyalty" data-loyalty-hook="detail-mobile-bar" @(initialEarnPoints <= 0 ? "hidden" : null)>
+                    <i class="fas fa-gift" aria-hidden="true"></i>
+                    +@initialEarnPoints puan kazanın
+                </span>
+                <div class="mobile-booking-price-main">
+                    <div class="mobile-booking-price-labels">
+                        <span class="mobile-booking-room-name" id="mobileBookingRoomName">@selectedRoomSeed?.Name</span>
+                        <span class="mobile-booking-label">@SharedLocalizer["Detail.Booking.Total"].Value</span>
+                    </div>
+                    <div class="mobile-booking-total-wrap">
+                        <del class="mobile-booking-original" id="mobileBookingOriginal" hidden aria-hidden="true"></del>
+                        <strong id="mobileBookingPrice" class="mobile-booking-total">@(initialTotal > 0m ? $"₺{initialTotal:N0}" : (Model.LowestRoomPrice > 0m ? $"₺{Model.GuestInclusiveNightlyFromStoredNet(Model.LowestRoomPrice):N0}" : "—"))</strong>
+                        <span class="mobile-booking-dawn-pill" id="mobileBookingDawn" hidden></span>
+                    </div>
                 </div>
             </div>
             <small class="mobile-booking-tax-note">@SharedLocalizer["Detail.Booking.TaxesNote"].Value</small>
@@ -3976,19 +3977,65 @@
                 return roomLines + buildTaxAndTotalRows(totals);
             }
 
+            const loyaltyEstimateCache = new Map();
+
+            async function resolveEarnPoints(totalAmount) {
+                const total = Number(totalAmount || 0);
+                if (total <= 0) {
+                    return 0;
+                }
+
+                const cacheKey = String(Math.round(total));
+                if (loyaltyEstimateCache.has(cacheKey)) {
+                    return loyaltyEstimateCache.get(cacheKey);
+                }
+
+                try {
+                    const response = await fetch('/oteller/puan-tahmini?amount=' + encodeURIComponent(total), {
+                        credentials: 'same-origin',
+                        headers: { 'X-Requested-With': 'XMLHttpRequest' }
+                    });
+                    if (response.ok) {
+                        const payload = await response.json();
+                        const points = Number(payload.earnPoints || 0);
+                        loyaltyEstimateCache.set(cacheKey, points);
+                        return points;
+                    }
+                } catch (_error) {
+                    // ignore
+                }
+
+                return 0;
+            }
+
+            function updateMobileBookingLoyalty(earnPoints) {
+                const loyaltyEl = document.getElementById('mobileBookingLoyalty');
+                if (!loyaltyEl) {
+                    return;
+                }
+
+                const points = Number(earnPoints || 0);
+                if (points > 0) {
+                    loyaltyEl.innerHTML = '<i class="fas fa-gift" aria-hidden="true"></i> +' + points + ' puan kazanın';
+                    loyaltyEl.hidden = false;
+                } else {
+                    loyaltyEl.textContent = '';
+                    loyaltyEl.hidden = true;
+                }
+            }
+
             function updateMobileBookingSummary(summary) {
                 const data = summary || {};
                 const roomNameEl = document.getElementById('mobileBookingRoomName');
                 const originalEl = document.getElementById('mobileBookingOriginal');
                 const dawnEl = document.getElementById('mobileBookingDawn');
-                const nightlyEl = document.getElementById('mobileBookingNightly');
                 const total = Number(data.totalAmount || 0);
                 const originalTotal = Number(data.originalTotalAmount || 0);
                 const dawnDiscount = Number(data.dawnSurpriseDiscountAmount || 0);
                 const dawnPercent = Number(data.dawnSurprisePercent || 0);
                 const roomName = (data.roomName || '').toString().trim();
-                const nightlyAmount = Number(data.nightlyAmount || 0);
                 const hasDawn = dawnDiscount > 0 && dawnPercent > 0 && originalTotal > total;
+                const earnPoints = data.earnPoints;
 
                 if (roomNameEl) {
                     if (roomName) {
@@ -4028,8 +4075,12 @@
                     }
                 }
 
-                if (nightlyEl && nightlyAmount > 0) {
-                    nightlyEl.textContent = formatMoney(nightlyAmount);
+                if (earnPoints !== undefined && earnPoints !== null) {
+                    updateMobileBookingLoyalty(earnPoints);
+                } else if (total > 0) {
+                    resolveEarnPoints(total).then(updateMobileBookingLoyalty);
+                } else if (Object.prototype.hasOwnProperty.call(data, 'totalAmount')) {
+                    updateMobileBookingLoyalty(0);
                 }
             }
 
@@ -4224,13 +4275,15 @@
                     if (bookingNightlyFrom) bookingNightlyFrom.textContent = nightlyText;
                 }
 
+                const earnPoints = await resolveEarnPoints(totals.totalAmount);
+
                 updateMobileBookingSummary({
                     roomName: firstItem?.roomName || '',
                     totalAmount: totals.totalAmount,
                     originalTotalAmount: totals.originalTotalAmount,
                     dawnSurprisePercent: totals.dawnSurprisePercent,
                     dawnSurpriseDiscountAmount: totals.dawnSurpriseDiscountAmount,
-                    nightlyAmount: nightlyAmount
+                    earnPoints: earnPoints
                 });
 
                 breakdown.innerHTML = buildMultiRoomBreakdownHtml(perRoom, totals);

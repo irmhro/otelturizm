@@ -22,6 +22,17 @@ public class HomeCategorySectionViewModel
     public List<HomeHotelCardViewModel> Hotels { get; set; } = new();
 }
 
+public class HomeHotelSectionRenderModel
+{
+    public string SectionKey { get; set; } = string.Empty;
+    public string Title { get; set; } = string.Empty;
+    public string? Subtitle { get; set; }
+    public string SeeAllUrl { get; set; } = "/oteller";
+    public List<HomeHotelCardViewModel> Hotels { get; set; } = new();
+    public string[] FallbackImages { get; set; } = Array.Empty<string>();
+    public bool AllowEmptyFallback { get; set; }
+}
+
 public class HomeHeroSlideViewModel
 {
     public string Title { get; set; } = string.Empty;

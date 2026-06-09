@@ -39,6 +39,8 @@ html {
 
 .home-header-shell {
     margin: 0;
+    width: 100%;
+    max-width: none;
 }
 
 .utility-bar {
@@ -74,16 +76,15 @@ header.navbar .container {
 
 .utility-left {
     color: #A1A1AA;
-    flex: 1;
+    flex: 0 0 auto;
     min-width: 0;
 }
 
 .utility-pulse {
-    display: flex;
+    display: inline-flex;
     align-items: center;
     gap: 12px;
     min-width: 0;
-    flex: 1;
 }
 
 .utility-pulse__clock {
