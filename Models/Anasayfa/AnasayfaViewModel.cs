@@ -11,7 +11,19 @@ public class AnasayfaViewModel
     public List<HomeHotelCardViewModel> WeekendHotels { get; set; } = new();
     public List<HomeHotelCardViewModel> FeaturedRouteHotels { get; set; } = new();
     public List<HomeCategorySectionViewModel> CustomHomepageSections { get; set; } = new();
-    public List<HomeCategorySectionViewModel> CategorySections { get; set; } = new();
+    public List<AdminHomepageSectionViewModel> AdminHomepageSections { get; set; } = new();
+}
+
+public class AdminHomepageSectionViewModel
+{
+    public string Key { get; set; } = string.Empty;
+    public string Title { get; set; } = string.Empty;
+    public string? Subtitle { get; set; }
+    public List<HomeHotelCardViewModel> Hotels { get; set; } = new();
+    public int SortOrder { get; set; }
+    public bool IsFeaturedRoute { get; set; }
+    public bool AllowEmptyFallback { get; set; }
+    public string SeeAllUrl { get; set; } = "/oteller";
 }
 
 public class HomeCategorySectionViewModel

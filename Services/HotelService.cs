@@ -529,32 +529,6 @@ public class HotelService : IHotelService
 
         model.PopularDestinations = destinations;
 
-        var categoryDefinitions = new (string Key, string Etiket, string Title)[]
-        {
-            ("hafta-sonu-firsatlari", "hafta-sonu-firsatlari", "Hafta Sonu Fırsatları"),
-            ("butceme-uygun-oteller", "butceme-uygun-oteller", "Bütçene Uygun"),
-            ("evcil-hayvan-dostu", "evcil-hayvan-dostu", "Evcil Hayvan Dostu"),
-            ("kampanyaya-dahil-oteller", "kampanyaya-dahil-oteller", "Kampanyalı Oteller"),
-            ("ultra-luks", "ultra-luks", "Yıldız Yağmuru")
-        };
-
-        foreach (var definition in categoryDefinitions)
-        {
-            var sectionHotels = ApplyHomepageCampaignFilter(hotels, definition.Etiket).Take(8).ToList();
-            if (sectionHotels.Count == 0)
-            {
-                sectionHotels = hotels.Take(8).ToList();
-            }
-
-            model.CategorySections.Add(new HomeCategorySectionViewModel
-            {
-                Key = definition.Key,
-                Etiket = definition.Etiket,
-                Title = definition.Title,
-                Hotels = sectionHotels
-            });
-        }
-
         await ApplyAdminHomepageSectionsAsync(connection, model, hotels, homepageVatPercent, homepageAccommodationPercent, hasDiscountTable, cancellationToken);
 
         return model;
@@ -4084,12 +4058,13 @@ public class HotelService : IHotelService
         if (!await HotelTableExistsAsync(connection, "ANASAYFA_OTEL_BOLUMLERI", cancellationToken))
         {
             model.FeaturedRouteHotels = model.PopularHotels.Take(4).ToList();
+            model.AdminHomepageSections.Add(BuildFallbackFeaturedRouteSection(model));
             return;
         }
 
-        var sections = new List<(long Id, string Code, string Title, string? Subtitle)>();
+        var sections = new List<(long Id, string Code, string Title, string? Subtitle, int SortOrder)>();
         const string sectionSql = @"
-            SELECT b.[ID], b.[BOLUM_KODU], b.[BASLIK], b.[ALT_BASLIK]
+            SELECT b.[ID], b.[BOLUM_KODU], b.[BASLIK], b.[ALT_BASLIK], b.[SIRALAMA]
             FROM [dbo].[ANASAYFA_OTEL_BOLUMLERI] b
             WHERE b.[AKTIF_MI] = 1
             ORDER BY b.[SIRALAMA], b.[ID];";
@@ -4103,7 +4078,8 @@ public class HotelService : IHotelService
                     sectionReader.GetInt64(0),
                     sectionReader.GetString(1),
                     sectionReader.GetString(2),
-                    sectionReader.IsDBNull(3) ? null : sectionReader.GetString(3)));
+                    sectionReader.IsDBNull(3) ? null : sectionReader.GetString(3),
+                    sectionReader.GetInt32(4)));
             }
         }
 
@@ -4134,6 +4110,7 @@ public class HotelService : IHotelService
         if (sections.Count == 0 && entriesBySection.Count == 0)
         {
             model.FeaturedRouteHotels = model.PopularHotels.Take(4).ToList();
+            model.AdminHomepageSections.Add(BuildFallbackFeaturedRouteSection(model));
             return;
         }
 
@@ -4181,39 +4158,100 @@ public class HotelService : IHotelService
 
         foreach (var section in sections)
         {
-            if (!entriesBySection.TryGetValue(section.Id, out var hotelIds) || hotelIds.Count == 0)
+            var isFeaturedRoute = string.Equals(section.Code, "ozel-rotalar", StringComparison.OrdinalIgnoreCase);
+            var hasEntries = entriesBySection.TryGetValue(section.Id, out var hotelIds) && hotelIds.Count > 0;
+            List<HomeHotelCardViewModel> sectionHotels;
+
+            if (hasEntries)
+            {
+                sectionHotels = ResolveHotels(hotelIds!);
+            }
+            else if (isFeaturedRoute)
+            {
+                sectionHotels = model.PopularHotels.Take(4).ToList();
+            }
+            else
             {
                 continue;
             }
 
-            var sectionHotels = ResolveHotels(hotelIds);
-            if (sectionHotels.Count == 0)
+            if (sectionHotels.Count == 0 && !isFeaturedRoute)
             {
                 continue;
             }
 
-            if (string.Equals(section.Code, "ozel-rotalar", StringComparison.OrdinalIgnoreCase))
+            var sectionKey = string.Equals(section.Code, "custom", StringComparison.OrdinalIgnoreCase)
+                ? $"custom-{section.Id}"
+                : section.Code;
+            var adminSection = new AdminHomepageSectionViewModel
+            {
+                Key = sectionKey,
+                Title = section.Title,
+                Subtitle = section.Subtitle,
+                Hotels = sectionHotels,
+                SortOrder = section.SortOrder,
+                IsFeaturedRoute = isFeaturedRoute,
+                AllowEmptyFallback = isFeaturedRoute,
+                SeeAllUrl = ResolveHomepageSectionSeeAllUrl(section.Code)
+            };
+            model.AdminHomepageSections.Add(adminSection);
+
+            if (isFeaturedRoute)
             {
                 model.FeaturedRouteHotels = sectionHotels;
                 continue;
             }
 
-            if (string.Equals(section.Code, "custom", StringComparison.OrdinalIgnoreCase))
+            model.CustomHomepageSections.Add(new HomeCategorySectionViewModel
             {
-                model.CustomHomepageSections.Add(new HomeCategorySectionViewModel
-                {
-                    Key = $"custom-{section.Id}",
-                    Etiket = section.Subtitle ?? string.Empty,
-                    Title = section.Title,
-                    Hotels = sectionHotels
-                });
-            }
+                Key = sectionKey,
+                Etiket = section.Subtitle ?? string.Empty,
+                Title = section.Title,
+                Hotels = sectionHotels
+            });
         }
 
         if (model.FeaturedRouteHotels.Count == 0)
         {
             model.FeaturedRouteHotels = model.PopularHotels.Take(4).ToList();
+            if (model.AdminHomepageSections.All(x => !x.IsFeaturedRoute))
+            {
+                model.AdminHomepageSections.Insert(0, BuildFallbackFeaturedRouteSection(model));
+            }
         }
+    }
+
+    private static AdminHomepageSectionViewModel BuildFallbackFeaturedRouteSection(AnasayfaViewModel model)
+    {
+        var featuredHotels = model.FeaturedRouteHotels.Count > 0
+            ? model.FeaturedRouteHotels
+            : model.PopularHotels.Take(4).ToList();
+
+        return new AdminHomepageSectionViewModel
+        {
+            Key = "ozel-rotalar",
+            Title = "Seçilen Özel Rotalar",
+            Hotels = featuredHotels,
+            SortOrder = 10,
+            IsFeaturedRoute = true,
+            AllowEmptyFallback = true,
+            SeeAllUrl = "/oteller"
+        };
+    }
+
+    private static string ResolveHomepageSectionSeeAllUrl(string sectionCode)
+    {
+        if (string.Equals(sectionCode, "ozel-rotalar", StringComparison.OrdinalIgnoreCase))
+        {
+            return "/oteller";
+        }
+
+        if (string.Equals(sectionCode, "custom", StringComparison.OrdinalIgnoreCase))
+        {
+            return "/oteller";
+        }
+
+        return $"/oteller?etiket={Uri.EscapeDataString(sectionCode)}";
     }
 
     private async Task<List<HomeHotelCardViewModel>> LoadSupplementalHomeHotelCardsAsync(
