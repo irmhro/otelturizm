@@ -128,44 +128,34 @@
         </div>
     }
 
-    @if (smartRoutes.Count > 0)
-    {
-        <div class="otelliste-filter-group otelliste-filter-group--smart-routes">
-            <span class="otelliste-filter-label">Akıllı Rota</span>
+    <div class="otelliste-filter-group otelliste-filter-group--smart-routes">
+        <span class="otelliste-filter-label">Akıllı Rota</span>
+        @if (smartRoutes.Count > 0)
+        {
+            <p class="otelliste-filter-hint">Ruh halinize uygun otelleri etiketlerle daraltın.</p>
             <div class="otelliste-smart-route-pills otelliste-filter-smart-routes" role="group" aria-label="Akıllı Rota etiketleri">
                 @foreach (var tag in smartRoutes)
                 {
-                    <label class="ai-pill ai-pill--@tag.ColorClass otelliste-filter-smart-route">
+                    <label class="ai-pill ai-pill--@tag.ColorClass otelliste-filter-smart-route" title="@tag.DisplayName">
                         <input type="checkbox"
                                class="otelliste-filter-smart-route-input"
                                value="@tag.Slug"
                                aria-label="@tag.Hashtag" />
                         <span class="ai-pill-dot" aria-hidden="true"></span>
                         <span class="otelliste-smart-route-label">@tag.Hashtag</span>
+                        @if (tag.HotelCount > 0)
+                        {
+                            <span class="otelliste-smart-route-count">@tag.HotelCount</span>
+                        }
                     </label>
                 }
             </div>
-        </div>
-    }
-
-    @if (Model.Campaigns?.Any(x => !string.IsNullOrWhiteSpace(x.Slug)) == true)
-    {
-        <div class="otelliste-filter-group">
-            <span class="otelliste-filter-label">Kampanyalar</span>
-            <div class="otelliste-check-list otelliste-filter-campaigns">
-                @foreach (var campaign in Model.Campaigns.Where(x => !string.IsNullOrWhiteSpace(x.Slug)).Take(8))
-                {
-                    <label class="otelliste-check">
-                        <input type="checkbox"
-                               class="otelliste-filter-campaign"
-                               value="@campaign.Slug"
-                               @(campaign.IsActive ? "checked" : null) />
-                        <span>@campaign.Name</span>
-                    </label>
-                }
-            </div>
-        </div>
-    }
+        }
+        else
+        {
+            <p class="otelliste-filter-empty">Akıllı Rota etiketleri yükleniyor. Kısa süre sonra burada görünecek.</p>
+        }
+    </div>
 
     <button type="button" class="otelliste-btn-reset otelliste-filter-reset">Filtreleri Sıfırla</button>
     <button type="button" class="otelliste-btn-apply otelliste-filter-apply">Filtreleri Uygula</button>

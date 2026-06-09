@@ -1003,8 +1003,29 @@
     }
 
     .otelliste-page .otelliste-filter-drawer-body .otelliste-smart-route-pills {
-        max-height: 240px;
+        max-height: 320px;
         gap: 8px;
+    }
+
+    .otelliste-page .otelliste-filter-drawer-body .otelliste-filter-hint,
+    .otelliste-page .otelliste-filter-hint {
+        margin: 0 0 8px;
+        font-size: 11px;
+        line-height: 1.45;
+        color: var(--otl-muted, #64748b);
+        font-weight: 600;
+    }
+
+    .otelliste-page .otelliste-filter-drawer-body .otelliste-filter-empty,
+    .otelliste-page .otelliste-filter-empty {
+        margin: 0;
+        padding: 10px 12px;
+        border-radius: 10px;
+        border: 1px dashed var(--otl-border, #e5e7eb);
+        font-size: 11px;
+        line-height: 1.45;
+        color: var(--otl-muted, #64748b);
+        font-weight: 600;
     }
 
     .otelliste-page .otelliste-filter-drawer-body .otelliste-filter-smart-route {

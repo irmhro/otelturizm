@@ -401,10 +401,39 @@
     display: flex;
     flex-wrap: wrap;
     gap: 8px;
-    max-height: 220px;
+    max-height: 280px;
     overflow-y: auto;
     scrollbar-width: thin;
     padding-right: 2px;
+}
+
+.otelliste-page .otelliste-filter-hint {
+    margin: 0 0 8px;
+    font-size: 11px;
+    line-height: 1.45;
+    color: var(--otl-muted, #64748b);
+    font-weight: 600;
+}
+
+.otelliste-page .otelliste-filter-empty {
+    margin: 0;
+    padding: 10px 12px;
+    border-radius: 10px;
+    border: 1px dashed var(--otl-border, #e5e7eb);
+    font-size: 11px;
+    line-height: 1.45;
+    color: var(--otl-muted, #64748b);
+    font-weight: 600;
+}
+
+.otelliste-page .otelliste-smart-route-count {
+    margin-left: 2px;
+    padding: 1px 5px;
+    border-radius: 999px;
+    background: rgba(15, 23, 42, 0.06);
+    font-size: 9px;
+    font-weight: 800;
+    color: var(--otl-muted, #64748b);
 }
 
 .otelliste-page .otelliste-filter-smart-route {

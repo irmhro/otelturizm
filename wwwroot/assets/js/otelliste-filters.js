@@ -51,8 +51,6 @@
             .filter(n => n > 0);
         const smartRoutes = Array.from(root.querySelectorAll('.otelliste-filter-smart-route-input:checked'))
             .map(el => normalize(el.value));
-        const campaigns = Array.from(root.querySelectorAll('.otelliste-filter-campaign:checked'))
-            .map(el => normalize(el.value));
         const minPriceEl = root.querySelector('.otelliste-filter-min-price');
         const maxPriceEl = root.querySelector('.otelliste-filter-max-price');
         const minRaw = minPriceEl?.value?.trim() ?? '';
@@ -73,8 +71,7 @@
             defaultMax,
             priceFilterActive,
             stars,
-            smartRoutes,
-            campaigns
+            smartRoutes
         };
     }
 
@@ -107,9 +104,6 @@
             ch.checked = state.smartRoutes.includes(normalize(ch.value));
             ch.closest('.otelliste-filter-smart-route')?.classList.toggle('active', ch.checked);
         });
-        root.querySelectorAll('.otelliste-filter-campaign').forEach(ch => {
-            ch.checked = state.campaigns.includes(normalize(ch.value));
-        });
     }
 
     function readFilters() {
@@ -121,7 +115,7 @@
         return active || desktop || mobile || {
             keyword: '', city: '', district: '', neighborhood: '',
             minPrice: 0, maxPrice: Number.MAX_SAFE_INTEGER, priceFilterActive: false,
-            stars: [], smartRoutes: [], campaigns: []
+            stars: [], smartRoutes: []
         };
     }
 
@@ -171,7 +165,6 @@
         if (state.neighborhood) n++;
         if (state.stars.length) n++;
         if (state.smartRoutes.length) n++;
-        if (state.campaigns.length) n++;
         if (state.priceFilterActive) n++;
         return n;
     }
@@ -194,11 +187,6 @@
         if (state.smartRoutes.length) {
             const cardRoutes = (card.getAttribute('data-smart-routes') || '').split(/\s+/).filter(Boolean);
             if (!state.smartRoutes.some(r => cardRoutes.includes(r))) return false;
-        }
-
-        if (state.campaigns.length) {
-            const cardCampaigns = (card.getAttribute('data-campaign-slugs') || '').split(/\s+/).filter(Boolean);
-            if (!state.campaigns.some(c => cardCampaigns.includes(c))) return false;
         }
 
         return true;
@@ -302,8 +290,7 @@
                 maxPrice: desktop.maxPrice,
                 priceFilterActive: desktop.priceFilterActive,
                 stars: desktop.stars,
-                smartRoutes: desktop.smartRoutes,
-                campaigns: desktop.campaigns
+                smartRoutes: desktop.smartRoutes
             });
         }
         syncSelectOptions('mobile');
@@ -352,8 +339,7 @@
             maxPrice: mobile.maxPrice,
             priceFilterActive: mobile.priceFilterActive,
             stars: mobile.stars,
-            smartRoutes: mobile.smartRoutes,
-            campaigns: mobile.campaigns
+            smartRoutes: mobile.smartRoutes
         });
         syncSelectOptions('desktop');
         persistPriceQuery(mobile);
@@ -379,7 +365,7 @@
                 if (scope === 'desktop') applyFilters();
             });
         });
-        root.querySelectorAll('.otelliste-filter-smart-route-input, .otelliste-filter-campaign').forEach(el => {
+        root.querySelectorAll('.otelliste-filter-smart-route-input').forEach(el => {
             el.addEventListener('change', () => {
                 el.closest('.otelliste-filter-smart-route')?.classList.toggle('active', el.checked);
                 if (scope === 'desktop') applyFilters();
