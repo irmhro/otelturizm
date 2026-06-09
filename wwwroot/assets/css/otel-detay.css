@@ -353,6 +353,24 @@
     opacity: 0.92;
 }
 
+.detail-breadcrumb .detail-region-link {
+    border-color: rgba(15, 118, 110, 0.28);
+    background: linear-gradient(180deg, #ffffff 0%, #f0fdfa 100%);
+    color: #0f766e;
+    box-shadow: 0 2px 10px rgba(15, 118, 110, 0.1);
+}
+
+.detail-breadcrumb .detail-region-link:hover {
+    background: linear-gradient(180deg, #ecfdf5 0%, #ccfbf1 100%);
+    border-color: rgba(15, 118, 110, 0.42);
+    box-shadow: 0 6px 18px rgba(15, 118, 110, 0.14);
+    color: #0d9488;
+}
+
+.detail-breadcrumb .detail-region-link i {
+    color: #14b8a6;
+}
+
 .detail-breadcrumb-sep {
     color: #cbd5e1;
     font-weight: 700;

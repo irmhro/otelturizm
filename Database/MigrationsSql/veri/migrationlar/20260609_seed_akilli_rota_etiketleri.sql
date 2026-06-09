@@ -24,7 +24,7 @@ INSERT INTO #akilli_rota_seed ([ETIKET_KODU], [ETIKET_ADI], [HASHTAG], [ARAMA_ME
 (N'ozel-havuzlu', N'ÖzelHavuzlu', N'#ÖzelHavuzlu', N'özel havuz, suite, jakuzi', N'sky', 4),
 (N'denize-sifir', N'DenizeSıfır', N'#DenizeSıfır', N'denize sıfır, plaj, kumsal', N'ocean', 5),
 (N'spa-wellness', N'SpaWellness', N'#SpaWellness', N'spa ve wellness, masaj, hamam', N'violet', 6),
-(N'romantik-kacamak', N'RomantikKaçamak', N'#RomantikKaçamak', N'romantik kaçamak, çift tatili', N'wine', 7),
+(N'romantik-kacamak', N'Romantik', N'#Romantik', N'romantik, çift tatili', N'wine', 7),
 (N'balayi-otelleri', N'BalayıOtelleri', N'#BalayıOtelleri', N'balayı, honeymoon suite', N'wine', 8),
 (N'aile-tatili', N'AileTatili', N'#AileTatili', N'aile tatili, geniş oda, çocuk aktivite', N'amber', 9),
 (N'luks-konaklama', N'LüksKonaklama', N'#LüksKonaklama', N'lüks konaklama, premium hizmet', N'wine', 10),

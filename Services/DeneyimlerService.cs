@@ -11,7 +11,7 @@ public class DeneyimlerService : IDeneyimlerService
         {
             HeroEyebrow = "Otelturizm Deneyim Atölyesi",
             HeroTitle = "Konaklamayı anıya dönüştüren rotalar",
-            HeroLead = "Şehir kaçamaklarından spa ritüellerine — ruh halinize uygun otelleri Akıllı Rota etiketleriyle keşfedin, koleksiyonlardan ilham alın.",
+            HeroLead = "Şehir rotalarından spa ritüellerine — ruh halinize uygun otelleri Akıllı Rota etiketleriyle keşfedin, koleksiyonlardan ilham alın.",
             Stats =
             [
                 new() { Value = "50+", Label = "Akıllı rota etiketi" },
@@ -24,7 +24,7 @@ public class DeneyimlerService : IDeneyimlerService
                 "🫧 Antalya thalasso günü — spa otelleri yükselişte",
                 "👨‍👩‍👧 Aile dostu hafta sonu — Uludağ & Bodrum",
                 "🍽️ Gurme rotası — İzmir & İstanbul seçkisi",
-                "🌊 Denize sıfır kaçamak — Ege koyları"
+                "🌊 Denize sıfır konaklama — Ege koyları"
             ],
             MoodPicks =
             [
@@ -32,7 +32,7 @@ public class DeneyimlerService : IDeneyimlerService
                 new() { CategoryKey = "sahil", Label = "Sahil molası", Emoji = "🌊", Hint = "Koy, marina, gün batımı" },
                 new() { CategoryKey = "spa", Label = "Spa & dinlenme", Emoji = "🫧", Hint = "Thalasso, masaj, sessizlik" },
                 new() { CategoryKey = "gastronomi", Label = "Lezzet turu", Emoji = "🍽️", Hint = "Yerel tat, fine dining" },
-                new() { CategoryKey = "aile", Label = "Aile kaçamağı", Emoji = "👨‍👩‍👧", Hint = "Çocuk kulübü, kayak, havuz" },
+                new() { CategoryKey = "aile", Label = "Aile konaklaması", Emoji = "👨‍👩‍👧", Hint = "Çocuk kulübü, kayak, havuz" },
                 new() { CategoryKey = "macera", Label = "Macera", Emoji = "⛰️", Hint = "Balon, yayla, doğa yürüyüşü" }
             ],
             Spotlight = new DeneyimSpotlightViewModel
@@ -44,14 +44,15 @@ public class DeneyimlerService : IDeneyimlerService
                 Duration = "2 gece",
                 LinkUrl = "/oteller?q=Kapadokya",
                 Accent = "#FF385C",
-                Emoji = "🎈"
+                Emoji = "🎈",
+                ImageUrl = "https://images.unsplash.com/photo-1533105079780-92b9be482077?w=800&auto=format&fit=crop&q=80"
             },
             SmartRoutes = BuildSmartRoutes(),
             CampaignHighlights =
             [
-                new() { Title = "Şehir Otelleri Kampanyası", Tag = "−%15'e varan", LinkUrl = "/kampanyalar" },
-                new() { Title = "Hafta Sonu Kaçamakları", Tag = "Club özel", LinkUrl = "/oteller?etiket=hafta-sonu-firsatlari" },
-                new() { Title = "Spa & Wellness Otelleri", Tag = "Wellness", LinkUrl = "/oteller?q=spa+wellness" }
+                new() { Title = "Şehir Otelleri Kampanyası", Tag = "−%15'e varan", LinkUrl = "/kampanyalar", ImageUrl = "https://images.unsplash.com/photo-1520250497591-112f2f40a3f4?w=600&auto=format&fit=crop&q=80" },
+                new() { Title = "Hafta Sonu Fırsatları", Tag = "Club özel", LinkUrl = "/oteller?etiket=hafta-sonu-firsatlari", ImageUrl = "https://images.unsplash.com/photo-1566073771259-6a8506099945?w=600&auto=format&fit=crop&q=80" },
+                new() { Title = "Spa & Wellness Otelleri", Tag = "Wellness", LinkUrl = "/oteller?q=spa+wellness", ImageUrl = "https://images.unsplash.com/photo-1540555700478-4be289fbecef?w=600&auto=format&fit=crop&q=80" }
             ],
             Categories =
             [
@@ -79,7 +80,8 @@ public class DeneyimlerService : IDeneyimlerService
                     Gradient = "linear-gradient(160deg, #1a1919 0%, #4a0404 42%, #003b95 100%)",
                     LinkUrl = "/oteller?q=İstanbul",
                     IsFeatured = true,
-                    IsWide = true
+                    IsWide = true,
+                    ImageUrl = "https://images.unsplash.com/photo-1524231757912-21f4fe3a7200?w=800&auto=format&fit=crop&q=80"
                 },
                 new()
                 {
@@ -94,7 +96,8 @@ public class DeneyimlerService : IDeneyimlerService
                     Accent = "#FF385C",
                     Gradient = "linear-gradient(145deg, #2d1b4e 0%, #ff6b6b 55%, #ffd166 100%)",
                     LinkUrl = "/oteller?q=Kapadokya",
-                    IsFeatured = true
+                    IsFeatured = true,
+                    ImageUrl = "https://images.unsplash.com/photo-1533105079780-92b9be482077?w=700&auto=format&fit=crop&q=80"
                 },
                 new()
                 {
@@ -109,7 +112,8 @@ public class DeneyimlerService : IDeneyimlerService
                     Accent = "#0ea5e9",
                     Gradient = "linear-gradient(145deg, #0c4a6e 0%, #38bdf8 50%, #fef3c7 100%)",
                     LinkUrl = "/oteller?q=Antalya",
-                    IsFeatured = true
+                    IsFeatured = true,
+                    ImageUrl = "https://images.unsplash.com/photo-1540555700478-4be289fbecef?w=700&auto=format&fit=crop&q=80"
                 }
             ],
             Collections =
@@ -126,7 +130,8 @@ public class DeneyimlerService : IDeneyimlerService
                     Stamp = "SAHİL",
                     Accent = "#0284c7",
                     Gradient = "linear-gradient(135deg, #0369a1 0%, #7dd3fc 100%)",
-                    LinkUrl = "/oteller?q=Bodrum"
+                    LinkUrl = "/oteller?q=Bodrum",
+                    ImageUrl = "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=700&auto=format&fit=crop&q=80"
                 },
                 new()
                 {
@@ -140,7 +145,8 @@ public class DeneyimlerService : IDeneyimlerService
                     Stamp = "TADIM",
                     Accent = "#ea580c",
                     Gradient = "linear-gradient(135deg, #7c2d12 0%, #fb923c 100%)",
-                    LinkUrl = "/oteller?q=İzmir"
+                    LinkUrl = "/oteller?q=İzmir",
+                    ImageUrl = "https://images.unsplash.com/photo-1544025162-d76694265947?w=700&auto=format&fit=crop&q=80"
                 },
                 new()
                 {
@@ -154,7 +160,8 @@ public class DeneyimlerService : IDeneyimlerService
                     Stamp = "AİLE",
                     Accent = "#6366f1",
                     Gradient = "linear-gradient(135deg, #312e81 0%, #e0e7ff 100%)",
-                    LinkUrl = "/oteller?q=Uludağ"
+                    LinkUrl = "/oteller?q=Uludağ",
+                    ImageUrl = "https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=700&auto=format&fit=crop&q=80"
                 },
                 new()
                 {
@@ -168,7 +175,8 @@ public class DeneyimlerService : IDeneyimlerService
                     Stamp = "KEŞİF",
                     Accent = "#64748b",
                     Gradient = "linear-gradient(135deg, #1e293b 0%, #94a3b8 100%)",
-                    LinkUrl = "/oteller?q=Ankara"
+                    LinkUrl = "/oteller?q=Ankara",
+                    ImageUrl = "https://images.unsplash.com/photo-1584132967334-10e028bd69f7?w=700&auto=format&fit=crop&q=80"
                 },
                 new()
                 {
@@ -182,7 +190,8 @@ public class DeneyimlerService : IDeneyimlerService
                     Stamp = "YAYLA",
                     Accent = "#16a34a",
                     Gradient = "linear-gradient(135deg, #14532d 0%, #86efac 100%)",
-                    LinkUrl = "/oteller?q=Trabzon"
+                    LinkUrl = "/oteller?q=Trabzon",
+                    ImageUrl = "https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=700&auto=format&fit=crop&q=80"
                 },
                 new()
                 {
@@ -196,7 +205,8 @@ public class DeneyimlerService : IDeneyimlerService
                     Stamp = "GECE",
                     Accent = "#db2777",
                     Gradient = "linear-gradient(135deg, #831843 0%, #f472b6 100%)",
-                    LinkUrl = "/oteller?q=Marmaris"
+                    LinkUrl = "/oteller?q=Marmaris",
+                    ImageUrl = "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=700&auto=format&fit=crop&q=80"
                 },
                 new()
                 {
@@ -210,7 +220,8 @@ public class DeneyimlerService : IDeneyimlerService
                     Stamp = "TERMAL",
                     Accent = "#0891b2",
                     Gradient = "linear-gradient(135deg, #164e63 0%, #67e8f9 100%)",
-                    LinkUrl = "/oteller?q=Bursa+termal"
+                    LinkUrl = "/oteller?q=Bursa+termal",
+                    ImageUrl = "https://images.unsplash.com/photo-1540555700478-4be289fbecef?w=700&auto=format&fit=crop&q=80"
                 },
                 new()
                 {
@@ -224,7 +235,8 @@ public class DeneyimlerService : IDeneyimlerService
                     Stamp = "DENİZ",
                     Accent = "#2563eb",
                     Gradient = "linear-gradient(135deg, #1e3a8a 0%, #93c5fd 100%)",
-                    LinkUrl = "/oteller?q=Fethiye"
+                    LinkUrl = "/oteller?q=Fethiye",
+                    ImageUrl = "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=700&auto=format&fit=crop&q=80"
                 }
             ],
             Stories =
@@ -248,7 +260,7 @@ public class DeneyimlerService : IDeneyimlerService
                 new()
                 {
                     Title = "Öğle 13:05",
-                    Quote = "Çocuklar kayak okulundayken biz spa'da 45 dakikalık kaçış yaptık.",
+                    Quote = "Çocuklar kayak okulundayken biz spa'da 45 dakikalık dinlenme molası yaptık.",
                     Author = "Ayşe T.",
                     Location = "Uludağ",
                     Accent = "#6366f1"

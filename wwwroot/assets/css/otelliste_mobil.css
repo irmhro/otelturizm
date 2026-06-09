@@ -606,6 +606,10 @@
         min-width: 0;
     }
 
+    .otelliste-page .otelliste-card-price-from-label {
+        display: none;
+    }
+
     .otelliste-page .otelliste-card-offer-row {
         display: flex;
         align-items: flex-end;

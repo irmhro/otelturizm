@@ -1,6 +1,7 @@
 @model otelturizmnew.Models.Oteller.HotelDetailPageViewModel
 @using System.Security.Claims
 @using otelturizmnew.Constants
+@using otelturizmnew.Models.Reservations
 @using Microsoft.Extensions.Configuration
 @inject otelturizmnew.Services.Abstractions.IReservationDraftService ReservationDraftService
 @inject otelturizmnew.Services.Abstractions.IHotelPointsService HotelPointsService
@@ -25,6 +26,16 @@
     ViewData["OgLocale"] = uiCulture.Replace('-', '_');
     ViewData["OgLocaleAlternate"] = "tr_TR,en_US,de_DE,fr_FR";
     ViewData["OgImage"] = Model.MainImageUrl;
+
+    var regionListingLabel = string.IsNullOrWhiteSpace(Model.District)
+        ? Model.City
+        : $"{Model.District}, {Model.City}".Trim(' ', ',');
+    var regionListingUrl = Model.IlceId is > 0
+        ? Url.Action("OtelListeleme", "Oteller", new { ilceId = Model.IlceId, q = regionListingLabel, page = 1 })
+        : Model.SehirId is > 0
+            ? Url.Action("OtelListeleme", "Oteller", new { sehirId = Model.SehirId, q = regionListingLabel, page = 1 })
+            : Url.Action("OtelListeleme", "Oteller", new { q = $"{Model.District} {Model.City}".Trim(), page = 1 });
+    regionListingUrl ??= "/oteller";
 
     try
     {
@@ -365,11 +376,11 @@
             <span>@SharedLocalizer["Detail.BackToHotels"].Value</span>
         </a>
         <span class="detail-breadcrumb-sep" aria-hidden="true">·</span>
-        <a class="detail-breadcrumb-context"
-           href="@Url.Action("OtelListeleme", "Oteller", new { q = $"{Model.District} {Model.City}".Trim(), city = (string?)null, page = 1 })"
-           aria-label="Bu bölgedeki otelleri listele">
-            <i class="fas fa-location-dot"></i>
-            <strong>@Model.District</strong><span class="detail-breadcrumb-muted">, @Model.City</span>
+        <a class="detail-back-link detail-region-link"
+           href="@regionListingUrl"
+           aria-label="@regionListingLabel bölgesindeki otelleri listele">
+            <i class="fas fa-location-dot" aria-hidden="true"></i>
+            <span>@regionListingLabel</span>
         </a>
     </div>
     <div class="detail-breadcrumb-right" aria-label="Hızlı işlemler">
@@ -485,10 +496,16 @@
                 <div class="gallery-mobile-overlay-top">
                     <div class="gallery-mobile-overlay-main">
                         <h1 class="gallery-mobile-hotel-name">@Model.Name</h1>
-                        <p class="gallery-mobile-location" role="text">
-                            <i class="fas fa-location-dot" aria-hidden="true"></i>
-                            <span>@headerLocationText</span>
-                        </p>
+                        <div class="gallery-mobile-location-row">
+                            <p class="gallery-mobile-location" role="text">
+                                <i class="fas fa-location-dot" aria-hidden="true"></i>
+                                <span>@headerLocationText</span>
+                            </p>
+                            @if (Model.Weather is not null && Model.Weather.Days.Count > 0)
+                            {
+                                @await Html.PartialAsync("_OtelDetayWeatherStrip", (Model.Weather, weatherThemeClass, "gallery"))
+                            }
+                        </div>
                     </div>
                     <button type="button"
                             class="gallery-mobile-all-photos"
@@ -500,12 +517,6 @@
                     </button>
                 </div>
                 <div class="gallery-mobile-overlay-bottom">
-                    @if (Model.HasFreeCancellation)
-                    {
-                        <div class="gallery-mobile-hero-meta" aria-label="Otel bilgileri">
-                            <span class="gallery-mobile-meta-chip is-benefit"><i class="fas fa-check-circle" aria-hidden="true"></i> Ücretsiz iptal</span>
-                        </div>
-                    }
                     <button type="button"
                             class="gallery-mobile-rating gallery-mobile-rating--compact"
                             data-rating-jump
@@ -555,38 +566,10 @@
     </section>
 }
 
-@if (Model.Weather is not null && Model.Weather.Days.Count > 0)
+@if (Model.Weather is not null && Model.Weather.Days.Count > 0 && gallery.Count == 0)
 {
-    <section class="detail-weather-topbar" aria-label="Hava durumu özeti">
-        <button type="button"
-                class="detail-weather-topbar__trigger @weatherThemeClass"
-                id="weatherTopbarOpen"
-                data-has-weather="true"
-                aria-haspopup="dialog"
-                aria-controls="weatherPopup">
-            <span class="detail-weather-topbar__location">
-                <i class="fas fa-location-dot" aria-hidden="true"></i>
-                <strong>@weatherAreaLabel</strong>
-            </span>
-            <span class="detail-weather-topbar__cards">
-                @foreach (var day in Model.Weather.Days.Take(3))
-                {
-                    var dayTone = GetWeatherDayTone(day.ConditionText);
-                    var temps = SplitWeatherTemperature(day.TemperatureText);
-                    <span class="detail-weather-topbar__card @dayTone">
-                        <em class="detail-weather-topbar__period">@day.PeriodLabel</em>
-                        <i class="fas @day.IconClass" aria-hidden="true"></i>
-                        <span class="detail-weather-topbar__temp">
-                            <strong>@temps.High</strong>
-                            @if (!string.IsNullOrWhiteSpace(temps.Low))
-                            {
-                                <small>@temps.Low</small>
-                            }
-                        </span>
-                    </span>
-                }
-            </span>
-        </button>
+    <section class="detail-weather-topbar detail-weather-topbar--standalone" aria-label="Hava durumu özeti">
+        @await Html.PartialAsync("_OtelDetayWeatherStrip", (Model.Weather, weatherThemeClass, "standalone"))
     </section>
 }
 
@@ -864,39 +847,74 @@
 <section class="detail-grid od-detail__layout">
     <div class="detail-content od-detail__main">
         <article class="content-card detail-about-card od-section od-section--about">
-            <details class="detail-collapsible detail-about-collapsible" open>
-                <summary class="detail-collapsible__summary tabler-section-head">
-                    <div class="tabler-section-titles">
-                        <h2>@SharedLocalizer["Detail.About.Title"].Value</h2>
-                        <p class="detail-collapsible__hint">@SharedLocalizer["Detail.About.ToggleHint"].Value</p>
-                    </div>
-                    <i class="fas fa-chevron-down detail-collapsible__chevron" aria-hidden="true"></i>
-                </summary>
-                <div class="detail-collapsible__body">
-                    <ul class="od-about-checkinout od-quick-facts__list" aria-label="@SharedLocalizer["Detail.QuickFacts.Aria"].Value">
-                        <li class="od-quick-facts__item">
-                            <span class="od-quick-facts__icon" aria-hidden="true"><i class="fas fa-door-open"></i></span>
-                            <span class="od-quick-facts__copy">
-                                <span class="od-quick-facts__label">@SharedLocalizer["Detail.QuickFacts.CheckIn"].Value</span>
-                                <strong class="od-quick-facts__value">@checkInDisplay</strong>
-                            </span>
-                        </li>
-                        <li class="od-quick-facts__item">
-                            <span class="od-quick-facts__icon" aria-hidden="true"><i class="fas fa-door-closed"></i></span>
-                            <span class="od-quick-facts__copy">
-                                <span class="od-quick-facts__label">@SharedLocalizer["Detail.QuickFacts.CheckOut"].Value</span>
-                                <strong class="od-quick-facts__value">@checkOutDisplay</strong>
-                            </span>
-                        </li>
-                    </ul>
-                    <p class="hotel-about-text" id="hotelAboutText">
-                        @(!string.IsNullOrWhiteSpace(Model.LocationDescription) ? Model.LocationDescription : longDescription)
-                    </p>
-                    <button type="button" class="hotel-about-toggle" id="hotelAboutToggle" hidden data-label-more="Devamını oku" data-label-less="Kapat">
-                        Devamını oku
-                    </button>
+            <div class="section-head tabler-section-head detail-about__head">
+                <div class="tabler-section-titles">
+                    <h2>@SharedLocalizer["Detail.About.Title"].Value</h2>
                 </div>
-            </details>
+            </div>
+            <div class="detail-about__body">
+                <ul class="od-about-checkinout od-quick-facts__list" aria-label="@SharedLocalizer["Detail.QuickFacts.Aria"].Value">
+                    <li class="od-quick-facts__item">
+                        <span class="od-quick-facts__icon" aria-hidden="true"><i class="fas fa-door-open"></i></span>
+                        <span class="od-quick-facts__copy">
+                            <span class="od-quick-facts__label">@SharedLocalizer["Detail.QuickFacts.CheckIn"].Value</span>
+                            <strong class="od-quick-facts__value">@checkInDisplay</strong>
+                        </span>
+                    </li>
+                    <li class="od-quick-facts__item">
+                        <span class="od-quick-facts__icon" aria-hidden="true"><i class="fas fa-door-closed"></i></span>
+                        <span class="od-quick-facts__copy">
+                            <span class="od-quick-facts__label">@SharedLocalizer["Detail.QuickFacts.CheckOut"].Value</span>
+                            <strong class="od-quick-facts__value">@checkOutDisplay</strong>
+                        </span>
+                    </li>
+                </ul>
+                <p class="hotel-about-text" id="hotelAboutText">
+                    @(!string.IsNullOrWhiteSpace(Model.LocationDescription) ? Model.LocationDescription : longDescription)
+                </p>
+                <button type="button" class="hotel-about-toggle" id="hotelAboutToggle" hidden data-label-more="Devamını oku" data-label-less="Kapat">
+                    Devamını oku
+                </button>
+                @if (mobileInlineAmenities.Count > 0)
+                {
+                    var mobileAmenitiesVisible = mobileInlineAmenities.Take(2).ToList();
+                    var mobileAmenitiesHidden = mobileInlineAmenities.Skip(2).ToList();
+                    <div class="od-amenities__mobile-inline od-amenities__mobile-inline--about" aria-label="@SharedLocalizer["Detail.Amenities.Title"].Value">
+                        @if (mobileAmenitiesVisible.Count > 0)
+                        {
+                            <div class="od-amenities__tag-grid od-amenities__tag-grid--preview" role="list">
+                                @foreach (var item in mobileAmenitiesVisible)
+                                {
+                                    var amenityIcon = string.IsNullOrWhiteSpace(item.IconClass) ? "fa-circle-check" : item.IconClass;
+                                    <div class="od-amenity-tile od-amenity-tile--preview" role="listitem">
+                                        <span class="od-amenity-tile__icon" aria-hidden="true"><i class="fas @amenityIcon"></i></span>
+                                        <span class="od-amenity-tile__label">@item.Name</span>
+                                    </div>
+                                }
+                            </div>
+                        }
+                        @if (mobileAmenitiesHidden.Count > 0)
+                        {
+                            <details class="od-amenities__inline-more">
+                                <summary class="od-amenities__see-all-mobile">
+                                    @SharedLocalizer["Detail.Amenities.SeeAll"].Value
+                                    <i class="fas fa-chevron-down" aria-hidden="true"></i>
+                                </summary>
+                                <div class="od-amenities__expand-grid" role="list" aria-label="@SharedLocalizer["Detail.Amenities.Title"].Value">
+                                    @foreach (var item in mobileAmenitiesHidden)
+                                    {
+                                        var amenityIcon = string.IsNullOrWhiteSpace(item.IconClass) ? "fa-circle-check" : item.IconClass;
+                                        <div class="od-amenity-tile" role="listitem">
+                                            <span class="od-amenity-tile__icon" aria-hidden="true"><i class="fas @amenityIcon"></i></span>
+                                            <span class="od-amenity-tile__label">@item.Name</span>
+                                        </div>
+                                    }
+                                </div>
+                            </details>
+                        }
+                    </div>
+                }
+            </div>
         </article>
 
         <article class="content-card featured-amenities-card od-section od-section--amenities">
@@ -917,34 +935,6 @@
                     }
                 </div>
             </div>
-            @if (mobileInlineAmenities.Count > 0)
-            {
-                var mobileAmenitiesVisible = mobileInlineAmenities.Take(2).ToList();
-                var mobileAmenitiesRest = mobileInlineAmenities.Skip(2).ToList();
-                <div class="od-amenities__mobile-inline">
-                    <div class="od-amenities__tag-grid" role="list" aria-label="@SharedLocalizer["Detail.Amenities.Title"].Value">
-                        @foreach (var item in mobileAmenitiesVisible)
-                        {
-                            <span class="od-amenity-tag" role="listitem">@item.Name</span>
-                        }
-                    </div>
-                    @if (mobileAmenitiesRest.Count > 0)
-                    {
-                        <details class="od-amenities__inline-more">
-                            <summary class="od-amenities__see-all-mobile">
-                                @SharedLocalizer["Detail.Amenities.SeeAll"].Value
-                                <i class="fas fa-chevron-down" aria-hidden="true"></i>
-                            </summary>
-                            <div class="od-amenities__tag-grid od-amenities__tag-grid--more" role="list" aria-label="@SharedLocalizer["Detail.Amenities.Title"].Value">
-                                @foreach (var item in mobileAmenitiesRest)
-                                {
-                                    <span class="od-amenity-tag" role="listitem">@item.Name</span>
-                                }
-                            </div>
-                        </details>
-                    }
-                </div>
-            }
             <div class="od-amenities__scroll" role="list" aria-label="@SharedLocalizer["Detail.Amenities.Title"].Value">
                 @foreach (var item in Model.Amenities.Where(x => !string.IsNullOrWhiteSpace(x.Name)).Take(12))
                 {
@@ -1171,42 +1161,46 @@
                                         </ul>
                                     }
                                 </div>
+                                @{
+                                    var roomHasDiscount = room.DiscountPrice.HasValue
+                                                         && room.BasePrice.HasValue
+                                                         && room.DiscountPrice.Value > 0m
+                                                         && room.BasePrice.Value > 0m
+                                                         && room.DiscountPrice.Value < room.BasePrice.Value;
+                                    var roomBaseDisplay = roomHasDiscount ? Model.GuestInclusiveNightlyFromStoredNet(room.BasePrice!.Value) : 0m;
+                                    var roomNightlyDisplay = room.Price > 0m ? Model.GuestInclusiveNightlyFromStoredNet(room.Price) : 0m;
+                                    var roomDiscountPercent = roomHasDiscount
+                                        ? Math.Clamp((int)Math.Round(((roomBaseDisplay - roomNightlyDisplay) / roomBaseDisplay) * 100m, MidpointRounding.AwayFromZero), 1, 95)
+                                        : 0;
+                                    var roomStayTotalForPoints = roomNightlyDisplay > 0m ? roomNightlyDisplay * initialNightCount * initialRooms : 0m;
+                                    var roomEarnPoints = roomStayTotalForPoints > 0m ? HotelPointsService.CalculateEarnPoints(roomStayTotalForPoints) : 0;
+                                }
                                 <div class="room-card-actions-row od-room-card__actions">
-                                    @if ((room.Features?.Count ?? 0) > 5)
+                                    @if (roomGalleryResolved.Count > 1)
                                     {
-                                        <div class="room-feature-more-inline" data-room-feature-wrap>
-                                            <button type="button"
-                                                    class="amenities-btn amenities-btn--compact room-feature-more-btn"
-                                                    data-room-feature-toggle
-                                                    aria-expanded="false">
-                                                Diğer özellikler
-                                                <i class="fas fa-angle-down" aria-hidden="true"></i>
-                                            </button>
-                                            <div class="room-feature-panel" data-room-feature-panel hidden>
-                                                <h4 class="room-feature-panel-title">Tüm Oda Olanakları</h4>
-                                                <ul class="room-feature-panel-list" aria-label="Tüm oda olanakları">
-                                                    @foreach (var feature in (room.Features ?? Enumerable.Empty<otelturizmnew.Models.Oteller.HotelRoomFeatureViewModel>()))
-                                                    {
-                                                        <li class="room-feature-panel-item">
-                                                            <i class="fas @feature.IconClass" aria-hidden="true"></i>
-                                                            <span>@feature.Name</span>
-                                                        </li>
-                                                    }
-                                                </ul>
-                                            </div>
+                                        <button type="button"
+                                                class="amenities-btn amenities-btn--compact room-gallery-btn od-room-action-btn room-card-action-secondary room-gallery-trigger"
+                                                data-room-name="@room.Name"
+                                                data-room-id="@room.RoomTypeId"
+                                                data-room-gallery-start="0"
+                                                aria-label="@room.Name galerisi">
+                                            <i class="fas fa-images" aria-hidden="true"></i>
+                                            Galeri (@roomGalleryResolved.Count)
+                                        </button>
+                                    }
+                                    else if (roomHasDiscount)
+                                    {
+                                        <div class="room-card-value-hint room-card-value-hint--discount room-card-action-secondary" role="status">
+                                            <i class="fas fa-tag" aria-hidden="true"></i>
+                                            <span>−%@roomDiscountPercent @(string.IsNullOrWhiteSpace(room.DiscountName) ? "indirim" : room.DiscountName)</span>
                                         </div>
                                     }
-                                    @{
-                                        var roomHasDiscount = room.DiscountPrice.HasValue
-                                                             && room.BasePrice.HasValue
-                                                             && room.DiscountPrice.Value > 0m
-                                                             && room.BasePrice.Value > 0m
-                                                             && room.DiscountPrice.Value < room.BasePrice.Value;
-                                        var roomBaseDisplay = roomHasDiscount ? Model.GuestInclusiveNightlyFromStoredNet(room.BasePrice!.Value) : 0m;
-                                        var roomNightlyDisplay = room.Price > 0m ? Model.GuestInclusiveNightlyFromStoredNet(room.Price) : 0m;
-                                        var roomDiscountPercent = roomHasDiscount
-                                            ? Math.Clamp((int)Math.Round(((roomBaseDisplay - roomNightlyDisplay) / roomBaseDisplay) * 100m, MidpointRounding.AwayFromZero), 1, 95)
-                                            : 0;
+                                    else if (roomEarnPoints > 0)
+                                    {
+                                        <div class="room-card-value-hint room-card-value-hint--loyalty room-card-action-secondary" role="status">
+                                            <i class="fas fa-gift" aria-hidden="true"></i>
+                                            <span>+@roomEarnPoints puan kazanın</span>
+                                        </div>
                                     }
                                     <button type="button"
                                             class="amenities-btn amenities-btn--compact room-feature-more-btn room-detail-btn od-room-action-btn"
@@ -1487,21 +1481,11 @@
 
         <article class="content-card detail-map-card od-section od-section--map" id="detailMapSection">
             <div class="section-head tabler-section-head">
-                <div class="tabler-section-headrow">
-                    <div class="tabler-section-titles">
+                <div class="tabler-section-headrow detail-map-card__headrow">
+                    <div class="tabler-section-titles detail-map-card__titles">
                         <h2>@SharedLocalizer["Detail.Location.Title"].Value</h2>
                         <p>@locationText</p>
                     </div>
-                    @if (Model.Latitude.HasValue && Model.Longitude.HasValue)
-                    {
-                        <div class="tabler-section-actions">
-                            <a class="tabler-section-action-btn" target="_blank" rel="noopener"
-                               href="https://www.google.com/maps?q=@mapLatitude,@mapLongitude">
-                                @SharedLocalizer["Detail.Location.OpenMap"].Value
-                                <i class="fas fa-arrow-up-right-from-square" aria-hidden="true"></i>
-                            </a>
-                        </div>
-                    }
                 </div>
             </div>
             <div class="map-card">
@@ -1542,16 +1526,28 @@
             <button type="button" class="booking-modal-close" id="bookingModalClose" aria-label="Rezervasyon panelini kapat">
                 <i class="fas fa-times"></i>
             </button>
+            @{
+                var bookingNightlyDisplay = initialInclusiveNightly > 0m
+                    ? initialInclusiveNightly
+                    : (Model.LowestRoomPrice > 0m ? Model.GuestInclusiveNightlyFromStoredNet(Model.LowestRoomPrice) : 0m);
+                var showBookingNightlyRow = bookingNightlyDisplay > 0m;
+                var showBookingTotalRow = initialTotal > 0m;
+            }
             <div class="booking-price-head booking-price-head--ota">
                 <div class="booking-price-row">
                     <div class="booking-price-main">
-                        @if (initialInclusiveNightly > 0m)
-                        {
+                        <div class="booking-price-line booking-price-line--nightly" id="bookingPriceNightlyRow" @(showBookingNightlyRow ? null : "hidden")>
                             <span class="booking-price-from">@SharedLocalizer["Detail.Booking.FromNight"].Value</span>
-                        }
-                        <strong id="bookingPrice" class="booking-price-total">@(initialTotal > 0m ? $"₺{initialTotal:N0}" : (Model.LowestRoomPrice > 0m ? $"₺{Model.GuestInclusiveNightlyFromStoredNet(Model.LowestRoomPrice):N0}" : "Fiyat yok"))</strong>
-                        <span class="booking-price-unit">@SharedLocalizer["Detail.Booking.Total"].Value · @SharedLocalizer["Detail.Room.TaxesIncluded"].Value</span>
-                        <small class="booking-price-tax-note">@SharedLocalizer["Detail.Booking.TaxesNote"].Value</small>
+                            <strong id="bookingNightlyFrom" class="booking-price-nightly">@(showBookingNightlyRow ? $"₺{bookingNightlyDisplay:N0}" : "—")</strong>
+                        </div>
+                        <div class="booking-price-line booking-price-line--total" id="bookingPriceTotalRow" @(showBookingTotalRow ? null : "hidden")>
+                            <span class="booking-price-unit">@SharedLocalizer["Detail.Booking.Total"].Value</span>
+                            <strong id="bookingPrice" class="booking-price-total">@(showBookingTotalRow ? $"₺{initialTotal:N0}" : "—")</strong>
+                        </div>
+                        <div class="booking-price-meta">
+                            <span class="booking-price-tax-badge">@SharedLocalizer["Detail.Room.TaxesIncluded"].Value</span>
+                            <small class="booking-price-tax-note">@SharedLocalizer["Detail.Booking.TaxesNote"].Value</small>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -1667,19 +1663,25 @@
 
                 @{
                     var pmSel = reservationForm.PaymentMethod?.Trim() ?? "";
-                    var selKapida = string.Equals(pmSel, "Kapıda Ödeme", StringComparison.OrdinalIgnoreCase);
-                    var selOnline = string.Equals(pmSel, "Online Ödeme", StringComparison.OrdinalIgnoreCase);
-                    var paymentMethodChosen = selKapida || selOnline;
+                    var selCashAtDoor = string.Equals(pmSel, PublicDoorPaymentMethods.CashAtDoor, StringComparison.OrdinalIgnoreCase)
+                        || string.Equals(pmSel, "Kapıda Ödeme", StringComparison.OrdinalIgnoreCase);
+                    var selCardAtDoor = string.Equals(pmSel, PublicDoorPaymentMethods.CardAtDoor, StringComparison.OrdinalIgnoreCase);
+                    var paymentMethodChosen = selCashAtDoor || selCardAtDoor;
+                    var guestCheckInDefault = Model.CheckInTime?.ToString(@"hh\:mm") ?? "14:00";
+                    var guestCheckOutDefault = Model.CheckOutTime?.ToString(@"hh\:mm") ?? "12:00";
+                    var hotelCheckOutStandard = guestCheckOutDefault;
                 }
-                <div class="booking-advanced-fields booking-visible-fields" id="bookingAdvancedFields">
+                <div class="booking-advanced-fields booking-visible-fields" id="bookingAdvancedFields"
+                     data-hotel-check-in="@guestCheckInDefault"
+                     data-hotel-check-out="@hotelCheckOutStandard">
                     <div class="booking-advanced-heading">
                         <strong>Ödeme planı</strong>
-                        <span>Rezervasyon öncesi ödeme tercihinizi ve giriş saatlerini netleştirin.</span>
+                        <span>Kapıda ödeme tercihinizi ve giriş-çıkış saatlerinizi seçin.</span>
                     </div>
                     <div class="booking-advanced-grid">
                         <label>
                             <span>Ödeme planı</span>
-                            <select name="PaymentMethod" id="paymentMethodSelect">
+                            <select name="PaymentMethod" id="paymentMethodSelect" required>
                                 @if (!paymentMethodChosen)
                                 {
                                     <option value="" selected disabled>Ödeme yönteminizi seçin</option>
@@ -1688,58 +1690,36 @@
                                 {
                                     <option value="" disabled>Ödeme yönteminizi seçin</option>
                                 }
-                                @if (selKapida)
+                                @if (selCashAtDoor)
                                 {
-                                    <option value="Kapıda Ödeme" selected>Kapıda ödeme</option>
+                                    <option value="@PublicDoorPaymentMethods.CashAtDoor" selected>@PublicDoorPaymentMethods.CashAtDoor</option>
                                 }
                                 else
                                 {
-                                    <option value="Kapıda Ödeme">Kapıda ödeme</option>
+                                    <option value="@PublicDoorPaymentMethods.CashAtDoor">@PublicDoorPaymentMethods.CashAtDoor</option>
                                 }
-                                @if (selOnline)
+                                @if (selCardAtDoor)
                                 {
-                                    <option value="Online Ödeme" selected>Online kart ile ödeme</option>
+                                    <option value="@PublicDoorPaymentMethods.CardAtDoor" selected>@PublicDoorPaymentMethods.CardAtDoor</option>
                                 }
                                 else
                                 {
-                                    <option value="Online Ödeme">Online kart ile ödeme</option>
+                                    <option value="@PublicDoorPaymentMethods.CardAtDoor">@PublicDoorPaymentMethods.CardAtDoor</option>
                                 }
                             </select>
                         </label>
-                        <div class="booking-payment-mix" id="bookingPaymentMix" hidden>
-                            <p class="booking-payment-mix-title">Tutarları toplam fiyata bölebilirsiniz (₺)</p>
-                            <label>
-                                <span>Kart ile</span>
-                                <input type="number" step="0.01" min="0" name="CardAmount" id="cardAmountInput" value="@reservationForm.CardAmount.ToString("0.00", System.Globalization.CultureInfo.InvariantCulture)" />
-                            </label>
-                            <label>
-                                <span>Havale / EFT</span>
-                                <input type="number" step="0.01" min="0" name="BankTransferAmount" id="bankAmountInput" value="@reservationForm.BankTransferAmount.ToString("0.00", System.Globalization.CultureInfo.InvariantCulture)" />
-                            </label>
-                            <label>
-                                <span>Otelde (kapıda)</span>
-                                <input type="number" step="0.01" min="0" name="CashAtHotelAmountSplit" id="cashSplitInput" value="@reservationForm.CashAtHotelAmountSplit.ToString("0.00", System.Globalization.CultureInfo.InvariantCulture)" />
-                            </label>
-                            <label>
-                                <span>Havale referansı</span>
-                                <input type="text" name="BankTransferReference" id="bankRefInput" maxlength="120" placeholder="İşlem / dekont referansı" value="@reservationForm.BankTransferReference" />
-                            </label>
-                            <label>
-                                <span>Havale dekontu (isteğe bağlı)</span>
-                                <input type="file" name="BankTransferReceipt" id="bankReceiptInput" accept=".pdf,.jpg,.jpeg,.png,.webp" />
-                            </label>
-                        </div>
                         <label>
-                            <span>Giriş / Çıkış</span>
-                            <input type="text" value="@(Model.CheckInTime?.ToString(@"hh\:mm") ?? "14:00") / @(Model.CheckOutTime?.ToString(@"hh\:mm") ?? "12:00")" readonly />
+                            <span>Giriş saati</span>
+                            <input type="time" name="CheckInTime" id="checkInTimeInput" value="@guestCheckInDefault" step="900" />
+                        </label>
+                        <label>
+                            <span>Çıkış saati</span>
+                            <input type="time" name="CheckOutTime" id="checkOutTimeInput" value="@guestCheckOutDefault" step="900" />
                         </label>
                     </div>
                     <p class="booking-advanced-tip">
-                        İptal, tarih ve oda koşulları seçilen oda tipine göre rezervasyon adımında tekrar onaylanır.
+                        Standart çıkış saatinden (@hotelCheckOutStandard) sonra ayrılırsanız fiyata ek günlük ücret yansıtılır. İptal ve oda koşulları seçilen oda tipine göre onaylanır.
                     </p>
-                    <div class="booking-payment-note" id="bookingPaymentNote" hidden>
-                        Online kart ödemesi rezervasyon kaydından sonra ödeme bağlantısı ile tamamlanacaktır. Havale seçtiyseniz dekont veya referans eklemeniz işlemi hızlandırır.
-                    </div>
                 </div>
 
                 @await Html.PartialAsync("~/Views/Oteller/Partials/_ReservationCreateButton.cshtml")
@@ -1778,13 +1758,13 @@
     <div class="mobile-booking-bar od-mobile-bottom-dock od-sticky-cta mob-sticky-cta fe-world-safe-bottom" id="mobileBookingBar" role="region" aria-label="@SharedLocalizer["Booking.MobileSummary"].Value">
         <div class="mobile-booking-bar__row mobile-booking-bar__row--price">
             <div class="mobile-booking-price-stack">
-                <span class="mobile-booking-loyalty" id="mobileBookingLoyalty" data-loyalty-hook="detail-mobile-bar" @(initialEarnPoints <= 0 ? "hidden" : null)>
-                    <i class="fas fa-gift" aria-hidden="true"></i>
-                    +@initialEarnPoints puan kazanın
-                </span>
                 <div class="mobile-booking-price-main">
                     <div class="mobile-booking-price-labels">
                         <span class="mobile-booking-room-name" id="mobileBookingRoomName">@selectedRoomSeed?.Name</span>
+                        <span class="mobile-booking-loyalty" id="mobileBookingLoyalty" data-loyalty-hook="detail-mobile-bar" @(initialEarnPoints <= 0 ? "hidden" : null)>
+                            <i class="fas fa-gift" aria-hidden="true"></i>
+                            +@initialEarnPoints puan kazanın
+                        </span>
                         <span class="mobile-booking-label">@SharedLocalizer["Detail.Booking.Total"].Value</span>
                     </div>
                     <div class="mobile-booking-total-wrap">
@@ -2304,8 +2284,8 @@
             const nightlyDetails = document.getElementById('nightlyBreakdownDetails');
             const nightlyList = document.getElementById('nightlyBreakdownList');
             const bookingQuoteNotice = document.getElementById('bookingQuoteNotice');
-            const bookingPaymentNote = document.getElementById('bookingPaymentNote');
-            const bookingPaymentMix = document.getElementById('bookingPaymentMix');
+            const checkInTimeInput = document.getElementById('checkInTimeInput');
+            const checkOutTimeInput = document.getElementById('checkOutTimeInput');
             let profileCompletionRequired = document.getElementById('profileCompletionRequired')?.value === 'true';
             let hasAutoPromptedProfileCompletion = false;
             const actionBackdrop = document.getElementById('detailActionBackdrop');
@@ -3689,8 +3669,8 @@
                     && (message || '').toString().trim().toLowerCase().includes('ödeme planı')
                     && paymentMethodSelect) {
                     infoModalActions.innerHTML =
-                        '<button type="button" class="detail-modal-option" data-set-payment="Kapıda Ödeme"><i class="fas fa-hand-holding-dollar"></i> Kapıda ödeme</button>'
-                        + '<button type="button" class="detail-modal-option" data-set-payment="Online Ödeme"><i class="fas fa-credit-card"></i> Online kart ile ödeme</button>'
+                        '<button type="button" class="detail-modal-option" data-set-payment="Kapıda nakit ödeme"><i class="fas fa-hand-holding-dollar"></i> Kapıda nakit ödeme</button>'
+                        + '<button type="button" class="detail-modal-option" data-set-payment="Kapıda kart ile ödeme"><i class="fas fa-credit-card"></i> Kapıda kart ile ödeme</button>'
                         + '<button type="button" class="detail-modal-secondary" data-close-modal="detailInfoModal">Vazgeç</button>';
                 } else {
                     infoModalActions.innerHTML = '<button type="button" class="detail-modal-primary" data-close-modal="detailInfoModal">Tamam</button>';
@@ -3707,13 +3687,6 @@
                         syncPaymentMethodState();
                         closeModal(infoModal);
                         bookingAdvancedFields?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-
-                        if (isOnlinePaymentSelected()) {
-                            // Seçim yapıldı; online şimdilik kapalıysa kullanıcıyı bilgilendir.
-                            window.setTimeout(function () {
-                                showInfoModal('Online ödeme altyapısı şu anda geliştirme aşamasında. Şimdilik kapıda ödeme / nakit seçeneği ile rezervasyon tamamlayabilirsiniz.', false, 'warning');
-                            }, 80);
-                        }
                     });
                 });
                 infoModalActions.querySelectorAll('[data-close-modal]').forEach(function (button) {
@@ -3832,18 +3805,32 @@
                 });
             }
 
-            function isPaymentMixScenario() {
-                const pm = (paymentMethodSelect?.value || '').trim();
-                return pm.startsWith('Karma');
+            function isDoorPaymentValue(value) {
+                const v = (value || '').trim();
+                return v === 'Kapıda nakit ödeme'
+                    || v === 'Kapıda kart ile ödeme'
+                    || v === 'Kapıda Ödeme';
             }
 
             function isPaymentMethodChosen() {
-                const v = (paymentMethodSelect?.value || '').trim();
-                return v === 'Kapıda Ödeme' || v === 'Online Ödeme' || v.startsWith('Karma');
+                return isDoorPaymentValue(paymentMethodSelect?.value || '');
             }
 
-            function isOnlinePaymentSelected() {
-                return (paymentMethodSelect?.value || '').trim() === 'Online Ödeme';
+            function getGuestCheckOutTimeValue() {
+                return (checkOutTimeInput?.value || '').trim();
+            }
+
+            function getHotelStandardCheckOutTime() {
+                return (bookingAdvancedFields?.dataset?.hotelCheckOut || '12:00').trim();
+            }
+
+            function isLateCheckoutSelection() {
+                const guest = getGuestCheckOutTimeValue();
+                const standard = getHotelStandardCheckOutTime();
+                if (!guest || !standard) {
+                    return false;
+                }
+                return guest > standard;
             }
 
             let lastQuoteUnavailable = false;
@@ -3864,19 +3851,6 @@
             }
 
             function syncPaymentMethodState() {
-                if (!paymentMethodSelect) {
-                    return;
-                }
-
-                const pm = (paymentMethodSelect.value || '').trim();
-                if (bookingPaymentMix) {
-                    bookingPaymentMix.hidden = !isPaymentMixScenario();
-                }
-
-                if (bookingPaymentNote) {
-                    bookingPaymentNote.hidden = pm === 'Kapıda Ödeme' || pm === '';
-                }
-
                 syncReserveButtonEnabled();
             }
 
@@ -3933,10 +3907,14 @@
                 const dawnRow = Number(quote.dawnSurpriseDiscountAmount || 0) > 0
                     ? '<div class="price-row price-row-tax price-row-dawn"><span>Şafak Sürprizi <small class="tax-rate-hint">%' + escapeHtml(String(quote.dawnSurprisePercent || 0)) + '</small></span><strong>-' + formatMoney(quote.dawnSurpriseDiscountAmount) + '</strong></div>'
                     : '';
+                const lateCheckoutRow = Number(quote.lateCheckoutSurchargeAmount || 0) > 0
+                    ? '<div class="price-row price-row-tax price-row-late-checkout"><span>Geç çıkış ek gün</span><strong>' + formatMoney(quote.lateCheckoutSurchargeAmount) + '</strong></div>'
+                    : '';
                 return '<div class="price-row price-row-tax"><span>KDV <small class="tax-rate-hint">%' + vatR + '</small></span><strong>' + formatMoney(quote.vatAmount || 0) + '</strong></div>' +
                     '<div class="price-row price-row-tax"><span>Konaklama Vergisi <small class="tax-rate-hint">%' + accR + '</small></span><strong>' + formatMoney(quote.accommodationTaxAmount || 0) + '</strong></div>' +
                     '<div class="price-row price-row-tax"><span>Vergi ve Harçlar</span><strong>' + formatMoney(quote.taxAmount) + '</strong></div>' +
                     dawnRow +
+                    lateCheckoutRow +
                     '<div class="price-row total"><span>Toplam</span><strong>' + formatMoney(quote.totalAmount) + '</strong></div>';
             }
 
@@ -4165,7 +4143,9 @@
                     totalAmount: 0,
                     originalTotalAmount: 0,
                     dawnSurprisePercent: 0,
-                    dawnSurpriseDiscountAmount: 0
+                    dawnSurpriseDiscountAmount: 0,
+                    lateCheckoutSurchargeAmount: 0,
+                    lateCheckoutApplied: false
                 };
 
                 const perRoom = [];
@@ -4173,10 +4153,26 @@
                 let anyUnavailable = false;
                 let availabilityMessage = '';
 
-                for (const item of items) {
+                for (let itemIndex = 0; itemIndex < items.length; itemIndex++) {
+                    const item = items[itemIndex];
                     try {
                         const rc = Math.max(1, parseInt(item.roomCount || 1, 10) || 1);
-                        const response = await fetch('/oteller/@Model.Slug/fiyat-teklifi?roomTypeId=' + encodeURIComponent(item.roomTypeId) + '&checkInDate=' + encodeURIComponent(item.checkIn) + '&checkOutDate=' + encodeURIComponent(item.checkOut) + '&roomCount=' + encodeURIComponent(rc), {
+                        const quoteParams = new URLSearchParams({
+                            roomTypeId: String(item.roomTypeId),
+                            checkInDate: item.checkIn,
+                            checkOutDate: item.checkOut,
+                            roomCount: String(rc)
+                        });
+                        if (itemIndex === 0) {
+                            const guestCheckOut = getGuestCheckOutTimeValue();
+                            if (guestCheckOut) {
+                                quoteParams.set('checkOutTime', guestCheckOut);
+                            }
+                            quoteParams.set('applyLateCheckoutSurcharge', isLateCheckoutSelection() ? 'true' : 'false');
+                        } else {
+                            quoteParams.set('applyLateCheckoutSurcharge', 'false');
+                        }
+                        const response = await fetch('/oteller/@Model.Slug/fiyat-teklifi?' + quoteParams.toString(), {
                             credentials: 'same-origin',
                             headers: { 'X-Requested-With': 'XMLHttpRequest' }
                         });
@@ -4204,6 +4200,10 @@
                         totals.dawnSurpriseDiscountAmount += Number(quote.dawnSurpriseDiscountAmount || 0);
                         if (Number(quote.dawnSurprisePercent || 0) > 0) {
                             totals.dawnSurprisePercent = Number(quote.dawnSurprisePercent);
+                        }
+                        if (Number(quote.lateCheckoutSurchargeAmount || 0) > 0) {
+                            totals.lateCheckoutSurchargeAmount += Number(quote.lateCheckoutSurchargeAmount);
+                            totals.lateCheckoutApplied = true;
                         }
 
                         perRoom.push({
@@ -4262,8 +4262,17 @@
                     return;
                 }
 
-                const unitEl = document.querySelector('.booking-price-unit');
-                bookingPrice.textContent = formatMoney(totals.totalAmount);
+                const nightlyRow = document.getElementById('bookingPriceNightlyRow');
+                const totalRow = document.getElementById('bookingPriceTotalRow');
+                const bookingNightlyFrom = document.getElementById('bookingNightlyFrom');
+                const hasTotal = totals.totalAmount > 0;
+
+                if (bookingPrice) {
+                    bookingPrice.textContent = hasTotal ? formatMoney(totals.totalAmount) : '—';
+                }
+                if (totalRow) {
+                    totalRow.hidden = !hasTotal;
+                }
                 lastBookingTotalAmount = Number(totals.totalAmount || 0);
 
                 const firstItem = items[0];
@@ -4271,13 +4280,15 @@
                     ? Math.max(1, Math.round((new Date(firstItem.checkOut).getTime() - new Date(firstItem.checkIn).getTime()) / 86400000))
                     : 1;
                 const roomsForNightly = firstItem ? Math.max(1, parseInt(firstItem.roomCount || 1, 10) || 1) : 1;
-                const nightlyAmount = totals.totalAmount > 0
+                const nightlyAmount = hasTotal
                     ? Math.round(totals.totalAmount / nightsForNightly / roomsForNightly)
                     : 0;
-                const bookingNightlyFrom = document.getElementById('bookingNightlyFrom');
+
                 if (nightlyAmount > 0) {
-                    const nightlyText = formatMoney(nightlyAmount);
-                    if (bookingNightlyFrom) bookingNightlyFrom.textContent = nightlyText;
+                    if (bookingNightlyFrom) bookingNightlyFrom.textContent = formatMoney(nightlyAmount);
+                    if (nightlyRow) nightlyRow.hidden = false;
+                } else if (nightlyRow) {
+                    nightlyRow.hidden = true;
                 }
 
                 const earnPoints = await resolveEarnPoints(totals.totalAmount);
@@ -4314,9 +4325,15 @@
                                     ? '<small class="nightly-stock">' + Number(row.remainingRooms || 0) + ' oda</small>'
                                     : '';
                                 const amountHtml = isDiscounted
-                                    ? '<strong><small>' + formatMoney(baseAmount) + '</small>' + formatMoney(effectiveAmount) + '<em>%' + discountPercent + '</em></strong>'
-                                    : '<strong>' + formatMoney(effectiveAmount) + '</strong>';
-                                return '<div class="nightly-breakdown-row' + (isDiscounted ? ' nightly-breakdown-row-discount' : '') + '"><span>' + escapeHtml(label) + stockText + '</span>' + amountHtml + '</div>';
+                                    ? '<strong class="nightly-breakdown-amount"><small>' + formatMoney(baseAmount) + '</small>' + formatMoney(effectiveAmount) + '<em>%' + discountPercent + '</em></strong>'
+                                    : '<strong class="nightly-breakdown-amount">' + formatMoney(effectiveAmount) + '</strong>';
+                                return '<div class="nightly-breakdown-row' + (isDiscounted ? ' nightly-breakdown-row-discount' : '') + '">'
+                                    + '<div class="nightly-breakdown-row-meta">'
+                                    + '<span class="nightly-breakdown-date">' + escapeHtml(label) + '</span>'
+                                    + stockText
+                                    + '</div>'
+                                    + amountHtml
+                                    + '</div>';
                             }).join('');
                             return '<div class="nightly-breakdown-room">' + header + rowsHtml + '</div>';
                         }).join('');
@@ -4328,6 +4345,8 @@
                 lastQuoteUnavailable = anyUnavailable;
                 if (anyUnavailable) {
                     setQuoteNotice(availabilityMessage || 'Seçili tarihler için uygun stok veya satış bulunamadı.', 'warning');
+                } else if (totals.lateCheckoutApplied) {
+                    setQuoteNotice('Seçtiğiniz çıkış saati standart saatten sonra olduğu için ek günlük ücret eklendi.', 'info');
                 } else {
                     setQuoteNotice(availabilityMessage || '', 'info');
                 }
@@ -5219,6 +5238,8 @@
             initReviewReadMore();
             initRoomFeaturePanels();
             paymentMethodSelect?.addEventListener('change', syncPaymentMethodState);
+            checkInTimeInput?.addEventListener('change', refreshPriceQuote);
+            checkOutTimeInput?.addEventListener('change', refreshPriceQuote);
 
             // Oda kart görselleri scroll'a gelince "geç yükleniyor" hissi vermesin diye
             // ilk etapta oda kapak görsellerini prefetch edelim (tarayıcı cache'e alsın).

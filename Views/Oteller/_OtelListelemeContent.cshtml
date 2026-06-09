@@ -312,6 +312,9 @@
                             </button>
                             </div>
                             <div class="otelliste-card-body">
+                                <h3 class="otelliste-card-title">
+                                    <a href="@detailUrl">@hotel.Name</a>
+                                </h3>
                                 <div class="otelliste-card-meta-row">
                                     <div class="otelliste-card-meta-primary">
                                         @if (hotel.Rating > 0)
@@ -344,9 +347,6 @@
                                         </div>
                                     }
                                 </div>
-                                <h3 class="otelliste-card-title">
-                                    <a href="@detailUrl">@hotel.Name</a>
-                                </h3>
                                 <p class="otelliste-card-location">
                                     <i class="fas fa-map-marker-alt" aria-hidden="true"></i> @locationText
                                 </p>
@@ -368,6 +368,10 @@
                                                 </div>
                                             }
                                         </div>
+                                    }
+                                    @if (price > 0m)
+                                    {
+                                        <p class="otelliste-card-price-from-label">başlayan fiyatlarla</p>
                                     }
                                     <div class="otelliste-card-offer-row">
                                         <div class="otelliste-card-price otelliste-card-price--body">

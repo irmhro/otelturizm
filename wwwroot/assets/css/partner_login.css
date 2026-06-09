@@ -1,6 +1,10 @@
 /* partner_login.css — partner giriş/kayıt */
 @import url('kullanici_login.css');
 
+.login-page .auth-info h2:first-child {
+    margin-top: 0;
+}
+
 .info-banner.subtle {
     background: rgba(14, 165, 233, 0.08);
     border-color: rgba(14, 165, 233, 0.22);

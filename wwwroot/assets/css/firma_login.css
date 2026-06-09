@@ -4,3 +4,7 @@
 .login-page .auth-info-badge {
     background: rgba(255, 158, 0, 0.18);
 }
+
+.login-page .auth-info h2:first-child {
+    margin-top: 0;
+}

@@ -73,8 +73,14 @@ public class PublicHotelReservationForm
     public int AdultCount { get; set; } = 2;
     public int ChildCount { get; set; }
     public int RoomCount { get; set; } = 1;
-    public string PaymentMethod { get; set; } = "Kapıda Ödeme";
+    public string PaymentMethod { get; set; } = string.Empty;
     public string? RoomsJson { get; set; }
+
+    /// <summary>Misafirin tercih ettiği giriş saati (HH:mm).</summary>
+    public string? CheckInTime { get; set; }
+
+    /// <summary>Misafirin tercih ettiği çıkış saati (HH:mm).</summary>
+    public string? CheckOutTime { get; set; }
 
     /// <summary>Kart ile ödenmek istenen tutar (karma planlarda).</summary>
     public decimal CardAmount { get; set; }
@@ -87,6 +93,13 @@ public class PublicHotelReservationForm
 
     /// <summary>Havale için referans veya dekont notu.</summary>
     public string? BankTransferReference { get; set; }
+}
+
+/// <summary>Otel detay rezervasyon formunda kapıda ödeme seçenekleri.</summary>
+public static class PublicDoorPaymentMethods
+{
+    public const string CashAtDoor = "Kapıda nakit ödeme";
+    public const string CardAtDoor = "Kapıda kart ile ödeme";
 }
 
 public sealed class PublicMultiRoomSelectionItem
@@ -122,6 +135,8 @@ public class PublicReservationPriceQuoteViewModel
     public decimal DawnSurpriseDiscountAmount { get; set; }
     public bool IsAvailable { get; set; } = true;
     public string? AvailabilityMessage { get; set; }
+    public bool LateCheckoutApplied { get; set; }
+    public decimal LateCheckoutSurchargeAmount { get; set; }
     public List<PublicReservationNightlyBreakdownItemViewModel> NightlyBreakdown { get; set; } = new();
 }
 

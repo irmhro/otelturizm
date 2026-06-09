@@ -581,13 +581,7 @@
 }
 
 .otelliste-page .otelliste-count {
-    font-weight: 700;
-    background: var(--otl-bg);
-    padding: 6px 12px;
-    border-radius: 0;
-    border: 1px solid var(--otl-border);
-    font-size: var(--otl-type-card-meta);
-    color: var(--otl-dark);
+    display: none;
 }
 
 .otelliste-page .otelliste-sort {
@@ -818,7 +812,7 @@
         align-items: flex-start;
         gap: 5px;
         min-width: 0;
-        margin-bottom: 1px;
+        margin: 0;
     }
 
     .otelliste-page .otelliste-card-meta-primary {
@@ -1038,6 +1032,15 @@
 .otelliste-page .otelliste-card-room-line--max .otelliste-card-room-price {
     color: var(--otl-muted);
     font-weight: 700;
+}
+
+.otelliste-page .otelliste-card-price-from-label {
+    margin: 0;
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--otl-muted);
+    line-height: 1.3;
+    letter-spacing: 0.01em;
 }
 
 .otelliste-page .otelliste-card-offer-row {

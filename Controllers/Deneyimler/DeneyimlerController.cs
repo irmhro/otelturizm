@@ -29,7 +29,7 @@ public class DeneyimlerController : Controller
         ViewData["PageCssMobile"] = "deneyimler";
         ViewData["IncludeAnasayfaStyles"] = true;
         ViewData["IncludeFeWorldTokens"] = true;
-        ViewData["MetaDescription"] = "Otelturizm Deneyimler: şehir rotaları, sahil kaçamakları, spa ritüelleri ve aile dostu maceralar. Konaklamanızı anıya dönüştüren koleksiyonlar.";
+        ViewData["MetaDescription"] = "Otelturizm Deneyimler: şehir rotaları, sahil konaklamaları, spa ritüelleri ve aile dostu maceralar. Konaklamanızı anıya dönüştüren koleksiyonlar.";
         ViewData["Canonical"] = $"{baseUrl}/deneyimler";
 
         return View("~/Views/Deneyimler/Index.cshtml", model);

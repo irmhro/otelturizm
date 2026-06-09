@@ -28,9 +28,15 @@
                 {
                     var card = Model.Featured[i];
                     <article class="dxp-mosaic-card dxp-mosaic-card--@(i + 1)" style="--dxp-accent:@card.Accent; --dxp-bg:@card.Gradient;">
-                        <span class="dxp-mosaic-card__stamp">@card.Stamp</span>
-                        <strong>@card.Title</strong>
-                        <small>@card.Location · @card.Duration</small>
+                        @if (!string.IsNullOrWhiteSpace(card.ImageUrl))
+                        {
+                            <img class="dxp-mosaic-card__img" src="@card.ImageUrl" alt="" loading="lazy" decoding="async" />
+                        }
+                        <div class="dxp-mosaic-card__overlay">
+                            <span class="dxp-mosaic-card__stamp">@card.Stamp</span>
+                            <strong>@card.Title</strong>
+                            <small>@card.Location · @card.Duration</small>
+                        </div>
                     </article>
                 }
             </div>
@@ -95,6 +101,12 @@
             var spot = Model.Spotlight;
             <section class="dxp-spotlight" aria-labelledby="dxp-spotlight-title">
                 <a class="dxp-spotlight__link" href="@spot.LinkUrl" style="--dxp-accent:@spot.Accent;">
+                    @if (!string.IsNullOrWhiteSpace(spot.ImageUrl))
+                    {
+                        <div class="dxp-spotlight__media">
+                            <img src="@spot.ImageUrl" alt="" loading="lazy" decoding="async" />
+                        </div>
+                    }
                     <div class="dxp-spotlight__badge"><span aria-hidden="true">@spot.Emoji</span> @spot.Badge</div>
                     <div class="dxp-spotlight__body">
                         <h2 id="dxp-spotlight-title" class="dxp-spotlight__title">@spot.Title</h2>
@@ -141,6 +153,12 @@
                     @foreach (var camp in Model.CampaignHighlights)
                     {
                         <a class="dxp-campaign-card" href="@camp.LinkUrl">
+                            @if (!string.IsNullOrWhiteSpace(camp.ImageUrl))
+                            {
+                                <span class="dxp-campaign-card__media">
+                                    <img src="@camp.ImageUrl" alt="" loading="lazy" decoding="async" />
+                                </span>
+                            }
                             <span class="dxp-campaign-card__tag">@camp.Tag</span>
                             <strong>@camp.Title</strong>
                             <span class="dxp-campaign-card__go">İncele <i class="fas fa-chevron-right" aria-hidden="true"></i></span>
@@ -166,8 +184,17 @@
                              style="--dxp-accent:@card.Accent; --dxp-bg:@card.Gradient;">
                         <a class="dxp-card__link" href="@card.LinkUrl">
                             <div class="dxp-card__visual">
-                                <span class="dxp-card__stamp">@card.Stamp</span>
-                                <span class="dxp-card__mood">@card.Mood</span>
+                                @if (!string.IsNullOrWhiteSpace(card.ImageUrl))
+                                {
+                                    <img class="dxp-card__img" src="@card.ImageUrl" alt="@card.Title" loading="lazy" decoding="async" />
+                                }
+                                <div class="dxp-card__visual-overlay">
+                                    <span class="dxp-card__stamp">@card.Stamp</span>
+                                    @if (!string.IsNullOrWhiteSpace(card.Mood))
+                                    {
+                                        <span class="dxp-card__mood">@card.Mood</span>
+                                    }
+                                </div>
                             </div>
                             <div class="dxp-card__body">
                                 <h3 class="dxp-card__title">@card.Title</h3>
@@ -221,7 +248,13 @@
                              style="--dxp-accent:@card.Accent; --dxp-bg:@card.Gradient;">
                         <a class="dxp-card__link" href="@card.LinkUrl">
                             <div class="dxp-card__visual">
-                                <span class="dxp-card__stamp dxp-card__stamp--mini">@card.Stamp</span>
+                                @if (!string.IsNullOrWhiteSpace(card.ImageUrl))
+                                {
+                                    <img class="dxp-card__img" src="@card.ImageUrl" alt="@card.Title" loading="lazy" decoding="async" />
+                                }
+                                <div class="dxp-card__visual-overlay">
+                                    <span class="dxp-card__stamp dxp-card__stamp--mini">@card.Stamp</span>
+                                </div>
                             </div>
                             <div class="dxp-card__body">
                                 <h3 class="dxp-card__title">@card.Title</h3>

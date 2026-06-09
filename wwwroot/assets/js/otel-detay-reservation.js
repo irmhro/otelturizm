@@ -298,7 +298,9 @@
         }
         if (adults < 1) return 'Rezervasyon için en az 1 yetişkin misafir seçiniz.';
         const payment = (paymentMethodSelect?.value || '').trim();
-        if (payment !== 'Kapıda Ödeme' && payment !== 'Online Ödeme' && !payment.startsWith('Karma')) {
+        if (payment !== 'Kapıda nakit ödeme'
+            && payment !== 'Kapıda kart ile ödeme'
+            && payment !== 'Kapıda Ödeme') {
             return 'Lütfen ödeme planı seçiniz.';
         }
         return '';
@@ -310,7 +312,7 @@
         if (current) return;
 
         const fallback = Array.from(paymentMethodSelect.options)
-            .find(x => x.value === 'Kapıda Ödeme')
+            .find(x => x.value === 'Kapıda nakit ödeme')
             || Array.from(paymentMethodSelect.options).find(x => x.value);
         if (fallback) {
             paymentMethodSelect.value = fallback.value;

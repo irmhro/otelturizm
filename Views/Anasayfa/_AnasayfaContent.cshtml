@@ -84,30 +84,29 @@
         <div class="container">
             <div class="hero-stage">
                 <div class="hero-stage-veil" aria-hidden="true"></div>
-            <div class="hero-top-grid hero-top-grid--solo">
-                <div class="hero-headline-pro">
-                    @await Component.InvokeAsync("LogoOzelGun")
-                    <h1 class="hero-title hero-title-pro hero-title-pro--headline" aria-label="@heroHeadline">
-                        <span class="hero-title-row hero-title-row--spread hero-title-row--line" aria-hidden="false">
-                            @for (var i = 0; i < heroLine1Words.Length; i++)
-                            {
-                                <span class="hero-title-word @HeroWordTone(i)">@heroLine1Words[i]</span>
-                            }
-                        </span>
-                        @if (heroLine2Words.Length > 0)
-                        {
-                            <span class="hero-title-row hero-title-row--spread hero-title-row--line">
-                                @for (var i = 0; i < heroLine2Words.Length; i++)
+                <div class="hero-top-grid hero-top-grid--solo">
+                    <div class="hero-headline-pro">
+                        @await Component.InvokeAsync("LogoOzelGun")
+                        <h1 class="hero-title hero-title-pro hero-title-pro--headline" aria-label="@heroHeadline">
+                            <span class="hero-title-row hero-title-row--spread hero-title-row--line" aria-hidden="false">
+                                @for (var i = 0; i < heroLine1Words.Length; i++)
                                 {
-                                    <span class="hero-title-word @HeroWordTone(i + heroLine1Words.Length)">@heroLine2Words[i]</span>
+                                    <span class="hero-title-word @HeroWordTone(i)">@heroLine1Words[i]</span>
                                 }
                             </span>
-                        }
-                    </h1>
+                            @if (heroLine2Words.Length > 0)
+                            {
+                                <span class="hero-title-row hero-title-row--spread hero-title-row--line">
+                                    @for (var i = 0; i < heroLine2Words.Length; i++)
+                                    {
+                                        <span class="hero-title-word @HeroWordTone(i + heroLine1Words.Length)">@heroLine2Words[i]</span>
+                                    }
+                                </span>
+                            }
+                        </h1>
+                    </div>
                 </div>
-            </div>
-
-            <div class="search-engine-shell">
+                <div class="search-engine-shell">
                 <form class="search-engine search-engine-pro" method="get" action="/oteller" data-search-pro-form>
                     <div class="search-pro-row search-pro-row-trip">
                         <div class="search-pro-field search-pro-destination input-group input-destination">

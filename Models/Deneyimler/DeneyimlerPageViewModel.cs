@@ -44,6 +44,7 @@ public class DeneyimCardViewModel
     public string Stamp { get; set; } = string.Empty;
     public string Accent { get; set; } = "#E30A17";
     public string Gradient { get; set; } = "linear-gradient(145deg, #1a1919 0%, #003b95 100%)";
+    public string ImageUrl { get; set; } = string.Empty;
     public string LinkUrl { get; set; } = "/oteller";
     public bool IsFeatured { get; set; }
     public bool IsWide { get; set; }
@@ -84,6 +85,7 @@ public class DeneyimSpotlightViewModel
     public string LinkUrl { get; set; } = "/oteller";
     public string Accent { get; set; } = "#E30A17";
     public string Emoji { get; set; } = "✨";
+    public string ImageUrl { get; set; } = string.Empty;
 }
 
 public class DeneyimMoodPickViewModel
@@ -99,4 +101,5 @@ public class DeneyimCampaignHighlightViewModel
     public string Title { get; set; } = string.Empty;
     public string Tag { get; set; } = string.Empty;
     public string LinkUrl { get; set; } = "/kampanyalar";
+    public string ImageUrl { get; set; } = string.Empty;
 }

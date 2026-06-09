@@ -80,7 +80,7 @@ public class OtellerController : Controller
     [HttpGet("")]
     [HttpGet("istanbul")]
     [OutputCache(PolicyName = "public-short")]
-    public async Task<IActionResult> OtelListeleme([FromQuery] string? q, [FromQuery] string? city, [FromQuery] string? etiket, [FromQuery] string? filter, [FromQuery] string? kampanya, [FromQuery] decimal? minPrice, [FromQuery] decimal? maxPrice, [FromQuery] int page, CancellationToken cancellationToken)
+    public async Task<IActionResult> OtelListeleme([FromQuery] string? q, [FromQuery] string? city, [FromQuery] string? etiket, [FromQuery] string? filter, [FromQuery] string? kampanya, [FromQuery] decimal? minPrice, [FromQuery] decimal? maxPrice, [FromQuery] long? ilceId, [FromQuery] long? sehirId, [FromQuery] int page, CancellationToken cancellationToken)
     {
         var listingCulture = ApplyRouteListingCulture();
         ViewData["PageCss"] = "otelliste_masaustu";
@@ -90,7 +90,7 @@ public class OtellerController : Controller
         var etiketN = HotelService.ResolveListingCampaignTag(etiket, filter);
         var kampanyaN = SearchTextNormalizer.Normalize(kampanya);
         var ctxBoost = Request.Cookies.TryGetValue("Otelturizm.SearchCtx", out var cx) ? cx.ToString() : null;
-        var model = await _hotelService.GetHotelListingPageAsync(searchTerm, etiketN, kampanyaN, page <= 0 ? 1 : page, ctxBoost, minPrice, maxPrice, cancellationToken);
+        var model = await _hotelService.GetHotelListingPageAsync(searchTerm, etiketN, kampanyaN, page <= 0 ? 1 : page, ctxBoost, minPrice, maxPrice, ilceId, sehirId, cancellationToken);
         await ApplyFavoriteStatesAsync(model, cancellationToken);
         ApplyListingLoyaltyTouchpoints(model);
         var listingMeta = _internationalSeo.BuildListingMeta(
@@ -106,7 +106,7 @@ public class OtellerController : Controller
 
     [HttpGet("harita")]
     [OutputCache(PolicyName = "public-short")]
-    public async Task<IActionResult> HaritaOteller([FromQuery] string? q, [FromQuery] string? city, [FromQuery] string? etiket, [FromQuery] string? filter, [FromQuery] string? kampanya, [FromQuery] decimal? minPrice, [FromQuery] decimal? maxPrice, CancellationToken cancellationToken)
+    public async Task<IActionResult> HaritaOteller([FromQuery] string? q, [FromQuery] string? city, [FromQuery] string? etiket, [FromQuery] string? filter, [FromQuery] string? kampanya, [FromQuery] decimal? minPrice, [FromQuery] decimal? maxPrice, [FromQuery] long? ilceId, [FromQuery] long? sehirId, CancellationToken cancellationToken)
     {
         ViewData["PageCss"] = "haritaoteller";
         ViewData["PageCssMobile"] = "haritaoteller.mobile";
@@ -115,7 +115,7 @@ public class OtellerController : Controller
         var etiketN = HotelService.ResolveListingCampaignTag(etiket, filter);
         var kampanyaN = SearchTextNormalizer.Normalize(kampanya);
         var ctxBoost = Request.Cookies.TryGetValue("Otelturizm.SearchCtx", out var cx) ? cx.ToString() : null;
-        var model = await _hotelService.GetHotelListingPageAsync(searchTerm, etiketN, kampanyaN, 1, ctxBoost, minPrice, maxPrice, cancellationToken);
+        var model = await _hotelService.GetHotelListingPageAsync(searchTerm, etiketN, kampanyaN, 1, ctxBoost, minPrice, maxPrice, ilceId, sehirId, cancellationToken);
         await ApplyFavoriteStatesAsync(model, cancellationToken);
         var mapCulture = ApplyRouteListingCulture();
         ViewData["Title"] = string.IsNullOrWhiteSpace(model.SearchLabel)
@@ -429,7 +429,15 @@ public class OtellerController : Controller
 
     [HttpGet("{slug}/fiyat-teklifi")]
     [EnableRateLimiting("quote-strict")]
-    public async Task<IActionResult> GetPriceQuote(string slug, [FromQuery] long roomTypeId, [FromQuery] DateOnly checkInDate, [FromQuery] DateOnly checkOutDate, [FromQuery] int roomCount = 1, CancellationToken cancellationToken = default)
+    public async Task<IActionResult> GetPriceQuote(
+        string slug,
+        [FromQuery] long roomTypeId,
+        [FromQuery] DateOnly checkInDate,
+        [FromQuery] DateOnly checkOutDate,
+        [FromQuery] int roomCount = 1,
+        [FromQuery] string? checkOutTime = null,
+        [FromQuery] bool applyLateCheckoutSurcharge = true,
+        CancellationToken cancellationToken = default)
     {
         if (roomCount < 1 || roomCount > 50)
         {
@@ -456,14 +464,22 @@ public class OtellerController : Controller
             return BadRequest(CheckoutErrorCatalog.JsonError(CheckoutErrorCatalog.RoomMismatch, "Seçilen oda tipi bu otel ile eşleşmiyor."));
         }
 
-        var shieldKey = $"currency-shield:v1:{slug}:{roomTypeId}:{checkInDate:O}:{checkOutDate:O}:{roomCount}";
+        var normalizedCheckOutTime = string.IsNullOrWhiteSpace(checkOutTime) ? string.Empty : checkOutTime.Trim();
+        var shieldKey = $"currency-shield:v1:{slug}:{roomTypeId}:{checkInDate:O}:{checkOutDate:O}:{roomCount}:{normalizedCheckOutTime}:{applyLateCheckoutSurcharge}";
         if (_memoryCache.TryGetValue(shieldKey, out PublicReservationPriceQuoteViewModel? cachedQuote) && cachedQuote is not null)
         {
             _logger.LogInformation("QUOTE_SHIELD_HIT slug={Slug} roomTypeId={RoomTypeId}", slug, roomTypeId);
             return Json(BuildPriceQuotePayload(cachedQuote));
         }
 
-        var quote = await _publicReservationService.GetPriceQuoteAsync(roomTypeId, checkInDate, checkOutDate, Math.Max(1, roomCount), cancellationToken);
+        var quote = await _publicReservationService.GetPriceQuoteAsync(
+            roomTypeId,
+            checkInDate,
+            checkOutDate,
+            Math.Max(1, roomCount),
+            normalizedCheckOutTime,
+            applyLateCheckoutSurcharge,
+            cancellationToken);
         _memoryCache.Set(
             shieldKey,
             quote,
@@ -521,6 +537,8 @@ public class OtellerController : Controller
             dawnSurprisePercent = quote.DawnSurprisePercent,
             dawnSurpriseDiscountAmount = quote.DawnSurpriseDiscountAmount,
             totalAmount = quote.TotalAmount,
+            lateCheckoutApplied = quote.LateCheckoutApplied,
+            lateCheckoutSurchargeAmount = quote.LateCheckoutSurchargeAmount,
             earnPoints = _hotelPointsService.CalculateEarnPoints(quote.TotalAmount),
             nightlyBreakdown = quote.NightlyBreakdown.Select(item => new
             {

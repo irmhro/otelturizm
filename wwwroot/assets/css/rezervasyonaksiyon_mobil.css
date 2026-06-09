@@ -61,7 +61,9 @@
         border: 0;
         border-radius: 0;
         box-shadow: none;
-        overflow: hidden;
+        overflow-x: hidden;
+        overflow-y: auto;
+        -webkit-overflow-scrolling: touch;
         background: #fff;
     }
 
@@ -76,23 +78,240 @@
         padding: calc(12px + env(safe-area-inset-top, 0px)) 52px 12px 16px;
         border-bottom: 1px solid var(--od-border, #EBE9E4);
         background: #fff;
+        display: block;
+    }
+
+    .oteldetay-page .rezervasyon-aksiyon .booking-price-main {
+        display: flex;
+        flex-direction: column;
+        align-items: stretch;
+        gap: 6px;
+        width: 100%;
+    }
+
+    .oteldetay-page .rezervasyon-aksiyon .booking-price-line {
+        display: flex;
+        align-items: baseline;
+        justify-content: space-between;
+        gap: 10px;
+        width: 100%;
+    }
+
+    .oteldetay-page .rezervasyon-aksiyon .booking-price-line[hidden] {
+        display: none !important;
+    }
+
+    .oteldetay-page .rezervasyon-aksiyon .booking-price-nightly {
+        font-size: 20px;
+        font-weight: 900;
+        line-height: 1.1;
+        color: var(--od-dark, #1A1919);
+        font-variant-numeric: tabular-nums;
+    }
+
+    .oteldetay-page .rezervasyon-aksiyon .booking-price-total {
+        font-size: 26px;
+        font-weight: 900;
+        line-height: 1.05;
+        color: var(--od-crimson, #E30A17);
+        font-variant-numeric: tabular-nums;
+    }
+
+    .oteldetay-page .rezervasyon-aksiyon .booking-price-meta {
+        display: flex;
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 2px;
+        width: 100%;
+        margin-top: 2px;
+        padding-top: 6px;
+        border-top: 1px solid rgba(235, 233, 228, 0.85);
+    }
+
+    .oteldetay-page .rezervasyon-aksiyon .booking-price-tax-badge {
+        display: inline-flex;
+        align-items: center;
+        font-size: 10px;
+        font-weight: 800;
+        letter-spacing: 0.03em;
+        text-transform: uppercase;
+        color: #15803d;
+        background: rgba(22, 163, 74, 0.1);
+        border: 1px solid rgba(22, 163, 74, 0.18);
+        border-radius: 999px;
+        padding: 2px 8px;
+        line-height: 1.35;
+    }
+
+    .oteldetay-page .rezervasyon-aksiyon .booking-price-tax-note {
+        display: block;
+        font-size: 11px;
+        line-height: 1.4;
+        color: var(--od-muted, #6E6E77);
     }
 
     .oteldetay-page .rezervasyon-aksiyon .booking-card .booking-form,
     .oteldetay-page .rezervasyon-aksiyon #bookingForm {
         display: flex;
         flex-direction: column;
-        flex: 1 1 auto;
+        flex: 0 0 auto;
         min-height: 0;
         width: 100%;
         max-width: 100%;
         margin: 0;
-        padding: 0 16px calc(12px + env(safe-area-inset-bottom, 0px));
+        padding: 0 16px 8px;
         gap: 0;
-        overflow-x: hidden;
-        overflow-y: auto;
-        -webkit-overflow-scrolling: touch;
+        overflow: visible;
         box-sizing: border-box;
+    }
+
+    .oteldetay-page .rezervasyon-aksiyon .booking-card .price-breakdown,
+    .oteldetay-page .rezervasyon-aksiyon .booking-card .nightly-breakdown-details,
+    .oteldetay-page .rezervasyon-aksiyon .booking-card .booking-quote-notice {
+        flex: 0 0 auto;
+        width: 100%;
+        max-width: 100%;
+        margin: 0;
+        padding: 0 16px 12px;
+        box-sizing: border-box;
+    }
+
+    .oteldetay-page .rezervasyon-aksiyon .booking-card .price-breakdown {
+        border-top: 1px solid var(--od-border, #EBE9E4);
+        padding-top: 12px;
+        gap: 8px;
+    }
+
+    .oteldetay-page .rezervasyon-aksiyon .booking-card .price-breakdown .price-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        width: 100%;
+        font-size: 13px;
+    }
+
+    .oteldetay-page .rezervasyon-aksiyon .booking-card .price-breakdown .price-row span {
+        flex: 1 1 auto;
+        min-width: 0;
+    }
+
+    .oteldetay-page .rezervasyon-aksiyon .booking-card .price-breakdown .price-row strong {
+        flex: 0 0 auto;
+        white-space: nowrap;
+        font-variant-numeric: tabular-nums;
+    }
+
+    .oteldetay-page .rezervasyon-aksiyon .booking-card .nightly-breakdown-details {
+        margin-top: 0;
+        margin-bottom: calc(8px + env(safe-area-inset-bottom, 0px));
+        border: 1px solid var(--od-border, #EBE9E4);
+        border-radius: 12px;
+        background: var(--od-bg, #FCFBF9);
+        padding: 10px 12px;
+    }
+
+    .oteldetay-page .rezervasyon-aksiyon .booking-card .nightly-breakdown-details summary {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 8px;
+        width: 100%;
+        min-height: 40px;
+        font-size: 13px;
+        font-weight: 800;
+        color: var(--od-dark, #1A1919);
+    }
+
+    .oteldetay-page .rezervasyon-aksiyon .nightly-breakdown-list {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        margin-top: 10px;
+        max-height: none;
+        overflow: visible;
+    }
+
+    .oteldetay-page .rezervasyon-aksiyon .nightly-breakdown-room-head {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+        margin-bottom: 8px;
+    }
+
+    .oteldetay-page .rezervasyon-aksiyon .nightly-breakdown-room-head small {
+        font-size: 11px;
+        line-height: 1.4;
+        color: var(--od-muted, #6E6E77);
+        white-space: normal;
+        word-break: break-word;
+    }
+
+    .oteldetay-page .rezervasyon-aksiyon .nightly-breakdown-row {
+        display: flex;
+        flex-direction: column;
+        align-items: stretch;
+        gap: 8px;
+        padding: 10px 12px;
+        border-radius: 10px;
+        border: 1px solid var(--od-border, #EBE9E4);
+        background: #fff;
+    }
+
+    .oteldetay-page .rezervasyon-aksiyon .nightly-breakdown-row-meta {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 6px 8px;
+        min-width: 0;
+    }
+
+    .oteldetay-page .rezervasyon-aksiyon .nightly-breakdown-date {
+        font-size: 13px;
+        font-weight: 700;
+        color: var(--od-dark, #1A1919);
+        line-height: 1.3;
+    }
+
+    .oteldetay-page .rezervasyon-aksiyon .nightly-stock {
+        display: inline-flex;
+        align-items: center;
+        padding: 2px 8px;
+        border-radius: 999px;
+        background: rgba(227, 10, 23, 0.08);
+        color: var(--od-crimson, #E30A17);
+        font-size: 10px;
+        font-weight: 800;
+        line-height: 1.2;
+        white-space: nowrap;
+    }
+
+    .oteldetay-page .rezervasyon-aksiyon .nightly-breakdown-amount,
+    .oteldetay-page .rezervasyon-aksiyon .nightly-breakdown-row strong {
+        display: inline-flex;
+        align-items: center;
+        justify-content: flex-end;
+        gap: 8px;
+        width: 100%;
+        font-size: 14px;
+        font-weight: 800;
+        color: var(--od-dark, #1A1919);
+        font-variant-numeric: tabular-nums;
+        white-space: nowrap;
+    }
+
+    .oteldetay-page .rezervasyon-aksiyon .nightly-breakdown-row-discount .nightly-breakdown-amount small {
+        color: #94a3b8;
+        text-decoration: line-through;
+        font-weight: 700;
+        font-size: 12px;
+    }
+
+    .oteldetay-page .rezervasyon-aksiyon .nightly-breakdown-row-discount .nightly-breakdown-amount em {
+        font-style: normal;
+        font-size: 10px;
+        font-weight: 800;
+        color: var(--od-crimson, #E30A17);
     }
 
     .oteldetay-page .rezervasyon-aksiyon .od-booking-counters-desktop-row {
@@ -105,9 +324,14 @@
         margin: 0 0 4px !important;
     }
 
-    .oteldetay-page .rezervasyon-aksiyon .od-booking-counters-desktop-row .multi-room,
-    .oteldetay-page .rezervasyon-aksiyon .od-booking-counters-desktop-row .multi-room-item {
+    .oteldetay-page .rezervasyon-aksiyon .od-booking-counters-desktop-row .multi-room {
         display: block !important;
+        width: 100% !important;
+        max-width: 100% !important;
+    }
+
+    .oteldetay-page .rezervasyon-aksiyon .od-booking-counters-desktop-row .multi-room-item {
+        display: grid !important;
         width: 100% !important;
         max-width: 100% !important;
     }
@@ -128,16 +352,22 @@
     }
 
     .oteldetay-page .rezervasyon-aksiyon .multi-room-item {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) minmax(96px, 118px);
+        column-gap: 10px;
+        row-gap: 10px;
         padding: 0;
         border: 0;
         background: transparent;
         box-shadow: none;
     }
 
+    .oteldetay-page .rezervasyon-aksiyon .multi-room-item-head {
+        grid-column: 1 / -1;
+    }
+
     .oteldetay-page .rezervasyon-aksiyon .multi-room-item-grid {
-        display: flex;
-        flex-direction: column;
-        gap: 10px;
+        display: contents;
         width: 100%;
     }
 
@@ -146,6 +376,7 @@
         grid-template-columns: 1fr 1fr;
         gap: 10px;
         width: 100%;
+        grid-column: 1 / -1;
     }
 
     .oteldetay-page .rezervasyon-aksiyon .multi-room-item-type,
@@ -175,22 +406,42 @@
         box-sizing: border-box;
     }
 
+    .oteldetay-page .rezervasyon-aksiyon .multi-room-item-type {
+        grid-column: 1;
+        align-self: end;
+        min-width: 0;
+    }
+
     .oteldetay-page .rezervasyon-aksiyon .od-booking-counters-band--item {
-        margin-top: 10px;
-        width: 100%;
+        grid-column: 2;
+        margin-top: 0;
+        width: auto;
+        align-self: end;
     }
 
     .oteldetay-page .rezervasyon-aksiyon .od-booking-counters-band--item .multi-room-quantity {
-        padding: 10px 12px;
+        padding: 0;
+        border: 0;
+        border-radius: 0;
+        background: transparent;
+        gap: 4px;
+    }
+
+    .oteldetay-page .rezervasyon-aksiyon .od-booking-counters-band--item .room-quantity-control {
+        width: 100%;
+        min-height: 44px;
+        padding: 4px 8px;
         border: 1px solid var(--od-border, #EBE9E4);
         border-radius: 12px;
         background: #fff;
+        box-sizing: border-box;
     }
 
     .oteldetay-page .rezervasyon-aksiyon .od-booking-counters-band--guests {
         display: grid !important;
-        grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
-        gap: 8px !important;
+        grid-template-columns: 1fr 1fr !important;
+        align-items: stretch !important;
+        gap: 10px !important;
         width: 100% !important;
         margin: 10px 0 0 !important;
         padding: 0 !important;
@@ -201,23 +452,25 @@
         flex-direction: column !important;
         align-items: stretch !important;
         justify-content: flex-start !important;
-        gap: 8px !important;
+        gap: 4px !important;
         min-height: 0 !important;
         margin: 0 !important;
-        padding: 10px 12px !important;
-        border: 1px solid var(--od-border, #EBE9E4) !important;
-        border-radius: 12px !important;
-        background: #fff !important;
+        padding: 0 !important;
+        border: 0 !important;
+        border-radius: 0 !important;
+        background: transparent !important;
         width: 100% !important;
         box-sizing: border-box;
     }
 
+    .oteldetay-page .rezervasyon-aksiyon .od-booking-counters-band--item .multi-room-quantity > span,
     .oteldetay-page .rezervasyon-aksiyon .od-booking-counters-band--guests .guest-row > span {
         font-size: 11px;
         font-weight: 700;
         text-transform: uppercase;
         letter-spacing: 0.04em;
         color: var(--od-muted, #6E6E77);
+        line-height: 1.2;
     }
 
     .oteldetay-page .rezervasyon-aksiyon .od-booking-counters-band--guests .guest-controls {
@@ -226,6 +479,12 @@
         justify-content: space-between;
         gap: 8px;
         width: 100%;
+        min-height: 44px;
+        padding: 4px 12px;
+        border: 1px solid var(--od-border, #EBE9E4);
+        border-radius: 12px;
+        background: #fff;
+        box-sizing: border-box;
     }
 
     .oteldetay-page .rezervasyon-aksiyon .booking-advanced-fields {
@@ -238,6 +497,7 @@
         border-top: 1px solid var(--od-border, #EBE9E4) !important;
         background: transparent !important;
         box-sizing: border-box;
+        overflow: hidden;
     }
 
     .oteldetay-page .rezervasyon-aksiyon .booking-advanced-heading {
@@ -262,6 +522,7 @@
     .oteldetay-page .rezervasyon-aksiyon .booking-advanced-grid {
         display: flex !important;
         flex-direction: column !important;
+        grid-template-columns: none !important;
         gap: 10px !important;
         width: 100% !important;
         max-width: 100% !important;
@@ -281,6 +542,7 @@
 
     .oteldetay-page .rezervasyon-aksiyon .booking-advanced-grid label > span {
         flex: none !important;
+        width: 100% !important;
         white-space: normal !important;
         font-size: 11px;
         font-weight: 700;
@@ -292,6 +554,41 @@
     .oteldetay-page .rezervasyon-aksiyon .booking-advanced-grid select,
     .oteldetay-page .rezervasyon-aksiyon .booking-advanced-grid input {
         width: 100% !important;
+        max-width: none !important;
+        flex: none !important;
+        min-height: 44px;
+        box-sizing: border-box;
+    }
+
+    .oteldetay-page .rezervasyon-aksiyon .booking-payment-mix {
+        display: flex !important;
+        flex-direction: column !important;
+        gap: 10px !important;
+        width: 100% !important;
+        max-width: 100% !important;
+        margin-top: 0 !important;
+        box-sizing: border-box;
+    }
+
+    .oteldetay-page .rezervasyon-aksiyon .booking-payment-mix > label {
+        display: flex !important;
+        flex-direction: column !important;
+        align-items: stretch !important;
+        gap: 4px !important;
+        width: 100% !important;
+    }
+
+    .oteldetay-page .rezervasyon-aksiyon .booking-payment-mix label > span {
+        font-size: 11px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+        color: var(--od-muted, #6E6E77);
+    }
+
+    .oteldetay-page .rezervasyon-aksiyon .booking-payment-mix input {
+        width: 100% !important;
+        max-width: none !important;
         min-height: 44px;
         box-sizing: border-box;
     }
@@ -346,12 +643,6 @@
         pointer-events: none;
         opacity: 0;
         transition: transform 0.25s ease, opacity 0.25s ease;
-    }
-}
-
-@media (max-width: 390px) {
-    .oteldetay-page .rezervasyon-aksiyon .multi-room-item-dates {
-        grid-template-columns: 1fr;
     }
 }
 

@@ -3,8 +3,12 @@
         --home-type-btn: 12px;
         --home-btn-min-height: 40px;
         --page-content-inset: 32px;
-        /* public-premium-pages.css :root 88px override — mobil header yüksekliği */
         --home-header-sticky-h: var(--home-header-bar-h, 56px);
+        --dxp-card-media-h: var(--home-card-media-h, 180px);
+    }
+
+    .deneyimler-page.anasayfa-page main.public-premium-main {
+        background: linear-gradient(180deg, #f3f2ef 0%, #faf9f7 42%, var(--bg-warm, #fcfbfa) 100%);
     }
 
     .dxp-shell {
@@ -13,12 +17,17 @@
         overflow-x: clip;
     }
 
+    .dxp-hero {
+        padding-top: 12px;
+    }
+
     .dxp-hero__grid {
         grid-template-columns: 1fr;
+        gap: 16px;
     }
 
     .dxp-hero__mosaic {
-        min-height: 240px;
+        min-height: 220px;
         margin-top: 4px;
         max-width: none;
     }
@@ -59,6 +68,7 @@
 
     .dxp-bento {
         grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 12px;
     }
 
     .dxp-card--featured,
@@ -68,7 +78,19 @@
 
     .dxp-collection-grid {
         grid-template-columns: repeat(2, minmax(0, 1fr));
-        gap: 10px;
+        gap: 12px;
+    }
+
+    .dxp-card__body {
+        padding: 12px 14px 14px;
+    }
+
+    .dxp-card__title {
+        font-size: var(--home-type-card-title, 0.95rem);
+    }
+
+    .dxp-card__subtitle {
+        font-size: var(--home-type-card-location, 0.78rem);
     }
 
     .dxp-journey {
@@ -95,21 +117,83 @@
 
     .dxp-mood-grid {
         grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 8px;
+    }
+
+    .dxp-mood-card {
+        min-height: 88px;
+        padding: 12px 10px;
     }
 
     .dxp-spotlight__link {
         grid-template-columns: 1fr;
+        gap: 12px;
+    }
+
+    .dxp-spotlight__media {
+        grid-column: 1;
+        grid-row: auto;
+        min-height: var(--dxp-card-media-h);
+        border-radius: 12px;
     }
 
     .dxp-spotlight__badge {
+        grid-column: 1;
         flex-direction: row;
         align-self: flex-start;
         min-width: 0;
         padding: 8px 12px;
     }
 
+    .dxp-spotlight__body {
+        grid-column: 1;
+    }
+
+    .dxp-campaigns {
+        padding: 12px;
+        border-radius: 16px;
+    }
+
     .dxp-campaigns__rail {
-        grid-template-columns: 1fr;
+        display: flex;
+        flex-direction: row;
+        gap: 12px;
+        overflow-x: auto;
+        scroll-snap-type: x mandatory;
+        padding-bottom: 4px;
+        scrollbar-width: none;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    .dxp-campaigns__rail::-webkit-scrollbar {
+        display: none;
+    }
+
+    .dxp-campaign-card {
+        flex: 0 0 min(78vw, 280px);
+        scroll-snap-align: start;
+    }
+
+    .dxp-stories-rail {
+        margin-left: calc(-1 * var(--page-content-gutter, 16px));
+        margin-right: calc(-1 * var(--page-content-gutter, 16px));
+        padding-left: var(--page-content-gutter, 16px);
+        padding-right: var(--page-content-gutter, 16px);
+    }
+
+    .dxp-routes-rail {
+        flex-wrap: nowrap;
+        overflow-x: auto;
+        padding-bottom: 4px;
+        scrollbar-width: none;
+    }
+
+    .dxp-routes-rail::-webkit-scrollbar {
+        display: none;
+    }
+
+    .dxp-route-pill {
+        flex: 0 0 auto;
     }
 }
 
@@ -132,5 +216,13 @@
 
     .dxp-mood-grid {
         grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .dxp-hero__title {
+        font-size: clamp(1.45rem, 7vw, 1.85rem);
+    }
+
+    .dxp-ticker__track {
+        animation-duration: 36s;
     }
 }

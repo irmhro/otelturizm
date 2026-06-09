@@ -489,7 +489,7 @@
     --home-btn-padding-y: 10px;
     --home-btn-padding-x: 16px;
     --home-btn-radius: 8px;
-    --home-card-media-h: 210px;
+    --home-card-media-h: 180px;
 }
 
 .mystery-main { display: contents; }
@@ -830,6 +830,31 @@
 .hotel-section__nav:disabled {
     opacity: 0.35;
     cursor: default;
+}
+
+@media (min-width: 901px) {
+    .hotel-section__shell {
+        position: relative;
+        gap: 0;
+    }
+
+    .hotel-section__nav {
+        position: absolute;
+        top: 50%;
+        z-index: 2;
+        box-shadow: 0 2px 10px rgba(18, 18, 18, 0.08);
+    }
+
+    .hotel-section__nav--prev {
+        left: 0;
+        transform: translate(-50%, -50%);
+    }
+
+    .hotel-section__nav--next {
+        right: 0;
+        left: auto;
+        transform: translate(50%, -50%);
+    }
 }
 
 @media (max-width: 900px) {
@@ -1309,8 +1334,36 @@ a.eco-pill:hover {
 }
 
 .anasayfa-page .img-holder {
+    position: relative;
+    overflow: hidden;
+    width: 100%;
     padding-top: 0;
     height: var(--home-card-media-h);
+    margin-bottom: 0;
+}
+
+.anasayfa-page .img-holder img {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.anasayfa-page .collection-card {
+    height: var(--home-card-media-h);
+}
+
+.anasayfa-page .collection-card img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.anasayfa-page .hotel-section .hotel-grid .img-holder {
+    height: var(--home-card-media-h);
+    padding-top: 0 !important;
+    border-radius: 0;
 }
 
 .deal-card {
@@ -2539,10 +2592,22 @@ a.eco-pill:hover {
     }
 
     .hero-stage .search-engine-shell {
-        margin-top: 6px;
+        margin-top: 12px;
         margin-bottom: 0;
         width: 100%;
         max-width: 100%;
+        padding: 14px 14px 10px;
+        border-radius: 24px;
+        border: 1px solid rgba(235, 233, 228, 0.42);
+        background: rgba(255, 255, 255, 0.94);
+        box-shadow: 0 6px 22px rgba(26, 25, 25, 0.035);
+        overflow: hidden;
+        box-sizing: border-box;
+    }
+
+    .hero-stage .hero-top-grid--solo {
+        margin-bottom: 0;
+        padding: 0;
     }
 
     .hero-stage .route-picker {
@@ -2570,7 +2635,7 @@ a.eco-pill:hover {
 
     .hero-top-grid--solo {
         grid-template-columns: 1fr;
-        margin-bottom: 24px;
+        margin-bottom: 16px;
     }
 
     .hero-top-grid:not(.hero-top-grid--solo) .hero-headline-pro {

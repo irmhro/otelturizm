@@ -1,0 +1,65 @@
+@using System.Globalization
+@model (otelturizmnew.Models.Oteller.HotelWeatherWidgetViewModel Weather, string ThemeClass, string Variant)
+
+@{
+    string GetWeatherDayTone(string? conditionText)
+    {
+        var value = conditionText ?? string.Empty;
+        if (value.Contains("Yağ", StringComparison.OrdinalIgnoreCase)
+            || value.Contains("Sağanak", StringComparison.OrdinalIgnoreCase)
+            || value.Contains("Fırtına", StringComparison.OrdinalIgnoreCase)
+            || value.Contains("Çisenti", StringComparison.OrdinalIgnoreCase))
+        {
+            return "is-rainy";
+        }
+
+        if (value.Contains("Açık", StringComparison.OrdinalIgnoreCase) || value.Contains("Güneş", StringComparison.OrdinalIgnoreCase))
+        {
+            return "is-sunny";
+        }
+
+        if (value.Contains("Kar", StringComparison.OrdinalIgnoreCase))
+        {
+            return "is-snowy";
+        }
+
+        return "is-cloudy";
+    }
+
+    (string High, string Low) SplitWeatherTemperature(string? temperatureText)
+    {
+        var parts = (temperatureText ?? string.Empty).Split('/', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries);
+        return (parts.Length > 0 ? parts[0] : "—", parts.Length > 1 ? parts[1] : string.Empty);
+    }
+
+    var variantClass = string.Equals(Model.Variant, "standalone", StringComparison.OrdinalIgnoreCase)
+        ? "detail-weather-strip--standalone"
+        : "detail-weather-strip--gallery";
+}
+
+<button type="button"
+        class="detail-weather-strip @Model.ThemeClass @variantClass"
+        id="weatherTopbarOpen"
+        data-has-weather="true"
+        aria-haspopup="dialog"
+        aria-controls="weatherPopup"
+        aria-label="3 günlük hava durumu">
+    <span class="detail-weather-strip__days">
+        @foreach (var day in Model.Weather.Days.Take(3))
+        {
+            var dayTone = GetWeatherDayTone(day.ConditionText);
+            var temps = SplitWeatherTemperature(day.TemperatureText);
+            <span class="detail-weather-strip__day @dayTone">
+                <span class="detail-weather-strip__label">@day.PeriodLabel</span>
+                <i class="fas @day.IconClass" aria-hidden="true"></i>
+                <span class="detail-weather-strip__temps">
+                    <strong>@temps.High</strong>
+                    @if (!string.IsNullOrWhiteSpace(temps.Low))
+                    {
+                        <small>@temps.Low</small>
+                    }
+                </span>
+            </span>
+        }
+    </span>
+</button>

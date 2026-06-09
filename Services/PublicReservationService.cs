@@ -64,12 +64,36 @@ public class PublicReservationService : IPublicReservationService
     public Task<ReservationDraftSummaryViewModel?> GetActiveDraftAsync(long? userId, string? sessionKey, CancellationToken cancellationToken = default)
         => _reservationDraftService.GetActiveDraftAsync(userId, sessionKey, cancellationToken);
 
-    public async Task<PublicReservationPriceQuoteViewModel> GetPriceQuoteAsync(long roomTypeId, DateOnly checkInDate, DateOnly checkOutDate, int roomCount, CancellationToken cancellationToken = default)
+    public async Task<PublicReservationPriceQuoteViewModel> GetPriceQuoteAsync(
+        long roomTypeId,
+        DateOnly checkInDate,
+        DateOnly checkOutDate,
+        int roomCount,
+        string? guestCheckOutTime = null,
+        bool applyLateCheckoutSurcharge = true,
+        CancellationToken cancellationToken = default)
     {
         await using var connection = await OpenConnectionAsync(cancellationToken);
         var pricing = await BuildPriceSummaryAsync(connection, roomTypeId, checkInDate, checkOutDate, roomCount, cancellationToken);
+        if (pricing.IsAvailable && applyLateCheckoutSurcharge)
+        {
+            var standardCheckout = await LoadHotelCheckOutTimeAsync(connection, roomTypeId, cancellationToken);
+            var guestCheckout = ParseGuestTime(guestCheckOutTime);
+            await TryApplyLateCheckoutExtraDayAsync(
+                connection,
+                roomTypeId,
+                checkOutDate,
+                roomCount,
+                standardCheckout,
+                guestCheckout,
+                pricing,
+                cancellationToken);
+        }
+
         var quote = MapPriceQuoteViewModel(pricing);
         quote.NightCount = Math.Max(1, checkOutDate.DayNumber - checkInDate.DayNumber);
+        quote.LateCheckoutApplied = pricing.LateCheckoutApplied;
+        quote.LateCheckoutSurchargeAmount = pricing.LateCheckoutSurchargeAmount;
         return quote;
     }
 
@@ -221,6 +245,21 @@ public class PublicReservationService : IPublicReservationService
             }
 
             var pricing = await BuildPriceSummaryAsync(connection, selection.RoomTypeId, selection.CheckInDate, selection.CheckOutDate, Math.Max(1, selection.RoomCount), cancellationToken);
+            if (pricing.IsAvailable && perRoomPricing.Count == 0)
+            {
+                var standardCheckout = await LoadHotelCheckOutTimeAsync(connection, selection.RoomTypeId, cancellationToken);
+                var guestCheckout = ParseGuestTime(form.CheckOutTime);
+                await TryApplyLateCheckoutExtraDayAsync(
+                    connection,
+                    selection.RoomTypeId,
+                    selection.CheckOutDate,
+                    Math.Max(1, selection.RoomCount),
+                    standardCheckout,
+                    guestCheckout,
+                    pricing,
+                    cancellationToken);
+            }
+
             ApplyDawnSurpriseToSummary(pricing);
             if (!pricing.IsAvailable)
             {
@@ -444,7 +483,7 @@ public class PublicReservationService : IPublicReservationService
                     insertCommand.Parameters.AddWithValue("@fullName", userProfile.FullName);
                     insertCommand.Parameters.AddWithValue("@email", userProfile.Email);
                     insertCommand.Parameters.AddWithValue("@phone", userProfile.Phone);
-                    insertCommand.Parameters.AddWithValue("@note", selections.Count > 1 ? "Web rezervasyon talebi (çoklu oda)" : "Web rezervasyon talebi");
+                    insertCommand.Parameters.AddWithValue("@note", BuildReservationNote(form, selections.Count));
                     insertCommand.Parameters.AddWithValue("@city", userProfile.City);
                     insertCommand.Parameters.AddWithValue("@district", userProfile.District);
                     insertCommand.Parameters.AddWithValue("@neighborhood", userProfile.Neighborhood);
@@ -1130,6 +1169,167 @@ public class PublicReservationService : IPublicReservationService
         };
     }
 
+    private static string BuildReservationNote(PublicHotelReservationForm form, int selectionCount)
+    {
+        var baseNote = selectionCount > 1 ? "Web rezervasyon talebi (çoklu oda)" : "Web rezervasyon talebi";
+        var timeParts = new List<string>(2);
+        if (!string.IsNullOrWhiteSpace(form.CheckInTime))
+        {
+            timeParts.Add("Giriş: " + form.CheckInTime.Trim());
+        }
+
+        if (!string.IsNullOrWhiteSpace(form.CheckOutTime))
+        {
+            timeParts.Add("Çıkış: " + form.CheckOutTime.Trim());
+        }
+
+        return timeParts.Count == 0 ? baseNote : baseNote + " · " + string.Join(" · ", timeParts);
+    }
+
+    private static TimeSpan? ParseGuestTime(string? value)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+        {
+            return null;
+        }
+
+        if (TimeOnly.TryParse(value.Trim(), CultureInfo.InvariantCulture, DateTimeStyles.None, out var timeOnly))
+        {
+            return timeOnly.ToTimeSpan();
+        }
+
+        return TimeSpan.TryParse(value.Trim(), CultureInfo.InvariantCulture, out var parsed)
+            ? parsed
+            : null;
+    }
+
+    private static bool RequiresLateCheckoutExtraDay(TimeSpan? standardCheckout, TimeSpan? guestCheckout)
+    {
+        if (!guestCheckout.HasValue)
+        {
+            return false;
+        }
+
+        var standard = standardCheckout ?? new TimeSpan(12, 0, 0);
+        return guestCheckout.Value > standard;
+    }
+
+    private static async Task<TimeSpan?> LoadHotelCheckOutTimeAsync(SqlConnection connection, long roomTypeId, CancellationToken cancellationToken)
+    {
+        const string sql = """
+            SELECT TOP (1) o.[check_out_saati]
+            FROM [dbo].[ODA_TIPLERI] ot
+            INNER JOIN [dbo].[OTELLER] o ON o.id = ot.[OTEL_ID]
+            WHERE ot.id = @roomTypeId;
+            """;
+
+        await using var command = new SqlCommand(sql, connection);
+        command.Parameters.AddWithValue("@roomTypeId", roomTypeId);
+        var raw = await command.ExecuteScalarAsync(cancellationToken);
+        if (raw is null or DBNull)
+        {
+            return null;
+        }
+
+        return raw switch
+        {
+            TimeSpan ts => ts,
+            TimeOnly to => to.ToTimeSpan(),
+            _ => TimeSpan.TryParse(Convert.ToString(raw, CultureInfo.InvariantCulture), CultureInfo.InvariantCulture, out var parsed)
+                ? parsed
+                : null
+        };
+    }
+
+    private async Task TryApplyLateCheckoutExtraDayAsync(
+        SqlConnection connection,
+        long roomTypeId,
+        DateOnly checkOutDate,
+        int roomCount,
+        TimeSpan? standardCheckout,
+        TimeSpan? guestCheckout,
+        PriceSummary pricing,
+        CancellationToken cancellationToken)
+    {
+        if (!RequiresLateCheckoutExtraDay(standardCheckout, guestCheckout))
+        {
+            return;
+        }
+
+        var effectiveRoomCount = Math.Max(1, roomCount);
+        var extraNight = pricing.NightlyBreakdown.LastOrDefault();
+        decimal extraRoomTotal;
+        if (extraNight is not null && extraNight.EffectivePrice > 0m)
+        {
+            extraRoomTotal = extraNight.EffectivePrice * effectiveRoomCount;
+        }
+        else
+        {
+            var fallbackBreakdown = await _hotelPricingReadService.GetRoomNightlyBreakdownAsync(
+                roomTypeId,
+                checkOutDate,
+                checkOutDate.AddDays(1),
+                cancellationToken);
+            var fallbackNight = fallbackBreakdown.FirstOrDefault();
+            if (fallbackNight is null || !fallbackNight.IsAvailable || fallbackNight.EffectivePrice <= 0m)
+            {
+                return;
+            }
+
+            extraRoomTotal = fallbackNight.EffectivePrice * effectiveRoomCount;
+        }
+
+        var commissionRule = await LoadActiveCommissionRuleAsync(connection, roomTypeId, checkOutDate, cancellationToken);
+        AppendRoomTotalToSummary(pricing, extraRoomTotal, commissionRule);
+        pricing.LateCheckoutApplied = true;
+        pricing.LateCheckoutSurchargeAmount += extraRoomTotal;
+        var perRoomExtra = extraRoomTotal / effectiveRoomCount;
+        pricing.NightlyBreakdown.Add(new RoomNightlyPricePoint
+        {
+            Date = checkOutDate,
+            DateText = checkOutDate.ToString("dd MMM yyyy", CultureInfo.GetCultureInfo("tr-TR")) + " (geç çıkış)",
+            EffectivePrice = perRoomExtra,
+            BasePrice = perRoomExtra,
+            IsAvailable = true,
+            IsClosed = false
+        });
+    }
+
+    private static void AppendRoomTotalToSummary(PriceSummary pricing, decimal additionalRoomTotal, CommissionTaxRuleSnapshot rule)
+    {
+        if (additionalRoomTotal <= 0m)
+        {
+            return;
+        }
+
+        var taxDivisor = 1m + rule.VatRate / 100m + rule.AccommodationTaxRate / 100m;
+        var net = taxDivisor > 0m
+            ? Math.Round(additionalRoomTotal / taxDivisor, 2, MidpointRounding.AwayFromZero)
+            : additionalRoomTotal;
+        var vat = Math.Round(net * rule.VatRate / 100m, 2, MidpointRounding.AwayFromZero);
+        var accommodationTax = Math.Max(0m, additionalRoomTotal - net - vat);
+        var tax = vat + accommodationTax;
+        var commissionAmount = Math.Round((pricing.NetRoomAmount + net) * rule.CommissionRate / 100m, 2, MidpointRounding.AwayFromZero);
+        var commissionIncomeTaxAmount = Math.Round(commissionAmount * rule.CommissionIncomeTaxRate / 100m, 2, MidpointRounding.AwayFromZero);
+
+        pricing.RoomTotal += additionalRoomTotal;
+        pricing.NetRoomAmount += net;
+        pricing.VatAmount += vat;
+        pricing.AccommodationTaxAmount += accommodationTax;
+        pricing.TaxAmount += tax;
+        pricing.TotalAmount += additionalRoomTotal;
+        pricing.CommissionRuleId = rule.RuleId;
+        pricing.CommissionRate = rule.CommissionRate;
+        pricing.CommissionAmount = commissionAmount;
+        pricing.CommissionIncomeTaxRate = rule.CommissionIncomeTaxRate;
+        pricing.CommissionIncomeTaxAmount = commissionIncomeTaxAmount;
+        pricing.PlatformNetCommissionAmount = commissionAmount - commissionIncomeTaxAmount;
+        pricing.HotelPayoutAmount = pricing.NetRoomAmount - commissionAmount;
+        pricing.NightlyPrice = pricing.NightlyBreakdown.Count > 0
+            ? pricing.NightlyBreakdown.Average(static item => item.EffectivePrice)
+            : pricing.NightlyPrice;
+    }
+
     private async Task<string> GenerateReservationNoAsync(SqlConnection connection, SqlTransaction transaction, CancellationToken cancellationToken)
     {
         await using var command = new SqlCommand(@"
@@ -1200,6 +1400,7 @@ public class PublicReservationService : IPublicReservationService
 
         switch (pm)
         {
+            case PublicDoorPaymentMethods.CashAtDoor:
             case "Kapıda Ödeme":
                 plan = BuildPlanCore(
                     legacyOdemeYontemi: "Kapıda Ödeme",
@@ -1208,7 +1409,19 @@ public class PublicReservationService : IPublicReservationService
                     havale: 0,
                     lines: new List<ReservationPaymentLine>
                     {
-                        new() { MethodKod = OdemeYontemiKodlari.KapidaOdeme, Tutar = totalAmount }
+                        new() { MethodKod = OdemeYontemiKodlari.Nakit, Tutar = totalAmount }
+                    });
+                return true;
+
+            case PublicDoorPaymentMethods.CardAtDoor:
+                plan = BuildPlanCore(
+                    legacyOdemeYontemi: "Kapıda Ödeme",
+                    kapida: totalAmount,
+                    online: 0,
+                    havale: 0,
+                    lines: new List<ReservationPaymentLine>
+                    {
+                        new() { MethodKod = OdemeYontemiKodlari.KrediKarti, Tutar = totalAmount }
                     });
                 return true;
 
@@ -1638,6 +1851,8 @@ public class PublicReservationService : IPublicReservationService
         public decimal HotelPayoutAmount { get; set; }
         public bool IsAvailable { get; set; }
         public string? AvailabilityMessage { get; set; }
+        public bool LateCheckoutApplied { get; set; }
+        public decimal LateCheckoutSurchargeAmount { get; set; }
         public List<RoomNightlyPricePoint> NightlyBreakdown { get; set; } = new();
     }
 

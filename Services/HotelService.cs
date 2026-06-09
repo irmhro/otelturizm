@@ -545,7 +545,7 @@ public class HotelService : IHotelService
         return NormalizeCampaignTag(SearchTextNormalizer.Normalize(raw));
     }
 
-    public async Task<HotelListingPageViewModel> GetHotelListingPageAsync(string? searchTerm, string? campaignTag = null, string? campaignSlug = null, int page = 1, string? contextualSearchBoostNormalized = null, decimal? minPrice = null, decimal? maxPrice = null, CancellationToken cancellationToken = default)
+    public async Task<HotelListingPageViewModel> GetHotelListingPageAsync(string? searchTerm, string? campaignTag = null, string? campaignSlug = null, int page = 1, string? contextualSearchBoostNormalized = null, decimal? minPrice = null, decimal? maxPrice = null, long? ilceId = null, long? sehirId = null, CancellationToken cancellationToken = default)
     {
         var normalizedSearch = string.IsNullOrWhiteSpace(searchTerm) ? string.Empty : searchTerm.Trim().ToLowerInvariant();
         var normalizedTag = string.IsNullOrWhiteSpace(campaignTag) ? string.Empty : campaignTag.Trim().ToLowerInvariant();
@@ -556,11 +556,13 @@ public class HotelService : IHotelService
             : NormalizeSearchKeyword(contextualSearchBoostNormalized.Trim()).ToLowerInvariant();
         var minKey = minPrice.HasValue && minPrice.Value > 0m ? minPrice.Value.ToString("0.##", CultureInfo.InvariantCulture) : "-";
         var maxKey = maxPrice.HasValue && maxPrice.Value > 0m ? maxPrice.Value.ToString("0.##", CultureInfo.InvariantCulture) : "-";
+        var ilceKey = ilceId is > 0 ? ilceId.Value.ToString(CultureInfo.InvariantCulture) : "-";
+        var sehirKey = sehirId is > 0 ? sehirId.Value.ToString(CultureInfo.InvariantCulture) : "-";
 
-        var cacheKey = $"hotel-listing:v5:{normalizedSearch}:{normalizedTag}:{normalizedSlug}:p{safePage}:ctx:{ctxNorm}:min:{minKey}:max:{maxKey}";
+        var cacheKey = $"hotel-listing:v6:{normalizedSearch}:{normalizedTag}:{normalizedSlug}:p{safePage}:ctx:{ctxNorm}:min:{minKey}:max:{maxKey}:ilce:{ilceKey}:sehir:{sehirKey}";
         var cached = await _cache.GetOrCreateAsync(
             cacheKey,
-            async ct => await GetHotelListingPageForSqlServerAsync(searchTerm, campaignTag, campaignSlug, safePage, contextualSearchBoostNormalized, minPrice, maxPrice, ct),
+            async ct => await GetHotelListingPageForSqlServerAsync(searchTerm, campaignTag, campaignSlug, safePage, contextualSearchBoostNormalized, minPrice, maxPrice, ct, true, ilceId, sehirId),
             absoluteExpirationRelativeToNow: TimeSpan.FromSeconds(45),
             slidingExpiration: TimeSpan.FromSeconds(15),
             cancellationToken: cancellationToken);
@@ -1156,7 +1158,7 @@ public class HotelService : IHotelService
         };
     }
 
-    private async Task<HotelListingPageViewModel> GetHotelListingPageForSqlServerAsync(string? searchTerm, string? campaignTag, string? campaignSlug, int page, string? contextualCityHint, decimal? minPrice, decimal? maxPrice, CancellationToken cancellationToken, bool allowFuzzyFallback = true)
+    private async Task<HotelListingPageViewModel> GetHotelListingPageForSqlServerAsync(string? searchTerm, string? campaignTag, string? campaignSlug, int page, string? contextualCityHint, decimal? minPrice, decimal? maxPrice, CancellationToken cancellationToken, bool allowFuzzyFallback = true, long? ilceId = null, long? sehirId = null)
     {
         const decimal listingVatPercent = 10m;
         const decimal listingAccommodationPercent = 2m;
@@ -1273,6 +1275,12 @@ public class HotelService : IHotelService
                     OR {normalizedCompositeSql} LIKE '%' + @searchTermNormalized + '%'
                 )
                 """;
+
+        var locationWhereSql = ilceId is > 0
+            ? "o.ilce_id = @ilceId"
+            : sehirId is > 0
+                ? "o.sehir_id = @sehirId"
+                : searchWhereSql;
 
         var sql = $"""
             SELECT
@@ -1526,7 +1534,7 @@ public class HotelService : IHotelService
                           AND k.seo_slug = @campaignSlug
                     )
                   )
-              AND {searchWhereSql}
+              AND {locationWhereSql}
             ORDER BY
                 CASE WHEN subs.pin_rank IS NULL THEN 1 ELSE 0 END,
                 subs.pin_rank ASC,
@@ -1568,6 +1576,8 @@ public class HotelService : IHotelService
         command.Parameters.AddWithValue("@contextBoost", contextBoost);
         command.Parameters.AddWithValue("@ftsQuery", useFts ? ftsQuery : (object)DBNull.Value);
         command.Parameters.AddWithValue("@campaignSlug", normalizedCampaignSlug);
+        command.Parameters.AddWithValue("@ilceId", ilceId is > 0 ? ilceId.Value : DBNull.Value);
+        command.Parameters.AddWithValue("@sehirId", sehirId is > 0 ? sehirId.Value : DBNull.Value);
         await using var reader = await command.ExecuteReaderAsync(cancellationToken);
         while (await reader.ReadAsync(cancellationToken))
         {
@@ -1781,6 +1791,8 @@ public class HotelService : IHotelService
 
         if (allowFuzzyFallback
             && filteredHotels.Count == 0
+            && ilceId is not > 0
+            && sehirId is not > 0
             && !string.IsNullOrWhiteSpace(normalizedSearchKeyword))
         {
             var fuzzyMatches = await LoadFuzzySearchCandidatesAsync(connection, normalizedSearchKeyword, cancellationToken);
