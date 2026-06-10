@@ -436,13 +436,23 @@ public sealed class HotelPointsService : IHotelPointsService
 
     private IReadOnlyList<PuanAyarRule> GetCachedRules(string cacheKey)
     {
-        return _memoryCache.GetOrCreate(cacheKey, entry =>
+        var ayarTipi = cacheKey == CacheKeyKazanim ? "KAZANIM" : "INDIRIM";
+        try
         {
-            entry.AbsoluteExpirationRelativeToNow = CacheDuration;
-            return LoadRulesAsync(cacheKey == CacheKeyKazanim ? "KAZANIM" : "INDIRIM", CancellationToken.None)
-                .GetAwaiter()
-                .GetResult();
-        }) ?? Array.Empty<PuanAyarRule>();
+            return _memoryCache.GetOrCreate(cacheKey, entry =>
+            {
+                entry.AbsoluteExpirationRelativeToNow = CacheDuration;
+                return LoadRulesAsync(ayarTipi, CancellationToken.None)
+                    .GetAwaiter()
+                    .GetResult();
+            }) ?? DefaultRules(ayarTipi);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "PUAN_AYAR kurallari yuklenemedi; varsayilan kurallar kullaniliyor tip={AyarTipi}", ayarTipi);
+            _memoryCache.Remove(cacheKey);
+            return DefaultRules(ayarTipi);
+        }
     }
 
     private async Task<IReadOnlyList<PuanAyarRule>> LoadRulesAsync(string ayarTipi, CancellationToken cancellationToken)
@@ -463,17 +473,25 @@ public sealed class HotelPointsService : IHotelPointsService
             """;
 
         var rules = new List<PuanAyarRule>();
-        await using var command = new SqlCommand(sql, connection);
-        command.Parameters.AddWithValue("@tip", ayarTipi);
-        await using var reader = await command.ExecuteReaderAsync(cancellationToken);
-        while (await reader.ReadAsync(cancellationToken))
+        try
         {
-            rules.Add(new PuanAyarRule(
-                reader.GetDecimal(0),
-                reader.IsDBNull(1) ? null : reader.GetDecimal(1),
-                reader.IsDBNull(2) ? null : reader.GetInt32(2),
-                reader.IsDBNull(3) ? null : reader.GetDecimal(3),
-                reader.GetInt32(4)));
+            await using var command = new SqlCommand(sql, connection);
+            command.Parameters.AddWithValue("@tip", ayarTipi);
+            await using var reader = await command.ExecuteReaderAsync(cancellationToken);
+            while (await reader.ReadAsync(cancellationToken))
+            {
+                rules.Add(new PuanAyarRule(
+                    reader.GetDecimal(0),
+                    reader.IsDBNull(1) ? null : reader.GetDecimal(1),
+                    reader.IsDBNull(2) ? null : reader.GetInt32(2),
+                    reader.IsDBNull(3) ? null : reader.GetDecimal(3),
+                    reader.GetInt32(4)));
+            }
+        }
+        catch (SqlException ex)
+        {
+            _logger.LogWarning(ex, "PUAN_AYAR sorgusu basarisiz; varsayilan kurallar kullaniliyor tip={AyarTipi}", ayarTipi);
+            return DefaultRules(ayarTipi);
         }
 
         return rules.Count > 0 ? rules : DefaultRules(ayarTipi);
