@@ -4,12 +4,14 @@
                   ?? TempData["FirmaSuccess"] as string
                   ?? TempData["SalesSuccess"] as string
                   ?? TempData["UserSuccess"] as string
+                  ?? TempData["UserSecuritySuccess"] as string
                   ?? TempData["DeveloperSuccess"] as string;
     var error = TempData["AdminError"] as string
                 ?? TempData["PartnerError"] as string
                 ?? TempData["FirmaError"] as string
                 ?? TempData["SalesError"] as string
                 ?? TempData["UserError"] as string
+                ?? TempData["UserSecurityError"] as string
                 ?? TempData["DeveloperError"] as string;
     var warning = TempData["AdminWarning"] as string
                   ?? TempData["PartnerWarning"] as string

@@ -93,6 +93,9 @@ public class PublicHotelReservationForm
 
     /// <summary>Havale için referans veya dekont notu.</summary>
     public string? BankTransferReference { get; set; }
+
+    /// <summary>Kayıtlı kart ile ödeme seçildiğinde kullanılacak kart kimliği.</summary>
+    public long? SavedPaymentCardId { get; set; }
 }
 
 /// <summary>Otel detay rezervasyon formunda kapıda ödeme seçenekleri.</summary>

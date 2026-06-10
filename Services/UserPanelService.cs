@@ -24,6 +24,7 @@ public class UserPanelService : IUserPanelService
     private readonly IHotelPricingReadService _hotelPricingReadService;
     private readonly ISecureFileService _secureFileService;
     private readonly IHotelPointsService _hotelPointsService;
+    private readonly IPaymentCardService _paymentCardService;
     private readonly string _publicBaseUrl;
 
     public UserPanelService(
@@ -33,7 +34,8 @@ public class UserPanelService : IUserPanelService
         IEmailQueueService emailQueueService,
         IHotelPricingReadService hotelPricingReadService,
         ISecureFileService secureFileService,
-        IHotelPointsService hotelPointsService)
+        IHotelPointsService hotelPointsService,
+        IPaymentCardService paymentCardService)
     {
         _connectionString = configuration.GetConnectionString("DefaultConnection")
             ?? throw new InvalidOperationException("DefaultConnection tanimli degil.");
@@ -43,6 +45,7 @@ public class UserPanelService : IUserPanelService
         _hotelPricingReadService = hotelPricingReadService;
         _secureFileService = secureFileService;
         _hotelPointsService = hotelPointsService;
+        _paymentCardService = paymentCardService;
         _publicBaseUrl = (configuration["App:PublicBaseUrl"] ?? "https://localhost:7223").TrimEnd('/');
     }
 
@@ -477,7 +480,7 @@ public class UserPanelService : IUserPanelService
         var otelOnay = reader.IsDBNull(10) ? string.Empty : reader.GetString(10);
         var hasReview = SafeInt(reader, 11) != 0;
         var isCancelled = string.Equals(status, "İptal Edildi", StringComparison.OrdinalIgnoreCase);
-        var canSubmitReview = CanReservationReceiveReview(status, otelOnay, hasReview, isCancelled);
+        var canSubmitReview = CanReservationReceiveReview(status, otelOnay, hasReview, isCancelled, checkOut);
         if (!canSubmitReview)
         {
             return null;
@@ -690,13 +693,13 @@ public class UserPanelService : IUserPanelService
                 var otelOnay = reader.GetString(11);
                 var isCancelled = string.Equals(status, "İptal Edildi", StringComparison.OrdinalIgnoreCase)
                                   || string.Equals(status, "Reddedildi", StringComparison.OrdinalIgnoreCase);
+                var checkIn = reader.GetDateTime(8);
+                var checkOut = reader.GetDateTime(9);
                 var hasReview = !reader.IsDBNull(12);
-                var canWriteReview = CanReservationReceiveReview(status, otelOnay, hasReview, isCancelled);
+                var canWriteReview = CanReservationReceiveReview(status, otelOnay, hasReview, isCancelled, checkOut);
                 var createdAt = reader.IsDBNull(14) ? (DateTime?)null : reader.GetDateTime(14);
                 var editLimit = createdAt?.AddDays(7);
                 var canEdit = hasReview && editLimit.HasValue && DateTime.UtcNow <= editLimit.Value;
-                var checkIn = reader.GetDateTime(8);
-                var checkOut = reader.GetDateTime(9);
                 var reviewTone = hasReview ? "reviewed" : canWriteReview ? "waiting" : "locked";
                 var imageRaw = reader.IsDBNull(18) ? string.Empty : reader.GetString(18);
                 all.Add(new UserReviewReservationRowViewModel
@@ -726,13 +729,15 @@ public class UserPanelService : IUserPanelService
             }
         }
 
-        model.WaitingReviewCount = all.Count(x => x.CanWriteReview);
-        model.ReviewedCount = all.Count(x => x.HasReview);
+        var eligible = all.Where(x => x.HasReview || x.CanWriteReview).ToList();
+        model.WaitingReviewCount = eligible.Count(x => x.CanWriteReview);
+        model.ReviewedCount = eligible.Count(x => x.HasReview);
+        model.EligibleCount = eligible.Count;
         var filtered = normalizedStatus switch
         {
-            "waiting" => all.Where(x => x.CanWriteReview).ToList(),
-            "reviewed" => all.Where(x => x.HasReview).ToList(),
-            _ => all
+            "waiting" => eligible.Where(x => x.CanWriteReview).ToList(),
+            "reviewed" => eligible.Where(x => x.HasReview).ToList(),
+            _ => eligible
         };
 
         if (!string.IsNullOrWhiteSpace(search))
@@ -763,7 +768,8 @@ public class UserPanelService : IUserPanelService
                    COALESCE(r.[OTEL_ONAY_DURUMU], ''),
                    CAST(CASE WHEN EXISTS (
                        SELECT 1 FROM [dbo].[YORUMLAR] y WHERE y.[REZERVASYON_ID] = r.id AND y.[KULLANICI_ID] = @userId
-                   ) THEN 1 ELSE 0 END AS INT)
+                   ) THEN 1 ELSE 0 END AS INT),
+                   r.[CIKIS_TARIHI]
             FROM [dbo].[REZERVASYONLAR] r
             WHERE r.id = @reservationId AND r.[KULLANICI_ID] = @userId;
             """;
@@ -779,9 +785,10 @@ public class UserPanelService : IUserPanelService
         var status = reader.GetString(0);
         var otelOnay = reader.GetString(1);
         var hasReview = Convert.ToInt32(reader.GetValue(2), CultureInfo.InvariantCulture) != 0;
+        var checkOut = reader.GetDateTime(3);
         var isCancelled = string.Equals(status, "İptal Edildi", StringComparison.OrdinalIgnoreCase)
                           || string.Equals(status, "Reddedildi", StringComparison.OrdinalIgnoreCase);
-        return CanReservationReceiveReview(status, otelOnay, hasReview, isCancelled);
+        return CanReservationReceiveReview(status, otelOnay, hasReview, isCancelled, checkOut);
     }
 
     public async Task<IReadOnlyList<HotelEligibleReviewStayViewModel>> GetEligibleReviewStaysForHotelAsync(
@@ -927,9 +934,14 @@ public class UserPanelService : IUserPanelService
     private static byte MapTenToLegacyFive(int ten) =>
         (byte)Math.Clamp((int)Math.Round(ten / 2.0, MidpointRounding.AwayFromZero), 1, 5);
 
-    private static bool CanReservationReceiveReview(string status, string otelOnay, bool hasReview, bool isCancelled)
+    private static bool CanReservationReceiveReview(string status, string otelOnay, bool hasReview, bool isCancelled, DateTime checkOut)
     {
         if (isCancelled || hasReview)
+        {
+            return false;
+        }
+
+        if (checkOut.Date >= DateTime.UtcNow.Date)
         {
             return false;
         }
@@ -2152,67 +2164,17 @@ INNER JOIN agg ON agg.[OTEL_ID] = o.id;";
         return $"*** *** {digits[^4..]}";
     }
 
-    public async Task<UserPaymentMethodsPageViewModel> GetPaymentMethodsAsync(long userId, CancellationToken cancellationToken = default)
-    {
-        var model = new UserPaymentMethodsPageViewModel();
-        await using var connection = await OpenConnectionAsync(cancellationToken);
+    public Task<UserPaymentMethodsPageViewModel> GetPaymentMethodsAsync(long userId, CancellationToken cancellationToken = default)
+        => _paymentCardService.GetPaymentMethodsPageAsync(userId, cancellationToken);
 
-        await using (var command = new SqlCommand(@"
-            SELECT id, [KART_ETIKETI], [MARKA], [SON_DORT_HANE], [SON_KULLANIM_AY], [SON_KULLANIM_YIL], [VARSAYILAN_MI]
-            FROM [dbo].[KULLANICI_ODEME_YONTEMLERI]
-            WHERE [KULLANICI_ID] = @userId AND [AKTIF_MI] = 1
-            ORDER BY [VARSAYILAN_MI] DESC, id DESC;", connection))
-        {
-            command.Parameters.AddWithValue("@userId", userId);
-            await using var reader = await command.ExecuteReaderAsync(cancellationToken);
-            while (await reader.ReadAsync(cancellationToken))
-            {
-                model.Methods.Add(new UserPaymentMethodRowViewModel
-                {
-                    PaymentMethodId = reader.GetInt64(0),
-                    Label = $"{reader.GetString(1)} · {reader.GetString(2)} •••• {reader.GetString(3)}",
-                    DetailText = $"Son kullanim {SafeInt(reader, 4):00}/{SafeInt(reader, 5)}" + (SafeBool(reader, 6) ? " · Varsayilan kart" : string.Empty),
-                    IsDefault = SafeBool(reader, 6)
-                });
-            }
-        }
+    public Task<(bool Success, string Message)> SavePaymentMethodAsync(long userId, UserPaymentMethodForm form, CancellationToken cancellationToken = default)
+        => _paymentCardService.SavePaymentMethodAsync(userId, form, cancellationToken);
 
-        await using var billingCommand = new SqlCommand(@"
-            SELECT TOP (1) [AD_SOYAD],
-                   COALESCE(NULLIF([ADRES], ''), ''),
-                   COALESCE(NULLIF(ilce, ''), ''),
-                   COALESCE(NULLIF([SEHIR], ''), ''),
-                   [EPOSTA]
-            FROM [dbo].[KULLANICILAR]
-            WHERE id = @userId;", connection);
-        billingCommand.Parameters.AddWithValue("@userId", userId);
-        await using var billingReader = await billingCommand.ExecuteReaderAsync(cancellationToken);
-        if (await billingReader.ReadAsync(cancellationToken))
-        {
-            var invoiceName = billingReader.GetString(0);
-            var addressLine = billingReader.GetString(1);
-            var district = billingReader.GetString(2);
-            var city = billingReader.GetString(3);
-            var email = billingReader.GetString(4);
-            var fullAddress = string.Join(", ", new[] { addressLine, district, city }.Where(static x => !string.IsNullOrWhiteSpace(x)));
-            model.Billing = new UserBillingSummaryViewModel
-            {
-                InvoiceName = invoiceName,
-                Address = string.IsNullOrWhiteSpace(fullAddress) ? "Adres bilgisi eklenmedi" : fullAddress,
-                Email = email
-            };
-            model.BillingForm = new UserBillingForm
-            {
-                InvoiceName = invoiceName,
-                AddressLine = addressLine,
-                District = district,
-                City = city,
-                Email = email
-            };
-        }
+    public Task<bool> DeletePaymentMethodAsync(long userId, long paymentMethodId, CancellationToken cancellationToken = default)
+        => _paymentCardService.DeletePaymentMethodAsync(userId, paymentMethodId, cancellationToken);
 
-        return model;
-    }
+    public Task<bool> SetDefaultPaymentMethodAsync(long userId, long paymentMethodId, CancellationToken cancellationToken = default)
+        => _paymentCardService.SetDefaultPaymentMethodAsync(userId, paymentMethodId, cancellationToken);
 
     public async Task<(bool Success, string Message)> SaveBillingInfoAsync(long userId, UserBillingForm form, CancellationToken cancellationToken = default)
     {
@@ -2241,55 +2203,19 @@ INNER JOIN agg ON agg.[OTEL_ID] = o.id;";
             : (false, "Fatura bilgileri kaydedilemedi.");
     }
 
-    public async Task<bool> SavePaymentMethodAsync(long userId, UserPaymentMethodForm form, CancellationToken cancellationToken = default)
-    {
-        if (string.IsNullOrWhiteSpace(form.CardLabel) || string.IsNullOrWhiteSpace(form.CardHolder) || string.IsNullOrWhiteSpace(form.LastFourDigits))
-        {
-            return false;
-        }
-
-        await using var connection = await OpenConnectionAsync(cancellationToken);
-        await using var transaction = await connection.BeginTransactionAsync(cancellationToken);
-        if (form.SetAsDefault)
-        {
-            await using var clear = new SqlCommand("UPDATE [dbo].[KULLANICI_ODEME_YONTEMLERI] SET [VARSAYILAN_MI] = 0 WHERE [KULLANICI_ID] = @userId;", connection, (SqlTransaction)transaction);
-            clear.Parameters.AddWithValue("@userId", userId);
-            await clear.ExecuteNonQueryAsync(cancellationToken);
-        }
-
-        await using var command = new SqlCommand(@"
-            INSERT INTO [dbo].[KULLANICI_ODEME_YONTEMLERI]
-            ([KULLANICI_ID], [KART_ETIKETI], [KART_SAHIBI], [MARKA], [SON_DORT_HANE], [SON_KULLANIM_AY], [SON_KULLANIM_YIL], [VARSAYILAN_MI], [AKTIF_MI])
-            VALUES
-            (@userId, @label, @holder, @brand, @lastFour, @month, @year, @isDefault, 1);", connection, (SqlTransaction)transaction);
-        command.Parameters.AddWithValue("@userId", userId);
-        command.Parameters.AddWithValue("@label", form.CardLabel.Trim());
-        command.Parameters.AddWithValue("@holder", form.CardHolder.Trim());
-        command.Parameters.AddWithValue("@brand", form.Brand.Trim());
-        command.Parameters.AddWithValue("@lastFour", form.LastFourDigits.Trim());
-        command.Parameters.AddWithValue("@month", form.ExpiryMonth);
-        command.Parameters.AddWithValue("@year", form.ExpiryYear);
-        command.Parameters.AddWithValue("@isDefault", form.SetAsDefault ? 1 : 0);
-        var affected = await command.ExecuteNonQueryAsync(cancellationToken);
-        await transaction.CommitAsync(cancellationToken);
-        return affected > 0;
-    }
-
-    public async Task<bool> DeletePaymentMethodAsync(long userId, long paymentMethodId, CancellationToken cancellationToken = default)
-    {
-        await using var connection = await OpenConnectionAsync(cancellationToken);
-        await using var command = new SqlCommand("UPDATE [dbo].[KULLANICI_ODEME_YONTEMLERI] SET [AKTIF_MI] = 0, [VARSAYILAN_MI] = 0 WHERE id = @paymentMethodId AND [KULLANICI_ID] = @userId;", connection);
-        command.Parameters.AddWithValue("@paymentMethodId", paymentMethodId);
-        command.Parameters.AddWithValue("@userId", userId);
-        return await command.ExecuteNonQueryAsync(cancellationToken) > 0;
-    }
-
     public async Task<UserLoyaltyPageViewModel> GetLoyaltyAsync(long userId, CancellationToken cancellationToken = default)
     {
         var model = new UserLoyaltyPageViewModel();
         await using var connection = await OpenConnectionAsync(cancellationToken);
 
-        await EnsureLoyaltyAccountAsync(connection, userId, cancellationToken);
+        try
+        {
+            await EnsureLoyaltyAccountAsync(connection, userId, cancellationToken);
+        }
+        catch (SqlException)
+        {
+            // Sadakat hesabı oluşturulamazsa varsayılan özetle devam et.
+        }
 
         var alertHotelIds = new List<long>();
 
@@ -2346,33 +2272,74 @@ INNER JOIN agg ON agg.[OTEL_ID] = o.id;";
             }
         }
 
-        model.Tiers = await LoadLoyaltyTiersAsync(connection, model.CurrentTierCode, cancellationToken);
-        model.PointTransactions = await LoadLoyaltyTransactionsAsync(connection, userId, cancellationToken);
-        model.Rewards = await LoadLoyaltyRewardsAsync(connection, model.AvailablePoints, cancellationToken);
-        model.Badges = await LoadUserBadgesAsync(connection, userId, cancellationToken);
-        await EnsurePassportCitiesAsync(connection, userId, cancellationToken);
-        model.PassportCities = await LoadPassportCitiesAsync(connection, userId, cancellationToken);
-        model.RecentReservationCities = await LoadRecentReservationCitiesAsync(connection, userId, 5, cancellationToken);
-        model.TravelPlans = await LoadTravelPlansAsync(connection, userId, cancellationToken);
-        model.Offers = await LoadOffersAsync(connection, userId, cancellationToken);
-        model.BudgetPlans = await LoadBudgetPlansAsync(connection, userId, cancellationToken);
-        model.PriceAlerts = await LoadPriceAlertsAsync(connection, userId, alertHotelIds, cancellationToken);
+        try
+        {
+            model.Tiers = await LoadLoyaltyTiersAsync(connection, model.CurrentTierCode, cancellationToken);
+            model.PointTransactions = await LoadLoyaltyTransactionsAsync(connection, userId, cancellationToken);
+            model.Rewards = await LoadLoyaltyRewardsAsync(connection, model.AvailablePoints, cancellationToken);
+        }
+        catch (SqlException)
+        {
+            // Sadakat tabloları eksikse temel özetle devam et.
+        }
+
+        try
+        {
+            model.Badges = await LoadUserBadgesAsync(connection, userId, cancellationToken);
+        }
+        catch (SqlException)
+        {
+        }
+
+        try
+        {
+            await EnsurePassportCitiesAsync(connection, userId, cancellationToken);
+            model.PassportCities = await LoadPassportCitiesAsync(connection, userId, cancellationToken);
+        }
+        catch (SqlException)
+        {
+        }
+
+        try
+        {
+            model.RecentReservationCities = await LoadRecentReservationCitiesAsync(connection, userId, 5, cancellationToken);
+            model.TravelPlans = await LoadTravelPlansAsync(connection, userId, cancellationToken);
+            model.Offers = await LoadOffersAsync(connection, userId, cancellationToken);
+            model.BudgetPlans = await LoadBudgetPlansAsync(connection, userId, cancellationToken);
+            model.PriceAlerts = await LoadPriceAlertsAsync(connection, userId, alertHotelIds, cancellationToken);
+        }
+        catch (SqlException)
+        {
+        }
 
         if (alertHotelIds.Count > 0)
         {
-            var start = DateOnly.FromDateTime(DateTime.Today);
-            var priceMap = await _hotelPricingReadService.GetHotelEffectivePriceMapAsync(alertHotelIds.Distinct().ToList(), start, start.AddDays(60), cancellationToken);
-            foreach (var alert in model.PriceAlerts)
+            try
             {
-                if (priceMap.TryGetValue(alert.HotelId, out var amount) && amount > 0)
+                var start = DateOnly.FromDateTime(DateTime.Today);
+                var priceMap = await _hotelPricingReadService.GetHotelEffectivePriceMapAsync(alertHotelIds.Distinct().ToList(), start, start.AddDays(60), cancellationToken);
+                foreach (var alert in model.PriceAlerts)
                 {
-                    alert.CurrentPriceText = FormatMoney(amount);
-                    alert.IsTriggered = TryParseCurrency(alert.TargetPriceText, out var targetPrice) && amount <= targetPrice;
+                    if (priceMap.TryGetValue(alert.HotelId, out var amount) && amount > 0)
+                    {
+                        alert.CurrentPriceText = FormatMoney(amount);
+                        alert.IsTriggered = TryParseCurrency(alert.TargetPriceText, out var targetPrice) && amount <= targetPrice;
+                    }
                 }
+            }
+            catch (SqlException)
+            {
             }
         }
 
-        model.Recommendations = await LoadRecommendationsAsync(connection, cancellationToken);
+        try
+        {
+            model.Recommendations = await LoadRecommendationsAsync(connection, cancellationToken);
+        }
+        catch (SqlException)
+        {
+        }
+
         model.BudgetPlanForm.DestinationCity = model.BudgetPlans.FirstOrDefault()?.DestinationText ?? string.Empty;
         model.BudgetPlanForm.TargetBudget = model.BudgetPlans.FirstOrDefault() is { } budget
             && TryParseCurrency(budget.BudgetText, out var budgetValue)
@@ -2380,26 +2347,35 @@ INNER JOIN agg ON agg.[OTEL_ID] = o.id;";
             : null;
         model.TravelPlanForm.DestinationCity = model.PassportCities.FirstOrDefault(static item => !item.IsVisited)?.CityName ?? string.Empty;
 
-        var hotelBalances = await _hotelPointsService.GetUserHotelBalancesAsync(userId, cancellationToken);
-        model.HotelPointBalances = hotelBalances.Select(static balance => new UserHotelPointsBalanceViewModel
+        try
         {
-            HotelId = balance.HotelId,
-            HotelName = balance.HotelName,
-            HotelCity = balance.HotelCity,
-            TotalEarned = balance.TotalEarned,
-            AvailablePoints = balance.AvailablePoints,
-            UsedPoints = balance.UsedPoints,
-            DiscountPercent = balance.DiscountPercent,
-            LastEarnedText = balance.LastEarnedText,
-            RecentMovements = balance.RecentMovements.Select(static movement => new UserHotelPointMovementViewModel
+            var hotelBalances = await _hotelPointsService.GetUserHotelBalancesAsync(userId, cancellationToken);
+            model.HotelPointBalances = hotelBalances.Select(static balance => new UserHotelPointsBalanceViewModel
             {
-                DateText = movement.DateText,
-                Title = movement.Title,
-                Description = movement.Description,
-                PointChange = movement.PointChange,
-                PointChangeText = movement.PointChangeText
-            }).ToList()
-        }).ToList();
+                HotelId = balance.HotelId,
+                HotelName = balance.HotelName,
+                HotelCity = balance.HotelCity,
+                TotalEarned = balance.TotalEarned,
+                AvailablePoints = balance.AvailablePoints,
+                UsedPoints = balance.UsedPoints,
+                DiscountPercent = balance.DiscountPercent,
+                LastEarnedText = balance.LastEarnedText,
+                StayCount = balance.StayCount,
+                LastStayText = balance.LastStayText,
+                RecentMovements = balance.RecentMovements.Select(static movement => new UserHotelPointMovementViewModel
+                {
+                    DateText = movement.DateText,
+                    Title = movement.Title,
+                    Description = movement.Description,
+                    PointChange = movement.PointChange,
+                    PointChangeText = movement.PointChangeText
+                }).ToList()
+            }).ToList();
+        }
+        catch (SqlException)
+        {
+            model.HotelPointBalances = new List<UserHotelPointsBalanceViewModel>();
+        }
 
         return model;
     }
@@ -2993,11 +2969,11 @@ INNER JOIN agg ON agg.[OTEL_ID] = o.id;";
         var list = new List<UserLoyaltyPriceAlertViewModel>();
         await using var command = new SqlCommand(@"
             SELECT TOP (4) a.[OTEL_ID], o.[OTEL_ADI], a.[HEDEF_MAKSIMUM_FIYAT]
-            FROM user_favorite_price_alerts a
+            FROM [dbo].[KULLANICI_FAVORI_FIYAT_ALARMLARI] a
             INNER JOIN [dbo].[OTELLER] o ON o.id = a.[OTEL_ID]
             WHERE a.[KULLANICI_ID] = @userId
               AND COALESCE(a.[AKTIF_MI], 1) = 1
-            ORDER BY a.[GUNCELLENME_TARIHI] DESC, a.id DESC;", connection);
+            ORDER BY a.[GUNCELLENME_TARIHI] DESC, a.[ID] DESC;", connection);
         command.Parameters.AddWithValue("@userId", userId);
         await using var reader = await command.ExecuteReaderAsync(cancellationToken);
         while (await reader.ReadAsync(cancellationToken))
@@ -3151,7 +3127,7 @@ INNER JOIN agg ON agg.[OTEL_ID] = o.id;";
             var childCount = SafeInt(reader, 14);
             var otelOnay = reader.IsDBNull(18) ? string.Empty : reader.GetString(18);
             var hasReview = SafeInt(reader, 28) != 0;
-            var canSubmitReview = CanReservationReceiveReview(status, otelOnay, hasReview, isCancelled);
+            var canSubmitReview = CanReservationReceiveReview(status, otelOnay, hasReview, isCancelled, checkOut);
             var canCancel = CanUserCancelReservation(status, otelOnay, checkIn, checkOut);
             list.Add(new UserReservationCardViewModel
             {
@@ -3277,7 +3253,7 @@ INNER JOIN agg ON agg.[OTEL_ID] = o.id;";
             var childCount = SafeInt(reader, 11);
             var otelOnay = reader.IsDBNull(15) ? string.Empty : reader.GetString(15);
             var hasReview = SafeInt(reader, 18) != 0;
-            var canSubmitReview = CanReservationReceiveReview(status, otelOnay, hasReview, isCancelled);
+            var canSubmitReview = CanReservationReceiveReview(status, otelOnay, hasReview, isCancelled, checkOut);
             var canCancel = CanUserCancelReservation(status, otelOnay, checkIn, checkOut);
             list.Add(new UserReservationCardViewModel
             {

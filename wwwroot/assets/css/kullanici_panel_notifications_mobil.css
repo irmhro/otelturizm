@@ -1,41 +1,309 @@
 @import url("./user-mobile-bundle.css");
 
-@media (max-width: 900px) {
-  .user-notifications-page,
-  .notifications-page {
-    padding-bottom: max(16px, env(safe-area-inset-bottom, 0px));
+@media (max-width: 991px) {
+  .kullanici-panel-shell .content-body .user-notifications-page,
+  .kullanici-panel-shell .content-body .notifications-page {
+    display: grid;
+    gap: 14px;
+    min-width: 0;
+    max-width: 100%;
+    overflow-x: clip;
+    padding-bottom: max(8px, env(safe-area-inset-bottom, 0px));
   }
 
-  .section-head,
-  .notifications-hero,
-  .notification-panel-head {
-    align-items: stretch;
-    flex-direction: column;
+  .kullanici-panel-shell .user-notifications-page .notification-alert {
+    font-size: 13px;
+    line-height: 1.4;
+    padding: 12px;
+    border-radius: 12px;
   }
 
-  .notifications-grid,
-  .toggle-row,
-  .notification-row {
+  /* Hero — compact stacked card */
+  .kullanici-panel-shell .user-notifications-page .notifications-hero {
+    display: grid;
     grid-template-columns: 1fr;
+    gap: 12px;
+    align-items: stretch;
+    padding: 14px;
+    margin-bottom: 0;
+    border-radius: 14px;
+    min-width: 0;
+    background:
+      radial-gradient(circle at 8% 12%, rgba(37, 99, 235, 0.08), transparent 18rem),
+      linear-gradient(135deg, var(--user-surface), var(--user-surface-2));
   }
 
-  .btn-primary-solid,
-  .notification-hero-metric,
-  .notifications-hero .btn {
+  .kullanici-panel-shell .user-notifications-page .notifications-hero > div {
+    min-width: 0;
+  }
+
+  .kullanici-panel-shell .user-notifications-page .panel-eyebrow {
+    font-size: 9px;
+    letter-spacing: 0.08em;
+  }
+
+  .kullanici-panel-shell .user-notifications-page .notifications-hero h1 {
+    margin: 2px 0 6px;
+    font-size: 18px;
+    line-height: 1.25;
+    word-break: break-word;
+  }
+
+  .kullanici-panel-shell .user-notifications-page .notifications-hero p {
+    font-size: 12px;
+    line-height: 1.45;
+  }
+
+  .kullanici-panel-shell .user-notifications-page .notification-hero-metric {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
     width: 100%;
+    min-width: 0;
+    padding: 12px 14px;
+    border-radius: 12px;
+    text-align: left;
+  }
+
+  .kullanici-panel-shell .user-notifications-page .notification-hero-metric strong {
+    font-size: 24px;
+    line-height: 1;
+  }
+
+  .kullanici-panel-shell .user-notifications-page .notification-hero-metric span {
+    font-size: 12px;
+    font-weight: 800;
+    color: var(--user-muted);
+  }
+
+  /* Single-column layout */
+  .kullanici-panel-shell .user-notifications-page .notifications-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 14px;
+    min-width: 0;
+  }
+
+  .kullanici-panel-shell .user-notifications-page .notification-panel {
+    border-radius: 14px;
+    min-width: 0;
+  }
+
+  .kullanici-panel-shell .user-notifications-page .notification-panel-head {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 10px;
+    padding: 14px;
+  }
+
+  .kullanici-panel-shell .user-notifications-page .notification-panel-head h2 {
+    margin: 0 0 4px;
+    font-size: 16px;
+  }
+
+  .kullanici-panel-shell .user-notifications-page .notification-panel-head p {
+    font-size: 12px;
+    line-height: 1.45;
+  }
+
+  .kullanici-panel-shell .user-notifications-page .notification-panel-head .btn-primary-solid {
+    display: none;
+  }
+
+  .kullanici-panel-shell .user-notifications-page .notification-count-pill {
+    align-self: flex-start;
+    font-size: 11px;
+    padding: 5px 10px;
+  }
+
+  /* Preference cards */
+  .kullanici-panel-shell .user-notifications-page .toggle-list {
+    gap: 10px;
+    padding: 12px 14px 0;
+    min-width: 0;
+  }
+
+  .kullanici-panel-shell .user-notifications-page .toggle-row {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 12px;
+    padding: 14px;
+    border-radius: 12px;
     min-height: var(--user-mob-touch, 44px);
+    touch-action: manipulation;
+    cursor: pointer;
+    min-width: 0;
   }
 
-  .notification-meta {
-    justify-items: start;
+  .kullanici-panel-shell .user-notifications-page .toggle-row > div {
+    min-width: 0;
   }
 
-  .notification-empty {
-    padding: 28px 16px max(24px, env(safe-area-inset-bottom, 0px));
+  .kullanici-panel-shell .user-notifications-page .toggle-row h3 {
+    font-size: 14px;
+    line-height: 1.3;
+    margin-bottom: 3px;
+    word-break: break-word;
   }
 
-  .notification-toggle,
-  .notification-row label {
-    min-height: var(--user-mob-touch, 44px);
+  .kullanici-panel-shell .user-notifications-page .toggle-row p {
+    font-size: 12px;
+    line-height: 1.4;
+  }
+
+  /* iOS-style toggle switches */
+  .kullanici-panel-shell .user-notifications-page .toggle-row input[type="checkbox"] {
+    appearance: none;
+    -webkit-appearance: none;
+    flex-shrink: 0;
+    width: 52px;
+    height: 30px;
+    margin: 0;
+    border: 0;
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--user-line) 66%, var(--user-surface));
+    position: relative;
+    cursor: pointer;
+    transition: background 0.18s ease;
+  }
+
+  .kullanici-panel-shell .user-notifications-page .toggle-row input[type="checkbox"]::after {
+    content: "";
+    position: absolute;
+    top: 3px;
+    left: 3px;
+    width: 24px;
+    height: 24px;
+    border-radius: 999px;
+    background: var(--user-surface);
+    box-shadow: 0 8px 18px rgba(15, 23, 42, 0.18);
+    transition: transform 0.18s ease;
+  }
+
+  .kullanici-panel-shell .user-notifications-page .toggle-row input[type="checkbox"]:checked {
+    background: linear-gradient(135deg, #22c55e, #10b981);
+  }
+
+  .kullanici-panel-shell .user-notifications-page .toggle-row input[type="checkbox"]:checked::after {
+    transform: translateX(22px);
+  }
+
+  .kullanici-panel-shell .user-notifications-page .toggle-row input[type="checkbox"]:focus-visible {
+    outline: 2px solid color-mix(in srgb, var(--user-accent) 55%, transparent);
+    outline-offset: 2px;
+  }
+
+  /* Sticky save bar above mobile nav */
+  .kullanici-panel-shell .user-notifications-page .notification-save-bar {
+    display: block;
+    position: sticky;
+    bottom: calc(64px + env(safe-area-inset-bottom, 0px));
+    z-index: 12;
+    padding: 12px 14px 14px;
+    margin-top: 4px;
+    background:
+      linear-gradient(180deg, transparent 0%, color-mix(in srgb, var(--user-surface) 88%, transparent) 28%, var(--user-surface) 100%);
+    border-top: 1px solid color-mix(in srgb, var(--user-line) 72%, transparent);
+  }
+
+  .kullanici-panel-shell .user-notifications-page .notification-save-bar .btn-primary-solid {
+    display: inline-flex;
+    width: 100%;
+    min-height: var(--user-mob-touch, 48px);
+    font-size: 15px;
+    font-weight: 900;
+    border-radius: 12px;
+    box-shadow: 0 10px 24px color-mix(in srgb, var(--user-accent) 28%, transparent);
+  }
+
+  /* Recent notifications list */
+  .kullanici-panel-shell .user-notifications-page .notification-list {
+    gap: 10px;
+    padding: 12px 14px 14px;
+    min-width: 0;
+  }
+
+  .kullanici-panel-shell .user-notifications-page .notification-row {
+    display: grid;
+    grid-template-columns: 40px minmax(0, 1fr);
+    gap: 10px;
+    align-items: start;
+    padding: 12px;
+    border-radius: 12px;
+    min-width: 0;
+  }
+
+  .kullanici-panel-shell .user-notifications-page .notification-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 10px;
+  }
+
+  .kullanici-panel-shell .user-notifications-page .notification-row h3 {
+    font-size: 14px;
+    line-height: 1.3;
+    word-break: break-word;
+  }
+
+  .kullanici-panel-shell .user-notifications-page .notification-row p {
+    font-size: 12px;
+    line-height: 1.4;
+  }
+
+  .kullanici-panel-shell .user-notifications-page .notification-meta {
+    grid-column: 2;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px 10px;
+    justify-content: flex-start;
+    margin-top: 2px;
+  }
+
+  .kullanici-panel-shell .user-notifications-page .notification-meta strong,
+  .kullanici-panel-shell .user-notifications-page .notification-meta span {
+    font-size: 11px;
+  }
+
+  .kullanici-panel-shell .user-notifications-page .notification-empty {
+    padding: 28px 16px max(20px, env(safe-area-inset-bottom, 0px));
+    border-radius: 12px;
+  }
+
+  .kullanici-panel-shell .user-notifications-page .notification-empty i {
+    font-size: 26px;
+  }
+}
+
+@media (min-width: 992px) {
+  .kullanici-panel-shell .user-notifications-page .notification-save-bar {
+    display: none;
+  }
+}
+
+@media (max-width: 400px) {
+  .kullanici-panel-shell .user-notifications-page .notifications-hero h1 {
+    font-size: 17px;
+  }
+
+  .kullanici-panel-shell .user-notifications-page .toggle-row {
+    gap: 10px;
+    padding: 12px;
+  }
+
+  .kullanici-panel-shell .user-notifications-page .toggle-row input[type="checkbox"] {
+    width: 48px;
+    height: 28px;
+  }
+
+  .kullanici-panel-shell .user-notifications-page .toggle-row input[type="checkbox"]::after {
+    width: 22px;
+    height: 22px;
+  }
+
+  .kullanici-panel-shell .user-notifications-page .toggle-row input[type="checkbox"]:checked::after {
+    transform: translateX(20px);
   }
 }

@@ -225,16 +225,26 @@
                 }
                 else
                 {
-                    <div class="ap-action-stack">
+                    <div class="dashboard-favorite-grid">
                         @foreach (var hotel in Model.FavoriteHotels.Take(5))
                         {
-                            <a class="ap-action-tile" href="/oteller/@hotel.HotelSlug">
-                                <span><i class="fas fa-hotel"></i></span>
-                                <div>
-                                    <strong>@hotel.HotelName</strong>
-                                    <small>@hotel.District, @hotel.City · @hotel.RatingText@if (!string.IsNullOrWhiteSpace(hotel.AddedDateText)) { <span> · @hotel.AddedDateText</span> }</small>
+                            <a class="dashboard-favorite-card" href="/oteller/@hotel.HotelSlug">
+                                <div class="dashboard-favorite-card-media">
+                                    @if (!string.IsNullOrWhiteSpace(hotel.ImageUrl))
+                                    {
+                                        <img src="@hotel.ImageUrl" alt="@hotel.HotelName" loading="lazy" />
+                                    }
+                                    else
+                                    {
+                                        <span class="dashboard-favorite-card-fallback" aria-hidden="true"><i class="fas fa-hotel"></i></span>
+                                    }
                                 </div>
-                                <i class="fas fa-chevron-right"></i>
+                                <div class="dashboard-favorite-card-body">
+                                    <strong class="dashboard-favorite-card-name">@hotel.HotelName</strong>
+                                    <span class="dashboard-favorite-card-location"><i class="fas fa-location-dot" aria-hidden="true"></i>@hotel.District, @hotel.City</span>
+                                    <span class="dashboard-favorite-card-rating"><i class="fas fa-star" aria-hidden="true"></i>@hotel.RatingText</span>
+                                </div>
+                                <i class="fas fa-chevron-right dashboard-favorite-card-chevron" aria-hidden="true"></i>
                             </a>
                         }
                     </div>

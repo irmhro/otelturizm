@@ -248,6 +248,7 @@ public class PartnerReservationRowViewModel
     public bool CanMarkPaymentCompleted { get; set; }
     public bool CanMessageGuest { get; set; }
     public bool CanOpenDetails { get; set; } = true;
+    public bool HasSavedPaymentCard { get; set; }
     public string StatusTone { get; set; } = "pending";
 }
 

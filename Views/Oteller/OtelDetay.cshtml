@@ -2,6 +2,7 @@
 @using System.Security.Claims
 @using otelturizmnew.Constants
 @using otelturizmnew.Models.Reservations
+@using otelturizmnew.Models.Payments
 @using Microsoft.Extensions.Configuration
 @inject otelturizmnew.Services.Abstractions.IReservationDraftService ReservationDraftService
 @inject otelturizmnew.Services.Abstractions.IHotelPointsService HotelPointsService
@@ -607,10 +608,6 @@
                 <i class="fas fa-location-dot" aria-hidden="true"></i>
                 <span>@headerLocationText</span>
             </a>
-            @if (Model.Weather is not null && Model.Weather.Days.Count > 0)
-            {
-                @await Html.PartialAsync("_OtelDetayWeatherStrip", (Model.Weather, weatherThemeClass, "header", "weatherTopbarOpen"))
-            }
         </div>
         <partial name="~/Views/Oteller/_OtelDetayBusinessTrust.cshtml" model="Model" />
         <div class="detail-title-subnav" aria-label="Hızlı gezinme">
@@ -885,6 +882,12 @@
                     </div>
                 </div>
             </div>
+            @if (Model.Weather is not null && Model.Weather.Days.Count > 0)
+            {
+                <div class="detail-about__weather-row">
+                    @await Html.PartialAsync("_OtelDetayWeatherStrip", (Model.Weather, weatherThemeClass, "standalone", "weatherAboutOpen"))
+                </div>
+            }
             <div class="detail-about__body">
                 @if (!string.IsNullOrWhiteSpace(longDescription))
                 {
@@ -1167,7 +1170,7 @@
                                             })
                                             .ToList();
                                     }
-                                    roomGalleryMap[room.RoomTypeId] = roomGallery;
+                                    roomGalleryMap[room.RoomTypeId] = roomGalleryResolved;
                                     roomDetailsMap[room.RoomTypeId] = roomAllFeatures;
                                 }
                                 <div class="room-feature-row">
@@ -1694,7 +1697,10 @@
                     var selCashAtDoor = string.Equals(pmSel, PublicDoorPaymentMethods.CashAtDoor, StringComparison.OrdinalIgnoreCase)
                         || string.Equals(pmSel, "Kapıda Ödeme", StringComparison.OrdinalIgnoreCase);
                     var selCardAtDoor = string.Equals(pmSel, PublicDoorPaymentMethods.CardAtDoor, StringComparison.OrdinalIgnoreCase);
-                    var paymentMethodChosen = selCashAtDoor || selCardAtDoor;
+                    var selSavedCard = string.Equals(pmSel, PublicSavedPaymentMethods.SavedCard, StringComparison.OrdinalIgnoreCase);
+                    var paymentMethodChosen = selCashAtDoor || selCardAtDoor || selSavedCard;
+                    var savedPaymentCards = ViewData["SavedPaymentCards"] as IReadOnlyList<SavedPaymentCardOptionViewModel> ?? Array.Empty<SavedPaymentCardOptionViewModel>();
+                    var hasSavedPaymentCards = Model.IsLoggedInUser && savedPaymentCards.Count > 0;
                     var guestCheckInDefault = Model.CheckInTime?.ToString(@"hh\:mm") ?? "14:00";
                     var guestCheckOutDefault = Model.CheckOutTime?.ToString(@"hh\:mm") ?? "12:00";
                     var hotelCheckOutStandard = guestCheckOutDefault;
@@ -1734,8 +1740,31 @@
                                 {
                                     <option value="@PublicDoorPaymentMethods.CardAtDoor">@PublicDoorPaymentMethods.CardAtDoor</option>
                                 }
+                                @if (hasSavedPaymentCards)
+                                {
+                                    if (selSavedCard)
+                                    {
+                                        <option value="@PublicSavedPaymentMethods.SavedCard" selected>@PublicSavedPaymentMethods.SavedCard</option>
+                                    }
+                                    else
+                                    {
+                                        <option value="@PublicSavedPaymentMethods.SavedCard">@PublicSavedPaymentMethods.SavedCard</option>
+                                    }
+                                }
                             </select>
                         </label>
+                        @if (hasSavedPaymentCards)
+                        {
+                            <label id="savedPaymentCardField" class="saved-payment-card-field" hidden>
+                                <span>Kayıtlı kart seç</span>
+                                <select name="SavedPaymentCardId" id="savedPaymentCardSelect">
+                                    @foreach (var card in savedPaymentCards)
+                                    {
+                                        <option value="@card.PaymentMethodId" selected="@card.IsDefault">@card.Label · @card.MaskedPan · @card.ExpiryText</option>
+                                    }
+                                </select>
+                            </label>
+                        }
                         <div class="booking-advanced-times">
                             <p class="booking-advanced-times-note">
                                 Otel konaklama saatleri: giriş <strong>@guestCheckInDefault</strong>, çıkış <strong>@guestCheckOutDefault</strong>. Tercihe göre fiyatlar değişebilir.
@@ -2354,6 +2383,8 @@
             const favoriteButtons = Array.from(document.querySelectorAll('.favorite-btn'));
             const bookingForm = document.getElementById('bookingForm');
             const paymentMethodSelect = document.getElementById('paymentMethodSelect');
+            const savedPaymentCardField = document.getElementById('savedPaymentCardField');
+            const savedPaymentCardSelect = document.getElementById('savedPaymentCardSelect');
             const roomsJsonInput = document.getElementById('roomsJsonInput');
             const roomItemsRoot = document.getElementById('roomItems');
             const roomItemTemplate = document.getElementById('roomItemTemplate');
@@ -2386,6 +2417,7 @@
             const weatherPopupBackdrop = document.getElementById('weatherPopupBackdrop');
             const weatherPopupOpen = document.getElementById('weatherPopupOpen');
             const weatherTopbarOpen = document.getElementById('weatherTopbarOpen');
+            const weatherAboutOpen = document.getElementById('weatherAboutOpen');
             const weatherPopupClose = document.getElementById('weatherPopupClose');
             const shareButton = document.getElementById('shareHotelBtn');
             const shareMenu = document.getElementById('shareMenu');
@@ -2769,10 +2801,19 @@
             });
 
             document.querySelectorAll('.room-gallery-trigger').forEach(function (button) {
-                button.addEventListener('click', function () {
+                button.addEventListener('click', function (event) {
+                    event.preventDefault();
+                    event.stopPropagation();
                     const roomId = button.getAttribute('data-room-id') || '';
                     const roomName = (button.getAttribute('data-room-name') || button.textContent || 'Oda').trim();
-                    const startIdx = parseInt(button.getAttribute('data-room-gallery-start') || '0', 10) || 0;
+                    let startIdx = parseInt(button.getAttribute('data-room-gallery-start') || '0', 10) || 0;
+                    const carousel = button.closest('[data-room-carousel]');
+                    if (carousel) {
+                        const track = carousel.querySelector('.room-carousel-track');
+                        if (track && track.clientWidth > 0) {
+                            startIdx = Math.round(track.scrollLeft / track.clientWidth);
+                        }
+                    }
                     const map = window.__otelDetayConfig?.roomGalleries || {};
                     const imgs = map[roomId] || map[String(roomId)] || [];
                     openVisualGallery(imgs, roomName, startIdx);
@@ -3433,14 +3474,15 @@
             }
 
             function bindWeatherPopupTriggers() {
-                [weatherPopupOpen, weatherTopbarOpen].forEach(function (trigger) {
+                [weatherPopupOpen, weatherTopbarOpen, weatherAboutOpen].forEach(function (trigger) {
                     trigger?.addEventListener('click', openWeatherPopup);
                 });
             }
 
             function openWeatherPopup() {
                 const hasWeather = (weatherPopupOpen?.getAttribute('data-has-weather') === 'true')
-                    || (weatherTopbarOpen?.getAttribute('data-has-weather') === 'true');
+                    || (weatherTopbarOpen?.getAttribute('data-has-weather') === 'true')
+                    || (weatherAboutOpen?.getAttribute('data-has-weather') === 'true');
                 if (!hasWeather || !weatherPopup || !weatherPopupBackdrop) {
                     showInfoModal('Hava durumu verisi şu an yüklenemedi. Birkaç saniye sonra tekrar deneyin.', false);
                     return;
@@ -3894,7 +3936,8 @@
                 const v = (value || '').trim();
                 return v === 'Kapıda nakit ödeme'
                     || v === 'Kapıda kart ile ödeme'
-                    || v === 'Kapıda Ödeme';
+                    || v === 'Kapıda Ödeme'
+                    || v === 'Kayıtlı kredi kartımla öde';
             }
 
             function isPaymentMethodChosen() {
@@ -3936,6 +3979,16 @@
             }
 
             function syncPaymentMethodState() {
+                const savedCardSelected = (paymentMethodSelect?.value || '').trim() === 'Kayıtlı kredi kartımla öde';
+                if (savedPaymentCardField) {
+                    savedPaymentCardField.hidden = !savedCardSelected;
+                }
+                if (savedPaymentCardSelect) {
+                    savedPaymentCardSelect.required = savedCardSelected;
+                    if (!savedCardSelected) {
+                        savedPaymentCardSelect.value = '';
+                    }
+                }
                 syncReserveButtonEnabled();
             }
 

@@ -270,9 +270,21 @@ public sealed class HotelPointsService : IHotelPointsService
                 pk.[TOPLAM_KAZANILAN],
                 pk.[KULLANILABILIR_PUAN],
                 pk.[KULLANILAN_PUAN],
-                pk.[SON_KAZANIM_TARIHI]
+                pk.[SON_KAZANIM_TARIHI],
+                COALESCE(rs.stay_count, 0) AS stay_count,
+                rs.last_checkout
             FROM [dbo].[PUAN_KULLANICI] pk
             INNER JOIN [dbo].[OTELLER] o ON o.[ID] = pk.[OTEL_ID]
+            LEFT JOIN (
+                SELECT
+                    r.[OTEL_ID],
+                    COUNT(*) AS stay_count,
+                    MAX(r.[CIKIS_TARIHI]) AS last_checkout
+                FROM [dbo].[REZERVASYONLAR] r
+                WHERE r.[KULLANICI_ID] = @userId
+                  AND COALESCE(NULLIF(r.[DURUM], ''), '') NOT IN (N'İptal Edildi', N'Reddedildi')
+                GROUP BY r.[OTEL_ID]
+            ) rs ON rs.[OTEL_ID] = pk.[OTEL_ID]
             WHERE pk.[KULLANICI_ID] = @userId
               AND (pk.[TOPLAM_KAZANILAN] > 0 OR pk.[KULLANILABILIR_PUAN] > 0 OR pk.[KULLANILAN_PUAN] > 0)
             ORDER BY pk.[KULLANILABILIR_PUAN] DESC, pk.[SON_KAZANIM_TARIHI] DESC;
@@ -289,6 +301,8 @@ public sealed class HotelPointsService : IHotelPointsService
                 var hotelId = reader.GetInt64(0);
                 hotelIds.Add(hotelId);
                 var available = reader.IsDBNull(4) ? 0 : reader.GetInt32(4);
+                var stayCount = reader.IsDBNull(7) ? 0 : reader.GetInt32(7);
+                var lastCheckout = reader.IsDBNull(8) ? (DateTime?)null : reader.GetDateTime(8);
                 balances.Add(new UserHotelPointsBalance
                 {
                     HotelId = hotelId,
@@ -298,7 +312,11 @@ public sealed class HotelPointsService : IHotelPointsService
                     AvailablePoints = available,
                     UsedPoints = reader.IsDBNull(5) ? 0 : reader.GetInt32(5),
                     DiscountPercent = CalculateDiscountPercent(available),
-                    LastEarnedText = reader.IsDBNull(6) ? null : reader.GetDateTime(6).ToString("dd MMM yyyy", CultureInfo.GetCultureInfo("tr-TR"))
+                    LastEarnedText = reader.IsDBNull(6) ? null : reader.GetDateTime(6).ToString("dd MMM yyyy", CultureInfo.GetCultureInfo("tr-TR")),
+                    StayCount = stayCount,
+                    LastStayText = lastCheckout.HasValue
+                        ? lastCheckout.Value.ToString("dd MMM yyyy", CultureInfo.GetCultureInfo("tr-TR"))
+                        : null
                 });
             }
         }
@@ -308,25 +326,39 @@ public sealed class HotelPointsService : IHotelPointsService
             return balances;
         }
 
-        var movements = await LoadRecentMovementsAsync(connection, userId, hotelIds, cancellationToken);
+        Dictionary<long, List<UserHotelPointMovement>> movements;
+        try
+        {
+            movements = await LoadRecentMovementsAsync(connection, userId, hotelIds, cancellationToken);
+        }
+        catch (SqlException ex)
+        {
+            _logger.LogWarning(ex, "Otel puan hareketleri okunamadi userId={UserId}", userId);
+            movements = new Dictionary<long, List<UserHotelPointMovement>>();
+        }
+
         for (var i = 0; i < balances.Count; i++)
         {
             var balance = balances[i];
-            if (movements.TryGetValue(balance.HotelId, out var rows))
+            if (!movements.TryGetValue(balance.HotelId, out var rows))
             {
-                balances[i] = new UserHotelPointsBalance
-                {
-                    HotelId = balance.HotelId,
-                    HotelName = balance.HotelName,
-                    HotelCity = balance.HotelCity,
-                    TotalEarned = balance.TotalEarned,
-                    AvailablePoints = balance.AvailablePoints,
-                    UsedPoints = balance.UsedPoints,
-                    DiscountPercent = balance.DiscountPercent,
-                    LastEarnedText = balance.LastEarnedText,
-                    RecentMovements = rows
-                };
+                continue;
             }
+
+            balances[i] = new UserHotelPointsBalance
+            {
+                HotelId = balance.HotelId,
+                HotelName = balance.HotelName,
+                HotelCity = balance.HotelCity,
+                TotalEarned = balance.TotalEarned,
+                AvailablePoints = balance.AvailablePoints,
+                UsedPoints = balance.UsedPoints,
+                DiscountPercent = balance.DiscountPercent,
+                LastEarnedText = balance.LastEarnedText,
+                StayCount = balance.StayCount,
+                LastStayText = balance.LastStayText,
+                RecentMovements = rows
+            };
         }
 
         return balances;
@@ -533,6 +565,11 @@ public sealed class HotelPointsService : IHotelPointsService
         IReadOnlyList<long> hotelIds,
         CancellationToken cancellationToken)
     {
+        if (!await ColumnExistsAsync(connection, "KULLANICI_PUAN_HAREKETLERI", "OTEL_ID", cancellationToken))
+        {
+            return hotelIds.ToDictionary(static id => id, static _ => new List<UserHotelPointMovement>());
+        }
+
         var map = hotelIds.ToDictionary(static id => id, static _ => new List<UserHotelPointMovement>());
         var idList = string.Join(",", hotelIds);
         var sql = $@"
@@ -581,6 +618,24 @@ public sealed class HotelPointsService : IHotelPointsService
             FROM information_schema.TABLES
             WHERE TABLE_CATALOG = DB_NAME() AND TABLE_NAME = @tableName;", connection);
         command.Parameters.AddWithValue("@tableName", tableName);
+        var result = await command.ExecuteScalarAsync(cancellationToken);
+        return Convert.ToInt32(result, CultureInfo.InvariantCulture) > 0;
+    }
+
+    private static async Task<bool> ColumnExistsAsync(
+        SqlConnection connection,
+        string tableName,
+        string columnName,
+        CancellationToken cancellationToken)
+    {
+        await using var command = new SqlCommand(@"
+            SELECT COUNT(*)
+            FROM information_schema.COLUMNS
+            WHERE TABLE_CATALOG = DB_NAME()
+              AND TABLE_NAME = @tableName
+              AND COLUMN_NAME = @columnName;", connection);
+        command.Parameters.AddWithValue("@tableName", tableName);
+        command.Parameters.AddWithValue("@columnName", columnName);
         var result = await command.ExecuteScalarAsync(cancellationToken);
         return Convert.ToInt32(result, CultureInfo.InvariantCulture) > 0;
     }

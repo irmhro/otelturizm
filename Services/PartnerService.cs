@@ -4851,7 +4851,167 @@ END";
         cmd.Parameters.AddWithValue("@fileName", string.IsNullOrWhiteSpace(fileName) ? DBNull.Value : fileName.Trim());
         cmd.Parameters.AddWithValue("@mimeType", string.IsNullOrWhiteSpace(mimeType) ? DBNull.Value : mimeType.Trim());
         await cmd.ExecuteNonQueryAsync(cancellationToken);
+
+        try
+        {
+            await QueueGuestInvoiceUploadedEmailAsync(connection, hotelId, reservationId, secureFileId, fileName, mimeType, cancellationToken);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Misafir faturasi e-posta bildirimi kuyruga alinamadi. ReservationId={ReservationId}", reservationId);
+        }
+
         return (true, "Fatura yüklendi ve rezervasyona işlendi.");
+    }
+
+    private async Task QueueGuestInvoiceUploadedEmailAsync(
+        SqlConnection connection,
+        long hotelId,
+        long reservationId,
+        long secureFileId,
+        string? fileName,
+        string? mimeType,
+        CancellationToken cancellationToken)
+    {
+        const string guestSql = @"
+            SELECT TOP (1)
+                r.[KULLANICI_ID],
+                COALESCE(NULLIF(LTRIM(RTRIM(u.[EPOSTA])), ''), '') AS [EPOSTA],
+                COALESCE(NULLIF(LTRIM(RTRIM(r.[MISAFIR_AD_SOYAD])), ''), NULLIF(LTRIM(RTRIM(u.[AD_SOYAD])), ''), N'Misafir') AS [MISAFIR_ADI],
+                COALESCE(NULLIF(r.[REZERVASYON_NO], ''), CAST(r.id AS nvarchar(30))) AS [REZERVASYON_NO],
+                COALESCE(o.[OTEL_ADI], N'Otel') AS [OTEL_ADI],
+                COALESCE(u.[DIL_TERCIHI], N'tr') AS [DIL]
+            FROM [dbo].[REZERVASYONLAR] r
+            INNER JOIN [dbo].[KULLANICILAR] u ON u.id = r.[KULLANICI_ID]
+            INNER JOIN [dbo].[OTELLER] o ON o.id = r.[OTEL_ID]
+            WHERE r.id = @reservationId
+              AND r.[OTEL_ID] = @hotelId;";
+
+        long guestUserId;
+        string guestEmail;
+        string guestName;
+        string reservationNo;
+        string hotelName;
+        string lang;
+
+        await using (var guestCmd = new SqlCommand(guestSql, connection))
+        {
+            guestCmd.Parameters.AddWithValue("@reservationId", reservationId);
+            guestCmd.Parameters.AddWithValue("@hotelId", hotelId);
+            await using var reader = await guestCmd.ExecuteReaderAsync(cancellationToken);
+            if (!await reader.ReadAsync(cancellationToken))
+            {
+                return;
+            }
+
+            guestUserId = reader.GetInt64(0);
+            guestEmail = reader.GetString(1);
+            guestName = reader.GetString(2);
+            reservationNo = reader.GetString(3);
+            hotelName = reader.GetString(4);
+            lang = reader.IsDBNull(5) ? "tr" : reader.GetString(5);
+        }
+
+        if (guestUserId <= 0 || string.IsNullOrWhiteSpace(guestEmail))
+        {
+            return;
+        }
+
+        var downloadPath = await _secureFileService.CreateEmailAccessUrlAsync(secureFileId, guestUserId, "user", cancellationToken);
+        List<QueuedEmailAttachment>? attachments = null;
+
+        if (IsPdfInvoice(mimeType, fileName))
+        {
+            attachments = await TryLoadInvoicePdfAttachmentAsync(connection, secureFileId, fileName, cancellationToken);
+        }
+
+        var normalizedLang = lang.StartsWith("en", StringComparison.OrdinalIgnoreCase) ? "en" : "tr";
+        await _emailQueueService.QueueTemplateAsync(connection, null, new QueuedEmailTemplateRequest
+        {
+            UserId = guestUserId,
+            RecipientEmail = guestEmail,
+            TemplateCode = "fatura_yuklendi",
+            RelatedTable = "rezervasyon_faturalari",
+            RelatedRecordId = reservationId,
+            Attachments = attachments,
+            Tokens = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+            {
+                ["lang"] = normalizedLang,
+                ["user_first_name"] = SplitFirstName(guestName),
+                ["hotel_name"] = hotelName,
+                ["booking_reference"] = reservationNo,
+                ["reservation_no"] = reservationNo,
+                ["invoice_download_link"] = downloadPath,
+                ["invoices_panel_link"] = "/panel/user/faturalarim"
+            }
+        }, cancellationToken);
+    }
+
+    private static bool IsPdfInvoice(string? mimeType, string? fileName)
+    {
+        if (string.Equals(mimeType, "application/pdf", StringComparison.OrdinalIgnoreCase))
+        {
+            return true;
+        }
+
+        return string.Equals(Path.GetExtension(fileName ?? string.Empty), ".pdf", StringComparison.OrdinalIgnoreCase);
+    }
+
+    private static async Task<List<QueuedEmailAttachment>?> TryLoadInvoicePdfAttachmentAsync(
+        SqlConnection connection,
+        long secureFileId,
+        string? fileName,
+        CancellationToken cancellationToken)
+    {
+        const string sql = @"
+            SELECT TOP (1)
+                [DEPOLAMA_YOLU],
+                COALESCE([ORIJINAL_DOSYA_ADI], N'fatura.pdf') AS [ORIJINAL_DOSYA_ADI],
+                COALESCE([MIME_TIPI], N'application/pdf') AS [MIME_TIPI],
+                COALESCE([DOSYA_BOYUTU], 0) AS [DOSYA_BOYUTU],
+                COALESCE([GORSEL_MI], 0) AS [GORSEL_MI]
+            FROM [dbo].[GUVENLI_DOSYA_VARLIKLARI]
+            WHERE id = @fileId AND [AKTIF_MI] = 1;";
+
+        await using var cmd = new SqlCommand(sql, connection);
+        cmd.Parameters.AddWithValue("@fileId", secureFileId);
+        await using var reader = await cmd.ExecuteReaderAsync(cancellationToken);
+        if (!await reader.ReadAsync(cancellationToken))
+        {
+            return null;
+        }
+
+        var isImage = !reader.IsDBNull(4) && reader.GetInt32(4) == 1;
+        if (isImage)
+        {
+            return null;
+        }
+
+        var size = reader.IsDBNull(3) ? 0L : Convert.ToInt64(reader.GetValue(3), CultureInfo.InvariantCulture);
+        if (size <= 0 || size > 10 * 1024 * 1024)
+        {
+            return null;
+        }
+
+        var path = reader.GetString(0);
+        if (string.IsNullOrWhiteSpace(path) || !File.Exists(path))
+        {
+            return null;
+        }
+
+        var attachmentName = string.IsNullOrWhiteSpace(fileName)
+            ? reader.GetString(1)
+            : Path.GetFileName(fileName);
+
+        return
+        [
+            new QueuedEmailAttachment
+            {
+                FileName = attachmentName,
+                FilePathOrUrl = path,
+                ContentType = reader.GetString(2)
+            }
+        ];
     }
 
     public async Task<PartnerApplicationPageViewModel> GetApplicationAsync(long userId, long? hotelId = null, CancellationToken cancellationToken = default)
@@ -9127,7 +9287,10 @@ END";
                 ) AS odeme_kalem_ozet,
                 COALESCE(NULLIF(r.[INDIRIM_NEDENI], ''), '') AS [INDIRIM_NEDENI],
                 COALESCE(r.[SAFAK_SURPRIZI_ORANI], 0) AS [SAFAK_SURPRIZI_ORANI],
-                COALESCE(r.[SAFAK_SURPRIZI_INDIRIM_TUTARI], 0) AS [SAFAK_SURPRIZI_INDIRIM_TUTARI]
+                COALESCE(r.[SAFAK_SURPRIZI_INDIRIM_TUTARI], 0) AS [SAFAK_SURPRIZI_INDIRIM_TUTARI],
+                CASE WHEN EXISTS (
+                    SELECT 1 FROM [dbo].[REZERVASYON_ODEME_KART_SNAPSHOT] s WHERE s.[REZERVASYON_ID] = r.id
+                ) THEN 1 ELSE 0 END AS has_saved_card
             FROM [dbo].[REZERVASYONLAR] r
             LEFT JOIN [dbo].[ODA_TIPLERI] ot ON ot.id = r.[ODA_TIP_ID]
             WHERE r.[OTEL_ID] = @hotelId
@@ -9225,6 +9388,7 @@ END";
                     reader.IsDBNull(25) ? null : reader.GetString(25),
                     reader.IsDBNull(26) ? (byte)0 : SafeByte(reader, 26),
                     reader.IsDBNull(27) ? 0m : SafeDecimal(reader, 27)),
+                HasSavedPaymentCard = !reader.IsDBNull(28) && Convert.ToInt32(reader.GetValue(28), CultureInfo.InvariantCulture) == 1,
                 StatusTone = GetPartnerReservationStatusTone(reservationStatus, hotelApprovalStatus)
             });
         }

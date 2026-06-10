@@ -21,7 +21,11 @@
             <div>
                 <p class="page-pretitle">PROFİL MERKEZİ</p>
                 <h1>@Model.Form.FirstName @Model.Form.LastName</h1>
-                <p>@Model.Form.Email · @Model.Form.Phone</p>
+                <p class="profile-contact-line">
+                    <span>@Model.Form.Email</span>
+                    <span class="profile-contact-sep" aria-hidden="true">·</span>
+                    <span>@Model.Form.Phone</span>
+                </p>
                 <div class="profile-status-row">
                     <span class="profile-status @(Model.EmailVerified ? "is-ok" : "is-warn")"><i class="fas @(Model.EmailVerified ? "fa-circle-check" : "fa-clock")"></i>@(Model.EmailVerified ? "E-posta doğrulandı" : "E-posta doğrulama bekliyor")</span>
                     <span class="profile-status tone-@Model.PhoneVerification.StatusToneClass"><i class="fas fa-mobile-screen-button"></i>@Model.PhoneVerification.StatusText</span>

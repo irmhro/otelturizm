@@ -155,7 +155,19 @@ public class SecureFileService : ISecureFileService
         return stored;
     }
 
-    public async Task<string> CreateAccessUrlAsync(long fileId, long viewerUserId, string viewerAccountType, CancellationToken cancellationToken = default)
+    public Task<string> CreateAccessUrlAsync(long fileId, long viewerUserId, string viewerAccountType, CancellationToken cancellationToken = default)
+        => CreateAccessUrlInternalAsync(fileId, viewerUserId, viewerAccountType, validityMinutes: 30, maxUses: 30, cancellationToken);
+
+    public Task<string> CreateEmailAccessUrlAsync(long fileId, long viewerUserId, string viewerAccountType, CancellationToken cancellationToken = default)
+        => CreateAccessUrlInternalAsync(fileId, viewerUserId, viewerAccountType, validityMinutes: 7 * 24 * 60, maxUses: 20, cancellationToken);
+
+    private async Task<string> CreateAccessUrlInternalAsync(
+        long fileId,
+        long viewerUserId,
+        string viewerAccountType,
+        int validityMinutes,
+        int maxUses,
+        CancellationToken cancellationToken)
     {
         var token = Guid.NewGuid().ToString("N");
         await using var connection = new SqlConnection(_connectionString);
@@ -170,7 +182,7 @@ public class SecureFileService : ISecureFileService
             VALUES
             (
                 @fileId, @token, @userId, @accountType,
-                DATEADD(MINUTE, 30, SYSUTCDATETIME()), 30
+                DATEADD(MINUTE, @validityMinutes, SYSUTCDATETIME()), @maxUses
             );";
 
         await using var command = new SqlCommand(sql, connection);
@@ -178,6 +190,8 @@ public class SecureFileService : ISecureFileService
         command.Parameters.AddWithValue("@token", token);
         command.Parameters.AddWithValue("@userId", viewerUserId);
         command.Parameters.AddWithValue("@accountType", viewerAccountType);
+        command.Parameters.AddWithValue("@validityMinutes", validityMinutes);
+        command.Parameters.AddWithValue("@maxUses", maxUses);
         await command.ExecuteNonQueryAsync(cancellationToken);
 
         return $"/secure-files/{token}";

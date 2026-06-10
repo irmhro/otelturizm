@@ -1,15 +1,23 @@
 @{
     var currentAction = ViewContext.RouteData.Values["action"]?.ToString() ?? "Dashboard";
-    bool IsAct(string action) => string.Equals(currentAction, action, StringComparison.OrdinalIgnoreCase);
+    var currentPath = Context.Request.Path.Value ?? string.Empty;
+    bool IsAct(params string[] actions) => actions.Any(a => string.Equals(currentAction, a, StringComparison.OrdinalIgnoreCase));
+    bool IsPath(params string[] paths) => paths.Any(p => currentPath.Equals(p, StringComparison.OrdinalIgnoreCase) || currentPath.StartsWith(p + "/", StringComparison.OrdinalIgnoreCase));
+
+    var reservationsActive = IsAct("Reservations", "ReservationReview", "Reviews") || IsPath("/panel/user/rezervasyonlarim", "/panel/user/yorumlarim");
+    var invoicesActive = IsAct("Invoices", "PaymentMethods") || IsPath("/panel/user/faturalarim", "/panel/user/odeme-yontemleri");
+    var loyaltyActive = IsAct("Loyalty") || IsPath("/panel/user/puanlarim");
+    var favoritesActive = IsAct("Favorites") || IsPath("/panel/user/favorilerim");
+    var menuActive = IsAct("Dashboard", "Messages", "Profile", "Notifications", "Security")
+        || IsPath("/panel/user/dashboard", "/panel/user/mesajlarim", "/panel/user/profil-bilgilerim", "/panel/user/bildirim-tercihleri", "/panel/user/guvenlik-ve-giris");
 }
 <nav class="admin-mobile-nav user-mobile-nav" aria-label="Alt menü">
-    <a asp-controller="UserPanel" asp-action="Dashboard" class="@(IsAct("Dashboard") ? "active" : null)"><i class="fas fa-th-large" aria-hidden="true"></i><span>Panel</span></a>
-    <a asp-controller="UserPanel" asp-action="Reservations" class="@(IsAct("Reservations") || IsAct("ReservationReview") ? "active" : null)"><i class="fas fa-suitcase" aria-hidden="true"></i><span>Rez.</span></a>
-    <a asp-controller="UserPanel" asp-action="Favorites" class="@(IsAct("Favorites") ? "active" : null)"><i class="fas fa-heart" aria-hidden="true"></i><span>Favori</span></a>
-    <a asp-controller="UserPanel" asp-action="Messages" class="@(IsAct("Messages") ? "active" : null)"><i class="fas fa-envelope" aria-hidden="true"></i><span>Mesaj</span></a>
-    <a asp-controller="UserPanel" asp-action="Profile" class="@(IsAct("Profile") ? "active" : null)"><i class="fas fa-user" aria-hidden="true"></i><span>Profil</span></a>
-    <form method="post" action="/cikis-yap" class="panel-mobile-logout-form">
-        @Html.AntiForgeryToken()
-        <button type="submit"><i class="fas fa-right-from-bracket" aria-hidden="true"></i><span>Çıkış</span></button>
-    </form>
+    <a href="/" rel="noopener"><i class="fas fa-house" aria-hidden="true"></i><span>Site</span></a>
+    <a asp-controller="UserPanel" asp-action="Reservations" class="@(reservationsActive ? "active" : null)"><i class="fas fa-suitcase" aria-hidden="true"></i><span>Rezervasyonlar</span></a>
+    <a asp-controller="UserPanel" asp-action="Invoices" class="@(invoicesActive ? "active" : null)"><i class="fas fa-file-invoice" aria-hidden="true"></i><span>Faturalar</span></a>
+    <a asp-controller="UserPanel" asp-action="Loyalty" class="@(loyaltyActive ? "active" : null)"><i class="fas fa-gift" aria-hidden="true"></i><span>Puan</span></a>
+    <a asp-controller="UserPanel" asp-action="Favorites" class="@(favoritesActive ? "active" : null)"><i class="fas fa-heart" aria-hidden="true"></i><span>Favori</span></a>
+    <button type="button" class="@(menuActive ? "active" : null)" id="userMobileMenuBtn" data-user-mobile-menu aria-label="Tüm menüyü aç" aria-expanded="false" aria-controls="appSidebar">
+        <i class="fas fa-bars" aria-hidden="true"></i><span>Menü</span>
+    </button>
 </nav>

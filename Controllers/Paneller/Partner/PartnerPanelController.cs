@@ -24,8 +24,9 @@ public class PartnerPanelController : Controller
     private readonly IPlatformPackageService _platformPackageService;
     private readonly IHotelPointsService _hotelPointsService;
     private readonly ISmartRouteService _smartRouteService;
+    private readonly IPaymentCardService _paymentCardService;
 
-    public PartnerPanelController(IPartnerService partnerService, IAuthService authService, IUserPanelService userPanelService, IOutputCacheStore outputCacheStore, IPanelThemeService panelThemeService, ISecureFileService secureFileService, IPlatformPackageService platformPackageService, IHotelPointsService hotelPointsService, ISmartRouteService smartRouteService)
+    public PartnerPanelController(IPartnerService partnerService, IAuthService authService, IUserPanelService userPanelService, IOutputCacheStore outputCacheStore, IPanelThemeService panelThemeService, ISecureFileService secureFileService, IPlatformPackageService platformPackageService, IHotelPointsService hotelPointsService, ISmartRouteService smartRouteService, IPaymentCardService paymentCardService)
     {
         _partnerService = partnerService;
         _authService = authService;
@@ -36,6 +37,7 @@ public class PartnerPanelController : Controller
         _platformPackageService = platformPackageService;
         _hotelPointsService = hotelPointsService;
         _smartRouteService = smartRouteService;
+        _paymentCardService = paymentCardService;
     }
 
     private async Task EvictPublicOutputCacheAsync(CancellationToken cancellationToken)
@@ -317,6 +319,24 @@ public class PartnerPanelController : Controller
         }
 
         return Redirect($"/panel/partner/rezervasyonlar?otelId={hotelId}");
+    }
+
+    [HttpGet("rezervasyonlar/{reservationId:long}/odeme-karti")]
+    public async Task<IActionResult> ViewReservationPaymentCard(long reservationId, long hotelId, CancellationToken cancellationToken)
+    {
+        if (!IsPartnerUser())
+        {
+            return Unauthorized(new { success = false, message = "Oturum gerekli." });
+        }
+
+        var result = await _paymentCardService.TryPartnerViewCardAsync(
+            GetUserId(),
+            hotelId,
+            reservationId,
+            HttpContext.Connection.RemoteIpAddress?.ToString(),
+            Request.Headers.UserAgent.ToString(),
+            cancellationToken);
+        return Json(result);
     }
 
     [HttpPost("rezervasyonlar/misafire-mesaj")]
@@ -1719,6 +1739,7 @@ public class PartnerPanelController : Controller
                 ContextTable = "rezervasyonlar",
                 ContextId = reservationId,
                 OwnerUserId = GetUserId(),
+                HotelId = hotelId,
                 Category = "guest-invoice",
                 VisibilityScope = "private"
             }, cancellationToken);

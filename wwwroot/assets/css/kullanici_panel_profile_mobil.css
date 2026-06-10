@@ -1,50 +1,348 @@
 @import url("./user-mobile-bundle.css");
 
-@media (max-width: 900px) {
-  .user-profile-page,
-  .profile-form {
+@media (max-width: 991px) {
+  .kullanici-panel-shell .content-body .user-profile-page,
+  .kullanici-panel-shell .content-body .profile-form {
     gap: 14px;
+    min-width: 0;
+    max-width: 100%;
+    overflow-x: clip;
     padding-bottom: max(16px, env(safe-area-inset-bottom, 0px));
   }
 
-  .user-profile-page {
-    padding-top: max(0px, env(safe-area-inset-top, 0px));
+  .kullanici-panel-shell .profile-alert {
+    font-size: 13px;
+    line-height: 1.4;
+    padding: 12px;
+    border-radius: 12px;
   }
 
-  .profile-hero,
-  .profile-panel,
-  .profile-preset-card {
-    border-radius: 13px;
-  }
-
-  .profile-hero,
-  .profile-panel {
-    padding: 14px;
-  }
-
-  .profile-identity h1 {
-    font-size: 23px;
-  }
-
-  .profile-file-picker {
-    min-height: 62px;
-  }
-
-  .profile-preset-list button {
-    width: 44px;
-    height: 44px;
-    min-width: 44px;
-    min-height: 44px;
-  }
-
-  .profile-uploaded-avatar-list,
-  .profile-uploaded-avatar-actions {
+  /* Hero — single column card stack */
+  .kullanici-panel-shell .profile-hero {
+    display: grid;
     grid-template-columns: 1fr;
+    gap: 14px;
+    padding: 14px;
+    border-radius: 14px;
+    min-width: 0;
+    background:
+      radial-gradient(circle at 8% 12%, rgba(37, 99, 235, 0.08), transparent 18rem),
+      var(--ap-surface-card, #fff);
   }
 
-  .profile-form .form-control,
-  .profile-form .form-select,
-  .profile-form .btn {
+  /* Identity — compact horizontal row (avatar + info) */
+  .kullanici-panel-shell .profile-identity {
+    flex-direction: row;
+    align-items: flex-start;
+    gap: 12px;
+    min-width: 0;
+  }
+
+  .kullanici-panel-shell .profile-identity > div {
+    min-width: 0;
+    flex: 1 1 auto;
+  }
+
+  .kullanici-panel-shell .profile-avatar-xl {
+    width: 72px;
+    height: 72px;
+    border-radius: 16px;
+    border-width: 3px;
+    flex-shrink: 0;
+    box-shadow: 0 10px 24px rgba(15, 23, 42, 0.12);
+  }
+
+  .kullanici-panel-shell .profile-identity .page-pretitle {
+    font-size: 9px;
+    margin-bottom: 2px;
+    letter-spacing: 0.08em;
+  }
+
+  .kullanici-panel-shell .profile-identity h1 {
+    font-size: 18px;
+    line-height: 1.25;
+    word-break: break-word;
+  }
+
+  .kullanici-panel-shell .profile-contact-line {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 2px 6px;
+    margin-top: 4px;
+    font-size: 12px;
+    line-height: 1.45;
+    font-weight: 700;
+  }
+
+  .kullanici-panel-shell .profile-contact-line span {
+    min-width: 0;
+    word-break: break-word;
+  }
+
+  .kullanici-panel-shell .profile-contact-sep {
+    color: color-mix(in srgb, var(--user-muted, #64748b) 72%, transparent);
+    flex-shrink: 0;
+  }
+
+  .kullanici-panel-shell .profile-status-row {
+    margin-top: 8px;
+    gap: 6px;
+    align-items: flex-start;
+  }
+
+  .kullanici-panel-shell .profile-status {
+    font-size: 11px;
+    padding: 4px 9px;
+    min-height: 28px;
+    max-width: 100%;
+    white-space: normal;
+    text-align: left;
+    line-height: 1.25;
+  }
+
+  /* Upload card — full-width touch targets */
+  .kullanici-panel-shell .profile-upload-card {
+    width: 100%;
+    min-width: 0;
+    padding: 14px;
+    border-radius: 13px;
+    gap: 10px;
+  }
+
+  .kullanici-panel-shell .profile-upload-card strong {
+    font-size: 15px;
+  }
+
+  .kullanici-panel-shell .profile-upload-card span {
+    font-size: 12px;
+    line-height: 1.45;
+  }
+
+  .kullanici-panel-shell .profile-file-picker {
+    min-height: 76px;
+    width: 100%;
+    padding: 12px;
+    touch-action: manipulation;
+    border-radius: 12px;
+  }
+
+  .kullanici-panel-shell .profile-upload-card .btn {
+    width: 100%;
+    min-height: var(--user-mob-touch, 48px);
+    font-weight: 800;
+    justify-content: center;
+  }
+
+  /* Preset avatars card */
+  .kullanici-panel-shell .profile-preset-card {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 12px;
+    padding: 14px;
+    min-width: 0;
+    border-radius: 14px;
+  }
+
+  .kullanici-panel-shell .profile-preset-card > div {
+    min-width: 0;
+  }
+
+  .kullanici-panel-shell .profile-preset-card h2 {
+    font-size: 16px;
+  }
+
+  .kullanici-panel-shell .profile-preset-card p {
+    font-size: 12px;
+    line-height: 1.45;
+  }
+
+  .kullanici-panel-shell .profile-preset-list {
+    display: grid;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    gap: 8px;
+    width: 100%;
+    justify-content: stretch;
+  }
+
+  .kullanici-panel-shell .profile-preset-list form {
+    min-width: 0;
+  }
+
+  .kullanici-panel-shell .profile-preset-list button {
+    width: 100%;
+    height: auto;
+    aspect-ratio: 1;
+    min-width: 0;
+    min-height: 0;
+    border-radius: 12px;
+    transition: border-color 0.16s ease, box-shadow 0.16s ease;
+  }
+
+  .kullanici-panel-shell .profile-preset-list button:active {
+    border-color: rgba(37, 99, 235, 0.45);
+    box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.12);
+  }
+
+  .kullanici-panel-shell .profile-uploaded-avatar-list {
+    grid-template-columns: 1fr;
+    gap: 10px;
+    width: 100%;
+  }
+
+  .kullanici-panel-shell .profile-uploaded-avatar {
+    grid-template-columns: 52px minmax(0, 1fr);
+    gap: 10px;
+    padding: 12px;
+    border-radius: 12px;
+    min-width: 0;
+  }
+
+  .kullanici-panel-shell .profile-uploaded-avatar img {
+    width: 52px;
+    height: 52px;
+  }
+
+  .kullanici-panel-shell .profile-uploaded-avatar-actions {
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+  }
+
+  .kullanici-panel-shell .profile-uploaded-avatar-actions .btn {
     min-height: var(--user-mob-touch, 44px);
+    font-size: 13px;
+  }
+
+  /* Form panels */
+  .kullanici-panel-shell .profile-panel {
+    padding: 14px;
+    min-width: 0;
+    border-radius: 14px;
+  }
+
+  .kullanici-panel-shell .profile-panel-head {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 10px;
+    margin-bottom: 12px;
+  }
+
+  .kullanici-panel-shell .profile-panel-head h2 {
+    font-size: 16px;
+  }
+
+  .kullanici-panel-shell .profile-panel-head p {
+    font-size: 12px;
+    line-height: 1.45;
+  }
+
+  .kullanici-panel-shell .profile-panel-head .btn,
+  .kullanici-panel-shell .profile-panel-head .profile-status {
+    width: 100%;
+    justify-content: center;
+    text-align: center;
+  }
+
+  .kullanici-panel-shell .profile-panel-head .profile-status {
+    align-self: stretch;
+  }
+
+  .kullanici-panel-shell .profile-form-grid {
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+
+  .kullanici-panel-shell .profile-form-grid label > span {
+    font-size: 12px;
+  }
+
+  .kullanici-panel-shell .profile-form .form-control,
+  .kullanici-panel-shell .profile-form .form-select,
+  .kullanici-panel-shell .profile-form .btn {
+    width: 100%;
+    min-height: var(--user-mob-touch, 44px);
+  }
+
+  .kullanici-panel-shell .profile-form textarea.form-control {
+    min-height: 96px;
+  }
+
+  .kullanici-panel-shell .profile-email-field {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 8px;
+  }
+
+  .kullanici-panel-shell .profile-email-field .profile-status {
+    align-self: flex-start;
+    width: auto;
+  }
+
+  .kullanici-panel-shell .profile-field-full small {
+    font-size: 11px;
+    line-height: 1.4;
+  }
+
+  /* Email verification */
+  .kullanici-panel-shell .profile-verification-grid {
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+
+  .kullanici-panel-shell .profile-inline-form,
+  .kullanici-panel-shell .profile-inline-form-wide {
+    grid-template-columns: 1fr;
+    gap: 10px;
+    padding: 12px;
+    border-radius: 12px;
+    min-width: 0;
+  }
+
+  .kullanici-panel-shell .profile-inline-form .btn {
+    width: 100%;
+    min-height: var(--user-mob-touch, 44px);
+    justify-content: center;
+    font-weight: 800;
+  }
+
+  .kullanici-panel-shell .email-update-card .profile-panel-head .profile-status {
+    width: auto;
+    align-self: flex-start;
+  }
+}
+
+@media (max-width: 400px) {
+  .kullanici-panel-shell .profile-preset-list {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+
+  .kullanici-panel-shell .profile-identity {
+    gap: 10px;
+  }
+
+  .kullanici-panel-shell .profile-avatar-xl {
+    width: 64px;
+    height: 64px;
+    border-radius: 14px;
+  }
+
+  .kullanici-panel-shell .profile-identity h1 {
+    font-size: 17px;
+  }
+}
+
+@media (max-width: 360px) {
+  .kullanici-panel-shell .profile-identity {
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+  }
+
+  .kullanici-panel-shell .profile-status-row {
+    justify-content: center;
+  }
+
+  .kullanici-panel-shell .profile-contact-line {
+    justify-content: center;
   }
 }

@@ -1,7 +1,11 @@
-<div class="pure-visual-slider-modal" id="pureVisualSliderModal" hidden aria-hidden="true">
+<div class="pure-visual-slider-modal" id="pureVisualSliderModal" hidden aria-hidden="true" role="dialog" aria-modal="true" aria-label="Oda galerisi">
     <button type="button" class="pure-visual-slider-modal__close" data-pvs-close aria-label="Galeriyi kapat">
         <i class="fas fa-times" aria-hidden="true"></i>
     </button>
+    <div class="pure-visual-slider-modal__meta" id="pureVisualSliderModalMeta" aria-live="polite">
+        <span class="pure-visual-slider-modal__title" data-pvs-title hidden></span>
+        <span class="pure-visual-slider-modal__counter" data-pvs-counter>1 / 1</span>
+    </div>
     <div class="pure-visual-slider pure-visual-slider--modal">
         <div class="swiper myVisualSwiper" id="pureVisualSliderModalSwiper" data-pure-visual-slider data-pure-visual-modal="true">
             <div class="swiper-wrapper" id="pureVisualSliderModalWrapper"></div>

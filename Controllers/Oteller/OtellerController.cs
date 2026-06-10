@@ -42,6 +42,7 @@ public class OtellerController : Controller
     private readonly HotelPresenceTracker _presenceTracker;
     private readonly InternationalSeoService _internationalSeo;
     private readonly IHotelPointsService _hotelPointsService;
+    private readonly IPaymentCardService _paymentCardService;
     private readonly ILogger<OtellerController> _logger;
 
     public OtellerController(
@@ -59,6 +60,7 @@ public class OtellerController : Controller
         HotelPresenceTracker presenceTracker,
         InternationalSeoService internationalSeo,
         IHotelPointsService hotelPointsService,
+        IPaymentCardService paymentCardService,
         ILogger<OtellerController> logger)
     {
         _hotelService = hotelService;
@@ -75,6 +77,7 @@ public class OtellerController : Controller
         _presenceTracker = presenceTracker;
         _internationalSeo = internationalSeo;
         _hotelPointsService = hotelPointsService;
+        _paymentCardService = paymentCardService;
         _logger = logger;
     }
 
@@ -297,6 +300,7 @@ public class OtellerController : Controller
                 model.HasCompletedReservationAtHotel = conversationAccess.Allowed;
                 model.ConversationInfoMessage = conversationAccess.Message;
                 model.EligibleReviewStays = (await _userPanelService.GetEligibleReviewStaysForHotelAsync(userId, model.Id, cancellationToken)).ToList();
+                ViewData["SavedPaymentCards"] = await _paymentCardService.GetUserCardOptionsAsync(userId, cancellationToken);
             }
         }
 

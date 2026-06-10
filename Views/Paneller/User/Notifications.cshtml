@@ -12,6 +12,7 @@
     if (Model.Form.SystemNotifications) activeCount++;
 }
 
+<div class="user-notifications-page notifications-page">
 <section class="notifications-hero">
     <div>
         <span class="panel-eyebrow">Bildirim merkezi</span>
@@ -50,6 +51,12 @@
             <label class="toggle-row"><div><h3>Fırsat e-postaları</h3><p>Özel kampanyalar ve kullanıcı fırsatları e-posta ile gelsin.</p></div><input asp-for="Form.CampaignEmail" type="checkbox" /></label>
             <label class="toggle-row"><div><h3>SMS bilgilendirmeleri</h3><p>Kısa kampanya ve kupon duyurularını SMS ile al.</p></div><input asp-for="Form.CampaignSms" type="checkbox" /></label>
             <label class="toggle-row no-border"><div><h3>Sistem bildirimleri</h3><p>Güvenlik ve hesap hareketleri için uygulama içi uyarılar açık olsun.</p></div><input asp-for="Form.SystemNotifications" type="checkbox" /></label>
+        </div>
+        <div class="notification-save-bar">
+            <button type="submit" class="btn-primary-solid">
+                <i class="fas fa-save"></i>
+                Kaydet
+            </button>
         </div>
     </form>
 
@@ -90,3 +97,4 @@
         </div>
     </article>
 </section>
+</div>

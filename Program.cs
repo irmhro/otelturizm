@@ -227,6 +227,8 @@ builder.Services.AddScoped<ISitemapService, SitemapService>();
 builder.Services.AddSingleton<InternationalSeoService>();
 builder.Services.AddScoped<IAdminSupportArticleService, AdminSupportArticleService>();
 builder.Services.AddScoped<IUserFavoriteService, UserFavoriteService>();
+builder.Services.AddSingleton<PaymentCardCryptoService>();
+builder.Services.AddScoped<IPaymentCardService, PaymentCardService>();
 builder.Services.AddScoped<IUserPanelService, UserPanelService>();
 builder.Services.AddScoped<IUserLoyaltyPointsService, UserLoyaltyPointsService>();
 builder.Services.AddScoped<ISessionSecurityService, SessionSecurityService>();

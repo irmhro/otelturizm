@@ -492,3 +492,217 @@
     font-weight: 900;
     font-size: 12px;
 }
+
+/* Otel bazlı puan panosu */
+.hotel-points-dashboard {
+    margin-bottom: 16px;
+}
+
+.hotel-points-dashboard__header {
+    display: flex;
+    align-items: stretch;
+    justify-content: space-between;
+    gap: 18px;
+}
+
+.hotel-points-dashboard__summary {
+    min-width: 180px;
+    padding: 16px 18px;
+    border-radius: 10px;
+    border: 1px solid color-mix(in srgb, var(--loyalty-gold) 28%, var(--user-line));
+    background: linear-gradient(135deg, color-mix(in srgb, var(--loyalty-gold) 12%, var(--user-surface)), var(--user-surface));
+    text-align: center;
+}
+
+.hotel-points-dashboard__summary-value {
+    font-size: 30px;
+    font-weight: 900;
+    color: var(--user-text);
+    line-height: 1.1;
+}
+
+.hotel-points-dashboard__summary-label,
+.hotel-points-dashboard__summary-meta {
+    color: var(--user-muted);
+    font-weight: 700;
+}
+
+.hotel-points-dashboard__summary-meta {
+    margin-top: 4px;
+    font-size: 12px;
+}
+
+.hotel-points-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 16px;
+}
+
+.hotel-point-card {
+    border: 1px solid var(--user-line);
+    border-radius: 10px;
+    background: var(--user-surface);
+    box-shadow: var(--user-shadow);
+    padding: 18px;
+    display: grid;
+    gap: 14px;
+}
+
+.hotel-point-card__head {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+}
+
+.hotel-point-card__icon {
+    width: 44px;
+    height: 44px;
+    border-radius: 10px;
+    display: grid;
+    place-items: center;
+    background: #fef3c7;
+    color: #a16207;
+    flex: 0 0 auto;
+}
+
+.hotel-point-card__title {
+    flex: 1 1 auto;
+    min-width: 0;
+}
+
+.hotel-point-card__title h3 {
+    margin: 0;
+    font-size: 1.05rem;
+    font-weight: 800;
+    color: var(--user-text);
+}
+
+.hotel-point-card__title p {
+    margin: 4px 0 0;
+    color: var(--user-muted);
+    font-size: 0.92rem;
+}
+
+.hotel-point-card__badge {
+    flex: 0 0 auto;
+    padding: 8px 12px;
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--loyalty-gold) 16%, var(--user-surface));
+    color: var(--user-text);
+    font-weight: 900;
+    font-size: 1rem;
+    white-space: nowrap;
+}
+
+.hotel-point-card__badge small {
+    font-size: 0.72rem;
+    font-weight: 700;
+    color: var(--user-muted);
+}
+
+.hotel-point-card__metrics {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 10px;
+}
+
+.hotel-point-metric {
+    padding: 10px 12px;
+    border-radius: 8px;
+    border: 1px solid color-mix(in srgb, var(--user-line) 82%, transparent);
+    background: var(--user-surface-2);
+}
+
+.hotel-point-metric__label {
+    display: block;
+    margin-bottom: 4px;
+    color: var(--user-muted);
+    font-size: 0.78rem;
+    font-weight: 700;
+}
+
+.hotel-point-metric strong {
+    color: var(--user-text);
+    font-size: 1rem;
+}
+
+.hotel-point-card__stay {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px 14px;
+    color: var(--user-muted);
+    font-size: 0.9rem;
+    font-weight: 600;
+}
+
+.hotel-point-card__stay i {
+    color: var(--user-accent);
+    margin-right: 4px;
+}
+
+.loyalty-hotel-movements h4 {
+    margin: 0 0 8px;
+    font-size: 0.92rem;
+    font-weight: 800;
+    color: var(--user-text);
+}
+
+.hotel-point-movement {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 10px 12px;
+    border-radius: 8px;
+    border: 1px solid color-mix(in srgb, var(--user-line) 84%, transparent);
+    background: var(--user-surface-2);
+}
+
+.hotel-point-movement + .hotel-point-movement {
+    margin-top: 8px;
+}
+
+.hotel-point-movement__title {
+    font-weight: 800;
+    color: var(--user-text);
+}
+
+.hotel-point-movement__meta {
+    margin-top: 2px;
+    color: var(--user-muted);
+    font-size: 0.86rem;
+}
+
+.hotel-point-movement__delta {
+    font-weight: 900;
+    white-space: nowrap;
+}
+
+.hotel-point-movement__delta.is-earned { color: #166534; }
+.hotel-point-movement__delta.is-spent { color: #991b1b; }
+
+.hotel-points-empty {
+    padding: 36px 24px;
+    border: 1px dashed color-mix(in srgb, var(--user-line) 80%, transparent);
+    border-radius: 12px;
+    background: var(--user-surface);
+    text-align: center;
+}
+
+.hotel-points-empty i {
+    font-size: 2rem;
+    color: var(--loyalty-gold);
+    margin-bottom: 10px;
+}
+
+.hotel-points-empty h3 {
+    margin: 0 0 8px;
+    color: var(--user-text);
+}
+
+.hotel-points-empty p {
+    margin: 0 0 16px;
+    color: var(--user-muted);
+    max-width: 420px;
+    margin-inline: auto;
+}

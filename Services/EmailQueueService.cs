@@ -223,6 +223,7 @@ public class EmailQueueService : IEmailQueueService
             "reservation_cancelled_partner" => "Rezervasyon İptali",
             "firma_reservation_created_company" => "Kurumsal Rezervasyon Alındı",
             "firma_reservation_created_partner" => "Yeni Kurumsal Rezervasyon",
+            "fatura_yuklendi" => "Faturanız yüklendi",
             _ => NormalizeSubjectTitle(fallback)
         };
     }
@@ -409,6 +410,7 @@ public class EmailQueueService : IEmailQueueService
             "firma_reservation_created_company" => "rezervasyon@otelturizm.com",
             "firma_reservation_created_partner" => "rezervasyon@otelturizm.com",
             "favorite_price_alert_match" => "bildiri@otelturizm.com",
+            "fatura_yuklendi" => "odeme@otelturizm.com",
             "contract_delivery" => "bilgi@otelturizm.com",
             "system_health_link_report" => "bildiri@otelturizm.com",
             _ => "info@otelturizm.com"

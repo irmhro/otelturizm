@@ -3,8 +3,10 @@
     Layout = "~/Views/Paneller/User/_UserPanelLayout.cshtml";
     ViewData["Title"] = "Puanlarim";
     var currentTier = string.IsNullOrWhiteSpace(Model.CurrentTierName) ? "Bronz" : Model.CurrentTierName;
+    var totalHotelPoints = Model.HotelPointBalances.Sum(static item => item.AvailablePoints);
 }
 
+<div class="user-loyalty-page loyalty-page">
 <section class="content-header">
     <div class="page-title">
         <h1>OtelPuan Programi</h1>
@@ -90,64 +92,97 @@
     </div>
 </section>
 
-@if (Model.HotelPointBalances.Count > 0)
-{
-    <section class="content-header">
+<section class="hotel-points-dashboard">
+    <div class="content-header hotel-points-dashboard__header">
         <div class="page-title">
             <h2>Otel Bazli Puanlarim</h2>
-            <p>Kazandiginiz puanlar otel bazindadir; yalnizca ilgili tesiste indirim olarak kullanilabilir.</p>
+            <p>Konakladiginiz otellerden kazandiginiz puanlar burada listelenir. Her otelin puani yalnizca o tesiste kullanilabilir.</p>
         </div>
-    </section>
+        <div class="hotel-points-dashboard__summary">
+            <div class="hotel-points-dashboard__summary-value">@totalHotelPoints.ToString("N0")</div>
+            <div class="hotel-points-dashboard__summary-label">Toplam otel puani</div>
+            <div class="hotel-points-dashboard__summary-meta">@Model.HotelPointBalances.Count otel</div>
+        </div>
+    </div>
 
-    <section class="features-grid loyalty-feature-grid">
-        @foreach (var hotelBalance in Model.HotelPointBalances)
-        {
-            <article class="feature-card">
-                <div class="feature-header">
-                    <div class="feature-icon feature-tone-gold"><i class="fas fa-hotel"></i></div>
-                    <div>
-                        <h3>@hotelBalance.HotelName</h3>
-                        <p class="text-muted small">@hotelBalance.HotelCity</p>
+    @if (Model.HotelPointBalances.Count == 0)
+    {
+        <div class="hotel-points-empty">
+            <i class="fas fa-hotel" aria-hidden="true"></i>
+            <h3>Henuz otel puani yok</h3>
+            <p>Rezervasyon tamamladikca konakladiginiz otellerden puan kazanir ve burada gorebilirsiniz.</p>
+            <a class="btn btn-primary" href="/oteller"><i class="fas fa-search"></i> Otel ara</a>
+        </div>
+    }
+    else
+    {
+        <div class="hotel-points-grid">
+            @foreach (var hotelBalance in Model.HotelPointBalances)
+            {
+                <article class="hotel-point-card">
+                    <div class="hotel-point-card__head">
+                        <div class="hotel-point-card__icon"><i class="fas fa-hotel" aria-hidden="true"></i></div>
+                        <div class="hotel-point-card__title">
+                            <h3>@hotelBalance.HotelName</h3>
+                            @if (!string.IsNullOrWhiteSpace(hotelBalance.HotelCity))
+                            {
+                                <p>@hotelBalance.HotelCity</p>
+                            }
+                        </div>
+                        <div class="hotel-point-card__badge">@hotelBalance.AvailablePoints.ToString("N0") <small>puan</small></div>
                     </div>
-                </div>
-                <div class="stats-mini-grid">
-                    <div class="stat-mini-card">
-                        <div class="stat-mini-content">
-                            <h3>@hotelBalance.AvailablePoints.ToString("N0")</h3>
-                            <p>Kullanilabilir puan</p>
+
+                    <div class="hotel-point-card__metrics">
+                        <div class="hotel-point-metric">
+                            <span class="hotel-point-metric__label">Toplam kazanilan</span>
+                            <strong>@hotelBalance.TotalEarned.ToString("N0")</strong>
+                        </div>
+                        <div class="hotel-point-metric">
+                            <span class="hotel-point-metric__label">Kullanilan</span>
+                            <strong>@hotelBalance.UsedPoints.ToString("N0")</strong>
+                        </div>
+                        <div class="hotel-point-metric">
+                            <span class="hotel-point-metric__label">Indirim</span>
+                            <strong>@(hotelBalance.DiscountPercent.HasValue ? $"%{hotelBalance.DiscountPercent.Value:N0}" : "—")</strong>
                         </div>
                     </div>
-                    <div class="stat-mini-card">
-                        <div class="stat-mini-content">
-                            <h3>@(hotelBalance.DiscountPercent.HasValue ? $"%{hotelBalance.DiscountPercent.Value:N0}" : "—")</h3>
-                            <p>Uygulanabilir indirim</p>
-                        </div>
-                    </div>
-                </div>
-                @if (hotelBalance.RecentMovements.Count > 0)
-                {
-                    <div class="loyalty-hotel-movements">
-                        <h4>Son hareketler</h4>
-                        @foreach (var movement in hotelBalance.RecentMovements)
+
+                    <div class="hotel-point-card__stay">
+                        @if (hotelBalance.StayCount > 0)
                         {
-                            <div class="alert-item">
-                                <div>
-                                    <div class="alert-hotel">@movement.Title</div>
-                                    <div class="alert-sub">@movement.DateText · @movement.Description</div>
-                                </div>
-                                <span class="alert-price">@movement.PointChangeText</span>
-                            </div>
+                            <span><i class="fas fa-bed"></i> @hotelBalance.StayCount konaklama</span>
+                        }
+                        @if (!string.IsNullOrWhiteSpace(hotelBalance.LastStayText))
+                        {
+                            <span><i class="far fa-calendar-check"></i> Son konaklama: @hotelBalance.LastStayText</span>
+                        }
+                        else if (!string.IsNullOrWhiteSpace(hotelBalance.LastEarnedText))
+                        {
+                            <span><i class="fas fa-coins"></i> Son kazanim: @hotelBalance.LastEarnedText</span>
                         }
                     </div>
-                }
-                else if (!string.IsNullOrWhiteSpace(hotelBalance.LastEarnedText))
-                {
-                    <p class="feature-empty">Son kazanim: @hotelBalance.LastEarnedText</p>
-                }
-            </article>
-        }
-    </section>
-}
+
+                    @if (hotelBalance.RecentMovements.Count > 0)
+                    {
+                        <div class="loyalty-hotel-movements">
+                            <h4>Son hareketler</h4>
+                            @foreach (var movement in hotelBalance.RecentMovements)
+                            {
+                                <div class="hotel-point-movement">
+                                    <div>
+                                        <div class="hotel-point-movement__title">@movement.Title</div>
+                                        <div class="hotel-point-movement__meta">@movement.DateText · @movement.Description</div>
+                                    </div>
+                                    <span class="hotel-point-movement__delta @(movement.PointChange >= 0 ? "is-earned" : "is-spent")">@movement.PointChangeText</span>
+                                </div>
+                            }
+                        </div>
+                    }
+                </article>
+            }
+        </div>
+    }
+</section>
 
 <section class="features-grid loyalty-feature-grid">
     <article class="feature-card">
@@ -459,7 +494,7 @@
             @foreach (var tier in Model.Tiers)
             {
                 <div class="tier-card @(tier.IsCurrent ? "active" : string.Empty)">
-                    <div class="tier-icon-sm tier-@tier.CssClass">@tier.Code[..1]</div>
+                    <div class="tier-icon-sm tier-@tier.CssClass">@(string.IsNullOrWhiteSpace(tier.Code) ? "?" : tier.Code[..1])</div>
                     <h4>@tier.Name @if (tier.IsCurrent) { <span class="tier-current-pill">Mevcut</span> }</h4>
                     <div class="tier-range">@tier.RangeText</div>
                     <ul class="tier-benefits">
@@ -473,6 +508,7 @@
         </div>
     </div>
 </section>
+</div>
 
 @section Scripts {
     @{

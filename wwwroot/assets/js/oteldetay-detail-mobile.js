@@ -91,8 +91,15 @@
 
         carousel.addEventListener('click', function (event) {
             if (event.target.closest('.room-carousel-dot')) return;
+            if (event.target.closest('.room-gallery-trigger')) return;
             var trigger = carousel.querySelector('.room-gallery-trigger');
-            if (trigger) trigger.click();
+            if (!trigger) return;
+            var startIdx = 0;
+            if (track && track.clientWidth > 0) {
+                startIdx = Math.round(track.scrollLeft / track.clientWidth);
+            }
+            trigger.setAttribute('data-room-gallery-start', String(startIdx));
+            trigger.click();
         });
     });
 

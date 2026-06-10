@@ -28,9 +28,30 @@
             <button type="submit" class="btn btn-primary">Şifreyi Güncelle</button>
         </div>
         <div class="security-form-grid">
-            <label><span>Mevcut Şifre</span><input class="form-control" name="CurrentPassword" type="password" autocomplete="current-password" /></label>
-            <label><span>Yeni Şifre</span><input class="form-control" name="NewPassword" type="password" autocomplete="new-password" /></label>
-            <label><span>Yeni Şifre Tekrar</span><input class="form-control" name="ConfirmPassword" type="password" autocomplete="new-password" /></label>
+            <label>
+                <span>Mevcut Şifre</span>
+                <div class="security-password-field">
+                    <input class="form-control" id="securityCurrentPassword" name="CurrentPassword" type="password" autocomplete="current-password" />
+                    <button type="button" class="toggle-password" data-toggle-target="securityCurrentPassword" aria-label="Şifreyi göster"><i class="far fa-eye"></i></button>
+                </div>
+            </label>
+            <label>
+                <span>Yeni Şifre</span>
+                <div class="security-password-field">
+                    <input class="form-control" id="securityNewPassword" name="NewPassword" type="password" autocomplete="new-password" />
+                    <button type="button" class="toggle-password" data-toggle-target="securityNewPassword" aria-label="Şifreyi göster"><i class="far fa-eye"></i></button>
+                </div>
+            </label>
+            <label>
+                <span>Yeni Şifre Tekrar</span>
+                <div class="security-password-field">
+                    <input class="form-control" id="securityConfirmPassword" name="ConfirmPassword" type="password" autocomplete="new-password" />
+                    <button type="button" class="toggle-password" data-toggle-target="securityConfirmPassword" aria-label="Şifreyi göster"><i class="far fa-eye"></i></button>
+                </div>
+            </label>
+        </div>
+        <div class="security-save-bar">
+            <button type="submit" class="btn btn-primary">Şifreyi Güncelle</button>
         </div>
     </form>
 
@@ -82,6 +103,9 @@
                 </div>
                 <button class="security-info-button" type="button" data-security-info="app"><i class="fas fa-circle-info"></i>Geliştirme notu</button>
             </label>
+        </div>
+        <div class="security-save-bar">
+            <button type="submit" class="btn btn-primary">Güvenlik tercihini kaydet</button>
         </div>
     </form>
 
@@ -233,6 +257,16 @@
         master.addEventListener('change', syncTwoFactorUi);
     }
     syncTwoFactorUi();
+    document.querySelectorAll('[data-toggle-target]').forEach((btn) => {
+        btn.addEventListener('click', () => {
+            const input = document.getElementById(btn.getAttribute('data-toggle-target'));
+            const icon = btn.querySelector('i');
+            if (!input || !icon) return;
+            const show = input.type === 'password';
+            input.type = show ? 'text' : 'password';
+            icon.className = show ? 'far fa-eye-slash' : 'far fa-eye';
+        });
+    });
     document.querySelectorAll('.security-channel-card:not(.is-disabled)').forEach((card) => {
         card.addEventListener('click', (event) => {
             if (event.target.closest('[data-security-info]')) return;

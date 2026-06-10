@@ -16,6 +16,14 @@
     </div>
 </section>
 
+<div class="payment-trust-note">
+    <i class="fas fa-shield-alt"></i>
+    <div>
+        <strong>Güvenli kart saklama</strong>
+        <p>Kart bilgileriniz 256-bit gelişmiş şifreleme ile korunur. CVV/CVC bilgisi hiçbir zaman saklanmaz; her kart için benzersiz güvenlik token'ı kullanılır.</p>
+    </div>
+</div>
+
 @if (TempData["UserPaymentSuccess"] is string success)
 {
     <div class="payment-alert success">@success</div>
@@ -59,6 +67,14 @@
                             {
                                 <span class="payment-status-pill">Varsayılan</span>
                             }
+                            else
+                            {
+                                <form method="post" asp-action="SetDefaultPaymentMethod">
+                                    @Html.AntiForgeryToken()
+                                    <input type="hidden" name="paymentMethodId" value="@method.PaymentMethodId" />
+                                    <button type="submit" class="btn-primary-soft">Varsayılan yap</button>
+                                </form>
+                            }
                             <form method="post" asp-action="DeletePaymentMethod">
                                 @Html.AntiForgeryToken()
                                 <input type="hidden" name="paymentMethodId" value="@method.PaymentMethodId" />
@@ -71,12 +87,12 @@
         </div>
     </article>
 
-    <form method="post" asp-action="SavePaymentMethod" class="payment-panel">
+    <form method="post" asp-action="SavePaymentMethod" class="payment-panel" autocomplete="off">
         @Html.AntiForgeryToken()
         <div class="payment-panel-head">
             <div>
                 <h2>Yeni Kart Ekle</h2>
-                <p>Kart bilgilerini maskeleme standardına uygun şekilde kaydet.</p>
+                <p>Kart numaranız maskelenerek gösterilir; tam numara AES-256 ile şifrelenir.</p>
             </div>
             <button type="submit" class="btn-primary-solid">
                 <i class="fas fa-save"></i>
@@ -84,13 +100,14 @@
             </button>
         </div>
         <div class="form-grid">
-            <label><span>Kart Etiketi</span><input asp-for="Form.CardLabel" type="text" placeholder="Kişisel Kart" /></label>
-            <label><span>Kart Sahibi</span><input asp-for="Form.CardHolder" type="text" placeholder="Ad Soyad" /></label>
+            <label><span>Kart Etiketi</span><input asp-for="Form.CardLabel" type="text" placeholder="Kişisel Kart" required /></label>
+            <label><span>Kart Sahibi</span><input asp-for="Form.CardHolder" type="text" placeholder="Ad Soyad" required autocomplete="cc-name" /></label>
+            <label class="form-grid-span-2"><span>Kart Numarası</span><input asp-for="Form.CardNumber" type="text" inputmode="numeric" autocomplete="cc-number" maxlength="19" placeholder="0000 0000 0000 0000" required /></label>
             <label><span>Marka</span><input asp-for="Form.Brand" type="text" placeholder="Visa / Mastercard" /></label>
-            <label><span>Son 4 Hane</span><input asp-for="Form.LastFourDigits" type="text" maxlength="4" inputmode="numeric" /></label>
-            <label><span>Son Kullanım Ay</span><input asp-for="Form.ExpiryMonth" type="number" min="1" max="12" /></label>
-            <label><span>Son Kullanım Yıl</span><input asp-for="Form.ExpiryYear" type="number" min="2026" max="2100" /></label>
+            <label><span>Son Kullanım Ay</span><input asp-for="Form.ExpiryMonth" type="number" min="1" max="12" required autocomplete="cc-exp-month" /></label>
+            <label><span>Son Kullanım Yıl</span><input asp-for="Form.ExpiryYear" type="number" min="2026" max="2100" required autocomplete="cc-exp-year" /></label>
         </div>
+        <p class="payment-form-note">Güvenlik nedeniyle CVV/CVC kodu saklanmaz.</p>
         <label class="toggle-row no-border">
             <div>
                 <h3>Varsayılan kart yap</h3>

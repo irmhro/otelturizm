@@ -44,6 +44,8 @@ public sealed class UserHotelPointsBalance
     public int UsedPoints { get; init; }
     public decimal? DiscountPercent { get; init; }
     public string? LastEarnedText { get; init; }
+    public int StayCount { get; init; }
+    public string? LastStayText { get; init; }
     public IReadOnlyList<UserHotelPointMovement> RecentMovements { get; init; } = Array.Empty<UserHotelPointMovement>();
 }
 

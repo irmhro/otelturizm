@@ -70,7 +70,8 @@ public interface IUserPanelService
     Task<bool> SaveTwoFactorAsync(long userId, UserTwoFactorForm form, CancellationToken cancellationToken = default);
     Task<UserInvoicesPageViewModel> GetInvoicesAsync(long userId, CancellationToken cancellationToken = default);
     Task<UserPaymentMethodsPageViewModel> GetPaymentMethodsAsync(long userId, CancellationToken cancellationToken = default);
-    Task<bool> SavePaymentMethodAsync(long userId, UserPaymentMethodForm form, CancellationToken cancellationToken = default);
+    Task<(bool Success, string Message)> SavePaymentMethodAsync(long userId, UserPaymentMethodForm form, CancellationToken cancellationToken = default);
     Task<bool> DeletePaymentMethodAsync(long userId, long paymentMethodId, CancellationToken cancellationToken = default);
+    Task<bool> SetDefaultPaymentMethodAsync(long userId, long paymentMethodId, CancellationToken cancellationToken = default);
     Task<(bool Success, string Message)> SaveBillingInfoAsync(long userId, UserBillingForm form, CancellationToken cancellationToken = default);
 }

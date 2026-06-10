@@ -20,6 +20,7 @@
 
     function closeMobileSidebar() {
         body.classList.remove('mobile-open');
+        syncMobileMenuState();
     }
 
     function toggleSidebar() {
@@ -42,10 +43,28 @@
         if (drawer) drawer.setAttribute('aria-hidden', 'true');
     }
 
+    function syncMobileMenuState() {
+        var mobileMenuBtn = document.getElementById('userMobileMenuBtn');
+        if (!mobileMenuBtn) return;
+        var open = body.classList.contains('mobile-open');
+        mobileMenuBtn.classList.toggle('active', open);
+        mobileMenuBtn.setAttribute('aria-expanded', open ? 'true' : 'false');
+    }
+
     if (toggleBtn) {
         toggleBtn.addEventListener('click', function (e) {
             e.stopPropagation();
             toggleSidebar();
+            syncMobileMenuState();
+        });
+    }
+
+    var mobileMenuBtn = document.getElementById('userMobileMenuBtn');
+    if (mobileMenuBtn) {
+        mobileMenuBtn.addEventListener('click', function (e) {
+            e.stopPropagation();
+            toggleSidebar();
+            syncMobileMenuState();
         });
     }
 

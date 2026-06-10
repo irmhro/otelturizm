@@ -240,7 +240,7 @@ public class UserPanelController : Controller
 
     [HttpPost("yorumlarim/guncelle")]
     [ValidateAntiForgeryToken]
-    public async Task<IActionResult> UpdateReview(UserReviewUpdateForm form, CancellationToken cancellationToken = default)
+    public async Task<IActionResult> UpdateReview(UserReviewUpdateForm form, string? status = null, string? searchTerm = null, CancellationToken cancellationToken = default)
     {
         if (CanAccessUserPanel())
         {
@@ -248,12 +248,12 @@ public class UserPanelController : Controller
             TempData[result.Success ? "UserReviewSuccess" : "UserReviewError"] = result.Message;
         }
 
-        return RedirectToAction(nameof(Reviews));
+        return RedirectToAction(nameof(Reviews), new { status, searchTerm, page = 1 });
     }
 
     [HttpPost("yorumlarim/sil")]
     [ValidateAntiForgeryToken]
-    public async Task<IActionResult> DeleteReview(UserReviewDeleteForm form, CancellationToken cancellationToken = default)
+    public async Task<IActionResult> DeleteReview(UserReviewDeleteForm form, string? status = null, string? searchTerm = null, CancellationToken cancellationToken = default)
     {
         if (CanAccessUserPanel())
         {
@@ -261,7 +261,7 @@ public class UserPanelController : Controller
             TempData[result.Success ? "UserReviewSuccess" : "UserReviewError"] = result.Message;
         }
 
-        return RedirectToAction(nameof(Reviews));
+        return RedirectToAction(nameof(Reviews), new { status, searchTerm, page = 1 });
     }
 
     [HttpGet("favorilerim")]
@@ -808,10 +808,8 @@ public class UserPanelController : Controller
     {
         if (CanAccessUserPanel())
         {
-            var success = await _userPanelService.SavePaymentMethodAsync(GetCurrentUserId(), form, cancellationToken);
-            TempData[success ? "UserPaymentSuccess" : "UserPaymentError"] = success
-                ? "Ödeme yöntemi eklendi."
-                : "Ödeme yöntemi eklenemedi.";
+            var result = await _userPanelService.SavePaymentMethodAsync(GetCurrentUserId(), form, cancellationToken);
+            TempData[result.Success ? "UserPaymentSuccess" : "UserPaymentError"] = result.Message;
         }
 
         return RedirectToAction(nameof(PaymentMethods));
@@ -839,6 +837,21 @@ public class UserPanelController : Controller
         {
             await _userPanelService.DeletePaymentMethodAsync(GetCurrentUserId(), paymentMethodId, cancellationToken);
             TempData["UserPaymentSuccess"] = "Ödeme yöntemi kaldırıldı.";
+        }
+
+        return RedirectToAction(nameof(PaymentMethods));
+    }
+
+    [HttpPost("odeme-yontemleri/varsayilan")]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> SetDefaultPaymentMethod(long paymentMethodId, CancellationToken cancellationToken)
+    {
+        if (CanAccessUserPanel())
+        {
+            var success = await _userPanelService.SetDefaultPaymentMethodAsync(GetCurrentUserId(), paymentMethodId, cancellationToken);
+            TempData[success ? "UserPaymentSuccess" : "UserPaymentError"] = success
+                ? "Varsayılan kart güncellendi."
+                : "Varsayılan kart ayarlanamadı.";
         }
 
         return RedirectToAction(nameof(PaymentMethods));

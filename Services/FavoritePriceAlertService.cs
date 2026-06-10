@@ -35,7 +35,7 @@ public sealed class FavoritePriceAlertService : IFavoritePriceAlertService
         }
 
         const string insertSql = @"
-            INSERT INTO user_favorite_price_alert_jobs
+            INSERT INTO [dbo].[KULLANICI_FAVORI_FIYAT_ALARM_ISLERI]
             ([OTEL_ID], [TARIH_BASLANGIC], [TARIH_BITIS], [TETIKLEYEN_KULLANICI_ID], [DURUM], [SON_ISLENEN_ALARM_ID], [ISLENEN_KAYIT_SAYISI], [DENEME_SAYISI], [PLANLI_CALISMA_TARIHI], [OLUSTURULMA_TARIHI], [GUNCELLENME_TARIHI])
             VALUES
             (@hotelId, @startDate, @endDate, @triggeredByUserId, 'Pending', 0, 0, 0, SYSUTCDATETIME(), SYSUTCDATETIME(), SYSUTCDATETIME());";
@@ -99,7 +99,7 @@ public sealed class FavoritePriceAlertService : IFavoritePriceAlertService
                 UserId = match.UserId,
                 RecipientEmail = match.Email,
                 TemplateCode = "favorite_price_alert_match",
-                RelatedTable = "user_favorite_price_alerts",
+                RelatedTable = "KULLANICI_FAVORI_FIYAT_ALARMLARI",
                 RelatedRecordId = match.AlertId,
                 Tokens = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
                 {
@@ -114,7 +114,7 @@ public sealed class FavoritePriceAlertService : IFavoritePriceAlertService
             }, cancellationToken);
 
             const string touchAlertSql = @"
-                UPDATE user_favorite_price_alerts
+                UPDATE [dbo].[KULLANICI_FAVORI_FIYAT_ALARMLARI]
                 SET [SON_TETIKLENEN_TARIH] = SYSUTCDATETIME(),
                     [SON_TETIKLENEN_FIYAT] = @price,
                     [GUNCELLENME_TARIHI] = CURRENT_TIMESTAMP
@@ -135,7 +135,7 @@ public sealed class FavoritePriceAlertService : IFavoritePriceAlertService
         }
 
         const string requeueSql = @"
-            UPDATE user_favorite_price_alert_jobs
+            UPDATE [dbo].[KULLANICI_FAVORI_FIYAT_ALARM_ISLERI]
             SET [DURUM] = 'Pending',
                 [SON_ISLENEN_ALARM_ID] = @cursor,
                 [ISLENEN_KAYIT_SAYISI] = [ISLENEN_KAYIT_SAYISI] + @processedCount,
@@ -154,7 +154,7 @@ public sealed class FavoritePriceAlertService : IFavoritePriceAlertService
     {
         const string sql = @"
             SELECT TOP (8) id, [OTEL_ID], [TARIH_BASLANGIC], [TARIH_BITIS], [SON_ISLENEN_ALARM_ID], [DENEME_SAYISI]
-            FROM user_favorite_price_alert_jobs
+            FROM [dbo].[KULLANICI_FAVORI_FIYAT_ALARM_ISLERI]
             WHERE [PLANLI_CALISMA_TARIHI] <= SYSUTCDATETIME()
               AND (
                     [DURUM] = 'Pending'
@@ -182,7 +182,7 @@ public sealed class FavoritePriceAlertService : IFavoritePriceAlertService
     private static async Task<bool> TryClaimJobAsync(SqlConnection connection, long jobId, CancellationToken cancellationToken)
     {
         const string sql = @"
-            UPDATE user_favorite_price_alert_jobs
+            UPDATE [dbo].[KULLANICI_FAVORI_FIYAT_ALARM_ISLERI]
             SET [DURUM] = 'Processing',
                 [DENEME_SAYISI] = [DENEME_SAYISI] + 1,
                 [GUNCELLENME_TARIHI] = CURRENT_TIMESTAMP
@@ -210,7 +210,7 @@ public sealed class FavoritePriceAlertService : IFavoritePriceAlertService
                 a.[HEDEF_MAKSIMUM_FIYAT],
                 MIN(COALESCE(NULLIF(ofm.[INDIRIMLI_FIYAT], 0), NULLIF(ofm.[GECELIK_FIYAT], 0))) AS matched_price,
                 MIN(ofm.[TARIH]) AS matched_date
-            FROM user_favorite_price_alerts a
+            FROM [dbo].[KULLANICI_FAVORI_FIYAT_ALARMLARI] a
             INNER JOIN [dbo].[KULLANICI_FAVORI_OTELLER] f ON f.[KULLANICI_ID] = a.[KULLANICI_ID] AND f.[OTEL_ID] = a.[OTEL_ID] AND COALESCE(f.[AKTIF_MI], 1) = 1
             INNER JOIN [dbo].[KULLANICILAR] u ON u.id = a.[KULLANICI_ID]
             INNER JOIN [dbo].[OTELLER] o ON o.id = a.[OTEL_ID]
@@ -261,7 +261,7 @@ public sealed class FavoritePriceAlertService : IFavoritePriceAlertService
     private static async Task MarkCompletedAsync(SqlConnection connection, long jobId, long cursor, int processedCount, CancellationToken cancellationToken)
     {
         const string sql = @"
-            UPDATE user_favorite_price_alert_jobs
+            UPDATE [dbo].[KULLANICI_FAVORI_FIYAT_ALARM_ISLERI]
             SET [DURUM] = 'Completed',
                 [SON_ISLENEN_ALARM_ID] = @cursor,
                 [ISLENEN_KAYIT_SAYISI] = [ISLENEN_KAYIT_SAYISI] + @processedCount,
@@ -278,7 +278,7 @@ public sealed class FavoritePriceAlertService : IFavoritePriceAlertService
     private static async Task MarkFailedAsync(SqlConnection connection, long jobId, string errorMessage, CancellationToken cancellationToken)
     {
         const string sql = @"
-            UPDATE user_favorite_price_alert_jobs
+            UPDATE [dbo].[KULLANICI_FAVORI_FIYAT_ALARM_ISLERI]
             SET [DURUM] = 'Pending',
                 [PLANLI_CALISMA_TARIHI] = DATEADD(
                     SECOND,

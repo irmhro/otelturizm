@@ -1,56 +1,224 @@
 @import url("./user-mobile-bundle.css");
 
-@media (max-width: 900px) {
-  .user-dashboard {
-    padding-bottom: max(16px, env(safe-area-inset-bottom, 0px));
-  }
-
-  .kullanici-panel-dashboard .ap-page-header {
-    align-items: stretch;
-    flex-direction: column;
-    padding: 18px;
-  }
-
-  .user-hero-actions {
-    justify-content: stretch;
-  }
-
-  .user-hero-actions .btn {
-    width: 100%;
-    min-height: var(--user-mob-touch, 44px);
-  }
-
-  .user-dashboard .btn {
-    min-height: var(--user-mob-touch, 44px);
-  }
-
-  .user-widget {
-    min-width: 0;
-  }
-
-  .user-table-card .table-responsive:has(.user-table--cards) {
-    display: block;
-  }
-
-  .user-dashboard .empty {
-    padding: 28px 16px max(24px, env(safe-area-inset-bottom, 0px));
-  }
-
-  .user-dashboard .empty-action {
-    flex-direction: column;
-    width: 100%;
-    max-width: 320px;
-    margin-inline: auto;
-  }
-
-  .user-dashboard .empty-action .btn {
-    width: 100%;
-  }
-}
-
 @media (max-width: 991px) {
     .kullanici-panel-dashboard {
         gap: 16px;
+    }
+
+    .kullanici-panel-dashboard .page-header {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 14px;
+    }
+
+    .kullanici-panel-dashboard .page-header h1 {
+        font-size: 20px;
+        line-height: 1.25;
+    }
+
+    .kullanici-panel-dashboard .page-header > .d-flex {
+        flex-direction: column;
+        width: 100%;
+    }
+
+    .kullanici-panel-dashboard .page-header .btn-primary-ap,
+    .kullanici-panel-dashboard .page-header .btn-outline-ap {
+        width: 100%;
+        justify-content: center;
+        min-height: var(--user-mob-touch, 44px);
+    }
+
+    .kullanici-panel-shell .kullanici-panel-dashboard .kpi-grid-pro {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 10px;
+    }
+
+    .kullanici-panel-shell .kullanici-panel-dashboard .kpi-card-pro {
+        padding: 10px 12px;
+        min-height: 0;
+    }
+
+    .kullanici-panel-shell .kullanici-panel-dashboard .kpi-title {
+        font-size: 10px;
+        line-height: 1.25;
+        max-width: calc(100% - 30px);
+    }
+
+    .kullanici-panel-shell .kullanici-panel-dashboard .kpi-icon {
+        width: 24px;
+        height: 24px;
+        font-size: 11px;
+        flex-shrink: 0;
+    }
+
+    .kullanici-panel-shell .kullanici-panel-dashboard .kpi-value {
+        font-size: 18px;
+        word-break: break-word;
+    }
+
+    .kullanici-panel-shell .kullanici-panel-dashboard .kpi-bottom {
+        font-size: 10px;
+        margin-top: 4px;
+        line-height: 1.3;
+    }
+
+    .kullanici-panel-dashboard .quick-actions-bar {
+        margin-inline: -2px;
+        padding-inline: 2px;
+    }
+
+    .kullanici-panel-dashboard .action-chip {
+        flex: 0 0 auto;
+        white-space: nowrap;
+        min-height: var(--user-mob-touch, 44px);
+    }
+
+    .kullanici-panel-dashboard .complex-grid {
+        gap: 16px;
+    }
+
+    .kullanici-panel-dashboard .panel-header {
+        flex-wrap: wrap;
+        padding: 12px 14px;
+        gap: 10px;
+    }
+
+    .kullanici-panel-dashboard .panel-header h3 {
+        font-size: 13px;
+        min-width: 0;
+    }
+
+    .kullanici-panel-dashboard .generic-form-grid {
+        grid-template-columns: 1fr;
+        padding: 12px 14px;
+        gap: 10px;
+    }
+
+    .kullanici-panel-dashboard .generic-form-grid .form-control,
+    .kullanici-panel-dashboard .generic-form-grid .btn {
+        min-height: var(--user-mob-touch, 44px);
+    }
+
+    .kullanici-panel-dashboard .generic-form-grid .form-actions {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .kullanici-panel-dashboard .generic-form-grid .form-actions .btn-outline-ap,
+    .kullanici-panel-dashboard .generic-form-grid .form-actions .btn-primary-ap {
+        width: 100%;
+        justify-content: center;
+    }
+
+    .kullanici-panel-dashboard .panel-body:has(.pro-table) {
+        overflow-x: visible;
+        padding: 12px;
+    }
+
+    .kullanici-panel-dashboard .pro-table {
+        display: block;
+        min-width: 0;
+        width: 100%;
+    }
+
+    .kullanici-panel-dashboard .pro-table thead {
+        display: none;
+    }
+
+    .kullanici-panel-dashboard .pro-table tbody {
+        display: grid;
+        gap: 12px;
+    }
+
+    .kullanici-panel-dashboard .pro-table tbody tr {
+        display: grid;
+        gap: 8px;
+        padding: 14px;
+        border: 1px solid var(--ap-border-main, #E2E8F0);
+        border-radius: 12px;
+        background: var(--ap-surface-card, #fff);
+        box-shadow: 0 4px 16px rgba(15, 23, 42, 0.05);
+        position: relative;
+        overflow: hidden;
+    }
+
+    .kullanici-panel-dashboard .pro-table tbody tr::before {
+        content: "";
+        position: absolute;
+        left: 0;
+        top: 0;
+        bottom: 0;
+        width: 3px;
+        background: var(--ap-info, #3B82F6);
+    }
+
+    .kullanici-panel-dashboard .pro-table tbody td {
+        display: flex;
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 4px;
+        padding: 0 0 0 6px;
+        border: 0;
+        background: transparent !important;
+        text-align: left !important;
+    }
+
+    .kullanici-panel-dashboard .pro-table tbody td::before {
+        font-size: 10px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.02em;
+        color: var(--ap-text-light, #64748B);
+    }
+
+    .kullanici-panel-dashboard .pro-table tbody td:nth-child(1)::before { content: "Rezervasyon"; }
+    .kullanici-panel-dashboard .pro-table tbody td:nth-child(2)::before { content: "Otel"; }
+    .kullanici-panel-dashboard .pro-table tbody td:nth-child(3)::before { content: "Konaklama"; }
+    .kullanici-panel-dashboard .pro-table tbody td:nth-child(4)::before { content: "Durum"; }
+    .kullanici-panel-dashboard .pro-table tbody td:nth-child(5)::before { content: "Tutar"; }
+    .kullanici-panel-dashboard .pro-table tbody td:nth-child(6)::before { content: "Aksiyon"; }
+
+    .kullanici-panel-dashboard .pro-table tbody td:nth-child(5) {
+        font-size: 16px;
+        font-weight: 800;
+        color: var(--ap-primary-dark, #0F172A);
+    }
+
+    .kullanici-panel-dashboard .pro-table tbody td:last-child {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 8px;
+        padding-top: 10px;
+        margin-top: 2px;
+        border-top: 1px solid #F1F5F9;
+    }
+
+    .kullanici-panel-dashboard .pro-table tbody td:last-child::before {
+        grid-column: 1 / -1;
+    }
+
+    .kullanici-panel-dashboard .pro-table tbody td:last-child a {
+        width: 100%;
+        justify-content: center;
+        min-height: 40px;
+    }
+
+    .kullanici-panel-dashboard .panel-card > .form-actions {
+        flex-direction: column;
+        align-items: stretch;
+        padding: 12px 14px;
+        gap: 10px;
+    }
+
+    .kullanici-panel-dashboard .panel-card > .form-actions .btn-outline-ap {
+        width: 100%;
+        justify-content: center;
+        min-height: var(--user-mob-touch, 44px);
+    }
+
+    .kullanici-panel-dashboard .panel-card > .form-actions .text-muted {
+        margin-right: 0 !important;
+        text-align: center;
     }
 
     .kullanici-panel-dashboard .ap-route-grid {
@@ -73,5 +241,153 @@
 
     .kullanici-panel-dashboard .ap-activity-item > small {
         grid-column: 2;
+    }
+
+    .kullanici-panel-dashboard .dashboard-favorite-grid {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+    }
+
+    .kullanici-panel-dashboard .dashboard-favorite-card {
+        display: grid;
+        grid-template-columns: 80px minmax(0, 1fr) auto;
+        align-items: center;
+        gap: 12px;
+        padding: 0;
+        border: 1px solid var(--ap-border-main, #E2E8F0);
+        border-radius: 0;
+        background: var(--ap-surface-card, #fff);
+        text-decoration: none;
+        color: inherit;
+        overflow: hidden;
+        min-height: 80px;
+    }
+
+    .kullanici-panel-dashboard .dashboard-favorite-card-media {
+        width: 80px;
+        height: 80px;
+        flex-shrink: 0;
+        background: #F1F5F9;
+        overflow: hidden;
+        border-radius: 0;
+    }
+
+    .kullanici-panel-dashboard .dashboard-favorite-card-media img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        display: block;
+        border-radius: 0;
+    }
+
+    .kullanici-panel-dashboard .dashboard-favorite-card-fallback {
+        width: 100%;
+        height: 100%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: linear-gradient(135deg, #FCE7F3, #FBCFE8);
+        color: var(--ap-pink, #EC4899);
+        font-size: 22px;
+        border-radius: 0;
+    }
+
+    .kullanici-panel-dashboard .dashboard-favorite-card-body {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+        min-width: 0;
+        padding: 10px 0;
+    }
+
+    .kullanici-panel-dashboard .dashboard-favorite-card-name {
+        font-size: 14px;
+        font-weight: 700;
+        color: var(--ap-primary-dark, #0F172A);
+        line-height: 1.25;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    .kullanici-panel-dashboard .dashboard-favorite-card-location,
+    .kullanici-panel-dashboard .dashboard-favorite-card-rating {
+        display: flex;
+        align-items: center;
+        gap: 5px;
+        font-size: 12px;
+        color: var(--ap-text-light, #64748B);
+        line-height: 1.3;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    .kullanici-panel-dashboard .dashboard-favorite-card-location i {
+        color: #94A3B8;
+        font-size: 11px;
+        flex-shrink: 0;
+    }
+
+    .kullanici-panel-dashboard .dashboard-favorite-card-rating i {
+        color: #F59E0B;
+        font-size: 11px;
+        flex-shrink: 0;
+    }
+
+    .kullanici-panel-dashboard .dashboard-favorite-card-chevron {
+        margin-right: 12px;
+        color: #94A3B8;
+        font-size: 12px;
+        flex-shrink: 0;
+    }
+}
+
+@media (max-width: 900px) {
+    .user-dashboard {
+        padding-bottom: max(16px, env(safe-area-inset-bottom, 0px));
+    }
+
+    .kullanici-panel-dashboard .ap-page-header {
+        align-items: stretch;
+        flex-direction: column;
+        padding: 18px;
+    }
+
+    .user-hero-actions {
+        justify-content: stretch;
+    }
+
+    .user-hero-actions .btn {
+        width: 100%;
+        min-height: var(--user-mob-touch, 44px);
+    }
+
+    .user-dashboard .btn {
+        min-height: var(--user-mob-touch, 44px);
+    }
+
+    .user-widget {
+        min-width: 0;
+    }
+
+    .user-table-card .table-responsive:has(.user-table--cards) {
+        display: block;
+    }
+
+    .user-dashboard .empty {
+        padding: 28px 16px max(24px, env(safe-area-inset-bottom, 0px));
+    }
+
+    .user-dashboard .empty-action {
+        flex-direction: column;
+        width: 100%;
+        max-width: 320px;
+        margin-inline: auto;
+    }
+
+    .user-dashboard .empty-action .btn {
+        width: 100%;
     }
 }

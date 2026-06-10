@@ -47,6 +47,24 @@
     max-width: 320px;
   }
 
+  .payment-trust-note {
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .form-grid-span-2 {
+    grid-column: 1 / -1;
+  }
+
+  .btn-primary-soft,
+  .action-row form {
+    width: 100%;
+  }
+
+  .payment-form-note {
+    margin: 0 16px 8px;
+  }
+
   .form-grid .form-control,
   .form-grid .form-select {
     min-height: var(--user-mob-touch, 44px);

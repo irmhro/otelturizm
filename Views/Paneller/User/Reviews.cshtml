@@ -31,7 +31,7 @@
     <section class="reviews-stat-grid" aria-label="Yorum özeti">
         <article class="reviews-stat reviews-stat--all">
             <span><i class="fas fa-list-check"></i></span>
-            <div><strong>@Model.TotalCount</strong><small>Listelenen</small></div>
+            <div><strong>@Model.EligibleCount</strong><small>Toplam konaklama</small></div>
         </article>
         <article class="reviews-stat reviews-stat--waiting">
             <span><i class="fas fa-hourglass-half"></i></span>
@@ -86,7 +86,7 @@
             <div class="empty reviews-empty">
                 <div class="empty-icon"><i class="fas fa-comment-slash"></i></div>
                 <p class="empty-title">Kayıt bulunamadı</p>
-                <p class="empty-subtitle text-muted">Filtreleri değiştir veya rezervasyonlarından yorum yazılabilir kayıt seç.</p>
+                <p class="empty-subtitle text-muted">Onaylı ve tamamlanan konaklamaların burada listelenir. Yorum bekleyen oteller için &quot;Yorum ekle&quot; butonunu kullan.</p>
                 <div class="empty-action">
                     <a asp-action="Reservations" class="btn btn-primary">Rezervasyonlarım</a>
                 </div>
@@ -153,11 +153,12 @@
                                                 <form method="post" asp-action="UpdateReview" class="review-update-form">
                                                     @Html.AntiForgeryToken()
                                                     <input type="hidden" name="ReviewId" value="@item.ReviewId.Value" />
-                                                    <label class="form-label">Yorum metni <small class="field-optional">Opsiyonel</small></label>
-                                                    <textarea name="Comment" class="form-control" rows="4" maxlength="4000">@item.ReviewText</textarea>
-                                                    <small class="review-optional-warning">Yorum yazmazsanız mevcut metin boş kaydedilir.</small>
+                                                    <input type="hidden" name="status" value="@Model.StatusFilter" />
+                                                    <input type="hidden" name="searchTerm" value="@Model.SearchTerm" />
+                                                    <label class="form-label">Yorum metni</label>
+                                                    <textarea name="Comment" class="form-control" rows="4" maxlength="4000" minlength="20" required>@item.ReviewText</textarea>
+                                                    <small class="text-muted">En az 20 karakter. @item.EditLimitText tarihine kadar düzenlenebilir.</small>
                                                     <div class="review-edit-panel-foot">
-                                                        <small class="text-muted">@item.EditLimitText tarihine kadar düzenlenebilir.</small>
                                                         <button type="submit" class="btn btn-primary btn-sm">Kaydet</button>
                                                     </div>
                                                 </form>
@@ -166,6 +167,8 @@
                                         <form method="post" asp-action="DeleteReview" class="review-delete-inline" onsubmit="return confirm('Yorumu silmek istediğinize emin misiniz?');">
                                             @Html.AntiForgeryToken()
                                             <input type="hidden" name="ReviewId" value="@item.ReviewId.Value" />
+                                            <input type="hidden" name="status" value="@Model.StatusFilter" />
+                                            <input type="hidden" name="searchTerm" value="@Model.SearchTerm" />
                                             <button type="submit" class="btn btn-outline-danger btn-sm"><i class="fas fa-trash me-1"></i>Sil</button>
                                         </form>
                                     }

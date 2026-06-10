@@ -276,6 +276,48 @@ public class HeaderBildiriService : IHeaderBildiriService
             FROM [dbo].[MESAJ_KONUSMALARI]
             WHERE [MISAFIR_KULLANICI_ID] = @userId
               AND [DURUM] <> 'Arşivlendi';";
+
+        const string invoiceSql = @"
+            IF OBJECT_ID(N'[dbo].[REZERVASYON_FATURALARI]', N'U') IS NULL
+            BEGIN
+                RETURN;
+            END
+
+            SELECT TOP (3)
+                rf.id,
+                COALESCE(NULLIF(r.[REZERVASYON_NO], ''), CAST(r.id AS nvarchar(30))) AS [REZERVASYON_NO],
+                COALESCE(o.[OTEL_ADI], N'Otel') AS [OTEL_ADI],
+                rf.[OLUSTURULMA_TARIHI]
+            FROM [dbo].[REZERVASYON_FATURALARI] rf
+            INNER JOIN [dbo].[REZERVASYONLAR] r ON r.id = rf.[REZERVASYON_ID]
+            INNER JOIN [dbo].[OTELLER] o ON o.id = rf.[OTEL_ID]
+            WHERE r.[KULLANICI_ID] = @userId
+              AND rf.[GUVENLI_DOSYA_ID] IS NOT NULL
+            ORDER BY rf.[OLUSTURULMA_TARIHI] DESC;";
+
+        await using (var invoiceCommand = new SqlCommand(invoiceSql, connection))
+        {
+            invoiceCommand.Parameters.AddWithValue("@userId", userId);
+            await using var reader = await invoiceCommand.ExecuteReaderAsync(cancellationToken);
+            while (await reader.ReadAsync(cancellationToken))
+            {
+                var invoiceId = reader.GetInt64(0);
+                var reservationNo = reader.GetString(1);
+                var hotelName = reader.GetString(2);
+                var uploadedAt = reader.GetDateTime(3);
+                Add(
+                    model,
+                    BuildItemKey("user-invoice", invoiceId.ToString(CultureInfo.InvariantCulture)),
+                    "fa-file-invoice",
+                    "Faturaniz yuklendi",
+                    $"{hotelName} konaklamaniz ({reservationNo}) icin fatura indirilebilir.",
+                    "success",
+                    RelativeTime(uploadedAt),
+                    "/panel/user/faturalarim",
+                    uploadedAt);
+            }
+        }
+
         await using (var command = new SqlCommand(unreadSql, connection))
         {
             command.Parameters.AddWithValue("@userId", userId);

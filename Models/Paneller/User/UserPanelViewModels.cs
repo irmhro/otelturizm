@@ -137,6 +137,7 @@ public class UserReservationReviewForm
 public class UserReviewsPageViewModel
 {
     public int TotalCount { get; set; }
+    public int EligibleCount { get; set; }
     public int WaitingReviewCount { get; set; }
     public int ReviewedCount { get; set; }
     public string StatusFilter { get; set; } = "all";
@@ -279,6 +280,8 @@ public class UserHotelPointsBalanceViewModel
     public int UsedPoints { get; set; }
     public decimal? DiscountPercent { get; set; }
     public string? LastEarnedText { get; set; }
+    public int StayCount { get; set; }
+    public string? LastStayText { get; set; }
     public List<UserHotelPointMovementViewModel> RecentMovements { get; set; } = new();
 }
 
@@ -601,6 +604,7 @@ public class UserPaymentMethodRowViewModel
     public long PaymentMethodId { get; set; }
     public string Label { get; set; } = string.Empty;
     public string DetailText { get; set; } = string.Empty;
+    public string MaskedPan { get; set; } = string.Empty;
     public bool IsDefault { get; set; }
 }
 
@@ -609,7 +613,7 @@ public class UserPaymentMethodForm
     public string CardLabel { get; set; } = string.Empty;
     public string CardHolder { get; set; } = string.Empty;
     public string Brand { get; set; } = "Visa";
-    public string LastFourDigits { get; set; } = string.Empty;
+    public string CardNumber { get; set; } = string.Empty;
     public int ExpiryMonth { get; set; }
     public int ExpiryYear { get; set; }
     public bool SetAsDefault { get; set; }

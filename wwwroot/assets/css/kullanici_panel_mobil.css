@@ -1,11 +1,48 @@
 /* Admin Panel v6 — mobil */
 @media (max-width: 991px) {
+    .kullanici-panel-shell .admin-shell-container {
+        overflow-x: hidden;
+    }
+
     .kullanici-panel-shell .admin-sidebar {
+        width: 90vw;
+        max-width: 90vw;
+        overflow-x: hidden;
         transform: translateX(-100%);
     }
 
     .kullanici-panel-shell.mobile-open .admin-sidebar {
         transform: translateX(0);
+    }
+
+    .kullanici-panel-shell .sidebar-scroll {
+        overflow-x: hidden;
+        min-width: 0;
+    }
+
+    .kullanici-panel-shell .sidebar-user-line > div {
+        min-width: 0;
+        flex: 1;
+        overflow: hidden;
+    }
+
+    .kullanici-panel-shell .sidebar-user-line span {
+        max-width: 100%;
+    }
+
+    .kullanici-panel-shell .nav-main-link {
+        min-width: 0;
+    }
+
+    .kullanici-panel-shell .nav-link-left {
+        min-width: 0;
+        overflow: hidden;
+    }
+
+    .kullanici-panel-shell .nav-link-left > span {
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
     }
 
     .kullanici-panel-shell .main-layout {
@@ -73,21 +110,22 @@
         border-top: 1px solid var(--ap-border-main, #E2E8F0);
         padding: 6px 4px calc(6px + env(safe-area-inset-bottom));
         box-shadow: 0 -4px 20px rgba(15, 23, 42, 0.08);
-        overflow-x: auto;
-        -webkit-overflow-scrolling: touch;
+    }
+
+    .kullanici-panel-shell .user-mobile-nav {
+        overflow: hidden;
     }
 
     .kullanici-panel-shell .admin-mobile-nav a,
     .kullanici-panel-shell .admin-mobile-nav button {
-        flex: 1 0 auto;
-        min-width: 56px;
-        max-width: 80px;
+        flex: 1 1 0;
+        min-width: 0;
         display: flex;
         flex-direction: column;
         align-items: center;
         justify-content: center;
         gap: 3px;
-        padding: 6px 4px;
+        padding: 6px 2px;
         font-size: 10px;
         font-weight: 600;
         color: #64748B;
@@ -96,24 +134,33 @@
         background: transparent;
         border-radius: 8px;
         cursor: pointer;
+        line-height: 1.15;
+        text-align: center;
+    }
+
+    .kullanici-panel-shell .user-mobile-nav a span,
+    .kullanici-panel-shell .user-mobile-nav button span {
+        max-width: 100%;
+        font-size: 9px;
+        letter-spacing: -0.01em;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
     }
 
     .kullanici-panel-shell .admin-mobile-nav a i,
     .kullanici-panel-shell .admin-mobile-nav button i {
         font-size: 16px;
+        flex-shrink: 0;
     }
 
     .kullanici-panel-shell .admin-mobile-nav a.active,
     .kullanici-panel-shell .admin-mobile-nav a:hover,
-    .kullanici-panel-shell .admin-mobile-nav button:hover {
+    .kullanici-panel-shell .admin-mobile-nav button:hover,
+    .kullanici-panel-shell .admin-mobile-nav button.active,
+    .kullanici-panel-shell.mobile-open .user-mobile-nav [data-user-mobile-menu] {
         color: var(--ap-primary-red, #DC2626);
         background: #FFF5F5;
-    }
-
-    .kullanici-panel-shell .admin-mobile-nav .panel-mobile-logout-form {
-        flex: 1 0 auto;
-        margin: 0;
-        min-width: 56px;
     }
 }
 

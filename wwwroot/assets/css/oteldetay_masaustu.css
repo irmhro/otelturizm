@@ -3086,6 +3086,48 @@
         padding: 0 16px;
     }
 
+    .oteldetay-page .detail-header.hotel-title-section .detail-weather-strip--header {
+        display: none !important;
+    }
+
+    .oteldetay-page .detail-about__weather-row {
+        width: 100%;
+        padding: 0 16px 14px;
+        box-sizing: border-box;
+    }
+
+    .oteldetay-page .detail-about__weather-row .detail-weather-strip--standalone {
+        display: flex !important;
+        width: 100%;
+        padding: 12px 16px;
+        border-radius: 14px;
+        border: 1px solid var(--od-border, #EBE9E4);
+        background: #fff;
+        color: var(--od-dark, #1A1919);
+        box-shadow: 0 4px 16px rgba(26, 25, 25, 0.06);
+        cursor: pointer;
+    }
+
+    .oteldetay-page .detail-about__weather-row .detail-weather-strip__days {
+        display: flex;
+        width: 100%;
+        justify-content: space-between;
+    }
+
+    .oteldetay-page .detail-about__weather-row .detail-weather-strip__day {
+        flex: 1 1 0;
+        flex-direction: row;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        border-left-color: var(--od-border, #EBE9E4);
+    }
+
+    .oteldetay-page .detail-about__weather-row .detail-weather-strip__temps {
+        flex-direction: row;
+        gap: 4px;
+    }
+
     .oteldetay-page .detail-weather-strip--about,
     .oteldetay-page .od-about-features,
     .oteldetay-page .od-about-actions {

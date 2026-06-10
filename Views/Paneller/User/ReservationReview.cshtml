@@ -79,9 +79,8 @@
             </div>
 
             <label class="user-review-field">
-                <span>Yorumunuz <small class="field-optional">Opsiyonel</small></span>
-                <textarea asp-for="Form.Comment" rows="5" maxlength="4000" placeholder="İsterseniz oda, temizlik, konum, personel ve fiyat deneyiminizi yazın."></textarea>
-                <small class="review-optional-warning" data-review-empty-warning hidden>Yorum yazmadınız; sadece yıldız puanlarınız gönderilecek.</small>
+                <span>Yorumunuz</span>
+                <textarea asp-for="Form.Comment" rows="5" maxlength="4000" minlength="20" required placeholder="En az 20 karakter. Oda, temizlik, konum, personel ve fiyat deneyiminizi yazın."></textarea>
             </label>
 
             <div class="user-review-actions">
@@ -98,18 +97,6 @@
 @section Scripts {
     <script nonce="@(Context.Items["CspNonce"] as string)">
         (() => {
-            const form = document.querySelector('.user-review-form');
-            const comment = form?.querySelector('textarea[name="Form.Comment"]');
-            const emptyWarning = form?.querySelector('[data-review-empty-warning]');
-            form?.addEventListener('submit', () => {
-                if (comment && emptyWarning && !comment.value.trim()) {
-                    emptyWarning.hidden = false;
-                }
-            });
-            comment?.addEventListener('input', () => {
-                if (emptyWarning) emptyWarning.hidden = Boolean(comment.value.trim());
-            });
-
             document.querySelectorAll('[data-star-rating]').forEach((rating) => {
                 const value = rating.querySelector('.star-rating-value');
                 const suffix = rating.dataset.scoreSuffix || '';

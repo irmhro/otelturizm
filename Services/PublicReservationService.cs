@@ -29,6 +29,7 @@ public class PublicReservationService : IPublicReservationService
     private readonly IDawnSurpriseService _dawnSurpriseService;
     private readonly IUserLoyaltyPointsService _loyaltyPointsService;
     private readonly IHotelPointsService _hotelPointsService;
+    private readonly IPaymentCardService _paymentCardService;
     private readonly IHttpContextAccessor _httpContextAccessor;
     private readonly ILogger<PublicReservationService> _logger;
 
@@ -43,6 +44,7 @@ public class PublicReservationService : IPublicReservationService
         IDawnSurpriseService dawnSurpriseService,
         IUserLoyaltyPointsService loyaltyPointsService,
         IHotelPointsService hotelPointsService,
+        IPaymentCardService paymentCardService,
         IHttpContextAccessor httpContextAccessor,
         ILogger<PublicReservationService> logger)
     {
@@ -57,6 +59,7 @@ public class PublicReservationService : IPublicReservationService
         _dawnSurpriseService = dawnSurpriseService;
         _loyaltyPointsService = loyaltyPointsService;
         _hotelPointsService = hotelPointsService;
+        _paymentCardService = paymentCardService;
         _httpContextAccessor = httpContextAccessor;
         _logger = logger;
     }
@@ -562,6 +565,27 @@ public class PublicReservationService : IPublicReservationService
             };
         }
 
+        if (string.Equals(form.PaymentMethod?.Trim(), PublicSavedPaymentMethods.SavedCard, StringComparison.OrdinalIgnoreCase))
+        {
+            if (form.SavedPaymentCardId is not > 0)
+            {
+                return new PublicReservationResult
+                {
+                    Message = "Kayitli kart secimi zorunludur.",
+                    RedirectUrl = $"/oteller/{hotel.Slug}"
+                };
+            }
+
+            if (!await _paymentCardService.UserOwnsActiveCardAsync(authenticatedUserId, form.SavedPaymentCardId.Value, cancellationToken))
+            {
+                return new PublicReservationResult
+                {
+                    Message = "Secilen kayitli kart bulunamadi veya kullanilamaz.",
+                    RedirectUrl = $"/oteller/{hotel.Slug}"
+                };
+            }
+        }
+
         var readyDraft = CloneDraftRequest(draftRequest);
         readyDraft.Status = "Taslak";
         readyDraft.GuestFullName = userProfile.FullName;
@@ -740,6 +764,17 @@ public class PublicReservationService : IPublicReservationService
                     splitPlan.Lines.Add(new ReservationPaymentLine { MethodKod = OdemeYontemiKodlari.HavaleEft, Tutar = havale, HavaleReferans = splitPlan.BankTransferReference });
                 }
                 await InsertReservationPaymentLinesAsync(connection, (SqlTransaction)transaction, reservationId, splitPlan, cancellationToken);
+                if (string.Equals(paymentPlan.LegacyOdemeYontemi, PublicSavedPaymentMethods.SavedCard, StringComparison.OrdinalIgnoreCase)
+                    && form.SavedPaymentCardId is > 0)
+                {
+                    await _paymentCardService.CreateReservationSnapshotAsync(
+                        connection,
+                        (SqlTransaction)transaction,
+                        reservationId,
+                        authenticatedUserId,
+                        form.SavedPaymentCardId.Value,
+                        cancellationToken);
+                }
                 createdReservationIds.Add(reservationId);
                 createdReservationAwards.Add((reservationId, pricing.TotalAmount));
                 createdReservationNos.Add(reservationNo);
@@ -1607,6 +1642,24 @@ public class PublicReservationService : IPublicReservationService
                     lines: new List<ReservationPaymentLine>
                     {
                         new() { MethodKod = OdemeYontemiKodlari.KrediKarti, Tutar = totalAmount }
+                    });
+                return true;
+
+            case PublicSavedPaymentMethods.SavedCard:
+                if (form.SavedPaymentCardId is not > 0)
+                {
+                    errorMessage = "Kayitli kart secin.";
+                    return false;
+                }
+
+                plan = BuildPlanCore(
+                    legacyOdemeYontemi: PublicSavedPaymentMethods.SavedCard,
+                    kapida: 0,
+                    online: totalAmount,
+                    havale: 0,
+                    lines: new List<ReservationPaymentLine>
+                    {
+                        new() { MethodKod = OdemeYontemiKodlari.SanalPos, Tutar = totalAmount }
                     });
                 return true;
 

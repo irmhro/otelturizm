@@ -110,4 +110,76 @@
   .inline-form-grid .form-select {
     min-height: var(--user-mob-touch, 44px);
   }
+
+  .hotel-points-dashboard__header {
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .hotel-points-dashboard__summary {
+    width: 100%;
+    min-width: 0;
+  }
+
+  .hotel-points-grid {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+
+  .hotel-point-card {
+    padding: 14px;
+    gap: 12px;
+  }
+
+  .hotel-point-card__head {
+    flex-wrap: wrap;
+  }
+
+  .hotel-point-card__badge {
+    width: 100%;
+    text-align: center;
+  }
+
+  .hotel-point-card__metrics {
+    grid-template-columns: 1fr;
+    gap: 8px;
+  }
+
+  .hotel-point-metric {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    min-height: var(--user-mob-touch, 44px);
+  }
+
+  .hotel-point-metric__label {
+    margin-bottom: 0;
+  }
+
+  .hotel-point-card__stay {
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .hotel-point-movement {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .hotel-point-movement__delta {
+    align-self: flex-start;
+    padding: 4px 10px;
+    border-radius: 999px;
+    background: var(--user-surface);
+  }
+
+  .hotel-points-empty {
+    padding: 28px 16px max(24px, env(safe-area-inset-bottom, 0px));
+  }
+
+  .hotel-points-empty .btn {
+    width: 100%;
+    min-height: var(--user-mob-touch, 44px);
+  }
 }

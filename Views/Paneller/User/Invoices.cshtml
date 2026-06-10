@@ -62,7 +62,11 @@
                                 <td class="text-end" data-label="İşlem">
                                     @if (row.HasInvoice && !string.IsNullOrWhiteSpace(row.DownloadUrl))
                                     {
-                                        <a class="btn btn-sm btn-primary btn-pill" href="@row.DownloadUrl" target="_blank" rel="noopener">İndir</a>
+                                        @if (row.IsPdf)
+                                        {
+                                            <a class="btn btn-sm btn-outline-primary btn-pill" href="@row.DownloadUrl" target="_blank" rel="noopener">Görüntüle</a>
+                                        }
+                                        <a class="btn btn-sm btn-primary btn-pill user-invoice-btn-download" href="@row.DownloadUrl" target="_blank" rel="noopener">İndir</a>
                                     }
                                 </td>
                             </tr>
@@ -101,7 +105,11 @@
                         <a class="btn btn-outline-primary btn-pill" href="/panel/user/rezervasyonlarim">Rezervasyon</a>
                         @if (row.HasInvoice && !string.IsNullOrWhiteSpace(row.DownloadUrl))
                         {
-                            <a class="btn btn-primary btn-pill" href="@row.DownloadUrl" target="_blank" rel="noopener"><i class="fas fa-download me-2"></i>İndir</a>
+                            @if (row.IsPdf)
+                            {
+                                <a class="btn btn-outline-primary btn-pill user-invoice-btn-touch" href="@row.DownloadUrl" target="_blank" rel="noopener"><i class="fas fa-eye me-2"></i>Görüntüle</a>
+                            }
+                            <a class="btn btn-primary btn-pill user-invoice-btn-download" href="@row.DownloadUrl" target="_blank" rel="noopener"><i class="fas fa-download me-2"></i>İndir</a>
                         }
                     </div>
                 </article>

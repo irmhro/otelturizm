@@ -1378,28 +1378,94 @@
         display: none !important;
     }
 
-    .oteldetay-page .detail-about__head-row .detail-weather-strip--about {
-        flex: 0 0 auto;
+    .oteldetay-page .detail-about__weather-row {
+        width: 100%;
+        padding: 0 16px 12px;
+        box-sizing: border-box;
+    }
+
+    .oteldetay-page .detail-about__weather-row .detail-weather-strip--standalone {
         display: flex !important;
-        align-items: stretch;
-        margin: 0;
-        padding: 6px 8px;
+        width: 100%;
+        padding: 10px 12px;
+        border-radius: 14px;
         border: 1px solid var(--od-border, #EBE9E4);
-        border-radius: 12px;
-        background: rgba(255, 255, 255, 0.96);
+        background: rgba(255, 255, 255, 0.98);
         color: var(--od-dark, #1A1919);
         box-shadow: 0 4px 14px rgba(26, 25, 25, 0.05);
         cursor: pointer;
     }
 
-    .oteldetay-page .detail-about__head-row .detail-weather-strip--about .detail-weather-strip__day {
-        border-left-color: var(--od-border, #EBE9E4);
-        padding: 0 6px;
+    .oteldetay-page .detail-about__weather-row .detail-weather-strip__days {
+        display: flex;
+        width: 100%;
+        justify-content: space-between;
+        gap: 0;
     }
 
-    .oteldetay-page .detail-about__head-row .detail-weather-strip--about .detail-weather-strip__label {
+    .oteldetay-page .detail-about__weather-row .detail-weather-strip__day {
+        flex: 1 1 0;
+        flex-direction: row;
+        flex-wrap: nowrap;
+        align-items: center;
+        justify-content: center;
+        gap: 6px;
+        min-width: 0;
+        padding: 0 8px;
+        border-left: 1px solid var(--od-border, #EBE9E4);
+    }
+
+    .oteldetay-page .detail-about__weather-row .detail-weather-strip__day:first-child {
+        border-left: 0;
+        padding-left: 0;
+    }
+
+    .oteldetay-page .detail-about__weather-row .detail-weather-strip__day:last-child {
+        padding-right: 0;
+    }
+
+    .oteldetay-page .detail-about__weather-row .detail-weather-strip__label {
+        color: var(--od-muted, #6E6E77);
+        font-size: 11px;
+        font-weight: 700;
+        opacity: 1;
+        white-space: nowrap;
+    }
+
+    .oteldetay-page .detail-about__weather-row .detail-weather-strip__day i {
+        font-size: 14px;
+        flex-shrink: 0;
+    }
+
+    .oteldetay-page .detail-about__weather-row .detail-weather-strip__temps {
+        flex-direction: row;
+        align-items: baseline;
+        gap: 4px;
+    }
+
+    .oteldetay-page .detail-about__weather-row .detail-weather-strip__temps strong {
+        font-size: 13px;
+        font-weight: 800;
+    }
+
+    .oteldetay-page .detail-about__weather-row .detail-weather-strip__temps small {
+        font-size: 11px;
+        font-weight: 600;
         color: var(--od-muted, #6E6E77);
         opacity: 1;
+    }
+
+    .oteldetay-page .detail-about__weather-row .detail-weather-strip__day.is-rainy i {
+        color: #2563eb;
+    }
+
+    .oteldetay-page .detail-about__weather-row .detail-weather-strip__day.is-sunny i {
+        color: #f59e0b;
+    }
+
+    .oteldetay-page .detail-about__weather-row .detail-weather-strip__day.is-snowy i,
+    .oteldetay-page .detail-about__weather-row .detail-weather-strip__day.is-cloudy i {
+        color: #64748b;
     }
 
     .oteldetay-page .od-section--about .hotel-about-location {
@@ -5507,47 +5573,7 @@
     }
 
     .oteldetay-page .detail-header.hotel-title-section .detail-weather-strip--header {
-        flex: 0 0 auto;
-        display: flex !important;
-        align-items: stretch;
-        margin: 0;
-        padding: 6px 8px;
-        border: 1px solid var(--od-border, #EBE9E4);
-        border-radius: 12px;
-        background: rgba(255, 255, 255, 0.96);
-        color: var(--od-dark, #1A1919);
-        box-shadow: 0 4px 14px rgba(26, 25, 25, 0.05);
-        cursor: pointer;
-    }
-
-    .oteldetay-page .detail-header.hotel-title-section .detail-weather-strip--header .detail-weather-strip__days {
-        justify-content: flex-end;
-    }
-
-    .oteldetay-page .detail-header.hotel-title-section .detail-weather-strip--header .detail-weather-strip__day {
-        border-left-color: var(--od-border, #EBE9E4);
-        padding: 0 6px;
-    }
-
-    .oteldetay-page .detail-header.hotel-title-section .detail-weather-strip--header .detail-weather-strip__label {
-        color: var(--od-muted, #6E6E77);
-        opacity: 1;
-    }
-
-    .oteldetay-page .detail-header.hotel-title-section .detail-weather-strip--header .detail-weather-strip__day.is-rainy i {
-        color: #2563eb;
-    }
-
-    .oteldetay-page .detail-header.hotel-title-section .detail-weather-strip--header .detail-weather-strip__day.is-sunny i {
-        color: #f59e0b;
-    }
-
-    .oteldetay-page .detail-header.hotel-title-section .detail-weather-strip--header .detail-weather-strip__day.is-snowy i {
-        color: #38bdf8;
-    }
-
-    .oteldetay-page .detail-header.hotel-title-section .detail-weather-strip--header .detail-weather-strip__day.is-cloudy i {
-        color: #64748b;
+        display: none !important;
     }
 
     .oteldetay-page .detail-header.hotel-title-section .detail-header-location span {

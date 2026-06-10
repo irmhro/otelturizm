@@ -229,7 +229,7 @@ public class UserFavoriteService : IUserFavoriteService
                 WHERE ot.[AKTIF_MI] = 1
                 GROUP BY ot.[OTEL_ID]
             ) pf ON pf.[OTEL_ID] = o.id
-            LEFT JOIN user_favorite_price_alerts a
+            LEFT JOIN [dbo].[KULLANICI_FAVORI_FIYAT_ALARMLARI] a
                 ON a.[KULLANICI_ID] = f.[KULLANICI_ID]
                AND a.[OTEL_ID] = f.[OTEL_ID]
                AND COALESCE(a.[AKTIF_MI], 1) = 1
@@ -380,11 +380,26 @@ public class UserFavoriteService : IUserFavoriteService
             {
                 if (!priceMap.TryGetValue(hotel.HotelId, out var effectivePrice) || effectivePrice <= 0m)
                 {
+                    if (hotel.StartingPrice is > 0m)
+                    {
+                        hotel.NightlyPrice = hotel.StartingPrice;
+                        hotel.NightlyPriceText = $"TRY {hotel.StartingPrice.Value:N0}";
+                        hotel.PriceText = hotel.NightlyPriceText;
+                    }
+                    else
+                    {
+                        hotel.NightlyPriceText = "Teklif Al";
+                    }
+
+                    hotel.PriceDateText = $"{today:dd MMMM yyyy} itibariyle";
                     continue;
                 }
 
                 hotel.StartingPrice = effectivePrice;
-                hotel.PriceText = $"TRY {effectivePrice:N0}";
+                hotel.NightlyPrice = effectivePrice;
+                hotel.NightlyPriceText = $"TRY {effectivePrice:N0}";
+                hotel.PriceText = hotel.NightlyPriceText;
+                hotel.PriceDateText = $"{today:dd MMMM yyyy} itibariyle";
             }
         }
 
@@ -504,7 +519,7 @@ public class UserFavoriteService : IUserFavoriteService
         if (isActive)
         {
             const string disableAlertSql = @"
-                UPDATE user_favorite_price_alerts
+                UPDATE [dbo].[KULLANICI_FAVORI_FIYAT_ALARMLARI]
                 SET [AKTIF_MI] = 0,
                     [GUNCELLENME_TARIHI] = CURRENT_TIMESTAMP
                 WHERE [KULLANICI_ID] = @userId
@@ -566,7 +581,7 @@ public class UserFavoriteService : IUserFavoriteService
         if (!form.Enabled)
         {
             const string disableSql = @"
-                UPDATE user_favorite_price_alerts
+                UPDATE [dbo].[KULLANICI_FAVORI_FIYAT_ALARMLARI]
                 SET [AKTIF_MI] = 0,
                     [GUNCELLENME_TARIHI] = CURRENT_TIMESTAMP
                 WHERE [KULLANICI_ID] = @userId
@@ -609,7 +624,7 @@ public class UserFavoriteService : IUserFavoriteService
         }
 
         const string upsertSql = @"
-            MERGE user_favorite_price_alerts AS target
+            MERGE [dbo].[KULLANICI_FAVORI_FIYAT_ALARMLARI] AS target
             USING (SELECT @userId AS [KULLANICI_ID], @hotelId AS [OTEL_ID]) AS source
             ON target.[KULLANICI_ID] = source.[KULLANICI_ID] AND target.[OTEL_ID] = source.[OTEL_ID]
             WHEN MATCHED THEN
@@ -650,7 +665,7 @@ public class UserFavoriteService : IUserFavoriteService
         await connection.OpenAsync(cancellationToken);
 
         const string deleteSql = @"
-            DELETE FROM user_favorite_price_alerts
+            DELETE FROM [dbo].[KULLANICI_FAVORI_FIYAT_ALARMLARI]
             WHERE [KULLANICI_ID] = @userId
               AND [OTEL_ID] = @hotelId;";
         await using var command = new SqlCommand(deleteSql, connection);

@@ -245,7 +245,9 @@
                                             data-request-note="@(row.RequestNote ?? string.Empty)"
                                             data-cancellation-reason="@(row.CancellationReason ?? string.Empty)"
                                             data-cancellation-time="@(row.CancellationTimeText ?? string.Empty)"
-                                            data-discount-reason="@(row.DiscountReasonLabel ?? string.Empty)">
+                                            data-discount-reason="@(row.DiscountReasonLabel ?? string.Empty)"
+                                            data-has-saved-card="@(row.HasSavedPaymentCard ? "1" : "0")"
+                                            data-reservation-id="@row.ReservationId">
                                         Detay
                                     </button>
                                     @if (row.CanMessageGuest)
@@ -346,8 +348,20 @@
                         <tr><th>Yöntem</th><td id="reservation-detail-payment-method">-</td></tr>
                         <tr><th>Tutar</th><td class="fw-bold" id="reservation-detail-total-table">-</td></tr>
                         <tr><th>İndirim nedeni</th><td id="reservation-detail-discount-reason">-</td></tr>
+                        <tr id="reservation-detail-saved-card-row" hidden><th>Kayıtlı kart</th><td><button type="button" class="btn btn-outline-primary btn-sm" id="reservation-detail-view-card">Kart bilgisini görüntüle</button></td></tr>
                     </tbody>
                 </table>
+                <div id="reservation-detail-card-panel" class="partner-saved-card-panel" hidden>
+                    <p id="reservation-detail-card-message" class="text-muted small mb-2"></p>
+                    <table class="partner-dialog-detail-table">
+                        <tbody>
+                            <tr><th>Kart sahibi</th><td id="reservation-detail-card-holder">-</td></tr>
+                            <tr><th>Kart numarası</th><td id="reservation-detail-card-number">-</td></tr>
+                            <tr><th>Son kullanma</th><td id="reservation-detail-card-expiry">-</td></tr>
+                            <tr><th>Marka</th><td id="reservation-detail-card-brand">-</td></tr>
+                        </tbody>
+                    </table>
+                </div>
             </section>
             <section class="partner-dialog-panel">
                 <h4><i class="fas fa-database me-2"></i>Kayıt</h4>
@@ -462,6 +476,11 @@
     const detailDialog = document.getElementById('partner-reservation-detail-dialog');
     const rejectDialog = document.getElementById('partner-reservation-reject-dialog');
     const messageDialog = document.getElementById('partner-reservation-message-dialog');
+    const viewCardButton = document.getElementById('reservation-detail-view-card');
+    const cardPanel = document.getElementById('reservation-detail-card-panel');
+    const cardMessage = document.getElementById('reservation-detail-card-message');
+    let activeReservationId = 0;
+    let activeHotelId = @Model.Shell.SelectedHotelId;
     document.querySelectorAll('[data-partner-filter-form] select[name="status"], [data-partner-filter-form] select[name="pageSize"]').forEach((select) => {
         select.addEventListener('change', () => select.form?.requestSubmit());
     });
@@ -490,8 +509,54 @@
             document.getElementById('reservation-detail-discount-reason').textContent = button.dataset.discountReason || 'Uygulanan indirim yok';
             document.getElementById('reservation-detail-guest-note').textContent = button.dataset.guestNote || 'Misafir notu bulunmuyor.';
             document.getElementById('reservation-detail-request-note').textContent = button.dataset.requestNote || 'Ek talep bulunmuyor.';
+            activeReservationId = Number(button.dataset.reservationId || '0');
+            const savedCardRow = document.getElementById('reservation-detail-saved-card-row');
+            const hasSavedCard = button.dataset.hasSavedCard === '1';
+            if (savedCardRow) {
+                savedCardRow.hidden = !hasSavedCard;
+            }
+            if (cardPanel) {
+                cardPanel.hidden = true;
+            }
+            if (cardMessage) {
+                cardMessage.textContent = '';
+            }
             detailDialog.showModal();
         });
+    });
+
+    viewCardButton?.addEventListener('click', async () => {
+        if (!activeReservationId || !cardPanel) {
+            return;
+        }
+        cardPanel.hidden = false;
+        if (cardMessage) {
+            cardMessage.textContent = 'Kart bilgileri yükleniyor...';
+        }
+        try {
+            const response = await fetch(`/panel/partner/rezervasyonlar/${activeReservationId}/odeme-karti?hotelId=${activeHotelId}`, {
+                headers: { 'Accept': 'application/json' }
+            });
+            const payload = await response.json();
+            if (cardMessage) {
+                cardMessage.textContent = payload.message || '';
+            }
+            if (payload.success) {
+                document.getElementById('reservation-detail-card-holder').textContent = payload.cardHolder || '-';
+                document.getElementById('reservation-detail-card-number').textContent = payload.cardNumber || '-';
+                document.getElementById('reservation-detail-card-expiry').textContent = payload.expiryText || '-';
+                document.getElementById('reservation-detail-card-brand').textContent = payload.brand || '-';
+            } else {
+                document.getElementById('reservation-detail-card-holder').textContent = payload.maskedPan || '-';
+                document.getElementById('reservation-detail-card-number').textContent = payload.limitExceeded ? 'Gizlendi' : '-';
+                document.getElementById('reservation-detail-card-expiry').textContent = '-';
+                document.getElementById('reservation-detail-card-brand').textContent = '-';
+            }
+        } catch {
+            if (cardMessage) {
+                cardMessage.textContent = 'Kart bilgileri alınamadı.';
+            }
+        }
     });
 
     document.querySelectorAll('[data-reservation-message]').forEach((button) => {
