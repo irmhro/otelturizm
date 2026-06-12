@@ -1479,12 +1479,6 @@
         white-space: nowrap !important;
         font-size: 0.9rem !important;
     }
-
-    .ot-geo-prompt {
-        max-width: min(92vw, 380px) !important;
-        border-radius: 20px !important;
-        z-index: 4200 !important;
-    }
 }
 
 @media (max-width: 390px) {

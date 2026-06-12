@@ -9,6 +9,7 @@
         flex-direction: column;
         align-items: stretch;
         gap: 14px;
+        min-width: 0;
     }
 
     .kullanici-panel-dashboard .page-header h1 {
@@ -16,16 +17,36 @@
         line-height: 1.25;
     }
 
-    .kullanici-panel-dashboard .page-header > .d-flex {
-        flex-direction: column;
+    .kullanici-panel-shell .kullanici-panel-dashboard .dashboard-header-actions {
+        display: grid !important;
+        grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+        gap: 8px;
         width: 100%;
+        min-width: 0;
+        flex-wrap: nowrap !important;
     }
 
-    .kullanici-panel-dashboard .page-header .btn-primary-ap,
-    .kullanici-panel-dashboard .page-header .btn-outline-ap {
+    .kullanici-panel-shell .kullanici-panel-dashboard .dashboard-header-actions .btn-primary-ap,
+    .kullanici-panel-shell .kullanici-panel-dashboard .dashboard-header-actions .btn-outline-ap {
         width: 100%;
+        min-width: 0;
+        max-width: 100%;
         justify-content: center;
-        min-height: var(--user-mob-touch, 44px);
+        min-height: 40px;
+        height: 40px;
+        padding: 0 8px;
+        font-size: 11px;
+        line-height: 1.1;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        box-sizing: border-box;
+    }
+
+    .kullanici-panel-shell .kullanici-panel-dashboard .dashboard-header-actions .btn-primary-ap i,
+    .kullanici-panel-shell .kullanici-panel-dashboard .dashboard-header-actions .btn-outline-ap i {
+        flex-shrink: 0;
+        font-size: 12px;
     }
 
     .kullanici-panel-shell .kullanici-panel-dashboard .kpi-grid-pro {
@@ -77,6 +98,11 @@
         gap: 16px;
     }
 
+    .kullanici-panel-dashboard .panel-card {
+        min-width: 0;
+        overflow: hidden;
+    }
+
     .kullanici-panel-dashboard .panel-header {
         flex-wrap: wrap;
         padding: 12px 14px;
@@ -89,25 +115,89 @@
     }
 
     .kullanici-panel-dashboard .generic-form-grid {
-        grid-template-columns: 1fr;
+        --dashboard-filter-row-h: 40px;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
         padding: 12px 14px;
-        gap: 10px;
+        gap: 8px 10px;
+        min-width: 0;
+        box-sizing: border-box;
     }
 
-    .kullanici-panel-dashboard .generic-form-grid .form-control,
-    .kullanici-panel-dashboard .generic-form-grid .btn {
-        min-height: var(--user-mob-touch, 44px);
+    .kullanici-panel-dashboard .generic-form-grid > input[type="hidden"] {
+        display: none;
     }
 
-    .kullanici-panel-dashboard .generic-form-grid .form-actions {
-        flex-direction: column;
-        align-items: stretch;
+    .kullanici-panel-dashboard .generic-form-grid .form-group {
+        min-width: 0;
+        margin: 0;
     }
 
-    .kullanici-panel-dashboard .generic-form-grid .form-actions .btn-outline-ap,
-    .kullanici-panel-dashboard .generic-form-grid .form-actions .btn-primary-ap {
+    .kullanici-panel-dashboard .generic-form-grid .form-group label {
+        display: block;
+        margin-bottom: 4px;
+        font-size: 11px;
+        font-weight: 600;
+        line-height: 1.2;
+        color: var(--ap-text-light, #64748B);
+    }
+
+    .kullanici-panel-dashboard .generic-form-grid .form-control {
         width: 100%;
+        min-width: 0;
+        max-width: 100%;
+        height: var(--dashboard-filter-row-h);
+        min-height: var(--dashboard-filter-row-h);
+        padding: 0 8px;
+        font-size: 13px;
+        line-height: 1.2;
+        box-sizing: border-box;
+    }
+
+    .kullanici-panel-dashboard .generic-form-grid input[type="date"].form-control {
+        padding: 0 6px;
+        -webkit-appearance: none;
+        appearance: none;
+    }
+
+    .kullanici-panel-dashboard .generic-form-grid select.form-control {
+        padding-right: 28px;
+    }
+
+    .kullanici-panel-shell .kullanici-panel-dashboard .generic-form-grid .form-actions {
+        grid-column: 1 / -1;
+        display: flex !important;
+        flex-direction: row;
+        flex-wrap: nowrap;
+        align-items: stretch;
+        gap: 8px;
+        margin-top: 2px;
+        padding: 0;
+        border-top: 0;
+        background: transparent;
+        border-radius: 0;
+        min-width: 0;
+    }
+
+    .kullanici-panel-shell .kullanici-panel-dashboard .generic-form-grid .form-actions input[type="hidden"] {
+        display: none;
+    }
+
+    .kullanici-panel-shell .kullanici-panel-dashboard .generic-form-grid .form-actions .btn-outline-ap,
+    .kullanici-panel-shell .kullanici-panel-dashboard .generic-form-grid .form-actions .btn-primary-ap {
+        flex: 1 1 0;
+        width: auto;
+        min-width: 0;
+        max-width: none;
+        height: var(--dashboard-filter-row-h);
+        min-height: var(--dashboard-filter-row-h);
+        padding: 0 10px;
         justify-content: center;
+        font-size: 13px;
+        display: inline-flex !important;
+        align-items: center;
+        box-sizing: border-box;
+        position: static;
+        margin: 0;
     }
 
     .kullanici-panel-dashboard .panel-body:has(.pro-table) {
@@ -132,7 +222,8 @@
 
     .kullanici-panel-dashboard .pro-table tbody tr {
         display: grid;
-        gap: 8px;
+        grid-template-columns: minmax(0, 1fr) auto;
+        gap: 8px 12px;
         padding: 14px;
         border: 1px solid var(--ap-border-main, #E2E8F0);
         border-radius: 12px;
@@ -178,15 +269,37 @@
     .kullanici-panel-dashboard .pro-table tbody td:nth-child(5)::before { content: "Tutar"; }
     .kullanici-panel-dashboard .pro-table tbody td:nth-child(6)::before { content: "Aksiyon"; }
 
+    .kullanici-panel-dashboard .pro-table tbody td:nth-child(1),
+    .kullanici-panel-dashboard .pro-table tbody td:nth-child(2),
+    .kullanici-panel-dashboard .pro-table tbody td:nth-child(3),
+    .kullanici-panel-dashboard .pro-table tbody td:last-child {
+        grid-column: 1 / -1;
+    }
+
+    .kullanici-panel-dashboard .pro-table tbody td:nth-child(4) {
+        grid-column: 1;
+        min-width: 0;
+    }
+
     .kullanici-panel-dashboard .pro-table tbody td:nth-child(5) {
+        grid-column: 2;
+        align-items: flex-end;
+        text-align: right !important;
+        white-space: nowrap;
         font-size: 16px;
         font-weight: 800;
         color: var(--ap-primary-dark, #0F172A);
     }
 
+    .kullanici-panel-dashboard .pro-table tbody td:nth-child(5)::before {
+        align-self: flex-end;
+    }
+
     .kullanici-panel-dashboard .pro-table tbody td:last-child {
-        display: grid;
-        grid-template-columns: 1fr 1fr;
+        display: flex;
+        flex-direction: row;
+        flex-wrap: nowrap;
+        align-items: center;
         gap: 8px;
         padding-top: 10px;
         margin-top: 2px;
@@ -194,13 +307,22 @@
     }
 
     .kullanici-panel-dashboard .pro-table tbody td:last-child::before {
-        grid-column: 1 / -1;
+        display: none;
     }
 
-    .kullanici-panel-dashboard .pro-table tbody td:last-child a {
-        width: 100%;
-        justify-content: center;
+    .kullanici-panel-shell .kullanici-panel-dashboard .pro-table tbody td:last-child a.btn-outline-ap,
+    .kullanici-panel-shell .kullanici-panel-dashboard .pro-table tbody td:last-child a.btn-primary-ap {
+        flex: 1 1 0;
+        min-width: 0;
+        width: auto !important;
+        height: 40px !important;
         min-height: 40px;
+        padding: 0 10px !important;
+        font-size: 12px !important;
+        display: inline-flex !important;
+        align-items: center;
+        justify-content: center;
+        box-sizing: border-box;
     }
 
     .kullanici-panel-dashboard .panel-card > .form-actions {
@@ -341,6 +463,34 @@
         color: #94A3B8;
         font-size: 12px;
         flex-shrink: 0;
+    }
+
+    .kullanici-panel-shell .kullanici-panel-dashboard .dashboard-deals-actions {
+        display: flex !important;
+        flex-direction: row;
+        flex-wrap: nowrap;
+        align-items: stretch;
+        gap: 8px;
+        margin-top: 10px;
+        min-width: 0;
+    }
+
+    .kullanici-panel-shell .kullanici-panel-dashboard .dashboard-deals-actions .btn-primary-ap,
+    .kullanici-panel-shell .kullanici-panel-dashboard .dashboard-deals-actions .btn-outline-ap {
+        flex: 1 1 0;
+        width: auto;
+        min-width: 0;
+        height: 40px !important;
+        padding: 0 8px !important;
+        font-size: 12px !important;
+        line-height: 1;
+        white-space: nowrap;
+        display: inline-flex !important;
+        align-items: center;
+        justify-content: center;
+        box-sizing: border-box;
+        margin: 0;
+        position: static;
     }
 }
 

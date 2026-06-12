@@ -18,6 +18,24 @@
         --home-logo-track-turizm: 0.07em;
     }
 
+    /* Sabit üst header — sticky overflow-x:hidden ile kırılabildiği için fixed */
+    body.anasayfa-page:not(.login-page) {
+        padding-top: var(--home-header-sticky-h, 56px);
+    }
+
+    body.anasayfa-page:not(.login-page) .home-header-shell {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        width: 100%;
+        max-width: 100%;
+        z-index: 1200;
+        background: rgba(255, 255, 255, 0.98);
+        backdrop-filter: blur(12px);
+        -webkit-backdrop-filter: blur(12px);
+    }
+
     .utility-bar,
     .navbar nav,
     .nav-actions {
@@ -27,14 +45,15 @@
     header.navbar,
     .anasayfa-page header.navbar,
     .anasayfa-page .navbar {
-        position: sticky;
-        top: 0;
-        z-index: 1100;
+        position: relative;
+        top: auto;
+        z-index: 1;
         height: var(--home-header-bar-h) !important;
         min-height: var(--home-header-bar-h) !important;
         padding: 0;
-        background: rgba(255, 255, 255, 0.98);
-        backdrop-filter: blur(12px);
+        background: transparent;
+        backdrop-filter: none;
+        -webkit-backdrop-filter: none;
         border-bottom: 1px solid var(--border-subtle);
     }
 
@@ -241,18 +260,25 @@
         flex: 1;
         min-height: var(--home-drawer-auth-h);
         height: var(--home-drawer-auth-h);
-        padding: 0 10px;
+        padding: 0 12px;
         border-radius: 10px;
         display: inline-flex;
         align-items: center;
         justify-content: center;
-        gap: 0;
+        gap: 6px;
         font-size: 11.5px;
         font-weight: 700;
         text-decoration: none;
         transition: background 0.2s ease, border-color 0.2s ease, color 0.2s ease;
         line-height: 1;
         white-space: nowrap;
+    }
+
+    .btn-primary-mobile i,
+    .btn-outline-mobile i {
+        flex: 0 0 auto;
+        font-size: 11px;
+        line-height: 1;
     }
 
     .btn-primary-mobile {

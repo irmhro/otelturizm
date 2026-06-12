@@ -431,7 +431,6 @@ public class UserProfilePageViewModel
     public bool EmailVerified { get; set; }
     public string EmailVerifiedAtText { get; set; } = "—";
     public string ProfileImageUrl { get; set; } = "/uploads/demo/avatars/avatar-01.svg";
-    public List<string> PresetAvatarUrls { get; set; } = new();
     public List<UserUploadedProfileAvatarViewModel> UploadedProfileAvatars { get; set; } = new();
     public UserPhoneVerificationStatusViewModel PhoneVerification { get; set; } = new();
     public List<AddressCountryOption> Countries { get; set; } = new();

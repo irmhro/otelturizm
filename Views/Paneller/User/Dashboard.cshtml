@@ -19,28 +19,13 @@
             <h1>Hoş geldin — rezervasyonlarını tek ekrandan yönet</h1>
             <p>Yaklaşan konaklamalar, favori oteller, mesajlar ve tasarruf bilgileri canlı verilerle özetlenir.</p>
         </div>
-        <div class="d-flex flex-wrap gap-2">
+        <div class="dashboard-header-actions d-flex gap-2">
             <a class="btn-primary-ap" href="/oteller"><i class="fas fa-magnifying-glass"></i> Otel Keşfet</a>
             <a class="btn-outline-ap" href="/panel/user/rezervasyonlarim"><i class="fas fa-calendar-check"></i> Rezervasyonlarım</a>
         </div>
     </div>
 
-    <div class="quick-actions-bar">
-        <a class="action-chip" href="/panel/user/rezervasyonlarim"><i class="fas fa-suitcase" style="color: var(--ap-info);"></i> Seyahatlerim</a>
-        <a class="action-chip" href="/panel/user/favorilerim"><i class="fas fa-heart" style="color: var(--ap-pink);"></i> Favori Oteller</a>
-        <a class="action-chip" href="/panel/user/mesajlarim"><i class="fas fa-envelope" style="color: var(--ap-warning);"></i> Mesajlar</a>
-        <a class="action-chip" href="/panel/user/puanlarim"><i class="fas fa-gem" style="color: var(--ap-purple);"></i> OtelPuan</a>
-    </div>
-
     <div class="kpi-grid-pro">
-        <a class="kpi-card-pro kpi-blue" href="/panel/user/rezervasyonlarim">
-            <div class="kpi-top">
-                <span class="kpi-title">Toplam Rezervasyon</span>
-                <div class="kpi-icon icon-blue"><i class="fas fa-calendar-check"></i></div>
-            </div>
-            <div class="kpi-value">@Model.TotalReservationCount</div>
-            <div class="kpi-bottom up"><i class="fas fa-clock"></i> Tüm zamanlar</div>
-        </a>
         <a class="kpi-card-pro kpi-warning" href="/panel/user/rezervasyonlarim">
             <div class="kpi-top">
                 <span class="kpi-title">Yaklaşan Konaklama</span>
@@ -56,22 +41,6 @@
             </div>
             <div class="kpi-value">@Model.FavoriteCount</div>
             <div class="kpi-bottom up"><i class="fas fa-bookmark"></i> Kayıtlı tesisler</div>
-        </a>
-        <a class="kpi-card-pro kpi-green" href="/panel/user/rezervasyonlarim">
-            <div class="kpi-top">
-                <span class="kpi-title">Toplam Tasarruf</span>
-                <div class="kpi-icon icon-green"><i class="fas fa-tag"></i></div>
-            </div>
-            <div class="kpi-value">@Model.DiscountText</div>
-            <div class="kpi-bottom up"><i class="fas fa-percent"></i> Rezervasyon indirimleri</div>
-        </a>
-        <a class="kpi-card-pro kpi-teal" href="/panel/user/mesajlarim">
-            <div class="kpi-top">
-                <span class="kpi-title">Mesaj</span>
-                <div class="kpi-icon icon-teal"><i class="fas fa-envelope"></i></div>
-            </div>
-            <div class="kpi-value">@Model.MessageCount</div>
-            <div class="kpi-bottom up"><i class="fas fa-comments"></i> Otel ve destek</div>
         </a>
     </div>
 
@@ -253,9 +222,9 @@
                 <div class="ai-alert-box" style="margin-top:16px;">
                     <div class="ai-alert-header"><span><i class="fas fa-bolt"></i> Kişisel Fırsatlar</span></div>
                     <p class="ai-alert-text">Favorilerin, rezervasyon davranışın ve puan seviyene göre şekillenen kampanya önerilerini tek panelde topla.</p>
-                    <div class="d-flex flex-wrap gap-2" style="margin-top:10px;">
-                        <a class="btn-primary-ap" style="height:32px;font-size:12px;" href="/panel/user/puanlarim">Fırsatları keşfet</a>
-                        <a class="btn-outline-ap" style="height:32px;font-size:12px;" href="/panel/user/favorilerim">Favorilerden devam et</a>
+                    <div class="dashboard-deals-actions d-flex gap-2">
+                        <a class="btn-primary-ap" href="/panel/user/puanlarim">Fırsatlar</a>
+                        <a class="btn-outline-ap" href="/panel/user/favorilerim">Favoriler</a>
                     </div>
                 </div>
             </div>

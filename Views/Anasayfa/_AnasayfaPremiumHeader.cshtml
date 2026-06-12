@@ -177,7 +177,6 @@
                 <a href="/kullanici-giris?sekme=kayit" class="btn-outline-mobile">@SharedLocalizer["Nav.Register"].Value</a>
             </div>
         }
-        <a href="/kampanyalar" class="btn-kampanya-mobile"><i class="fas fa-tags" aria-hidden="true"></i> Kampanyalar</a>
     </div>
     <div class="home-drawer-content">
         <div class="home-menu-section">
@@ -216,31 +215,6 @@
                 <a href="/yardim-merkezi"><i class="fas fa-chart-line"></i> Seyahat Rehberi</a>
                 <a href="/yardim-merkezi"><i class="fas fa-shield-alt"></i> Güvenli Rezervasyon</a>
                 <a href="/yardim-merkezi"><i class="fas fa-headset"></i> 7/24 Destek</a>
-            </div>
-        </div>
-
-        <div class="home-menu-section home-prefs-section">
-            <div class="home-menu-title">TERCİHLER</div>
-            <div class="home-prefs-accordions">
-                <div class="home-pref-accordion" data-pref-accordion>
-                    <button type="button" class="home-pref-trigger" data-pref-trigger aria-expanded="false">
-                        <span class="home-pref-trigger-main">
-                            <i class="fas fa-language" aria-hidden="true"></i>
-                            <span>Dil</span>
-                        </span>
-                        <span class="home-pref-trigger-value" data-pref-value>@currentLangLabel</span>
-                        <i class="fas fa-chevron-down home-pref-chevron" aria-hidden="true"></i>
-                    </button>
-                    <div class="home-pref-panel" data-pref-panel hidden>
-                        <div class="home-pref-options">
-                            @foreach (var lang in prefLanguages)
-                            {
-                                var isActiveLang = string.Equals(lang.Code, currentLang, StringComparison.OrdinalIgnoreCase);
-                                <a class="home-pref-btn@(isActiveLang ? " active" : string.Empty)" href="@BuildPrefLangUrl(lang.Code)" data-pref-label="@lang.Label">@lang.Label</a>
-                            }
-                        </div>
-                    </div>
-                </div>
             </div>
         </div>
 

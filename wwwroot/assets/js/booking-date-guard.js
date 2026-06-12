@@ -95,6 +95,11 @@
         }
     }
 
+    function isHotelDetailPage() {
+        return document.body.classList.contains('oteldetay-page')
+            || document.body.classList.contains('oteldetay-page-shell');
+    }
+
     function readPersistedSearchDates() {
         var fromUrl = null;
         try {
@@ -109,6 +114,11 @@
         }
         if (fromUrl) {
             return fromUrl;
+        }
+
+        // Otel detay: URL'de tarih yoksa sunucu varsayilani (bugun + 1 gece) korunur.
+        if (isHotelDetailPage()) {
+            return null;
         }
 
         var fromStorage = '';

@@ -72,40 +72,6 @@
   border-radius: 12px;
 }
 
-.ot-geo-prompt {
-  left: 12px;
-  right: 12px;
-  bottom: calc(82px + env(safe-area-inset-bottom));
-  width: auto;
-  grid-template-columns: 40px minmax(0, 1fr);
-  gap: 10px;
-  padding: 14px;
-  border-radius: 18px;
-}
-
-.ot-geo-prompt__icon {
-  width: 40px;
-  height: 40px;
-  border-radius: 14px;
-}
-
-.ot-geo-prompt__content {
-  padding-right: 24px;
-}
-
-.ot-geo-prompt__content strong {
-  font-size: 0.95rem;
-  line-height: 1.2;
-}
-
-.ot-geo-prompt__content span {
-  font-size: 0.82rem;
-}
-
-.ot-geo-prompt__actions {
-  grid-template-columns: 1fr;
-}
-
 .mobile-menu-drawer .drawer-link.promo-link {
   min-height: 52px;
   padding: 12px 12px;

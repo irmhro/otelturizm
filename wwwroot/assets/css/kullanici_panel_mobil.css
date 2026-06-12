@@ -1,7 +1,13 @@
 /* Admin Panel v6 — mobil */
 @media (max-width: 991px) {
+    .kullanici-panel-shell {
+        --page-content-gutter: 16px;
+        --page-content-inset: 32px;
+        --ap-topbar-sticky-h: var(--ap-topbar-height, 52px);
+    }
+
     .kullanici-panel-shell .admin-shell-container {
-        overflow-x: hidden;
+        overflow-x: clip;
     }
 
     .kullanici-panel-shell .admin-sidebar {
@@ -47,6 +53,23 @@
 
     .kullanici-panel-shell .main-layout {
         margin-left: 0 !important;
+        padding-top: var(--ap-topbar-sticky-h, 52px);
+        min-width: 0;
+    }
+
+    .kullanici-panel-shell .global-topbar {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        width: 100%;
+        max-width: 100%;
+        z-index: 1030;
+        box-sizing: border-box;
+        padding-left: var(--page-content-gutter, 16px);
+        padding-right: var(--page-content-gutter, 16px);
+        background: var(--ap-surface-card, #fff);
+        border-bottom: 1px solid var(--ap-border-main, #e2e8f0);
     }
 
     .kullanici-panel-shell .header-search {
@@ -68,9 +91,14 @@
     }
 
     .kullanici-panel-shell .content-body {
-        padding: 16px;
+        box-sizing: border-box;
+        width: 100%;
+        max-width: 100%;
+        min-width: 0;
+        padding: 16px var(--page-content-gutter, 16px);
         padding-bottom: calc(72px + env(safe-area-inset-bottom));
         gap: 16px;
+        overflow-x: clip;
     }
 
     .kullanici-panel-shell .ap-page-header h1 {
@@ -164,11 +192,14 @@
     }
 }
 
-@media (max-width: 576px) {
-    .kullanici-panel-shell .global-topbar {
-        padding: 0 10px;
+@media (max-width: 520px) {
+    .kullanici-panel-shell {
+        --page-content-gutter: 14px;
+        --page-content-inset: 28px;
     }
+}
 
+@media (max-width: 576px) {
     .kullanici-panel-shell .topbar-right {
         gap: 4px;
     }

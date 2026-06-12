@@ -20,11 +20,15 @@
   /* Hero — single column card stack */
   .kullanici-panel-shell .profile-hero {
     display: grid;
-    grid-template-columns: 1fr;
-    gap: 14px;
-    padding: 14px;
-    border-radius: 14px;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 12px;
+    padding: 12px;
+    border-radius: 12px;
+    box-sizing: border-box;
+    width: 100%;
+    max-width: 100%;
     min-width: 0;
+    overflow: hidden;
     background:
       radial-gradient(circle at 8% 12%, rgba(37, 99, 235, 0.08), transparent 18rem),
       var(--ap-surface-card, #fff);
@@ -34,7 +38,7 @@
   .kullanici-panel-shell .profile-identity {
     flex-direction: row;
     align-items: flex-start;
-    gap: 12px;
+    gap: 10px;
     min-width: 0;
   }
 
@@ -44,23 +48,24 @@
   }
 
   .kullanici-panel-shell .profile-avatar-xl {
-    width: 72px;
-    height: 72px;
-    border-radius: 16px;
-    border-width: 3px;
+    width: 52px;
+    height: 52px;
+    border-radius: 12px;
+    border-width: 2px;
     flex-shrink: 0;
-    box-shadow: 0 10px 24px rgba(15, 23, 42, 0.12);
+    box-shadow: 0 6px 16px rgba(15, 23, 42, 0.1);
   }
 
   .kullanici-panel-shell .profile-identity .page-pretitle {
-    font-size: 9px;
+    font-size: 10px;
     margin-bottom: 2px;
-    letter-spacing: 0.08em;
+    letter-spacing: 0.1em;
   }
 
   .kullanici-panel-shell .profile-identity h1 {
     font-size: 18px;
     line-height: 1.25;
+    font-weight: 800;
     word-break: break-word;
   }
 
@@ -69,9 +74,9 @@
     flex-wrap: wrap;
     align-items: center;
     gap: 2px 6px;
-    margin-top: 4px;
+    margin-top: 3px;
     font-size: 12px;
-    line-height: 1.45;
+    line-height: 1.4;
     font-weight: 700;
   }
 
@@ -86,244 +91,436 @@
   }
 
   .kullanici-panel-shell .profile-status-row {
-    margin-top: 8px;
+    margin-top: 6px;
     gap: 6px;
     align-items: flex-start;
   }
 
   .kullanici-panel-shell .profile-status {
     font-size: 11px;
-    padding: 4px 9px;
-    min-height: 28px;
+    padding: 3px 8px;
+    min-height: 26px;
     max-width: 100%;
     white-space: normal;
     text-align: left;
     line-height: 1.25;
   }
 
-  /* Upload card — full-width touch targets */
+  /* Upload card — compact, fontlar.md panel mobil */
   .kullanici-panel-shell .profile-upload-card {
+    box-sizing: border-box;
     width: 100%;
+    max-width: 100%;
     min-width: 0;
-    padding: 14px;
-    border-radius: 13px;
-    gap: 10px;
+    overflow: hidden;
+    padding: 10px;
+    border-radius: 10px;
+    gap: 8px;
   }
 
   .kullanici-panel-shell .profile-upload-card strong {
-    font-size: 15px;
+    font-size: 16px;
+    font-weight: 800;
+    line-height: 1.25;
   }
 
-  .kullanici-panel-shell .profile-upload-card span {
+  .kullanici-panel-shell .profile-upload-card > span {
     font-size: 12px;
-    line-height: 1.45;
+    line-height: 1.4;
+    min-width: 0;
+    overflow-wrap: anywhere;
+  }
+
+  .kullanici-panel-shell .profile-upload-actions {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    gap: 8px;
+    width: 100%;
+    min-width: 0;
   }
 
   .kullanici-panel-shell .profile-file-picker {
-    min-height: 76px;
+    position: relative;
+    box-sizing: border-box;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    min-height: 40px;
+    height: 40px;
     width: 100%;
-    padding: 12px;
+    max-width: 100%;
+    min-width: 0;
+    overflow: hidden;
+    padding: 0 10px;
     touch-action: manipulation;
-    border-radius: 12px;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 700;
+  }
+
+  .kullanici-panel-shell .profile-file-picker input[type="file"] {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    margin: 0;
+    padding: 0;
+    opacity: 0;
+    cursor: pointer;
+    z-index: 2;
+    font-size: 16px;
+  }
+
+  .kullanici-panel-shell .profile-file-picker i,
+  .kullanici-panel-shell .profile-file-picker > span {
+    position: relative;
+    z-index: 1;
+    pointer-events: none;
+    flex-shrink: 0;
+  }
+
+  .kullanici-panel-shell .profile-file-picker > span {
+    flex: 1 1 auto;
+    min-width: 0;
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .kullanici-panel-shell .profile-file-picker i {
+    font-size: 14px;
   }
 
   .kullanici-panel-shell .profile-upload-card .btn {
     width: 100%;
-    min-height: var(--user-mob-touch, 48px);
-    font-weight: 800;
+    min-height: 40px;
+    height: 40px;
+    padding: 10px 12px;
+    font-size: 13px;
+    font-weight: 700;
+    border-radius: 8px;
     justify-content: center;
   }
 
-  /* Preset avatars card */
+  .kullanici-panel-shell .profile-upload-btn-short {
+    display: inline;
+  }
+
+  .kullanici-panel-shell .profile-upload-btn-full {
+    display: none;
+  }
+
+  /* Preset avatars card — fontlar.md mobil (h3 18px, muted 12px, btn 13px/40px) */
   .kullanici-panel-shell .profile-preset-card {
     flex-direction: column;
     align-items: stretch;
-    gap: 12px;
-    padding: 14px;
+    gap: 10px;
+    padding: 12px;
     min-width: 0;
-    border-radius: 14px;
+    border-radius: 12px;
+    box-sizing: border-box;
+    width: 100%;
+    max-width: 100%;
+    overflow: hidden;
   }
 
-  .kullanici-panel-shell .profile-preset-card > div {
+  .kullanici-panel-shell .profile-preset-head,
+  .kullanici-panel-shell .profile-preset-card > div:first-child {
     min-width: 0;
   }
 
   .kullanici-panel-shell .profile-preset-card h2 {
-    font-size: 16px;
+    margin: 0;
+    font-size: 18px;
+    font-weight: 800;
+    line-height: 1.25;
   }
 
   .kullanici-panel-shell .profile-preset-card p {
+    margin: 4px 0 0;
     font-size: 12px;
-    line-height: 1.45;
-  }
-
-  .kullanici-panel-shell .profile-preset-list {
-    display: grid;
-    grid-template-columns: repeat(5, minmax(0, 1fr));
-    gap: 8px;
-    width: 100%;
-    justify-content: stretch;
-  }
-
-  .kullanici-panel-shell .profile-preset-list form {
-    min-width: 0;
-  }
-
-  .kullanici-panel-shell .profile-preset-list button {
-    width: 100%;
-    height: auto;
-    aspect-ratio: 1;
-    min-width: 0;
-    min-height: 0;
-    border-radius: 12px;
-    transition: border-color 0.16s ease, box-shadow 0.16s ease;
-  }
-
-  .kullanici-panel-shell .profile-preset-list button:active {
-    border-color: rgba(37, 99, 235, 0.45);
-    box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.12);
+    line-height: 1.4;
   }
 
   .kullanici-panel-shell .profile-uploaded-avatar-list {
     grid-template-columns: 1fr;
-    gap: 10px;
+    gap: 8px;
     width: 100%;
   }
 
   .kullanici-panel-shell .profile-uploaded-avatar {
-    grid-template-columns: 52px minmax(0, 1fr);
-    gap: 10px;
-    padding: 12px;
-    border-radius: 12px;
+    display: grid;
+    grid-template-columns: 40px minmax(0, 1fr);
+    grid-template-rows: auto auto;
+    gap: 8px 10px;
+    padding: 10px;
+    border-radius: 10px;
     min-width: 0;
+    align-items: center;
   }
 
   .kullanici-panel-shell .profile-uploaded-avatar img {
-    width: 52px;
-    height: 52px;
+    width: 40px;
+    height: 40px;
+    border-radius: 8px;
+    grid-row: 1 / span 2;
+  }
+
+  .kullanici-panel-shell .profile-uploaded-avatar-meta {
+    min-width: 0;
+  }
+
+  .kullanici-panel-shell .profile-uploaded-avatar-meta strong {
+    display: block;
+    font-size: 14px;
+    font-weight: 800;
+    line-height: 1.25;
+  }
+
+  .kullanici-panel-shell .profile-uploaded-avatar-meta span {
+    display: block;
+    margin-top: 2px;
+    font-size: 12px;
+    line-height: 1.35;
   }
 
   .kullanici-panel-shell .profile-uploaded-avatar-actions {
+    grid-column: 1 / -1;
     grid-template-columns: 1fr 1fr;
     gap: 8px;
   }
 
   .kullanici-panel-shell .profile-uploaded-avatar-actions .btn {
-    min-height: var(--user-mob-touch, 44px);
+    min-height: 40px;
     font-size: 13px;
+    font-weight: 700;
+    border-radius: 8px;
   }
 
-  /* Form panels */
+  /* Form panels — fontlar.md mobil (label 13px, input 16px, row 40px) */
+  .kullanici-panel-shell .profile-form {
+    --profile-form-row-h: 40px;
+    gap: 12px;
+  }
+
   .kullanici-panel-shell .profile-panel {
-    padding: 14px;
+    padding: 12px;
     min-width: 0;
-    border-radius: 14px;
+    border-radius: 12px;
+    box-sizing: border-box;
+    width: 100%;
+    max-width: 100%;
+    overflow: hidden;
   }
 
   .kullanici-panel-shell .profile-panel-head {
-    flex-direction: column;
-    align-items: stretch;
-    gap: 10px;
-    margin-bottom: 12px;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: start;
+    gap: 8px 10px;
+    margin-bottom: 10px;
+  }
+
+  .kullanici-panel-shell .profile-panel-head > div {
+    min-width: 0;
+    grid-column: 1;
   }
 
   .kullanici-panel-shell .profile-panel-head h2 {
-    font-size: 16px;
+    margin: 0;
+    font-size: 18px;
+    font-weight: 800;
+    line-height: 1.25;
   }
 
   .kullanici-panel-shell .profile-panel-head p {
+    margin: 3px 0 0;
     font-size: 12px;
-    line-height: 1.45;
+    line-height: 1.4;
   }
 
-  .kullanici-panel-shell .profile-panel-head .btn,
-  .kullanici-panel-shell .profile-panel-head .profile-status {
-    width: 100%;
+  .kullanici-panel-shell .profile-panel-head > .btn {
+    grid-column: 2;
+    grid-row: 1;
+    width: auto;
+    min-width: 84px;
+    height: var(--profile-form-row-h);
+    min-height: var(--profile-form-row-h);
+    padding: 0 14px;
+    font-size: 13px;
+    font-weight: 700;
+    border-radius: 8px;
+    justify-content: center;
+    align-self: start;
+    white-space: nowrap;
+  }
+
+  .kullanici-panel-shell .profile-panel-head > .profile-status {
+    grid-column: 2;
+    grid-row: 1;
+    width: auto;
+    align-self: start;
     justify-content: center;
     text-align: center;
-  }
-
-  .kullanici-panel-shell .profile-panel-head .profile-status {
-    align-self: stretch;
+    font-size: 11px;
+    min-height: 28px;
+    padding: 3px 8px;
   }
 
   .kullanici-panel-shell .profile-form-grid {
     grid-template-columns: 1fr;
-    gap: 10px;
-  }
-
-  .kullanici-panel-shell .profile-form-grid label > span {
-    font-size: 12px;
-  }
-
-  .kullanici-panel-shell .profile-form .form-control,
-  .kullanici-panel-shell .profile-form .form-select,
-  .kullanici-panel-shell .profile-form .btn {
-    width: 100%;
-    min-height: var(--user-mob-touch, 44px);
-  }
-
-  .kullanici-panel-shell .profile-form textarea.form-control {
-    min-height: 96px;
-  }
-
-  .kullanici-panel-shell .profile-email-field {
-    flex-direction: column;
-    align-items: stretch;
     gap: 8px;
   }
 
+  .kullanici-panel-shell .profile-form-grid label {
+    display: grid;
+    gap: 4px;
+    margin: 0;
+    min-width: 0;
+  }
+
+  .kullanici-panel-shell .profile-form-grid label > span {
+    font-size: 13px;
+    font-weight: 700;
+    line-height: 1.2;
+    color: var(--ap-text-main, #1e293b);
+  }
+
+  .kullanici-panel-shell .profile-form .form-control,
+  .kullanici-panel-shell .profile-form .form-select {
+    width: 100%;
+    min-width: 0;
+    max-width: 100%;
+    height: var(--profile-form-row-h);
+    min-height: var(--profile-form-row-h);
+    max-height: var(--profile-form-row-h);
+    padding: 0 10px;
+    font-size: 16px;
+    line-height: 1.2;
+    border: 1px solid var(--ap-border-main, #e2e8f0);
+    border-radius: 8px;
+    background: #f8fafc;
+    color: var(--ap-text-main, #1e293b);
+    box-sizing: border-box;
+    appearance: none;
+    -webkit-appearance: none;
+  }
+
+  .kullanici-panel-shell .profile-form .form-select {
+    padding-right: 32px;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8' fill='none'%3E%3Cpath d='M1 1.5L6 6.5L11 1.5' stroke='%2364748B' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 10px center;
+    background-size: 12px 8px;
+  }
+
+  .kullanici-panel-shell .profile-form input[type="date"].form-control {
+    padding: 0 8px;
+  }
+
+  .kullanici-panel-shell .profile-form .form-control:focus,
+  .kullanici-panel-shell .profile-form .form-select:focus {
+    border-color: var(--ap-primary-red, #dc2626);
+    background: #fff;
+    box-shadow: 0 0 0 2px rgba(220, 38, 38, 0.1);
+    outline: none;
+  }
+
+  .kullanici-panel-shell .profile-form textarea.form-control {
+    height: auto;
+    min-height: 72px;
+    max-height: none;
+    padding: 8px 10px;
+    line-height: 1.45;
+    resize: vertical;
+  }
+
+  .kullanici-panel-shell .profile-email-field {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .kullanici-panel-shell .profile-email-field .form-control {
+    min-width: 0;
+  }
+
   .kullanici-panel-shell .profile-email-field .profile-status {
-    align-self: flex-start;
+    align-self: center;
     width: auto;
+    flex-shrink: 0;
+    font-size: 11px;
+    min-height: 26px;
+    padding: 3px 8px;
+    white-space: nowrap;
   }
 
   .kullanici-panel-shell .profile-field-full small {
-    font-size: 11px;
-    line-height: 1.4;
+    font-size: 12px;
+    line-height: 1.35;
+    margin-top: 2px;
   }
 
   /* Email verification */
   .kullanici-panel-shell .profile-verification-grid {
     grid-template-columns: 1fr;
-    gap: 10px;
+    gap: 8px;
   }
 
   .kullanici-panel-shell .profile-inline-form,
   .kullanici-panel-shell .profile-inline-form-wide {
     grid-template-columns: 1fr;
-    gap: 10px;
-    padding: 12px;
-    border-radius: 12px;
+    gap: 8px;
+    padding: 10px;
+    border-radius: 10px;
     min-width: 0;
+  }
+
+  .kullanici-panel-shell .profile-inline-form .form-label {
+    font-size: 13px;
+    font-weight: 700;
+    margin-bottom: 4px;
+  }
+
+  .kullanici-panel-shell .profile-inline-form .form-control,
+  .kullanici-panel-shell .profile-inline-form .form-select {
+    height: var(--profile-form-row-h);
+    min-height: var(--profile-form-row-h);
+    padding: 0 10px;
+    font-size: 16px;
+    border-radius: 8px;
+    box-sizing: border-box;
   }
 
   .kullanici-panel-shell .profile-inline-form .btn {
     width: 100%;
-    min-height: var(--user-mob-touch, 44px);
+    height: var(--profile-form-row-h);
+    min-height: var(--profile-form-row-h);
+    padding: 0 14px;
+    font-size: 13px;
+    font-weight: 700;
+    border-radius: 8px;
     justify-content: center;
-    font-weight: 800;
   }
 
   .kullanici-panel-shell .email-update-card .profile-panel-head .profile-status {
     width: auto;
-    align-self: flex-start;
+    align-self: start;
   }
 }
 
 @media (max-width: 400px) {
-  .kullanici-panel-shell .profile-preset-list {
-    grid-template-columns: repeat(4, minmax(0, 1fr));
-  }
-
   .kullanici-panel-shell .profile-identity {
-    gap: 10px;
+    gap: 8px;
   }
 
   .kullanici-panel-shell .profile-avatar-xl {
-    width: 64px;
-    height: 64px;
-    border-radius: 14px;
+    width: 48px;
+    height: 48px;
+    border-radius: 10px;
   }
 
   .kullanici-panel-shell .profile-identity h1 {

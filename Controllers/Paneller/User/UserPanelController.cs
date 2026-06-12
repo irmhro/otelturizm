@@ -664,27 +664,6 @@ public class UserPanelController : Controller
         return RedirectToAction(nameof(Profile));
     }
 
-    [HttpPost("profil-bilgilerim/profil-resmi-sec")]
-    [ValidateAntiForgeryToken]
-    public async Task<IActionResult> SelectPresetProfileImage(string avatarUrl, CancellationToken cancellationToken)
-    {
-        if (!CanAccessUserPanel())
-        {
-            return RedirectToAction("UserLogin", "Auth");
-        }
-
-        var normalized = (avatarUrl ?? string.Empty).Trim();
-        if (string.IsNullOrWhiteSpace(normalized) || !normalized.StartsWith("/uploads/demo/avatars/", StringComparison.OrdinalIgnoreCase))
-        {
-            TempData["UserProfileError"] = "Geçersiz görsel seçimi.";
-            return RedirectToAction(nameof(Profile));
-        }
-
-        await _userPanelService.SaveProfileImageAsync(GetCurrentUserId(), normalized, "preset", cancellationToken);
-        TempData["UserProfileSuccess"] = "Profil görseliniz güncellendi.";
-        return RedirectToAction(nameof(Profile));
-    }
-
     [HttpPost("profil-bilgilerim/profil-resmi-sec-secure")]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> SelectUploadedProfileImage(long fileId, CancellationToken cancellationToken)

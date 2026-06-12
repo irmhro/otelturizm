@@ -2127,7 +2127,7 @@
             </header>
             <p class="detail-modal-copy detail-profile-modal__lead">Rezervasyonu tamamlayabilmemiz için e-posta, telefon, doğum tarihi, cinsiyet, il ve ilçe alanlarının eksiksiz olması gerekiyor. Mahalle isteğe bağlıdır. 18 yaşını bugün dolduran kullanıcı bugün rezervasyon yapamaz; en erken yarın işlem yapabilir.</p>
 
-            <form id="profileCompletionForm" class="detail-profile-form" method="post" action="/oteller/@Model.Slug/profil-bilgilerini-tamamla">
+            <form id="profileCompletionForm" class="detail-profile-form" lang="tr-TR" method="post" action="/oteller/@Model.Slug/profil-bilgilerini-tamamla">
                 @Html.AntiForgeryToken()
                 <div class="detail-profile-form__fields">
                     <label>
@@ -2166,9 +2166,16 @@
                         <span>Telefon</span>
                         <input type="text" name="Phone" value="@Model.ProfilePrompt.Phone" required inputmode="tel" autocomplete="tel" />
                     </label>
-                    <label>
+                    <label lang="tr-TR">
                         <span>Doğum Tarihi</span>
-                        <input type="date" name="BirthDateText" value="@Model.ProfilePrompt.BirthDateText" required max="@reservationAdultCutoffText" />
+                        <input type="date"
+                               name="BirthDateText"
+                               lang="tr-TR"
+                               autocomplete="bday"
+                               value="@Model.ProfilePrompt.BirthDateText"
+                               required
+                               max="@reservationAdultCutoffText"
+                               title="gg/aa/yyyy" />
                     </label>
                     <label>
                         <span>Cinsiyet</span>
@@ -2187,7 +2194,7 @@
                     </label>
                     <label>
                         <span>İl</span>
-                        <select name="City" id="detailProvinceSelect" required>
+                        <select name="City" id="detailProvinceSelect" required data-selected-text="@Model.ProfilePrompt.City">
                             <option value="">Yükleniyor...</option>
                         </select>
                     </label>
@@ -3993,7 +4000,7 @@
             }
 
             function openProfileCompletionModal(message) {
-                hydrateProfileAddressSelectors();
+                void hydrateProfileAddressSelectors();
                 if (profileFeedback && message) {
                     profileFeedback.hidden = false;
                     profileFeedback.className = 'detail-modal-feedback error';
@@ -5056,29 +5063,42 @@
                 }
 
                 select.innerHTML = '<option value="">' + placeholder + '</option>';
-                const response = await fetch(url, { credentials: 'same-origin' });
-                const items = response.ok ? await response.json() : [];
+                select.disabled = true;
+
+                let items = [];
+                try {
+                    const response = await fetch(url, { credentials: 'same-origin' });
+                    items = response.ok ? await response.json() : [];
+                } catch (error) {
+                    console.error('Adres seçenekleri yüklenemedi:', url, error);
+                    items = [];
+                }
+
                 items.forEach(function (item) {
                     const option = document.createElement('option');
-                    option.value = item.name;
-                    option.textContent = item.name;
-                    if (item.id) {
-                        option.dataset.id = item.id;
+                    const itemId = item.id ?? item.Id ?? '';
+                    const itemName = item.name ?? item.Name ?? '';
+                    option.value = itemName;
+                    option.textContent = itemName;
+                    if (itemId !== '' && itemId !== null && itemId !== undefined) {
+                        option.dataset.id = String(itemId);
                     }
-                    if (item.iso2) {
-                        option.dataset.iso2 = item.iso2;
+                    if (item.iso2 ?? item.Iso2) {
+                        option.dataset.iso2 = String(item.iso2 ?? item.Iso2).toUpperCase();
                     }
-                    if (item.provinceId) {
-                        option.dataset.provinceId = item.provinceId;
+                    if (item.provinceId ?? item.ProvinceId) {
+                        option.dataset.provinceId = String(item.provinceId ?? item.ProvinceId);
                     }
-                    if (item.postalCode) {
-                        option.dataset.postalCode = item.postalCode;
+                    if (item.postalCode ?? item.PostalCode) {
+                        option.dataset.postalCode = String(item.postalCode ?? item.PostalCode);
                     }
-                    if (selectedText && item.name === selectedText) {
+                    if (selectedText && itemName === selectedText) {
                         option.selected = true;
                     }
                     select.appendChild(option);
                 });
+
+                select.disabled = false;
                 return items;
             }
 
@@ -5086,49 +5106,190 @@
             const provinceSelect = document.getElementById('detailProvinceSelect');
             const districtSelect = document.getElementById('detailDistrictSelect');
             const neighborhoodSelect = document.getElementById('detailNeighborhoodSelect');
-            const profileAddressSeed = {
-                country: '@(Model.ProfilePrompt.Nationality ?? string.Empty)',
-                city: '@(Model.ProfilePrompt.City ?? string.Empty)',
-                district: '@(Model.ProfilePrompt.District ?? string.Empty)',
-                neighborhood: '@(Model.ProfilePrompt.Neighborhood ?? string.Empty)'
-            };
+            const profileAddressSeed = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(new
+            {
+                country = Model.ProfilePrompt.Nationality ?? string.Empty,
+                city = Model.ProfilePrompt.City ?? string.Empty,
+                district = Model.ProfilePrompt.District ?? string.Empty,
+                neighborhood = Model.ProfilePrompt.Neighborhood ?? string.Empty
+            }));
 
             function selectedCountryId() {
-                return countrySelect?.selectedOptions[0]?.dataset.id || '';
+                const selected = countrySelect?.selectedOptions[0];
+                return selected?.dataset.id || '';
+            }
+
+            function selectedProvinceId() {
+                const selected = provinceSelect?.selectedOptions[0];
+                return selected?.dataset.id || selected?.dataset.provinceId || '';
+            }
+
+            function selectedDistrictId() {
+                const selected = districtSelect?.selectedOptions[0];
+                return selected?.dataset.id || '';
+            }
+
+            function ensureProfileCountrySelected(countries) {
+                if (!countrySelect || selectedCountryId()) {
+                    return;
+                }
+
+                const seedCountry = (profileAddressSeed.country || '').trim();
+                if (seedCountry) {
+                    const seeded = Array.from(countrySelect.options).find(function (option) {
+                        return option.value === seedCountry;
+                    });
+                    if (seeded) {
+                        countrySelect.value = seeded.value;
+                        return;
+                    }
+                }
+
+                const turkey = (countries || []).find(function (item) {
+                    return String(item.iso2 ?? item.Iso2 ?? '').toUpperCase() === 'TR';
+                });
+                if (turkey?.name || turkey?.Name) {
+                    const turkeyName = turkey.name ?? turkey.Name;
+                    const turkeyOption = Array.from(countrySelect.options).find(function (option) {
+                        return option.value === turkeyName;
+                    });
+                    if (turkeyOption) {
+                        countrySelect.value = turkeyOption.value;
+                        return;
+                    }
+                }
+
+                if (countrySelect.options.length > 1) {
+                    countrySelect.selectedIndex = 1;
+                }
+            }
+
+            function setProfileAddressSelectEnabled() {
+                if (countrySelect) {
+                    countrySelect.disabled = false;
+                }
+                if (provinceSelect) {
+                    provinceSelect.disabled = provinceSelect.options.length <= 1;
+                }
+                if (districtSelect) {
+                    districtSelect.disabled = districtSelect.options.length <= 1;
+                }
+                if (neighborhoodSelect) {
+                    neighborhoodSelect.disabled = neighborhoodSelect.options.length <= 1;
+                }
+            }
+
+            function bindProfileAddressSelectOverflowFix() {
+                [countrySelect, provinceSelect, districtSelect, neighborhoodSelect].forEach(function (select) {
+                    if (!select) {
+                        return;
+                    }
+
+                    const restoreOverflow = function () {
+                        window.setTimeout(function () {
+                            const fields = select.closest('.detail-profile-form__fields');
+                            const shell = select.closest('.detail-profile-modal__shell');
+                            const form = select.closest('.detail-profile-form');
+                            if (fields) {
+                                fields.style.overflowY = '';
+                            }
+                            if (shell) {
+                                shell.style.overflow = '';
+                            }
+                            if (form) {
+                                form.style.overflow = '';
+                            }
+                        }, 250);
+                    };
+
+                    select.addEventListener('focus', function () {
+                        const fields = select.closest('.detail-profile-form__fields');
+                        const shell = select.closest('.detail-profile-modal__shell');
+                        const form = select.closest('.detail-profile-form');
+                        if (fields) {
+                            fields.style.overflowY = 'visible';
+                        }
+                        if (shell) {
+                            shell.style.overflow = 'visible';
+                        }
+                        if (form) {
+                            form.style.overflow = 'visible';
+                        }
+                    });
+
+                    select.addEventListener('blur', restoreOverflow);
+                    select.addEventListener('change', restoreOverflow);
+                });
+            }
+
+            async function hydrateProfileAddressSelectors() {
+                if (!countrySelect || !provinceSelect || !districtSelect) {
+                    return;
+                }
+
+                const countries = await loadSelectOptions('/api/adres/ulkeler', countrySelect, 'Uyruk seçiniz', profileAddressSeed.country);
+                countries.forEach(function (item) {
+                    const itemName = item.name ?? item.Name ?? '';
+                    const opt = Array.from(countrySelect.options).find(function (option) {
+                        return option.value === itemName;
+                    });
+                    if (!opt) {
+                        return;
+                    }
+                    const itemId = item.id ?? item.Id;
+                    if (itemId !== undefined && itemId !== null && itemId !== '') {
+                        opt.dataset.id = String(itemId);
+                    }
+                    opt.dataset.iso2 = String(item.iso2 ?? item.Iso2 ?? '').toUpperCase();
+                });
+
+                ensureProfileCountrySelected(countries);
+
+                const countryId = selectedCountryId();
+                if (!countryId) {
+                    districtSelect.innerHTML = '<option value="">Önce ülke seçiniz</option>';
+                    if (neighborhoodSelect) {
+                        neighborhoodSelect.innerHTML = '<option value="">Önce ilçe seçiniz</option>';
+                    }
+                    setProfileAddressSelectEnabled();
+                    return;
+                }
+
+                const regionLabel = isTurkeySelected() ? 'İl seçiniz' : 'Eyalet seçiniz';
+                const citySeed = profileAddressSeed.city || provinceSelect.dataset.selectedText || '';
+                await loadSelectOptions('/api/adres/iller?ulkeId=' + encodeURIComponent(countryId), provinceSelect, regionLabel, citySeed);
+
+                if (!isTurkeySelected()) {
+                    districtSelect.innerHTML = '<option value="">Türkiye dışı adreslerde ilçe seçilmez</option>';
+                    if (neighborhoodSelect) {
+                        neighborhoodSelect.innerHTML = '<option value="">Türkiye dışı adreslerde mahalle seçilmez</option>';
+                    }
+                    setProfileAddressSelectEnabled();
+                    return;
+                }
+
+                const provinceId = selectedProvinceId();
+                if (provinceId) {
+                    const districtSeed = profileAddressSeed.district || districtSelect.dataset.selectedText || '';
+                    await loadSelectOptions('/api/adres/ilceler?ilId=' + encodeURIComponent(provinceId), districtSelect, 'İlçe seçiniz', districtSeed);
+                    const districtId = selectedDistrictId();
+                    if (districtId && neighborhoodSelect) {
+                        const neighborhoodSeed = profileAddressSeed.neighborhood || neighborhoodSelect.dataset.selectedText || '';
+                        await loadSelectOptions('/api/adres/mahalleler?ilceId=' + encodeURIComponent(districtId), neighborhoodSelect, 'Mahalle seçiniz (opsiyonel)', neighborhoodSeed);
+                    }
+                } else {
+                    districtSelect.innerHTML = '<option value="">Önce il seçiniz</option>';
+                    if (neighborhoodSelect) {
+                        neighborhoodSelect.innerHTML = '<option value="">Önce ilçe seçiniz</option>';
+                    }
+                }
+
+                setProfileAddressSelectEnabled();
             }
 
             function isTurkeySelected() {
                 const iso2 = (countrySelect?.selectedOptions[0]?.dataset.iso2 || '').toUpperCase();
                 return iso2 === 'TR';
-            }
-
-            async function hydrateProfileAddressSelectors() {
-                const countries = await loadSelectOptions('/api/adres/ulkeler', countrySelect, 'Uyruk seçiniz', profileAddressSeed.country);
-                countries.forEach(function (item) {
-                    const opt = Array.from(countrySelect.options).find(function (o) { return o.value === item.name; });
-                    if (opt) {
-                        opt.dataset.iso2 = item.iso2 || '';
-                    }
-                });
-                const countryId = selectedCountryId();
-                if (!countryId) {
-                    return;
-                }
-                const regionLabel = isTurkeySelected() ? 'İl seçiniz' : 'Eyalet seçiniz';
-                await loadSelectOptions('/api/adres/iller?ulkeId=' + encodeURIComponent(countryId), provinceSelect, regionLabel, profileAddressSeed.city);
-                if (!isTurkeySelected()) {
-                    districtSelect.innerHTML = '<option value="">Türkiye dışı adreslerde ilçe seçilmez</option>';
-                    neighborhoodSelect.innerHTML = '<option value="">Türkiye dışı adreslerde mahalle seçilmez</option>';
-                    return;
-                }
-                const provinceId = provinceSelect?.selectedOptions[0]?.dataset.id || provinceSelect?.selectedOptions[0]?.dataset.provinceId;
-                if (provinceId) {
-                    await loadSelectOptions('/api/adres/ilceler?ilId=' + encodeURIComponent(provinceId), districtSelect, 'İlçe seçiniz', profileAddressSeed.district);
-                    const districtId = districtSelect?.selectedOptions[0]?.dataset.id;
-                    if (districtId) {
-                        await loadSelectOptions('/api/adres/mahalleler?ilceId=' + encodeURIComponent(districtId), neighborhoodSelect, 'Mahalle seçiniz (opsiyonel)', profileAddressSeed.neighborhood);
-                    }
-                }
             }
 
             countrySelect?.addEventListener('change', async function () {
@@ -5137,26 +5298,41 @@
                 await loadSelectOptions('/api/adres/iller?ulkeId=' + encodeURIComponent(countryId), provinceSelect, regionLabel, '');
                 if (!isTurkeySelected()) {
                     districtSelect.innerHTML = '<option value="">Türkiye dışı adreslerde ilçe seçilmez</option>';
-                    neighborhoodSelect.innerHTML = '<option value="">Türkiye dışı adreslerde mahalle seçilmez</option>';
+                    if (neighborhoodSelect) {
+                        neighborhoodSelect.innerHTML = '<option value="">Türkiye dışı adreslerde mahalle seçilmez</option>';
+                    }
+                    setProfileAddressSelectEnabled();
                     return;
                 }
                 districtSelect.innerHTML = '<option value="">Önce il seçiniz</option>';
-                neighborhoodSelect.innerHTML = '<option value="">Önce ilçe seçiniz</option>';
+                if (neighborhoodSelect) {
+                    neighborhoodSelect.innerHTML = '<option value="">Önce ilçe seçiniz</option>';
+                }
+                setProfileAddressSelectEnabled();
             });
 
             provinceSelect?.addEventListener('change', async function () {
                 if (!isTurkeySelected()) {
                     return;
                 }
-                const provinceId = provinceSelect.selectedOptions[0]?.dataset.id || provinceSelect.selectedOptions[0]?.dataset.provinceId || '';
+                const provinceId = selectedProvinceId();
                 await loadSelectOptions('/api/adres/ilceler?ilId=' + encodeURIComponent(provinceId), districtSelect, 'İlçe seçiniz', '');
-                neighborhoodSelect.innerHTML = '<option value="">Önce ilçe seçiniz</option>';
+                if (neighborhoodSelect) {
+                    neighborhoodSelect.innerHTML = '<option value="">Önce ilçe seçiniz</option>';
+                }
+                setProfileAddressSelectEnabled();
             });
 
             districtSelect?.addEventListener('change', async function () {
-                const districtId = districtSelect.selectedOptions[0]?.dataset.id || '';
+                const districtId = selectedDistrictId();
+                if (!neighborhoodSelect) {
+                    return;
+                }
                 await loadSelectOptions('/api/adres/mahalleler?ilceId=' + encodeURIComponent(districtId), neighborhoodSelect, 'Mahalle seçiniz (opsiyonel)', '');
+                setProfileAddressSelectEnabled();
             });
+
+            bindProfileAddressSelectOverflowFix();
 
             openProfileCompletionFromBanner?.addEventListener('click', function () {
                 openProfileCompletionModal('Rezervasyonunuza kaldığınız yerden devam etmek için eksik profil bilgilerinizi tamamlayın.');
@@ -5510,11 +5686,13 @@
             }
 
             if (shouldOpenProfileFromQuery && @((Model.ActiveDraft is not null && Model.IsLoggedInUser) ? "true" : "false")) {
-                hydrateProfileAddressSelectors();
-                openModal(profileModal);
+                void hydrateProfileAddressSelectors().then(function () {
+                    openModal(profileModal);
+                });
             } else if (@(Model.ShouldResumeDraftOnLoad && Model.ActiveDraft?.RequiresProfileCompletion == true && Model.IsLoggedInUser ? "true" : "false")) {
-                hydrateProfileAddressSelectors();
-                openModal(profileModal);
+                void hydrateProfileAddressSelectors().then(function () {
+                    openModal(profileModal);
+                });
             } else if (@(Model.ShouldResumeDraftOnLoad && Model.ActiveDraft is not null && Model.ActiveDraft.RequiresProfileCompletion == false ? "true" : "false")) {
                 resumeDraftFlow();
             }

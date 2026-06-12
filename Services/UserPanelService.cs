@@ -1096,7 +1096,6 @@ INNER JOIN agg ON agg.[OTEL_ID] = o.id;";
         }
 
         model.Countries = (await _addressLookupService.GetCountriesAsync(cancellationToken)).ToList();
-        model.PresetAvatarUrls = BuildPresetAvatarUrls();
         model.UploadedProfileAvatars = await LoadUploadedProfileAvatarsAsync(connection, userId, cancellationToken);
         model.RoomPreferenceOptions = BuildRoomPreferenceOptions();
         model.BedPreferenceOptions = BuildBedPreferenceOptions();
@@ -1178,21 +1177,6 @@ INNER JOIN agg ON agg.[OTEL_ID] = o.id;";
 
         return normalized.StartsWith("/", StringComparison.Ordinal) ? normalized : "/uploads/demo/avatars/avatar-01.svg";
     }
-
-    private static List<string> BuildPresetAvatarUrls()
-        => new()
-        {
-            "/uploads/demo/avatars/avatar-01.svg",
-            "/uploads/demo/avatars/avatar-02.svg",
-            "/uploads/demo/avatars/avatar-03.svg",
-            "/uploads/demo/avatars/avatar-04.svg",
-            "/uploads/demo/avatars/avatar-05.svg",
-            "/uploads/demo/avatars/avatar-06.svg",
-            "/uploads/demo/avatars/avatar-07.svg",
-            "/uploads/demo/avatars/avatar-08.svg",
-            "/uploads/demo/avatars/avatar-09.svg",
-            "/uploads/demo/avatars/avatar-10.svg"
-        };
 
     private static List<string> BuildRoomPreferenceOptions()
         => new() { "Fark etmez", "Standart oda", "Deluxe oda", "Suit oda", "Aile odası", "Sessiz kat", "Sigara içilmeyen oda" };

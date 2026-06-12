@@ -230,9 +230,10 @@ public class OtellerController : Controller
 
         var activeDraft = await _publicReservationService.GetActiveDraftAsync(GetCurrentUserIdOrNull(), EnsureReservationSessionKey(), cancellationToken);
         model.ActiveDraft = activeDraft;
+        var hasExplicitDates = loadOptions?.CheckIn is not null || loadOptions?.CheckOut is not null;
+        var explicitRoomTypeId = loadOptions?.RoomTypeId;
         var queryCheckIn = model.ReservationForm.CheckInDate;
         var queryCheckOut = model.ReservationForm.CheckOutDate;
-        var queryRoomTypeId = model.ReservationForm.RoomTypeId;
         model.ReservationForm = new PublicHotelReservationForm
         {
             HotelId = model.Id,
@@ -248,25 +249,24 @@ public class OtellerController : Controller
             model.ReservationForm.ChildCount = activeDraft.ChildCount;
             model.ReservationForm.RoomCount = activeDraft.RoomCount;
         }
-        else if (loadOptions is { HasFilters: true })
+        else if (hasExplicitDates)
         {
             model.ReservationForm.CheckInDate = queryCheckIn;
             model.ReservationForm.CheckOutDate = queryCheckOut;
-            if (queryRoomTypeId > 0)
+            if (explicitRoomTypeId is > 0)
             {
-                model.ReservationForm.RoomTypeId = queryRoomTypeId;
+                model.ReservationForm.RoomTypeId = explicitRoomTypeId.Value;
             }
-        }
-        else if (TryReadSearchDatesCookie(out var cookieCheckIn, out var cookieCheckOut))
-        {
-            model.ReservationForm.CheckInDate = cookieCheckIn;
-            model.ReservationForm.CheckOutDate = cookieCheckOut;
         }
         else
         {
             var today = DateOnly.FromDateTime(DateTime.Today);
             model.ReservationForm.CheckInDate = today;
             model.ReservationForm.CheckOutDate = today.AddDays(1);
+            if (explicitRoomTypeId is > 0)
+            {
+                model.ReservationForm.RoomTypeId = explicitRoomTypeId.Value;
+            }
         }
 
         if (model.ReservationForm.CheckOutDate <= model.ReservationForm.CheckInDate)

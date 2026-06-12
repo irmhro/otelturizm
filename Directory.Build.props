@@ -10,4 +10,13 @@
     <BaseIntermediateOutputPath>$(OtelturizmBuildCacheRoot)obj\</BaseIntermediateOutputPath>
     <MSBuildProjectExtensionsPath>$(BaseIntermediateOutputPath)</MSBuildProjectExtensionsPath>
   </PropertyGroup>
+
+  <!-- dev-watch.bat: tum cekirdek + paralel MSBuild/Roslyn (OTEL_DEV_FAST_BUILD=1) -->
+  <PropertyGroup Condition="'$(OTEL_DEV_FAST_BUILD)' == '1'">
+    <MaxCpuCount>0</MaxCpuCount>
+    <BuildInParallel>true</BuildInParallel>
+    <UseSharedCompilation>true</UseSharedCompilation>
+    <ProduceReferenceAssembly>true</ProduceReferenceAssembly>
+    <Deterministic>false</Deterministic>
+  </PropertyGroup>
 </Project>

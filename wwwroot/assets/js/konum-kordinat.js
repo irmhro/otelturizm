@@ -132,6 +132,13 @@
     );
   };
 
+  const findPromptHost = () =>
+    document.querySelector('main.content-body')
+    || document.querySelector('#mainContent')
+    || document.querySelector('main.site-main')
+    || document.querySelector('.main-layout > main')
+    || document.querySelector('main');
+
   const showLocationPrompt = () => {
     if (!canUseGeo() || !shouldSendNow() || hasRecentGeo() || wasPromptDismissedRecently()) return;
     if (document.querySelector('[data-otelturizm-geo-prompt]')) return;
@@ -144,14 +151,22 @@
       <button type="button" class="ot-geo-prompt__close" aria-label="Konum bildirimini kapat">×</button>
       <div class="ot-geo-prompt__icon"><i class="fas fa-location-dot" aria-hidden="true"></i></div>
       <div class="ot-geo-prompt__content">
-        <strong>Yakınınızdaki otelleri daha kolay bulun</strong>
-        <span>Konum bilginizi paylaşmak ister misiniz? İzin verirseniz size yakın otelleri daha doğru gösterebiliriz.</span>
+        <strong>Yakın oteller için konum</strong>
+        <span>İzin verirseniz size daha yakın sonuçlar gösterebiliriz.</span>
       </div>
       <div class="ot-geo-prompt__actions">
-        <button type="button" class="ot-geo-prompt__primary">Konumumu paylaş</button>
-        <button type="button" class="ot-geo-prompt__ghost">Şimdi değil</button>
+        <button type="button" class="ot-geo-prompt__primary">Konum paylaş</button>
+        <button type="button" class="ot-geo-prompt__ghost">Sonra</button>
       </div>`;
-    document.body.appendChild(toast);
+
+    const host = findPromptHost();
+    if (host) {
+      toast.classList.add('ot-geo-prompt--inline');
+      host.insertBefore(toast, host.firstChild);
+    } else {
+      toast.classList.add('ot-geo-prompt--fallback');
+      document.body.insertBefore(toast, document.body.firstChild);
+    }
 
     toast.querySelector('.ot-geo-prompt__primary')?.addEventListener('click', () => requestLocation(toast));
     toast.querySelector('.ot-geo-prompt__ghost')?.addEventListener('click', () => dismissPrompt(toast));
