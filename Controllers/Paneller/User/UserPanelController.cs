@@ -487,17 +487,13 @@ public class UserPanelController : Controller
         if (CanAccessUserPanel())
         {
             var saved = await _userPanelService.SaveProfileAsync(GetCurrentUserId(), form, cancellationToken);
-            TempData[saved ? "UserProfileSuccess" : "UserProfileError"] = saved
-                ? "Profil bilgileri güncellendi."
-                : "Profil bilgileri güncellenemedi.";
+            return ProfileSaveResult(
+                saved,
+                saved ? "Profil bilgileriniz kaydedildi." : "Profil bilgileri kaydedilemedi.",
+                form.ReturnUrl);
         }
 
-        if (!string.IsNullOrWhiteSpace(form.ReturnUrl) && Url.IsLocalUrl(form.ReturnUrl))
-        {
-            return Redirect(form.ReturnUrl);
-        }
-
-        return RedirectToAction(nameof(Profile));
+        return ProfileSaveResult(false, "Profil bilgileri kaydedilemedi.", form.ReturnUrl);
     }
 
     [HttpPost("profil-bilgilerim/seyahat-tercihleri")]
@@ -507,17 +503,13 @@ public class UserPanelController : Controller
         if (CanAccessUserPanel())
         {
             var saved = await _userPanelService.SaveTravelPreferencesAsync(GetCurrentUserId(), form, cancellationToken);
-            TempData[saved ? "UserProfileSuccess" : "UserProfileError"] = saved
-                ? "Seyahat tercihleri güncellendi."
-                : "Seyahat tercihleri güncellenemedi.";
+            return ProfileSaveResult(
+                saved,
+                saved ? "Seyahat tercihleriniz kaydedildi." : "Seyahat tercihleri kaydedilemedi.",
+                form.ReturnUrl);
         }
 
-        if (!string.IsNullOrWhiteSpace(form.ReturnUrl) && Url.IsLocalUrl(form.ReturnUrl))
-        {
-            return Redirect(form.ReturnUrl);
-        }
-
-        return RedirectToAction(nameof(Profile));
+        return ProfileSaveResult(false, "Seyahat tercihleri kaydedilemedi.", form.ReturnUrl);
     }
 
     [HttpPost("profil-bilgilerim/telefon-kodu-gonder")]
@@ -620,25 +612,24 @@ public class UserPanelController : Controller
     {
         if (!CanAccessUserPanel())
         {
-            return RedirectToAction("UserLogin", "Auth");
+            return IsPanelAjaxRequest()
+                ? Json(new { success = false, message = "Yetkisiz." })
+                : RedirectToAction("UserLogin", "Auth");
         }
 
         if (profileImage is null || profileImage.Length <= 0)
         {
-            TempData["UserProfileError"] = "Lütfen bir görsel seçin.";
-            return RedirectToAction(nameof(Profile));
+            return ProfileSaveResult(false, "Lütfen bir görsel seçin.");
         }
 
         if (profileImage.Length > 10 * 1024 * 1024)
         {
-            TempData["UserProfileError"] = "Profil görseli en fazla 10 MB olabilir.";
-            return RedirectToAction(nameof(Profile));
+            return ProfileSaveResult(false, "Profil görseli en fazla 10 MB olabilir.");
         }
 
         if (string.IsNullOrWhiteSpace(profileImage.ContentType) || !profileImage.ContentType.StartsWith("image/", StringComparison.OrdinalIgnoreCase))
         {
-            TempData["UserProfileError"] = "Sadece görsel dosyası yükleyebilirsiniz.";
-            return RedirectToAction(nameof(Profile));
+            return ProfileSaveResult(false, "Sadece görsel dosyası yükleyebilirsiniz.");
         }
 
         var userId = GetCurrentUserId();
@@ -654,14 +645,12 @@ public class UserPanelController : Controller
             }, cancellationToken);
 
             await _userPanelService.SaveProfileImageAsync(userId, $"secure:{saved.FileId}", "secure-upload", cancellationToken);
-            TempData["UserProfileSuccess"] = "Profil görseliniz güncellendi.";
+            return ProfileSaveResult(true, "Profil görseliniz kaydedildi.", reload: true);
         }
         catch (Exception ex)
         {
-            TempData["UserProfileError"] = $"Profil görseli yüklenemedi: {ex.Message}";
+            return ProfileSaveResult(false, $"Profil görseli yüklenemedi: {ex.Message}");
         }
-
-        return RedirectToAction(nameof(Profile));
     }
 
     [HttpPost("profil-bilgilerim/profil-resmi-sec-secure")]
@@ -670,18 +659,18 @@ public class UserPanelController : Controller
     {
         if (!CanAccessUserPanel())
         {
-            return RedirectToAction("UserLogin", "Auth");
+            return IsPanelAjaxRequest()
+                ? Json(new { success = false, message = "Yetkisiz." })
+                : RedirectToAction("UserLogin", "Auth");
         }
 
         if (fileId <= 0)
         {
-            TempData["UserProfileError"] = "Geçersiz profil görseli.";
-            return RedirectToAction(nameof(Profile));
+            return ProfileSaveResult(false, "Geçersiz profil görseli.");
         }
 
         await _userPanelService.SaveProfileImageAsync(GetCurrentUserId(), $"secure:{fileId}", "secure-upload", cancellationToken);
-        TempData["UserProfileSuccess"] = "Profil görseliniz güncellendi.";
-        return RedirectToAction(nameof(Profile));
+        return ProfileSaveResult(true, "Profil görseliniz kaydedildi.", reload: true);
     }
 
     [HttpPost("profil-bilgilerim/profil-resmi-sil")]
@@ -690,14 +679,16 @@ public class UserPanelController : Controller
     {
         if (!CanAccessUserPanel())
         {
-            return RedirectToAction("UserLogin", "Auth");
+            return IsPanelAjaxRequest()
+                ? Json(new { success = false, message = "Yetkisiz." })
+                : RedirectToAction("UserLogin", "Auth");
         }
 
         var deleted = await _userPanelService.DeleteProfileImageAsync(GetCurrentUserId(), fileId, cancellationToken);
-        TempData[deleted ? "UserProfileSuccess" : "UserProfileError"] = deleted
-            ? "Profil görseli silindi."
-            : "Profil görseli silinemedi.";
-        return RedirectToAction(nameof(Profile));
+        return ProfileSaveResult(
+            deleted,
+            deleted ? "Profil görseli silindi." : "Profil görseli silinemedi.",
+            reload: deleted);
     }
 
     [HttpPost("mesajlarim/gonder")]
@@ -846,5 +837,30 @@ public class UserPanelController : Controller
     {
         var raw = User.FindFirstValue(AuthClaimTypes.UserId) ?? User.FindFirstValue(ClaimTypes.NameIdentifier);
         return long.TryParse(raw, out var userId) ? userId : 0;
+    }
+
+    private bool IsPanelAjaxRequest()
+        => string.Equals(Request.Headers["X-Requested-With"], "XMLHttpRequest", StringComparison.OrdinalIgnoreCase)
+           || (Request.Headers.Accept.Any(h =>
+               h?.Contains("application/json", StringComparison.OrdinalIgnoreCase) == true));
+
+    private IActionResult ProfileSaveResult(bool success, string message, string? returnUrl = null, bool reload = false)
+    {
+        if (IsPanelAjaxRequest())
+        {
+            return new JsonResult(new { success, message, reload })
+            {
+                ContentType = "application/json; charset=utf-8",
+            };
+        }
+
+        TempData[success ? "UserProfileSuccess" : "UserProfileError"] = message;
+
+        if (!string.IsNullOrWhiteSpace(returnUrl) && Url.IsLocalUrl(returnUrl))
+        {
+            return Redirect(returnUrl);
+        }
+
+        return RedirectToAction(nameof(Profile));
     }
 }

@@ -36,6 +36,7 @@ Bu proje üzerinde çalışan YZ ajanları token ve zaman tüketimini azaltmak i
 ## Değişiklik Yapma
 
 - Mevcut dosyaları güncellerken sadece ilgili metot, blok veya satırları değiştir.
+- **Panel otomatik kayıt:** Yeni panel form/seçim geliştirmelerinde [PANEL_OTOMATIK_KAYIT_SOZLESMESI.md](PANEL_OTOMATIK_KAYIT_SOZLESMESI.md) kurallarına uy.
 - Sayfa geliştirmelerinde route, action/metot, `.cshtml`, `.css` ve varsa `.mobile.css` adları sayfa adı standardıyla eşleşmeli; örnek `favorilerim` için `Favorites.cshtml`/`favorites.css`, `rezervasyonlarim` için `Reservations.cshtml`/`reservations.css`.
 - Alakasız düzenleme, formatlama ve toplu refactor yapma.
 - Kullanıcının veya başka aracın yaptığı değişiklikleri geri alma.

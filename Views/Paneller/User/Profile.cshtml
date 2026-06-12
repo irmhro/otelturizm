@@ -5,14 +5,6 @@
 }
 
 <div class="user-profile-page">
-    @if (TempData["UserProfileSuccess"] is string profileSuccess && !string.IsNullOrWhiteSpace(profileSuccess))
-    {
-        <div class="profile-alert profile-alert--success"><i class="fas fa-circle-check"></i>@profileSuccess</div>
-    }
-    @if (TempData["UserProfileError"] is string profileError && !string.IsNullOrWhiteSpace(profileError))
-    {
-        <div class="profile-alert profile-alert--danger"><i class="fas fa-triangle-exclamation"></i>@profileError</div>
-    }
     <section class="profile-hero">
         <div class="profile-identity">
             <div class="profile-avatar-xl">
@@ -32,20 +24,16 @@
                 </div>
             </div>
         </div>
-        <form method="post" asp-action="UploadProfileImage" enctype="multipart/form-data" class="profile-upload-card">
+        <form method="post" asp-action="UploadProfileImage" enctype="multipart/form-data" class="profile-upload-card" data-panel-auto-upload data-panel-auto-upload-success="Profil görseliniz kaydedildi.">
             @Html.AntiForgeryToken()
             <strong>Profil görseli</strong>
-            <span>Görseller güvenli dosya alanında tutulur ve panelde tokenlı URL ile gösterilir.</span>
+            <span>Görsel seçildiğinde otomatik yüklenir. Dosyalar güvenli alanda tutulur.</span>
             <div class="profile-upload-actions">
                 <label class="profile-file-picker">
-                    <input type="file" name="profileImage" accept="image/jpeg,image/png,image/webp,image/gif" required data-profile-image-input />
+                    <input type="file" name="profileImage" accept="image/jpeg,image/png,image/webp,image/gif" data-profile-image-input />
                     <i class="fas fa-cloud-arrow-up"></i>
                     <span data-profile-file-label>Görsel seç</span>
                 </label>
-                <button type="submit" class="btn btn-primary">
-                    <span class="profile-upload-btn-full">Görseli Yükle</span>
-                    <span class="profile-upload-btn-short">Yükle</span>
-                </button>
             </div>
         </form>
     </section>
@@ -67,12 +55,12 @@
                             <span>@avatar.UploadedAtText</span>
                         </div>
                         <div class="profile-uploaded-avatar-actions">
-                            <form method="post" asp-action="SelectUploadedProfileImage">
+                            <form method="post" asp-action="SelectUploadedProfileImage" data-panel-auto-action="select">
                                 @Html.AntiForgeryToken()
                                 <input type="hidden" name="fileId" value="@avatar.FileId" />
                                 <button type="submit" class="btn btn-outline-primary" disabled="@avatar.IsCurrent">Seç</button>
                             </form>
-                            <form method="post" asp-action="DeleteProfileImage">
+                            <form method="post" asp-action="DeleteProfileImage" data-panel-auto-action="delete">
                                 @Html.AntiForgeryToken()
                                 <input type="hidden" name="fileId" value="@avatar.FileId" />
                                 <button type="submit" class="btn btn-outline-danger">Sil</button>
@@ -84,7 +72,7 @@
     </section>
     }
 
-    <form method="post" asp-action="SaveProfile" class="profile-form">
+    <form method="post" asp-action="SaveProfile" class="profile-form" data-panel-auto-save data-panel-auto-save-success="Profil bilgileriniz kaydedildi.">
         @Html.AntiForgeryToken()
         <input type="hidden" name="ReturnUrl" value="@Model.ReturnUrl" />
 
@@ -92,19 +80,18 @@
             <div class="profile-panel-head">
                 <div>
                     <h2>Kişisel Bilgiler</h2>
-                    <p>Kimlik, iletişim ve adres bilgilerini tek yerde yönet.</p>
+                    <p>Değişiklikler otomatik kaydedilir.</p>
                 </div>
-                <button type="submit" class="btn btn-primary">Kaydet</button>
             </div>
             <div class="profile-form-grid">
-                <label><span>Ad</span><input class="form-control" asp-for="Form.FirstName" type="text" /></label>
-                <label><span>Soyad</span><input class="form-control" asp-for="Form.LastName" type="text" /></label>
-                <label lang="tr-TR"><span>Doğum Tarihi</span><input class="form-control" asp-for="Form.BirthDateText" type="date" lang="tr-TR" autocomplete="bday" title="gg/aa/yyyy" required /></label>
-                <label><span>Telefon</span><input class="form-control" asp-for="Form.Phone" type="text" /></label>
-                <label><span>TC Kimlik No</span><input class="form-control" asp-for="Form.IdentityNumber" type="text" maxlength="11" /></label>
+                <label><span>Ad</span><input class="form-control" asp-for="Form.FirstName" type="text" data-panel-autosave="blur" /></label>
+                <label><span>Soyad</span><input class="form-control" asp-for="Form.LastName" type="text" data-panel-autosave="blur" /></label>
+                <label lang="tr-TR"><span>Doğum Tarihi</span><input class="form-control" asp-for="Form.BirthDateText" type="date" lang="tr-TR" autocomplete="bday" title="gg/aa/yyyy" required data-panel-autosave="change" /></label>
+                <label><span>Telefon</span><input class="form-control" asp-for="Form.Phone" type="text" data-panel-autosave="blur" /></label>
+                <label><span>TC Kimlik No</span><input class="form-control" asp-for="Form.IdentityNumber" type="text" maxlength="11" data-panel-autosave="blur" /></label>
                 <label>
                     <span>Cinsiyet</span>
-                    <select class="form-select" asp-for="Form.Gender" required>
+                    <select class="form-select" asp-for="Form.Gender" required data-panel-autosave="change">
                         <option value="">Seçiniz</option>
                         <option value="Erkek">Erkek</option>
                         <option value="Kadın">Kadın</option>
@@ -113,7 +100,7 @@
                 </label>
                 <label>
                     <span>Uyruk</span>
-                    <select class="form-select" asp-for="Form.Nationality" id="userCountrySelect">
+                    <select class="form-select" asp-for="Form.Nationality" id="userCountrySelect" data-panel-autosave="change">
                         <option value="">Seçiniz</option>
                         @foreach (var country in Model.Countries)
                         {
@@ -121,7 +108,7 @@
                         }
                     </select>
                 </label>
-                <label><span>Posta Kodu</span><input class="form-control" asp-for="Form.PostalCode" type="text" /></label>
+                <label><span>Posta Kodu</span><input class="form-control" asp-for="Form.PostalCode" type="text" data-panel-autosave="blur" /></label>
                 <label class="profile-field-full">
                     <span>E-posta</span>
                     <div class="profile-email-field">
@@ -135,7 +122,7 @@
                 <input type="hidden" id="userSelectedNeighborhoodId" value="@(Model.SelectedNeighborhoodId?.ToString() ?? string.Empty)" />
                 <label>
                     <span id="userProvinceLabel">İl</span>
-                    <select class="form-select" asp-for="Form.City" id="userProvinceSelect" required>
+                    <select class="form-select" asp-for="Form.City" id="userProvinceSelect" required data-panel-autosave="change">
                         <option value="">Seçiniz</option>
                         @foreach (var province in Model.Provinces)
                         {
@@ -145,17 +132,17 @@
                 </label>
                 <label id="userDistrictField">
                     <span>İlçe</span>
-                    <select class="form-select" asp-for="Form.District" id="userDistrictSelect" data-selected-text="@Model.Form.District" required>
+                    <select class="form-select" asp-for="Form.District" id="userDistrictSelect" data-selected-text="@Model.Form.District" required data-panel-autosave="change">
                         <option value="">Önce il seçiniz</option>
                     </select>
                 </label>
                 <label id="userNeighborhoodField">
                     <span>Mahalle</span>
-                    <select class="form-select" asp-for="Form.Neighborhood" id="userNeighborhoodSelect" data-selected-text="@Model.Form.Neighborhood" required>
+                    <select class="form-select" asp-for="Form.Neighborhood" id="userNeighborhoodSelect" data-selected-text="@Model.Form.Neighborhood" required data-panel-autosave="change">
                         <option value="">Önce ilçe seçiniz</option>
                     </select>
                 </label>
-                <label class="profile-field-full"><span>Adres</span><textarea class="form-control" asp-for="Form.Address" rows="3"></textarea></label>
+                <label class="profile-field-full"><span>Adres</span><textarea class="form-control" asp-for="Form.Address" rows="3" data-panel-autosave="blur"></textarea></label>
             </div>
         </article>
     </form>
@@ -191,21 +178,20 @@
         </article>
     }
 
-    <form method="post" asp-action="SaveTravelPreferences" class="profile-form">
+    <form method="post" asp-action="SaveTravelPreferences" class="profile-form" data-panel-auto-save data-panel-auto-save-success="Seyahat tercihleriniz kaydedildi.">
         @Html.AntiForgeryToken()
         <input type="hidden" name="ReturnUrl" value="@Model.ReturnUrl" />
         <article class="profile-panel">
             <div class="profile-panel-head">
                 <div>
                     <h2>Seyahat Tercihleri</h2>
-                    <p>Konaklama önerilerini ve otel iletişimini kişiselleştir.</p>
+                    <p>Seçimleriniz otomatik kaydedilir.</p>
                 </div>
-                <button type="submit" class="btn btn-primary">Tercihleri Kaydet</button>
             </div>
             <div class="profile-form-grid">
                 <label>
                     <span>Oda Tercihi</span>
-                    <select class="form-select" name="RoomPreference">
+                    <select class="form-select" name="RoomPreference" data-panel-autosave="change">
                         @foreach (var option in Model.RoomPreferenceOptions)
                         {
                             <option value="@option" selected="@(string.Equals(Model.Form.RoomPreference, option, StringComparison.OrdinalIgnoreCase))">@option</option>
@@ -214,7 +200,7 @@
                 </label>
                 <label>
                     <span>Yatak Tercihi</span>
-                    <select class="form-select" name="BedPreference">
+                    <select class="form-select" name="BedPreference" data-panel-autosave="change">
                         @foreach (var option in Model.BedPreferenceOptions)
                         {
                             <option value="@option" selected="@(string.Equals(Model.Form.BedPreference, option, StringComparison.OrdinalIgnoreCase))">@option</option>
@@ -223,7 +209,7 @@
                 </label>
                 <label>
                     <span>Seyahat Amacı</span>
-                    <select class="form-select" name="TravelPurpose">
+                    <select class="form-select" name="TravelPurpose" data-panel-autosave="change">
                         @foreach (var option in Model.TravelPurposeOptions)
                         {
                             <option value="@option" selected="@(string.Equals(Model.Form.TravelPurpose, option, StringComparison.OrdinalIgnoreCase))">@option</option>
@@ -232,14 +218,14 @@
                 </label>
                 <label>
                     <span>Konuşulan Dil</span>
-                    <select class="form-select" name="SpokenLanguages">
+                    <select class="form-select" name="SpokenLanguages" data-panel-autosave="change">
                         @foreach (var option in Model.SpokenLanguageOptions)
                         {
                             <option value="@option" selected="@(string.Equals(Model.Form.SpokenLanguages, option, StringComparison.OrdinalIgnoreCase))">@option</option>
                         }
                     </select>
                 </label>
-                <label class="profile-field-full"><span>Özel İstekler</span><textarea class="form-control" name="SpecialRequests" rows="3">@Model.Form.SpecialRequests</textarea></label>
+                <label class="profile-field-full"><span>Özel İstekler</span><textarea class="form-control" name="SpecialRequests" rows="3" data-panel-autosave="blur">@Model.Form.SpecialRequests</textarea></label>
             </div>
         </article>
     </form>
@@ -253,38 +239,26 @@
         const input = document.querySelector('[data-profile-image-input]');
         const image = document.querySelector('[data-profile-preview-image]');
         const label = document.querySelector('[data-profile-file-label]');
-        const form = input ? input.closest('form') : null;
-        const submitBtn = form ? form.querySelector('button[type=\"submit\"]') : null;
         if (!input || !image) return;
 
         input.addEventListener('change', function () {
             const file = input.files && input.files[0];
             if (!file) return;
-            if (label) label.textContent = file.name;
-            const previewUrl = URL.createObjectURL(file);
-            image.onload = function () { URL.revokeObjectURL(previewUrl); };
-            image.src = previewUrl;
 
-            // Koşullara uygunsa otomatik yükle ve profil görseli yap.
             const allowed = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
             const maxBytes = 10 * 1024 * 1024;
             const ok = allowed.includes((file.type || '').toLowerCase()) && file.size <= maxBytes;
             if (!ok) {
-                alert('Lütfen JPG/PNG/WebP/GIF formatında ve en fazla 10 MB bir görsel seçin.');
+                window.OtPanelToast?.show('Lütfen JPG/PNG/WebP/GIF formatında ve en fazla 10 MB bir görsel seçin.', 'danger');
                 input.value = '';
                 if (label) label.textContent = 'Görsel seç';
                 return;
             }
 
-            if (submitBtn) {
-                submitBtn.disabled = true;
-                submitBtn.textContent = 'Yükleniyor...';
-            }
-            if (form && typeof form.requestSubmit === 'function') {
-                form.requestSubmit();
-            } else if (form) {
-                form.submit();
-            }
+            if (label) label.textContent = file.name;
+            const previewUrl = URL.createObjectURL(file);
+            image.onload = function () { URL.revokeObjectURL(previewUrl); };
+            image.src = previewUrl;
         });
     })();
 
