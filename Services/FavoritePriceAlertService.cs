@@ -340,7 +340,7 @@ public sealed class FavoritePriceAlertService : IFavoritePriceAlertService
             slug = hotelCode.ToLowerInvariant();
         }
 
-        return $"/oteller/{slug}";
+        return $"/hotel/{slug}";
     }
 
     private sealed record PriceAlertJobRow(

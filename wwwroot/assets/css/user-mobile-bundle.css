@@ -1,0 +1,27 @@
+@import url("./shared/mobile-viewport-shell.css");
+
+/**
+ * Kullanıcı paneli mobil token hub — fontlar.md §8 + MOBIL_TEK_EKRAN
+ * Sayfa CSS'lerinde tekrar tanımlamayın; layout + ap-page-* sınıflarını kullanın.
+ */
+.kullanici-panel-shell {
+  --user-mob-touch: 44px;
+  --user-font-md: 13px;
+  --user-font-md-weight: 600;
+  --user-font-sm: 12px;
+  --user-font-xs: 11px;
+  --user-font-label: 13px;
+  --user-font-input: 16px;
+  --user-btn-min-h: 44px;
+  --user-btn-min-h-compact: 40px;
+  --user-btn-px: 14px;
+  --user-btn-radius: 8px;
+  --user-btn-gap: 6px;
+  --user-page-h1: 20px;
+  --user-page-pretitle: 11px;
+  --user-page-subtitle: 13px;
+  --user-card-title: 15px;
+  --user-stat-value: 18px;
+  --user-stat-label: 11px;
+  --user-actions-gap: 8px;
+}

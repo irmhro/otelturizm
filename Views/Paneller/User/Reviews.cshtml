@@ -16,79 +16,139 @@
         <div class="review-alert review-alert--danger"><i class="fas fa-triangle-exclamation"></i><span>@errorMessage</span></div>
     }
 
-    <section class="reviews-page-hero">
-        <div>
-            <div class="page-pretitle">DEĞERLENDİRMELER</div>
-            <h1 class="page-title">Yorumlarım</h1>
-            <p class="text-muted mb-0">Onaylı konaklamaların için yorum yaz; 7 gün içinde düzenleyebilir veya silebilirsin.</p>
+    <section class="reviews-page-hero reviews-page-hero--compact">
+        <div class="reviews-page-hero-copy">
+            <div class="page-pretitle">Değerlendirmeler</div>
+            <p class="reviews-page-hero-lead mb-0">Onaylanmış ve tamamlanmış konaklamalarında tesise yorum yazabilir; yorumunu 7 gün içinde düzenleyebilir veya silebilirsin.</p>
         </div>
-        <div class="reviews-page-hero-actions">
-            <a class="btn btn-primary btn-pill" asp-action="Reservations"><i class="fas fa-calendar-check me-2"></i>Rezervasyonlarım</a>
-            <a class="btn btn-outline-primary btn-pill" href="/oteller"><i class="fas fa-magnifying-glass me-2"></i>Otel Ara</a>
+        <div class="reviews-page-hero-actions ap-page-hero-actions">
+            @if (Model.WaitingReviewCount > 0)
+            {
+                <a class="btn btn-primary-ap reviews-hero-cta" asp-action="Reviews" asp-route-status="waiting" asp-route-page="1">
+                    <i class="fas fa-pen-to-square" aria-hidden="true"></i>
+                    <span>@Model.WaitingReviewCount yorum bekliyor</span>
+                </a>
+            }
+            <a class="btn btn-primary-ap reviews-hero-link" href="/hotel">
+                <i class="fas fa-magnifying-glass" aria-hidden="true"></i>
+                <span>Otel Ara</span>
+            </a>
+            <a class="btn btn-outline-ap reviews-hero-link" asp-action="Reservations">
+                <i class="fas fa-calendar-check" aria-hidden="true"></i>
+                <span>Rezervasyonlarım</span>
+            </a>
         </div>
     </section>
 
     <section class="reviews-stat-grid" aria-label="Yorum özeti">
         <article class="reviews-stat reviews-stat--all">
-            <span><i class="fas fa-list-check"></i></span>
+            <span><i class="fas fa-list-check" aria-hidden="true"></i></span>
             <div><strong>@Model.EligibleCount</strong><small>Toplam konaklama</small></div>
         </article>
         <article class="reviews-stat reviews-stat--waiting">
-            <span><i class="fas fa-hourglass-half"></i></span>
+            <span><i class="fas fa-hourglass-half" aria-hidden="true"></i></span>
             <div><strong>@Model.WaitingReviewCount</strong><small>Yorum bekleyen</small></div>
         </article>
         <article class="reviews-stat reviews-stat--reviewed">
-            <span><i class="fas fa-comment-dots"></i></span>
+            <span><i class="fas fa-comment-dots" aria-hidden="true"></i></span>
             <div><strong>@Model.ReviewedCount</strong><small>Yorumlanan</small></div>
         </article>
     </section>
 
-    <section class="card reviews-filter-card">
-        <div class="card-header">
-            <h3 class="card-title">Filtrele</h3>
-            <div class="card-actions">
+    <section class="reviews-filter-card">
+        <div class="reviews-filter-shell">
+            <div class="reviews-filter-top">
                 <span class="reviews-count-chip">@pageStart-@pageEnd / @Model.TotalCount kayıt</span>
             </div>
-        </div>
-        <div class="card-body">
-            <nav class="reviews-status-tabs" aria-label="Yorum durumu">
-                <a asp-action="Reviews" asp-route-status="all" asp-route-searchTerm="@Model.SearchTerm" asp-route-page="1" class="reviews-tab @(Model.StatusFilter == "all" ? "is-active" : string.Empty)">Tümü</a>
-                <a asp-action="Reviews" asp-route-status="waiting" asp-route-searchTerm="@Model.SearchTerm" asp-route-page="1" class="reviews-tab @(Model.StatusFilter == "waiting" ? "is-active" : string.Empty)">Yorum bekleyen</a>
-                <a asp-action="Reviews" asp-route-status="reviewed" asp-route-searchTerm="@Model.SearchTerm" asp-route-page="1" class="reviews-tab @(Model.StatusFilter == "reviewed" ? "is-active" : string.Empty)">Yorumlanan</a>
+
+            <nav class="reviews-status-tabs reviews-status-tabs--scroll" aria-label="Yorum durumu">
+                <a asp-action="Reviews" asp-route-status="all" asp-route-searchTerm="@Model.SearchTerm" asp-route-page="1" class="reviews-tab @(Model.StatusFilter == "all" ? "is-active" : string.Empty)">
+                    Tümü
+                    @if (Model.EligibleCount > 0)
+                    {
+                        <span class="reviews-tab-count">@Model.EligibleCount</span>
+                    }
+                </a>
+                <a asp-action="Reviews" asp-route-status="waiting" asp-route-searchTerm="@Model.SearchTerm" asp-route-page="1" class="reviews-tab @(Model.StatusFilter == "waiting" ? "is-active" : string.Empty)">
+                    Yorum bekleyen
+                    @if (Model.WaitingReviewCount > 0)
+                    {
+                        <span class="reviews-tab-count">@Model.WaitingReviewCount</span>
+                    }
+                </a>
+                <a asp-action="Reviews" asp-route-status="reviewed" asp-route-searchTerm="@Model.SearchTerm" asp-route-page="1" class="reviews-tab @(Model.StatusFilter == "reviewed" ? "is-active" : string.Empty)">
+                    Yorumlanan
+                    @if (Model.ReviewedCount > 0)
+                    {
+                        <span class="reviews-tab-count">@Model.ReviewedCount</span>
+                    }
+                </a>
             </nav>
 
-            <form method="get" asp-action="Reviews" class="reviews-filter-form">
-                <input type="hidden" name="status" value="@Model.StatusFilter" />
-                <input type="hidden" name="page" value="1" />
-                <div class="reviews-filter-field reviews-filter-field--search">
-                    <label class="form-label">Arama</label>
-                    <div class="input-icon">
-                        <span class="input-icon-addon"><i class="fas fa-search"></i></span>
-                        <input class="form-control" type="search" name="searchTerm" value="@Model.SearchTerm" placeholder="Otel, şehir veya rezervasyon no" />
+            <details class="reviews-filter-drawer">
+                <summary><i class="fas fa-search" aria-hidden="true"></i> Arama</summary>
+                <form method="get" asp-action="Reviews" class="reviews-filter-form">
+                    <input type="hidden" name="status" value="@Model.StatusFilter" />
+                    <input type="hidden" name="page" value="1" />
+                    <div class="reviews-filter-field reviews-filter-field--search">
+                        <label class="form-label">Otel, şehir veya rezervasyon no</label>
+                        <div class="input-icon">
+                            <span class="input-icon-addon"><i class="fas fa-search" aria-hidden="true"></i></span>
+                            <input class="form-control" type="search" name="searchTerm" value="@Model.SearchTerm" placeholder="Örn. Antalya, rezervasyon no" />
+                        </div>
                     </div>
-                </div>
-                <div class="reviews-filter-actions">
-                    <button type="submit" class="btn btn-primary"><i class="fas fa-filter me-2"></i>Filtrele</button>
-                    <a asp-action="Reviews" class="btn btn-outline-primary">Temizle</a>
-                </div>
-            </form>
+                    <div class="reviews-filter-actions ap-page-filter-actions">
+                        <button type="submit" class="btn btn-primary-ap"><i class="fas fa-filter" aria-hidden="true"></i> Filtrele</button>
+                        <a asp-action="Reviews" class="btn btn-outline-ap">Temizle</a>
+                    </div>
+                </form>
+            </details>
+
+            <p class="reviews-policy-note">
+                <i class="fas fa-circle-info" aria-hidden="true"></i>
+                <span>Yorum yazabilmek için rezervasyonunun onaylanmış, konaklamanın tamamlanmış ve çıkış tarihinin geçmiş olması gerekir.</span>
+            </p>
         </div>
     </section>
 
-    <section class="card reviews-list-card">
-        <div class="card-header">
-            <h3 class="card-title">Konaklama ve yorumlar</h3>
-            <div class="card-actions text-muted">Sayfa @Model.Page / @Model.TotalPages</div>
+    <section class="reviews-list-card">
+        <div class="reviews-list-head">
+            <h2>Konaklama ve yorumlar</h2>
+            <span class="reviews-list-meta">Sayfa @Model.Page / @Model.TotalPages</span>
         </div>
 
         @if (Model.Items.Count == 0)
         {
             <div class="empty reviews-empty">
-                <div class="empty-icon"><i class="fas fa-comment-slash"></i></div>
+                <div class="empty-icon"><i class="fas fa-comment-slash" aria-hidden="true"></i></div>
                 <p class="empty-title">Kayıt bulunamadı</p>
-                <p class="empty-subtitle text-muted">Onaylı ve tamamlanan konaklamaların burada listelenir. Yorum bekleyen oteller için &quot;Yorum ekle&quot; butonunu kullan.</p>
+                <p class="empty-subtitle text-muted">
+                    @if (Model.StatusFilter == "waiting")
+                    {
+                        @:Şu an yorum bekleyen onaylı konaklaman görünmüyor. Tamamlanan konaklamaların burada listelenir.
+                    }
+                    else if (Model.StatusFilter == "reviewed")
+                    {
+                        @:Henüz yorum yazdığın bir konaklama yok.
+                    }
+                    else if (!string.IsNullOrWhiteSpace(Model.SearchTerm))
+                    {
+                        @:Arama kriterine uygun konaklama bulunamadı. Farklı bir otel adı veya rezervasyon no dene.
+                    }
+                    else
+                    {
+                        @:Onaylanmış ve tamamlanmış konaklamaların burada listelenir. Konaklama bittikten sonra &quot;Yorum ekle&quot; ile değerlendirme yapabilirsin.
+                    }
+                </p>
                 <div class="empty-action">
-                    <a asp-action="Reservations" class="btn btn-primary">Rezervasyonlarım</a>
+                    @if (Model.WaitingReviewCount > 0)
+                    {
+                        <a asp-action="Reviews" asp-route-status="waiting" asp-route-page="1" class="btn btn-primary-ap">Yorum bekleyenleri göster</a>
+                    }
+                    else
+                    {
+                        <a asp-action="Reservations" class="btn btn-primary-ap">Rezervasyonlarım</a>
+                    }
                 </div>
             </div>
         }
@@ -98,14 +158,14 @@
                 @foreach (var item in Model.Items)
                 {
                     <article class="review-row-card review-row-card--@item.ReviewTone">
-                        <a class="review-row-media" href="/oteller/@item.HotelSlug">
+                        <a class="review-row-media" href="/hotel/@item.HotelSlug">
                             @if (!string.IsNullOrWhiteSpace(item.HotelImageUrl))
                             {
-                                <img src="@item.HotelImageUrl" alt="@item.HotelName" />
+                                <img src="@item.HotelImageUrl" alt="@item.HotelName" loading="lazy" />
                             }
                             else
                             {
-                                <span><i class="fas fa-hotel"></i></span>
+                                <span><i class="fas fa-hotel" aria-hidden="true"></i></span>
                             }
                         </a>
                         <div class="review-row-main">
@@ -117,10 +177,10 @@
                                 <span class="review-row-status review-row-status--@item.ReviewTone">@item.ReviewStatusText</span>
                             </div>
                             <div class="review-row-meta">
-                                <span><i class="far fa-calendar"></i>@item.StayDateText</span>
-                                <span><i class="far fa-moon"></i>@item.RoomName</span>
-                                <span><i class="fas fa-hashtag"></i>Rez. @item.ReservationNo</span>
-                                <span class="text-muted">@item.ReservationStatusText</span>
+                                <span><i class="far fa-calendar" aria-hidden="true"></i>@item.StayDateText</span>
+                                <span><i class="far fa-moon" aria-hidden="true"></i>@item.RoomName</span>
+                                <span><i class="fas fa-hashtag" aria-hidden="true"></i>Rez. @item.ReservationNo</span>
+                                <span class="review-row-res-status">@item.ReservationStatusText</span>
                             </div>
 
                             @if (item.HasReview)
@@ -139,16 +199,20 @@
                             }
 
                             <div class="review-row-footer">
-                                <div class="review-row-actions">
-                                    <a class="btn btn-outline-primary btn-sm" href="/oteller/@item.HotelSlug"><i class="fas fa-hotel me-1"></i>Otel</a>
+                                <div class="review-row-actions review-row-actions--primary">
                                     @if (item.CanWriteReview && !item.HasReview)
                                     {
-                                        <a class="btn btn-primary btn-sm" asp-action="ReservationReview" asp-route-reservationId="@item.ReservationId"><i class="fas fa-plus me-1"></i>Yorum ekle</a>
+                                        <a class="btn btn-primary-ap" asp-action="ReservationReview" asp-route-reservationId="@item.ReservationId">
+                                            <i class="fas fa-plus" aria-hidden="true"></i> Yorum ekle
+                                        </a>
                                     }
+                                </div>
+                                <div class="review-row-actions review-row-actions--secondary">
+                                    <a class="btn btn-outline-ap btn-sm" href="/hotel/@item.HotelSlug"><i class="fas fa-hotel" aria-hidden="true"></i> Otel</a>
                                     @if (item.HasReview && item.CanEditReview && item.ReviewId.HasValue)
                                     {
                                         <details class="review-edit-details">
-                                            <summary class="btn btn-outline-primary btn-sm review-edit-summary"><i class="fas fa-pen me-1"></i>Düzenle</summary>
+                                            <summary class="btn btn-outline-ap btn-sm review-edit-summary"><i class="fas fa-pen" aria-hidden="true"></i> Düzenle</summary>
                                             <div class="review-edit-panel">
                                                 <form method="post" asp-action="UpdateReview" class="review-update-form">
                                                     @Html.AntiForgeryToken()
@@ -159,7 +223,7 @@
                                                     <textarea name="Comment" class="form-control" rows="4" maxlength="4000" minlength="20" required>@item.ReviewText</textarea>
                                                     <small class="text-muted">En az 20 karakter. @item.EditLimitText tarihine kadar düzenlenebilir.</small>
                                                     <div class="review-edit-panel-foot">
-                                                        <button type="submit" class="btn btn-primary btn-sm">Kaydet</button>
+                                                        <button type="submit" class="btn btn-primary-ap btn-sm">Kaydet</button>
                                                     </div>
                                                 </form>
                                             </div>
@@ -169,16 +233,16 @@
                                             <input type="hidden" name="ReviewId" value="@item.ReviewId.Value" />
                                             <input type="hidden" name="status" value="@Model.StatusFilter" />
                                             <input type="hidden" name="searchTerm" value="@Model.SearchTerm" />
-                                            <button type="submit" class="btn btn-outline-danger btn-sm"><i class="fas fa-trash me-1"></i>Sil</button>
+                                            <button type="submit" class="btn btn-outline-ap btn-sm review-delete-btn"><i class="fas fa-trash" aria-hidden="true"></i> Sil</button>
                                         </form>
                                     }
                                     else if (item.HasReview && !item.CanEditReview)
                                     {
-                                        <span class="review-locked-inline text-muted small"><i class="fas fa-lock me-1"></i>7 günlük düzenleme süresi doldu</span>
+                                        <span class="review-locked-inline text-muted small"><i class="fas fa-lock" aria-hidden="true"></i> 7 günlük düzenleme süresi doldu</span>
                                     }
                                     else if (!item.HasReview && !item.CanWriteReview)
                                     {
-                                        <span class="text-muted small">Bu konaklama için yorum yazılamaz.</span>
+                                        <span class="review-closed-inline text-muted small"><i class="fas fa-ban" aria-hidden="true"></i> Yorum kapalı</span>
                                     }
                                 </div>
                             </div>
@@ -188,14 +252,14 @@
             </div>
         }
 
-        <div class="card-footer reviews-pager">
-            <div class="text-muted">@pageStart-@pageEnd arası gösteriliyor · @Model.TotalCount kayıt</div>
-            <div class="btn-list">
-                <a asp-action="Reviews" asp-route-status="@Model.StatusFilter" asp-route-searchTerm="@Model.SearchTerm" asp-route-page="@(Math.Max(1, Model.Page - 1))" class="btn btn-outline-primary btn-sm @(Model.Page <= 1 ? "disabled" : string.Empty)">
-                    <i class="fas fa-chevron-left me-1"></i>Önceki
+        <div class="reviews-pager">
+            <div class="reviews-pager-meta">@pageStart-@pageEnd arası · @Model.TotalCount kayıt</div>
+            <div class="reviews-pager-actions">
+                <a asp-action="Reviews" asp-route-status="@Model.StatusFilter" asp-route-searchTerm="@Model.SearchTerm" asp-route-page="@(Math.Max(1, Model.Page - 1))" class="btn btn-outline-ap btn-sm @(Model.Page <= 1 ? "disabled" : string.Empty)">
+                    <i class="fas fa-chevron-left" aria-hidden="true"></i> Önceki
                 </a>
-                <a asp-action="Reviews" asp-route-status="@Model.StatusFilter" asp-route-searchTerm="@Model.SearchTerm" asp-route-page="@(Math.Min(Model.TotalPages, Model.Page + 1))" class="btn btn-outline-primary btn-sm @(Model.Page >= Model.TotalPages ? "disabled" : string.Empty)">
-                    Sonraki<i class="fas fa-chevron-right ms-1"></i>
+                <a asp-action="Reviews" asp-route-status="@Model.StatusFilter" asp-route-searchTerm="@Model.SearchTerm" asp-route-page="@(Math.Min(Model.TotalPages, Model.Page + 1))" class="btn btn-outline-ap btn-sm @(Model.Page >= Model.TotalPages ? "disabled" : string.Empty)">
+                    Sonraki <i class="fas fa-chevron-right" aria-hidden="true"></i>
                 </a>
             </div>
         </div>

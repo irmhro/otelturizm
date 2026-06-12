@@ -39,6 +39,17 @@
   box-shadow: var(--user-shadow);
 }
 
+.reviews-page-hero--compact {
+  padding: 16px 18px;
+}
+
+.reviews-page-hero-lead {
+  color: #64748b;
+  font-size: 14px;
+  line-height: 1.5;
+  font-weight: 600;
+}
+
 .reviews-page-hero .page-title {
   margin-bottom: 6px;
   font-size: 28px;
@@ -50,6 +61,14 @@
   flex-wrap: wrap;
   justify-content: flex-end;
   gap: 10px;
+}
+
+.reviews-hero-cta,
+.reviews-hero-link {
+  min-height: 36px;
+  height: auto;
+  padding-top: 8px;
+  padding-bottom: 8px;
 }
 
 .reviews-stat-grid {
@@ -108,10 +127,131 @@
 
 .reviews-filter-card,
 .reviews-list-card {
-  border-color: var(--user-line);
+  border: 1px solid var(--user-line);
   border-radius: 14px;
+  background: var(--user-surface);
   box-shadow: var(--user-shadow);
   overflow: hidden;
+}
+
+.reviews-filter-shell {
+  padding: 14px 16px 16px;
+}
+
+.reviews-filter-top {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 10px;
+}
+
+.reviews-status-tabs--scroll {
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+  padding-bottom: 2px;
+  margin-bottom: 12px;
+}
+
+.reviews-status-tabs--scroll::-webkit-scrollbar {
+  display: none;
+}
+
+.reviews-tab-count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 20px;
+  min-height: 20px;
+  margin-left: 6px;
+  padding: 0 6px;
+  border-radius: 999px;
+  background: rgba(15, 23, 42, .08);
+  font-size: 11px;
+  font-weight: 900;
+  line-height: 1;
+}
+
+.reviews-tab.is-active .reviews-tab-count {
+  background: rgba(255, 255, 255, .22);
+  color: #fff;
+}
+
+.reviews-filter-drawer {
+  border: 1px solid var(--user-line);
+  border-radius: 12px;
+  background: var(--user-surface-2);
+  overflow: hidden;
+}
+
+.reviews-filter-drawer summary {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 44px;
+  padding: 0 14px;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 800;
+  color: #334155;
+  list-style: none;
+}
+
+.reviews-filter-drawer summary::-webkit-details-marker {
+  display: none;
+}
+
+.reviews-filter-drawer[open] summary {
+  border-bottom: 1px solid var(--user-line);
+}
+
+.reviews-filter-drawer .reviews-filter-form {
+  padding: 12px 14px 14px;
+  margin-bottom: 0;
+}
+
+.reviews-policy-note {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  margin: 12px 0 0;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: rgba(32, 107, 196, 0.06);
+  border: 1px solid rgba(32, 107, 196, 0.12);
+  color: #475569;
+  font-size: 12px;
+  line-height: 1.45;
+  font-weight: 600;
+}
+
+.reviews-policy-note i {
+  flex-shrink: 0;
+  margin-top: 2px;
+  color: var(--user-accent);
+}
+
+.reviews-list-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--user-line);
+}
+
+.reviews-list-head h2 {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 900;
+  color: #0f172a;
+}
+
+.reviews-list-meta {
+  color: #64748b;
+  font-size: 12px;
+  font-weight: 700;
+  white-space: nowrap;
 }
 
 .reviews-count-chip {
@@ -287,6 +427,60 @@
   min-width: 0;
 }
 
+.review-row-res-status {
+  color: #64748b;
+  font-weight: 700;
+}
+
+.review-row-actions--primary {
+  margin-bottom: 0;
+}
+
+.review-row-actions--primary:empty {
+  display: none;
+}
+
+.review-row-actions--secondary {
+  margin-top: 0;
+}
+
+.review-delete-btn {
+  color: #b91c1c;
+  border-color: rgba(220, 38, 38, .24);
+}
+
+.review-closed-inline,
+.review-locked-inline {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+  padding: 8px 10px;
+  border-radius: 8px;
+  background: rgba(248, 250, 252, .9);
+  border: 1px solid rgba(148, 163, 184, .18);
+}
+
+.reviews-pager {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 14px 16px;
+  border-top: 1px solid var(--user-line);
+}
+
+.reviews-pager-meta {
+  color: #64748b;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.reviews-pager-actions {
+  display: flex;
+  gap: 8px;
+}
+
 .review-snippet-block {
   padding: 10px 12px;
   border-radius: 12px;
@@ -335,6 +529,8 @@
 
 .review-row-footer {
   padding-top: 4px;
+  display: grid;
+  gap: 8px;
 }
 
 .review-row-actions {
@@ -388,13 +584,6 @@
 .review-locked-inline {
   display: inline-flex;
   align-items: center;
-}
-
-.reviews-pager {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
 }
 
 .reviews-empty {

@@ -69,31 +69,37 @@
     word-break: break-word;
   }
 
-  .kullanici-panel-shell .profile-contact-line {
+  .kullanici-panel-shell .profile-contact-stack {
+    display: grid;
+    gap: 6px;
+    margin-top: 4px;
+  }
+
+  .kullanici-panel-shell .profile-contact-row {
     display: flex;
     flex-wrap: wrap;
     align-items: center;
-    gap: 2px 6px;
-    margin-top: 3px;
+    gap: 6px;
+    min-width: 0;
+  }
+
+  .kullanici-panel-shell .profile-contact-value {
     font-size: 12px;
     line-height: 1.4;
     font-weight: 700;
-  }
-
-  .kullanici-panel-shell .profile-contact-line span {
     min-width: 0;
     word-break: break-word;
+    color: var(--user-muted, #64748b);
   }
 
-  .kullanici-panel-shell .profile-contact-sep {
-    color: color-mix(in srgb, var(--user-muted, #64748b) 72%, transparent);
-    flex-shrink: 0;
-  }
-
-  .kullanici-panel-shell .profile-status-row {
-    margin-top: 6px;
-    gap: 6px;
-    align-items: flex-start;
+  .kullanici-panel-shell .profile-contact-row .profile-status {
+    font-size: 11px;
+    padding: 3px 8px;
+    min-height: 26px;
+    max-width: 100%;
+    white-space: normal;
+    text-align: left;
+    line-height: 1.25;
   }
 
   .kullanici-panel-shell .profile-status {
@@ -106,7 +112,6 @@
     line-height: 1.25;
   }
 
-  /* Upload card — compact, fontlar.md panel mobil */
   .kullanici-panel-shell .profile-upload-card {
     box-sizing: border-box;
     width: 100%;
@@ -242,6 +247,31 @@
     margin: 4px 0 0;
     font-size: 12px;
     line-height: 1.4;
+  }
+
+  .kullanici-panel-shell .profile-avatar-picker-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 10px;
+    width: 100%;
+  }
+
+  .kullanici-panel-shell .profile-avatar-picker-tile-btn {
+    border-radius: 14px;
+  }
+
+  .kullanici-panel-shell .profile-avatar-picker-date {
+    font-size: 10px;
+  }
+
+  .kullanici-panel-shell .profile-avatar-picker-hover {
+    opacity: 1;
+    background: linear-gradient(180deg, transparent 45%, rgba(15, 23, 42, .62));
+    align-items: flex-end;
+    padding-bottom: 10px;
+  }
+
+  .kullanici-panel-shell .profile-avatar-picker-tile.is-current .profile-avatar-picker-hover {
+    display: none;
   }
 
   .kullanici-panel-shell .profile-uploaded-avatar-list {
@@ -464,7 +494,84 @@
     margin-top: 2px;
   }
 
+  .kullanici-panel-shell .profile-travel-purpose-grid {
+    gap: 6px;
+  }
+
+  .kullanici-panel-shell .profile-travel-purpose-pill > span {
+    min-height: 32px;
+    padding: 5px 11px;
+    font-size: 12px;
+  }
+
   /* Email verification */
+  .kullanici-panel-shell .profile-email-update-head {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 8px;
+  }
+
+  .kullanici-panel-shell .profile-email-update-head .profile-status {
+    align-self: flex-start;
+    width: auto;
+  }
+
+  .kullanici-panel-shell .profile-email-update-steps {
+    gap: 10px;
+  }
+
+  .kullanici-panel-shell .profile-email-step {
+    padding: 12px;
+    border-radius: 10px;
+    gap: 10px;
+  }
+
+  .kullanici-panel-shell .profile-email-step-head {
+    gap: 10px;
+  }
+
+  .kullanici-panel-shell .profile-email-step-no {
+    width: 26px;
+    height: 26px;
+    font-size: 12px;
+  }
+
+  .kullanici-panel-shell .profile-email-step-head strong {
+    font-size: 14px;
+  }
+
+  .kullanici-panel-shell .profile-email-step-head p {
+    font-size: 12px;
+  }
+
+  .kullanici-panel-shell .profile-email-step-form,
+  .kullanici-panel-shell .profile-email-step-form-verify {
+    grid-template-columns: 1fr;
+    gap: 8px;
+  }
+
+  .kullanici-panel-shell .profile-email-field-label > span {
+    font-size: 13px;
+  }
+
+  .kullanici-panel-shell .profile-email-field-label .form-control {
+    height: var(--profile-form-row-h);
+    min-height: var(--profile-form-row-h);
+    padding: 0 10px;
+    font-size: 16px;
+    border-radius: 8px;
+  }
+
+  .kullanici-panel-shell .profile-email-action-btn {
+    width: 100%;
+    min-height: var(--profile-form-row-h);
+    height: var(--profile-form-row-h);
+    padding: 0 14px;
+    font-size: 13px;
+    font-weight: 700;
+    border-radius: 8px;
+  }
+
   .kullanici-panel-shell .profile-verification-grid {
     grid-template-columns: 1fr;
     gap: 8px;
@@ -535,11 +642,7 @@
     text-align: center;
   }
 
-  .kullanici-panel-shell .profile-status-row {
-    justify-content: center;
-  }
-
-  .kullanici-panel-shell .profile-contact-line {
+  .kullanici-panel-shell .profile-contact-row {
     justify-content: center;
   }
 }

@@ -352,7 +352,7 @@ public class EmailQueueService : IEmailQueueService
 
         if (tokenKey.Equals("hotel_link", StringComparison.OrdinalIgnoreCase))
         {
-            return $"{_publicBaseUrl}/oteller/{trimmed.TrimStart('/')}";
+            return $"{_publicBaseUrl}/hotel/{trimmed.TrimStart('/')}";
         }
 
         return $"{_publicBaseUrl}/{trimmed.TrimStart('/')}";

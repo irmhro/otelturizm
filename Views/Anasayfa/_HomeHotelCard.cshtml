@@ -16,7 +16,7 @@
 }
 
 <article class="home-hotel-card">
-    <a href="/oteller/@Uri.EscapeDataString(Model.DetailSlug ?? string.Empty)" class="home-hotel-card-link">
+    <a href="/hotel/@Uri.EscapeDataString(Model.DetailSlug ?? string.Empty)" class="home-hotel-card-link">
         <div class="card-image-shell">
             @{
                 var gallery = (Model.GalleryImageUrls ?? new List<string>())

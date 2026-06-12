@@ -109,7 +109,7 @@ public sealed class UtilityPulseService : IUtilityPulseService
                 {
                     City = city,
                     HotelCount = reader.GetInt32(1),
-                    ListingUrl = $"/oteller?q={Uri.EscapeDataString(city)}"
+                    ListingUrl = $"/hotel?q={Uri.EscapeDataString(city)}"
                 });
             }
         }
@@ -118,10 +118,10 @@ public sealed class UtilityPulseService : IUtilityPulseService
         {
             destinations.AddRange(new[]
             {
-                new UtilityPulseDestinationViewModel { City = "Antalya", HotelCount = 0, ListingUrl = "/oteller?q=Antalya" },
-                new UtilityPulseDestinationViewModel { City = "İstanbul", HotelCount = 0, ListingUrl = "/oteller?q=%C4%B0stanbul" },
-                new UtilityPulseDestinationViewModel { City = "Muğla", HotelCount = 0, ListingUrl = "/oteller?q=Mu%C4%9Fla" },
-                new UtilityPulseDestinationViewModel { City = "Kapadokya", HotelCount = 0, ListingUrl = "/oteller?q=Kapadokya" }
+                new UtilityPulseDestinationViewModel { City = "Antalya", HotelCount = 0, ListingUrl = "/hotel?q=Antalya" },
+                new UtilityPulseDestinationViewModel { City = "İstanbul", HotelCount = 0, ListingUrl = "/hotel?q=%C4%B0stanbul" },
+                new UtilityPulseDestinationViewModel { City = "Muğla", HotelCount = 0, ListingUrl = "/hotel?q=Mu%C4%9Fla" },
+                new UtilityPulseDestinationViewModel { City = "Kapadokya", HotelCount = 0, ListingUrl = "/hotel?q=Kapadokya" }
             });
         }
 
@@ -157,7 +157,7 @@ public sealed class UtilityPulseService : IUtilityPulseService
             {
                 IconClass = "fas fa-hotel",
                 Text = hotelCount > 0 ? $"{FormatCount(hotelCount)} onaylı otel" : "Onaylı otel ağı",
-                LinkUrl = "/oteller"
+                LinkUrl = "/hotel"
             }
         };
 

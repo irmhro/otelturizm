@@ -263,6 +263,113 @@
     gap: 10px;
 }
 
+.otelliste-page .otelliste-travel-pref-block {
+    display: grid;
+    gap: 8px;
+    padding: 12px;
+    border: 1px solid rgba(220, 38, 38, .18);
+    border-radius: 14px;
+    background: linear-gradient(135deg, rgba(254, 242, 242, .92), rgba(255, 255, 255, .98));
+    box-shadow: 0 10px 24px rgba(220, 38, 38, .08);
+}
+
+.otelliste-page .otelliste-travel-pref-btn {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    width: 100%;
+    padding: 12px 14px;
+    border: 1px solid rgba(220, 38, 38, .22);
+    border-radius: 12px;
+    background: #fff;
+    color: var(--otl-text, #0f172a);
+    text-align: left;
+    cursor: pointer;
+    transition: border-color .2s ease, box-shadow .2s ease, transform .2s ease, background .2s ease;
+}
+
+.otelliste-page .otelliste-travel-pref-btn:hover {
+    border-color: rgba(220, 38, 38, .45);
+    box-shadow: 0 8px 20px rgba(220, 38, 38, .12);
+    transform: translateY(-1px);
+}
+
+.otelliste-page .otelliste-travel-pref-btn.is-active {
+    border-color: rgba(220, 38, 38, .55);
+    background: linear-gradient(135deg, #dc2626, #b91c1c);
+    color: #fff;
+    box-shadow: 0 12px 28px rgba(220, 38, 38, .24);
+}
+
+.otelliste-page .otelliste-travel-pref-btn.is-active .otelliste-travel-pref-btn-icon {
+    background: rgba(255, 255, 255, .18);
+    color: #fff;
+}
+
+.otelliste-page .otelliste-travel-pref-btn.is-active small {
+    color: rgba(255, 255, 255, .88);
+}
+
+.otelliste-page .otelliste-travel-pref-btn-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex: 0 0 auto;
+    width: 40px;
+    height: 40px;
+    border-radius: 12px;
+    background: rgba(220, 38, 38, .1);
+    color: #dc2626;
+    font-size: 16px;
+}
+
+.otelliste-page .otelliste-travel-pref-btn-copy {
+    display: grid;
+    gap: 3px;
+    min-width: 0;
+}
+
+.otelliste-page .otelliste-travel-pref-btn-copy strong {
+    font-size: 14px;
+    font-weight: 800;
+    line-height: 1.25;
+}
+
+.otelliste-page .otelliste-travel-pref-btn-copy small {
+    color: var(--otl-muted, #64748b);
+    font-size: 11px;
+    font-weight: 650;
+    line-height: 1.35;
+}
+
+.otelliste-page .otelliste-travel-pref-edit {
+    justify-self: start;
+    font-size: 12px;
+    font-weight: 700;
+    color: #dc2626;
+    text-decoration: none;
+}
+
+.otelliste-page .otelliste-travel-pref-edit:hover {
+    text-decoration: underline;
+}
+
+.otelliste-page .otelliste-travel-pref-toast {
+    display: none;
+    padding: 10px 12px;
+    border-radius: 10px;
+    background: rgba(220, 252, 231, .92);
+    border: 1px solid rgba(16, 185, 129, .28);
+    color: #065f46;
+    font-size: 12px;
+    font-weight: 700;
+    line-height: 1.4;
+}
+
+.otelliste-page .otelliste-travel-pref-toast.is-visible {
+    display: block;
+}
+
 .otelliste-page .otelliste-filter-location-grid {
     display: flex;
     flex-direction: column;

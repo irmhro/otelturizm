@@ -321,12 +321,17 @@ public class UserFavoriteService : IUserFavoriteService
         }
 
         model.FavoriteCount = model.Hotels.Count;
+        await EnrichFavoriteSmartRoutesAsync(connection, model.Hotels, cancellationToken);
+        model.RouteSearchHints = model.Hotels
+            .SelectMany(h => h.SmartRouteLabels)
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .OrderBy(x => x, StringComparer.OrdinalIgnoreCase)
+            .Take(30)
+            .ToList();
         if (!string.IsNullOrWhiteSpace(normalizedSearch))
         {
             model.Hotels = model.Hotels
-                .Where(h => h.Name.Contains(normalizedSearch, StringComparison.OrdinalIgnoreCase)
-                            || h.City.Contains(normalizedSearch, StringComparison.OrdinalIgnoreCase)
-                            || h.District.Contains(normalizedSearch, StringComparison.OrdinalIgnoreCase))
+                .Where(h => MatchesFavoriteSearch(h, normalizedSearch))
                 .ToList();
         }
 
@@ -415,6 +420,135 @@ public class UserFavoriteService : IUserFavoriteService
             "newest-favorite" => "newest-favorite",
             _ => "latest-reservation"
         };
+
+    private static bool MatchesFavoriteSearch(UserFavoriteHotelCardViewModel hotel, string searchTerm)
+    {
+        var term = searchTerm.Trim();
+        if (term.Length == 0)
+        {
+            return true;
+        }
+
+        if (ContainsIgnoreCase(hotel.Name, term)
+            || ContainsIgnoreCase(hotel.City, term)
+            || ContainsIgnoreCase(hotel.District, term))
+        {
+            return true;
+        }
+
+        foreach (var label in hotel.SmartRouteLabels)
+        {
+            if (ContainsIgnoreCase(label, term))
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private static bool ContainsIgnoreCase(string? source, string term)
+        => !string.IsNullOrWhiteSpace(source)
+           && source.Contains(term, StringComparison.OrdinalIgnoreCase);
+
+    private async Task EnrichFavoriteSmartRoutesAsync(
+        SqlConnection connection,
+        List<UserFavoriteHotelCardViewModel> hotels,
+        CancellationToken cancellationToken)
+    {
+        if (hotels.Count == 0)
+        {
+            return;
+        }
+
+        if (!await TableExistsAsync(connection, "AKILLI_ROTA_OTELLER", cancellationToken)
+            || !await TableExistsAsync(connection, "AKILLI_ROTA", cancellationToken))
+        {
+            return;
+        }
+
+        var hotelIds = hotels.Select(h => h.HotelId).Distinct().ToArray();
+        var parameters = string.Join(", ", hotelIds.Select((_, index) => $"@hotelId{index}"));
+        var sql = $@"
+            SELECT
+                aro.[OTEL_ID],
+                ar.[ETIKET_ADI],
+                COALESCE(ar.[HASHTAG], '') AS [HASHTAG],
+                ar.[ETIKET_KODU],
+                COALESCE(ar.[ARAMA_METNI], '') AS [ARAMA_METNI]
+            FROM [dbo].[AKILLI_ROTA_OTELLER] aro
+            INNER JOIN [dbo].[AKILLI_ROTA] ar ON ar.[ID] = aro.[AKILLI_ROTA_ID]
+            WHERE aro.[OTEL_ID] IN ({parameters})
+              AND aro.[AKTIF_MI] = 1
+              AND (aro.[BITIS_TARIHI] IS NULL OR aro.[BITIS_TARIHI] > SYSUTCDATETIME())
+              AND ar.[AKTIF_MI] = 1
+            ORDER BY ar.[SIRA_NO], ar.[ETIKET_ADI];";
+
+        var routeMap = hotels.ToDictionary(h => h.HotelId, _ => new List<string>());
+
+        await using var command = new SqlCommand(sql, connection);
+        for (var i = 0; i < hotelIds.Length; i++)
+        {
+            command.Parameters.AddWithValue($"@hotelId{i}", hotelIds[i]);
+        }
+
+        await using var reader = await command.ExecuteReaderAsync(cancellationToken);
+        while (await reader.ReadAsync(cancellationToken))
+        {
+            var hotelId = reader.GetInt64(0);
+            if (!routeMap.TryGetValue(hotelId, out var labels))
+            {
+                continue;
+            }
+
+            var displayName = reader.IsDBNull(1) ? string.Empty : reader.GetString(1).Trim();
+            var hashtag = reader.IsDBNull(2) ? string.Empty : reader.GetString(2).Trim().TrimStart('#');
+            var slug = reader.IsDBNull(3) ? string.Empty : reader.GetString(3).Trim();
+            var searchText = reader.IsDBNull(4) ? string.Empty : reader.GetString(4).Trim();
+
+            AddRouteLabel(labels, displayName);
+            AddRouteLabel(labels, hashtag);
+            AddRouteLabel(labels, slug);
+            AddRouteLabel(labels, slug.Replace('-', ' '));
+            foreach (var part in searchText.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
+            {
+                AddRouteLabel(labels, part);
+            }
+        }
+
+        foreach (var hotel in hotels)
+        {
+            if (routeMap.TryGetValue(hotel.HotelId, out var labels))
+            {
+                hotel.SmartRouteLabels = labels;
+            }
+        }
+    }
+
+    private static void AddRouteLabel(List<string> labels, string? value)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+        {
+            return;
+        }
+
+        var trimmed = value.Trim();
+        if (labels.Any(existing => string.Equals(existing, trimmed, StringComparison.OrdinalIgnoreCase)))
+        {
+            return;
+        }
+
+        labels.Add(trimmed);
+    }
+
+    private static async Task<bool> TableExistsAsync(SqlConnection connection, string tableName, CancellationToken cancellationToken)
+    {
+        const string sql = "SELECT CASE WHEN OBJECT_ID(@tableName, 'U') IS NOT NULL THEN 1 ELSE 0 END;";
+        await using var command = new SqlCommand(sql, connection);
+        command.Parameters.AddWithValue("@tableName", $"dbo.{tableName}");
+        var result = await command.ExecuteScalarAsync(cancellationToken);
+        return Convert.ToInt32(result, CultureInfo.InvariantCulture) == 1;
+    }
 
     public async Task<OtelFavoriToggleYanit> ToggleFavoriteAsync(long userId, long hotelId, string sourcePage, string sourceUrl, string? deviceType, string? ipAddress, CancellationToken cancellationToken = default)
     {

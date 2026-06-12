@@ -36,6 +36,20 @@ public class HotelListingPageViewModel
     public bool ShowLoyaltyTouchpoints { get; set; } = true;
 
     public bool LoyaltyUserSignedIn { get; set; }
+
+    /// <summary>Giriş yapmış kullanıcının kayıtlı seyahat tercihleri (otel listesi filtresi).</summary>
+    public UserTravelPreferencesSearchViewModel? UserTravelPreferences { get; set; }
+}
+
+public class UserTravelPreferencesSearchViewModel
+{
+    public string? RoomPreference { get; set; }
+    public string? BedPreference { get; set; }
+    public string? TravelPurpose { get; set; }
+    public string? SpokenLanguages { get; set; }
+    public string? SpecialRequests { get; set; }
+    public bool HasActionablePreferences { get; set; }
+    public string SummaryText { get; set; } = string.Empty;
 }
 
 public class HotelSearchSuggestionViewModel

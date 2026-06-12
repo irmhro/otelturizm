@@ -13,18 +13,19 @@
             <div>
                 <p class="page-pretitle">PROFİL MERKEZİ</p>
                 <h1>@Model.Form.FirstName @Model.Form.LastName</h1>
-                <p class="profile-contact-line">
-                    <span>@Model.Form.Email</span>
-                    <span class="profile-contact-sep" aria-hidden="true">·</span>
-                    <span>@Model.Form.Phone</span>
-                </p>
-                <div class="profile-status-row">
-                    <span class="profile-status @(Model.EmailVerified ? "is-ok" : "is-warn")"><i class="fas @(Model.EmailVerified ? "fa-circle-check" : "fa-clock")"></i>@(Model.EmailVerified ? "E-posta doğrulandı" : "E-posta doğrulama bekliyor")</span>
-                    <span class="profile-status tone-@Model.PhoneVerification.StatusToneClass"><i class="fas fa-mobile-screen-button"></i>@Model.PhoneVerification.StatusText</span>
+                <div class="profile-contact-stack">
+                    <div class="profile-contact-row">
+                        <span class="profile-contact-value">@Model.Form.Email</span>
+                        <span class="profile-status @(Model.EmailVerified ? "is-ok" : "is-warn")"><i class="fas @(Model.EmailVerified ? "fa-circle-check" : "fa-clock")"></i>@(Model.EmailVerified ? "E-posta doğrulandı" : "E-posta doğrulama bekliyor")</span>
+                    </div>
+                    <div class="profile-contact-row">
+                        <span class="profile-contact-value">@Model.Form.Phone</span>
+                        <span class="profile-status tone-@Model.PhoneVerification.StatusToneClass"><i class="fas fa-mobile-screen-button"></i>@Model.PhoneVerification.StatusText</span>
+                    </div>
                 </div>
             </div>
         </div>
-        <form method="post" asp-action="UploadProfileImage" enctype="multipart/form-data" class="profile-upload-card" data-panel-auto-upload data-panel-auto-upload-success="Profil görseliniz kaydedildi.">
+        <form method="post" asp-action="UploadProfileImage" enctype="multipart/form-data" class="profile-upload-card" data-panel-auto-upload data-panel-auto-upload-reload="false" data-panel-auto-upload-success="Profil görseliniz kaydedildi.">
             @Html.AntiForgeryToken()
             <strong>Profil görseli</strong>
             <span>Görsel seçildiğinde otomatik yüklenir. Dosyalar güvenli alanda tutulur.</span>
@@ -43,32 +44,44 @@
     <section class="profile-preset-card">
         <div class="profile-preset-head">
             <h2>Profil görselleri</h2>
-            <p>Son yüklediğin görseller burada listelenir.</p>
+            <p>Bir görsele dokunarak profil resminizi değiştirin.</p>
         </div>
-            <div class="profile-uploaded-avatar-list">
-                @foreach (var avatar in Model.UploadedProfileAvatars)
-                {
-                    <article class="profile-uploaded-avatar @(avatar.IsCurrent ? "is-current" : string.Empty)">
-                        <img src="@avatar.AccessUrl" alt="@avatar.OriginalFileName" />
-                        <div class="profile-uploaded-avatar-meta">
-                            <strong>@(avatar.IsCurrent ? "Aktif profil görseli" : "Yüklenen profil görseli")</strong>
-                            <span>@avatar.UploadedAtText</span>
-                        </div>
-                        <div class="profile-uploaded-avatar-actions">
-                            <form method="post" asp-action="SelectUploadedProfileImage" data-panel-auto-action="select">
-                                @Html.AntiForgeryToken()
-                                <input type="hidden" name="fileId" value="@avatar.FileId" />
-                                <button type="submit" class="btn btn-outline-primary" disabled="@avatar.IsCurrent">Seç</button>
-                            </form>
-                            <form method="post" asp-action="DeleteProfileImage" data-panel-auto-action="delete">
-                                @Html.AntiForgeryToken()
-                                <input type="hidden" name="fileId" value="@avatar.FileId" />
-                                <button type="submit" class="btn btn-outline-danger">Sil</button>
-                            </form>
-                        </div>
-                    </article>
-                }
-            </div>
+        <div class="profile-avatar-picker-grid" data-profile-avatar-grid>
+            @foreach (var avatar in Model.UploadedProfileAvatars)
+            {
+                <article class="profile-avatar-picker-tile @(avatar.IsCurrent ? "is-current" : string.Empty)" data-avatar-file-id="@avatar.FileId">
+                    <form method="post" asp-action="SelectUploadedProfileImage" class="profile-avatar-picker-select-form" data-panel-auto-action="select" data-panel-auto-action-reload="false" data-panel-auto-action-success="Profil görseliniz güncellendi.">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" name="fileId" value="@avatar.FileId" />
+                    </form>
+                    <button type="button"
+                            class="profile-avatar-picker-tile-btn"
+                            data-profile-avatar-select
+                            data-image-url="@avatar.AccessUrl"
+                            aria-label="@(avatar.IsCurrent ? "Aktif profil görseli" : "Profil görseli olarak seç")"
+                            aria-pressed="@(avatar.IsCurrent ? "true" : "false")"
+                            disabled="@(avatar.IsCurrent ? "disabled" : null)">
+                        <img src="@avatar.AccessUrl" alt="@avatar.OriginalFileName" loading="lazy" />
+                        @if (avatar.IsCurrent)
+                        {
+                            <span class="profile-avatar-picker-badge" aria-hidden="true"><i class="fas fa-check"></i></span>
+                        }
+                        else
+                        {
+                            <span class="profile-avatar-picker-hover" aria-hidden="true">Seç</span>
+                        }
+                    </button>
+                    <span class="profile-avatar-picker-date">@avatar.UploadedAtText</span>
+                    <form method="post" asp-action="DeleteProfileImage" class="profile-avatar-picker-delete" data-panel-auto-action="delete" data-panel-auto-action-reload="false">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" name="fileId" value="@avatar.FileId" />
+                        <button type="submit" class="profile-avatar-picker-delete-btn" aria-label="Görseli sil" title="Sil">
+                            <i class="fas fa-trash-can"></i>
+                        </button>
+                    </form>
+                </article>
+            }
+        </div>
     </section>
     }
 
@@ -150,30 +163,60 @@
     @if (Model.EmailVerified)
     {
         <article class="profile-panel email-update-card @(Model.OpenEmailUpdate ? "email-update-open" : string.Empty)">
-            <div class="profile-panel-head">
+            <div class="profile-panel-head profile-email-update-head">
                 <div>
                     <h2>E-posta adresimi güncelle</h2>
                     <p>Yeni adres doğrulama kodu ile güvenli şekilde aktif edilir.</p>
                 </div>
-                <span class="profile-status is-ok">Güvenli doğrulama</span>
+                <span class="profile-status is-ok"><i class="fas fa-shield-halved"></i> Güvenli doğrulama</span>
             </div>
-            <div class="profile-verification-grid">
-                <form method="post" asp-action="SendEmailUpdateCode" class="profile-inline-form">
-                    @Html.AntiForgeryToken()
-                    <input type="hidden" name="EmailUpdate.ReturnUrl" value="@Model.ReturnUrl" />
-                    <label class="form-label" for="newEmail">Yeni E-posta</label>
-                    <input class="form-control" id="newEmail" type="email" name="EmailUpdate.NewEmail" placeholder="yeni@email.com" required />
-                    <button type="submit" class="btn btn-primary">Kod Gönder</button>
-                </form>
-                <form method="post" asp-action="VerifyEmailUpdateCode" class="profile-inline-form profile-inline-form-wide">
-                    @Html.AntiForgeryToken()
-                    <input type="hidden" name="EmailUpdateVerify.ReturnUrl" value="@Model.ReturnUrl" />
-                    <label class="form-label" for="verifyNewEmail">Yeni E-posta</label>
-                    <input class="form-control" id="verifyNewEmail" type="email" name="EmailUpdateVerify.NewEmail" placeholder="yeni@email.com" required />
-                    <label class="form-label" for="emailCode">Doğrulama Kodu</label>
-                    <input class="form-control" id="emailCode" type="text" name="EmailUpdateVerify.Code" inputmode="numeric" maxlength="8" placeholder="6 haneli kod" required />
-                    <button type="submit" class="btn btn-outline-primary">Doğrula ve Güncelle</button>
-                </form>
+            <div class="profile-email-update-steps">
+                <section class="profile-email-step">
+                    <div class="profile-email-step-head">
+                        <span class="profile-email-step-no" aria-hidden="true">1</span>
+                        <div>
+                            <strong>Doğrulama kodu gönder</strong>
+                            <p>Yeni e-posta adresinize kod iletilecek.</p>
+                        </div>
+                    </div>
+                    <form method="post" asp-action="SendEmailUpdateCode" class="profile-email-step-form">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" name="EmailUpdate.ReturnUrl" value="@Model.ReturnUrl" />
+                        <label class="profile-email-field-label" for="newEmail">
+                            <span>Yeni E-posta</span>
+                            <input class="form-control" id="newEmail" type="email" name="EmailUpdate.NewEmail" placeholder="yeni@email.com" autocomplete="email" required />
+                        </label>
+                        <button type="submit" class="btn-primary-ap profile-email-action-btn">
+                            <i class="fas fa-paper-plane" aria-hidden="true"></i>
+                            <span>Kod Gönder</span>
+                        </button>
+                    </form>
+                </section>
+                <section class="profile-email-step">
+                    <div class="profile-email-step-head">
+                        <span class="profile-email-step-no" aria-hidden="true">2</span>
+                        <div>
+                            <strong>Doğrula ve güncelle</strong>
+                            <p>E-posta ve gelen kodu girerek işlemi tamamlayın.</p>
+                        </div>
+                    </div>
+                    <form method="post" asp-action="VerifyEmailUpdateCode" class="profile-email-step-form profile-email-step-form-verify">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" name="EmailUpdateVerify.ReturnUrl" value="@Model.ReturnUrl" />
+                        <label class="profile-email-field-label" for="verifyNewEmail">
+                            <span>Yeni E-posta</span>
+                            <input class="form-control" id="verifyNewEmail" type="email" name="EmailUpdateVerify.NewEmail" placeholder="yeni@email.com" autocomplete="email" required />
+                        </label>
+                        <label class="profile-email-field-label" for="emailCode">
+                            <span>Doğrulama Kodu</span>
+                            <input class="form-control" id="emailCode" type="text" name="EmailUpdateVerify.Code" inputmode="numeric" maxlength="8" placeholder="6 haneli kod" autocomplete="one-time-code" required />
+                        </label>
+                        <button type="submit" class="btn-primary-ap profile-email-action-btn">
+                            <i class="fas fa-circle-check" aria-hidden="true"></i>
+                            <span>Doğrula ve Güncelle</span>
+                        </button>
+                    </form>
+                </section>
             </div>
         </article>
     }
@@ -207,14 +250,31 @@
                         }
                     </select>
                 </label>
-                <label>
+                <label class="profile-field-full profile-travel-purpose-field">
                     <span>Seyahat Amacı</span>
-                    <select class="form-select" name="TravelPurpose" data-panel-autosave="change">
+                    <small class="profile-travel-purpose-hint">Birden fazla amaç seçebilirsiniz.</small>
+                    @{
+                        var selectedTravelPurposes = UserPanelService.ParseTravelPurposes(Model.Form.TravelPurpose)
+                            .ToHashSet(StringComparer.OrdinalIgnoreCase);
+                    }
+                    <input type="hidden"
+                           name="TravelPurpose"
+                           id="travelPurposeValue"
+                           value="@Model.Form.TravelPurpose"
+                           data-panel-autosave="change" />
+                    <div class="profile-travel-purpose-grid" role="group" aria-label="Seyahat amacı seçimi">
                         @foreach (var option in Model.TravelPurposeOptions)
                         {
-                            <option value="@option" selected="@(string.Equals(Model.Form.TravelPurpose, option, StringComparison.OrdinalIgnoreCase))">@option</option>
+                            var isSelected = selectedTravelPurposes.Contains(option);
+                            <label class="profile-travel-purpose-pill @(isSelected ? "is-selected" : string.Empty)">
+                                <input type="checkbox"
+                                       value="@option"
+                                       data-travel-purpose-option
+                                       @(isSelected ? "checked" : null) />
+                                <span>@option</span>
+                            </label>
                         }
-                    </select>
+                    </div>
                 </label>
                 <label>
                     <span>Konuşulan Dil</span>
@@ -259,6 +319,89 @@
             const previewUrl = URL.createObjectURL(file);
             image.onload = function () { URL.revokeObjectURL(previewUrl); };
             image.src = previewUrl;
+        });
+
+        const uploadForm = input.closest('[data-panel-auto-upload]');
+        uploadForm?.addEventListener('panel-auto-upload:success', function (event) {
+            const serverUrl = event.detail?.payload?.imageUrl;
+            if (serverUrl) image.src = serverUrl;
+        });
+    })();
+
+    (function () {
+        const grid = document.querySelector('[data-profile-avatar-grid]');
+        if (!grid) return;
+
+        const syncTileState = (activeTile) => {
+            grid.querySelectorAll('.profile-avatar-picker-tile').forEach((tile) => {
+                const isCurrent = tile === activeTile;
+                tile.classList.toggle('is-current', isCurrent);
+
+                const selectBtn = tile.querySelector('[data-profile-avatar-select]');
+                if (!selectBtn) return;
+
+                selectBtn.disabled = isCurrent;
+                selectBtn.setAttribute('aria-pressed', isCurrent ? 'true' : 'false');
+                selectBtn.setAttribute(
+                    'aria-label',
+                    isCurrent ? 'Aktif profil görseli' : 'Profil görseli olarak seç'
+                );
+
+                let badge = selectBtn.querySelector('.profile-avatar-picker-badge');
+                let hover = selectBtn.querySelector('.profile-avatar-picker-hover');
+
+                if (isCurrent) {
+                    if (!badge) {
+                        badge = document.createElement('span');
+                        badge.className = 'profile-avatar-picker-badge';
+                        badge.setAttribute('aria-hidden', 'true');
+                        badge.innerHTML = '<i class="fas fa-check"></i>';
+                        selectBtn.appendChild(badge);
+                    }
+                    if (hover) hover.remove();
+                } else {
+                    if (badge) badge.remove();
+                    if (!hover) {
+                        hover = document.createElement('span');
+                        hover.className = 'profile-avatar-picker-hover';
+                        hover.setAttribute('aria-hidden', 'true');
+                        hover.textContent = 'Seç';
+                        selectBtn.appendChild(hover);
+                    }
+                }
+            });
+        };
+
+        grid.querySelectorAll('[data-profile-avatar-select]').forEach((button) => {
+            button.addEventListener('click', () => {
+                if (button.disabled) return;
+                const tile = button.closest('.profile-avatar-picker-tile');
+                const form = tile?.querySelector('.profile-avatar-picker-select-form');
+                if (!form) return;
+                form.dispatchEvent(new Event('submit', { cancelable: true, bubbles: true }));
+            });
+        });
+
+        grid.addEventListener('panel-auto-action:success', (event) => {
+            const action = event.detail?.action;
+            const form = event.detail?.form;
+
+            if (action === 'delete') {
+                const tile = form?.closest('.profile-avatar-picker-tile');
+                tile?.remove();
+                if (!grid.querySelector('.profile-avatar-picker-tile')) {
+                    grid.closest('.profile-preset-card')?.remove();
+                }
+                return;
+            }
+
+            if (action !== 'select') return;
+
+            const tile = form?.closest('.profile-avatar-picker-tile');
+            const imageUrl = tile?.querySelector('[data-profile-avatar-select]')?.dataset.imageUrl;
+            const preview = document.querySelector('[data-profile-preview-image]');
+            if (preview && imageUrl) preview.src = imageUrl;
+            if (tile) syncTileState(tile);
         });
     })();
 
@@ -385,5 +528,27 @@
         }
         const initialProvinceId = selectedProvinceId || provinceSelect.selectedOptions[0]?.dataset.provinceId || provinceSelect.selectedOptions[0]?.dataset.id || '';
         if (initialProvinceId && isTurkey()) loadDistricts(initialProvinceId, districtSelect.dataset.selectedText || '');
+    })();
+
+    (function () {
+        const hidden = document.getElementById('travelPurposeValue');
+        const grid = document.querySelector('.profile-travel-purpose-grid');
+        if (!hidden || !grid) return;
+
+        const syncHidden = () => {
+            const selected = Array.from(grid.querySelectorAll('[data-travel-purpose-option]:checked'))
+                .map(input => input.value.trim())
+                .filter(Boolean);
+            hidden.value = selected.join('|');
+            hidden.dispatchEvent(new Event('change', { bubbles: true }));
+        };
+
+        grid.addEventListener('change', function (event) {
+            const checkbox = event.target.closest('[data-travel-purpose-option]');
+            if (!checkbox) return;
+            checkbox.closest('.profile-travel-purpose-pill')
+                ?.classList.toggle('is-selected', checkbox.checked);
+            syncHidden();
+        });
     })();
 </script>

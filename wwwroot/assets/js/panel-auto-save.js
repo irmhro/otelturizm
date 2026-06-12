@@ -43,18 +43,18 @@
 
     // MVC redirect = işlem genelde başarılı (eski endpoint uyumluluğu)
     if (response.status >= 300 && response.status < 400) {
-      return { success: true, message: fallbackSuccess, reload: true };
+      return { success: true, message: fallbackSuccess, reload: false };
     }
 
     if (response.ok) {
       const text = (await response.text()).trim();
       if (!text) {
-        return { success: true, message: fallbackSuccess, reload: true };
+        return { success: true, message: fallbackSuccess, reload: false };
       }
       try {
         return JSON.parse(text);
       } catch {
-        return { success: true, message: fallbackSuccess, reload: true };
+        return { success: true, message: fallbackSuccess, reload: false };
       }
     }
 
@@ -65,6 +65,18 @@
           ? "İstek doğrulanamadı. Sayfayı yenileyip tekrar deneyin."
           : "İşlem tamamlanamadı.",
     };
+  };
+
+  const shouldReload = (targetForm, payload) => {
+    if (targetForm.hasAttribute("data-panel-auto-save")) return false;
+
+    const reloadPref =
+      targetForm.dataset.panelAutoActionReload ??
+      targetForm.dataset.panelAutoUploadReload;
+    if (reloadPref === "true") return payload.reload !== false;
+    if (reloadPref === "false") return false;
+
+    return payload.reload === true;
   };
 
   const bindAutoSaveForms = () => {
@@ -90,6 +102,12 @@
           const fallback =
             saveForm.dataset.panelAutoSaveSuccess || "Seçiminiz kaydedildi.";
           toast?.show(payload.message || fallback, "success");
+          saveForm.dispatchEvent(
+            new CustomEvent("panel-auto-save:success", {
+              bubbles: true,
+              detail: { payload, form: saveForm },
+            })
+          );
         } catch (error) {
           toast?.show(error.message || "Kayıt tamamlanamadı.", "danger");
         } finally {
@@ -101,6 +119,12 @@
         window.clearTimeout(timer);
         timer = window.setTimeout(save, DEBOUNCE_MS);
       };
+
+      saveForm.addEventListener("submit", (event) => {
+        event.preventDefault();
+        window.clearTimeout(timer);
+        save();
+      });
 
       saveForm.querySelectorAll('[data-panel-autosave="change"]').forEach((field) => {
         field.addEventListener("change", scheduleSave);
@@ -135,8 +159,20 @@
 
         try {
           const payload = await postForm(actionForm);
-          toast?.show(payload.message || "Seçiminiz kaydedildi.", "success");
-          if (payload.reload) {
+          const successMessage =
+            actionForm.dataset.panelAutoActionSuccess ||
+            payload.message ||
+            "Seçiminiz kaydedildi.";
+          toast?.show(successMessage, "success");
+
+          actionForm.dispatchEvent(
+            new CustomEvent("panel-auto-action:success", {
+              bubbles: true,
+              detail: { action, payload, form: actionForm },
+            })
+          );
+
+          if (shouldReload(actionForm, payload)) {
             window.setTimeout(() => window.location.reload(), 650);
           }
         } catch (error) {
@@ -164,7 +200,13 @@
         try {
           const payload = await postForm(uploadForm);
           toast?.show(payload.message || "Yükleme tamamlandı.", "success");
-          if (payload.reload !== false) {
+          uploadForm.dispatchEvent(
+            new CustomEvent("panel-auto-upload:success", {
+              bubbles: true,
+              detail: { payload, form: uploadForm },
+            })
+          );
+          if (shouldReload(uploadForm, payload)) {
             window.setTimeout(() => window.location.reload(), 650);
           }
         } catch (error) {

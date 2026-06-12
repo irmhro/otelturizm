@@ -119,7 +119,7 @@ public class LocaleController : Controller
         var query = queryIndex >= 0 ? path[queryIndex..] : string.Empty;
 
         if (InternationalSeoPaths.HasLocalePathPrefix(pathOnly)
-            || !pathOnly.StartsWith("/oteller", StringComparison.OrdinalIgnoreCase))
+            || !pathOnly.StartsWith("/hotel", StringComparison.OrdinalIgnoreCase))
         {
             return local;
         }

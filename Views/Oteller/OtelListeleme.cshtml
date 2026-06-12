@@ -23,7 +23,7 @@
             {
                 ["@type"] = "ListItem",
                 ["position"] = i + 1,
-                ["url"] = $"{baseUrl}/oteller/{h.Slug}",
+                ["url"] = $"{baseUrl}/hotel/{h.Slug}",
                 ["name"] = h.Name
             })
             .Cast<object>()
@@ -37,7 +37,7 @@
                 ["@type"] = "BreadcrumbList",
                 ["itemListElement"] = new object[]
                 {
-                    new Dictionary<string, object?> { ["@type"] = "ListItem", ["position"] = 1, ["name"] = "Oteller", ["item"] = $"{baseUrl}/oteller" }
+                    new Dictionary<string, object?> { ["@type"] = "ListItem", ["position"] = 1, ["name"] = "Oteller", ["item"] = $"{baseUrl}/hotel" }
                 }
             }
         };

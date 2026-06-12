@@ -1,3 +1,94 @@
 @import url("./panel-header-bildiri.css");
 
-/* Mobile overrides for header notifications. */
+@media (max-width: 991px) {
+    .header-bildiri {
+        position: static;
+    }
+
+    .header-bildiri-dropdown {
+        width: auto;
+        max-width: none;
+    }
+
+    .header-bildiri[data-open="true"] .header-bildiri-dropdown.is-fixed {
+        position: fixed;
+        left: var(--page-content-gutter, 12px);
+        right: var(--page-content-gutter, 12px);
+        width: auto;
+        max-width: none;
+        z-index: 1055;
+    }
+
+    .header-bildiri-list {
+        max-height: min(52vh, 320px);
+    }
+
+    .header-bildiri-foot {
+        display: grid;
+        gap: 8px;
+        margin-top: 0.65rem;
+        padding-top: 0.65rem;
+        border-top: 1px solid rgba(15, 23, 42, 0.08);
+    }
+
+    .header-bildiri-view-all,
+    .header-bildiri-clear {
+        width: 100%;
+        min-height: 40px;
+        border-radius: 10px;
+        font-size: 0.8rem;
+        font-weight: 700;
+    }
+
+    .header-bildiri-view-all {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        text-decoration: none;
+        color: #1d4ed8;
+        background: #eff6ff;
+        border: 1px solid rgba(37, 99, 235, 0.18);
+    }
+
+    .header-bildiri-clear {
+        border: 1px solid rgba(15, 23, 42, 0.12);
+        background: #fff;
+        color: #334155;
+        cursor: pointer;
+    }
+}
+
+@media (min-width: 992px) {
+    .header-bildiri-foot {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 8px;
+        margin-top: 0.65rem;
+        padding-top: 0.65rem;
+        border-top: 1px solid rgba(15, 23, 42, 0.08);
+    }
+
+    .header-bildiri-view-all {
+        display: inline-flex;
+        align-items: center;
+        text-decoration: none;
+        font-size: 0.76rem;
+        font-weight: 700;
+        color: #1d4ed8;
+    }
+
+    .header-bildiri-clear {
+        border: 0;
+        background: transparent;
+        color: #64748b;
+        font-size: 0.76rem;
+        font-weight: 700;
+        cursor: pointer;
+        padding: 0;
+    }
+
+    .header-bildiri-clear:hover {
+        color: #0f172a;
+    }
+}

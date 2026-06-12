@@ -1,3 +1,4 @@
+using otelturizmnew.Models.Anasayfa;
 using otelturizmnew.Models.Messages;
 using otelturizmnew.Models.Oteller;
 using otelturizmnew.Models.Paneller.User;
@@ -57,14 +58,18 @@ public interface IUserPanelService
     Task<(bool Success, string Message)> DeleteMessageAsync(long userId, MessageDeleteRequest form, CancellationToken cancellationToken = default);
     Task<UserProfilePageViewModel> GetProfileAsync(long userId, CancellationToken cancellationToken = default);
     Task<string> GetProfileImageUrlAsync(long userId, CancellationToken cancellationToken = default);
+    Task<HomeDrawerUserCardViewModel> GetHomeDrawerUserCardAsync(long userId, string accountType, CancellationToken cancellationToken = default);
     Task<bool> SaveProfileAsync(long userId, UserProfileForm form, CancellationToken cancellationToken = default);
     Task<bool> SaveTravelPreferencesAsync(long userId, UserTravelPreferencesForm form, CancellationToken cancellationToken = default);
+    Task<UserTravelPreferencesSearchViewModel?> GetTravelPreferencesForSearchAsync(long userId, CancellationToken cancellationToken = default);
     Task<bool> SaveProfileImageAsync(long userId, string imageUrl, string source, CancellationToken cancellationToken = default);
     Task<bool> DeleteProfileImageAsync(long userId, long fileId, CancellationToken cancellationToken = default);
     Task<(bool Success, string Message)> RequestEmailUpdateAsync(long userId, UserEmailUpdateRequestForm form, string? ipAddress, string? userAgent, CancellationToken cancellationToken = default);
     Task<(bool Success, string Message)> VerifyEmailUpdateAsync(long userId, UserEmailUpdateVerifyForm form, string? ipAddress, string? userAgent, CancellationToken cancellationToken = default);
     Task<UserNotificationsPageViewModel> GetNotificationsAsync(long userId, CancellationToken cancellationToken = default);
     Task<bool> SaveNotificationsAsync(long userId, UserNotificationPreferencesForm form, CancellationToken cancellationToken = default);
+    Task<UserNotificationInboxPageViewModel> GetNotificationInboxAsync(long userId, string? statusFilter = null, string? typeFilter = null, string? searchTerm = null, int page = 1, int pageSize = 10, CancellationToken cancellationToken = default);
+    Task ClearNotificationInboxAsync(long userId, CancellationToken cancellationToken = default);
     Task<UserSecurityPageViewModel> GetSecurityAsync(long userId, CancellationToken cancellationToken = default);
     Task<(bool Success, string Message)> ChangePasswordAsync(long userId, UserChangePasswordForm form, CancellationToken cancellationToken = default);
     Task<bool> SaveTwoFactorAsync(long userId, UserTwoFactorForm form, CancellationToken cancellationToken = default);

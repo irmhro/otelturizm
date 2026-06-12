@@ -14,7 +14,7 @@
             <div class="eco-meta"><span>🏷️</span> @SharedLocalizer["Nav.Campaigns"]</div>
             <div class="eco-pills kmp-trust-pills">
                 <span class="eco-pill"><i class="fas fa-bolt" aria-hidden="true"></i> <strong>@Model.Campaigns.Count</strong> @SharedLocalizer["Campaign.Stat.Active"]</span>
-                <a class="eco-pill eco-pill--link" href="/oteller?etiket=kampanyaya-dahil-oteller"><i class="fas fa-percent" aria-hidden="true"></i> @SharedLocalizer["Campaign.Stat.DiscountedHotels"]</a>
+                <a class="eco-pill eco-pill--link" href="/hotel?etiket=kampanyaya-dahil-oteller"><i class="fas fa-percent" aria-hidden="true"></i> @SharedLocalizer["Campaign.Stat.DiscountedHotels"]</a>
             </div>
         </section>
 
@@ -44,14 +44,14 @@
                 <div class="kmp-empty-state">
                     <strong>@SharedLocalizer["Campaign.Empty.Title"]</strong>
                     <p>@SharedLocalizer["Campaign.Empty.Description"]</p>
-                    <a class="btn-club-pro-outline" href="/oteller">@SharedLocalizer["Nav.Hotels"]</a>
+                    <a class="btn-club-pro-outline" href="/hotel">@SharedLocalizer["Nav.Hotels"]</a>
                 </div>
             }
             else
             {
                 @foreach (var campaign in Model.Campaigns)
                 {
-                    var listingUrl = $"/oteller?kampanya={Uri.EscapeDataString(campaign.Slug ?? string.Empty)}";
+                    var listingUrl = $"/hotel?kampanya={Uri.EscapeDataString(campaign.Slug ?? string.Empty)}";
                     var searchBlob = $"{campaign.CampaignName} {campaign.ShortDescription} {campaign.BadgeText} {campaign.PromoBadge} {campaign.CampaignType}".Trim();
                     <article class="kmp-card"
                              style="--kmp-accent:@campaign.ColorCode;"

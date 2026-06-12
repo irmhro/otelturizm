@@ -244,6 +244,12 @@
         return instances.get(id) || null;
     }
 
+    function isModalContentClick(target) {
+        return target.closest(
+            '.swiper-slide img, .swiper-button-next, .swiper-button-prev, .swiper-pagination'
+        );
+    }
+
     document.addEventListener('click', function (event) {
         var target = event.target instanceof HTMLElement ? event.target : null;
         if (!target) {
@@ -252,7 +258,16 @@
         if (target.closest('[data-pvs-close]')) {
             event.preventDefault();
             closeModal();
+            return;
         }
+        if (!modalRoot || modalRoot.hidden || !modalRoot.contains(target)) {
+            return;
+        }
+        if (isModalContentClick(target)) {
+            return;
+        }
+        event.preventDefault();
+        closeModal();
     });
 
     document.addEventListener('keydown', function (event) {

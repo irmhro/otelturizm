@@ -388,7 +388,7 @@ public class UserLoyaltyOfferViewModel
     public string Description { get; set; } = string.Empty;
     public string Code { get; set; } = string.Empty;
     public string ValidityText { get; set; } = string.Empty;
-    public string ActionUrl { get; set; } = "/oteller";
+    public string ActionUrl { get; set; } = "/hotel";
 }
 
 public class UserLoyaltyBudgetPlanViewModel
@@ -405,7 +405,7 @@ public class UserLoyaltyRecommendationViewModel
     public string DistrictText { get; set; } = string.Empty;
     public string ImageUrl { get; set; } = string.Empty;
     public string RatingText { get; set; } = string.Empty;
-    public string Url { get; set; } = "/oteller";
+    public string Url { get; set; } = "/hotel";
 }
 
 public class UserLoyaltyBudgetPlanForm
@@ -537,6 +537,38 @@ public class UserNotificationItemViewModel
     public string Message { get; set; } = string.Empty;
     public string TimeText { get; set; } = string.Empty;
     public string TypeText { get; set; } = string.Empty;
+}
+
+public class UserNotificationInboxPageViewModel
+{
+    public string SearchTerm { get; set; } = string.Empty;
+    public string StatusFilter { get; set; } = "all";
+    public string TypeFilter { get; set; } = string.Empty;
+    public int Page { get; set; } = 1;
+    public int PageSize { get; set; } = 10;
+    public int TotalCount { get; set; }
+    public int UnreadCount { get; set; }
+    public int PanelUnreadCount { get; set; }
+    public int SystemUnreadCount { get; set; }
+    public int TotalPages => PageSize <= 0 ? 1 : Math.Max(1, (int)Math.Ceiling(TotalCount / (double)PageSize));
+    public List<UserNotificationInboxRowViewModel> Items { get; set; } = new();
+    public List<string> TypeOptions { get; set; } = new();
+}
+
+public class UserNotificationInboxRowViewModel
+{
+    public string ItemKey { get; set; } = string.Empty;
+    public long? SystemNotificationId { get; set; }
+    public string Source { get; set; } = "panel";
+    public string Title { get; set; } = string.Empty;
+    public string Message { get; set; } = string.Empty;
+    public string TypeText { get; set; } = string.Empty;
+    public string Tone { get; set; } = "info";
+    public string IconClass { get; set; } = "fa-bell";
+    public string Url { get; set; } = "#";
+    public string TimeText { get; set; } = string.Empty;
+    public string AbsoluteTimeText { get; set; } = string.Empty;
+    public bool IsRead { get; set; }
 }
 
 public class UserSecurityPageViewModel

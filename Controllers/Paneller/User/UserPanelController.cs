@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
+using Serilog;
 using otelturizmnew.Constants;
 using otelturizmnew.Models.Messages;
 using otelturizmnew.Models.Paneller.User;
@@ -234,7 +235,7 @@ public class UserPanelController : Controller
         ViewData["PageCssPath"] = "kullanici_panel_reviews_masaustu";
         ViewData["PageCssMobilePath"] = "kullanici_panel_reviews_mobil";
         ViewData["PanelTitle"] = "Yorumlarım";
-        ViewData["PanelSubtitle"] = "Onaylı konaklamaların için yorum yaz, 7 gün içinde düzenle veya sil.";
+        ViewData["PanelSubtitle"] = "Onaylanmış ve tamamlanmış konaklamalarında tesise yorum yaz, 7 gün içinde düzenle veya sil.";
         return View("~/Views/Paneller/User/Reviews.cshtml", model);
     }
 
@@ -464,6 +465,36 @@ public class UserPanelController : Controller
         return View("~/Views/Paneller/User/Notifications.cshtml", model);
     }
 
+    [HttpGet("bildirimlerim")]
+    [HttpGet("notifications")]
+    public async Task<IActionResult> NotificationInbox(string? status = null, string? type = null, string? searchTerm = null, int page = 1, int pageSize = 10, CancellationToken cancellationToken = default)
+    {
+        if (!CanAccessUserPanel())
+        {
+            return RedirectToAction("UserLogin", "Auth");
+        }
+
+        var model = await _userPanelService.GetNotificationInboxAsync(GetCurrentUserId(), status, type, searchTerm, page, pageSize, cancellationToken);
+        ViewData["PageCssPath"] = "kullanici_panel_bildirimler_masaustu";
+        ViewData["PageCssMobilePath"] = "kullanici_panel_bildirimler_mobil";
+        ViewData["PanelTitle"] = "Bildirimlerim";
+        ViewData["PanelSubtitle"] = "Rezervasyon, mesaj ve sistem bildirimlerinizi arayın, filtreleyin ve yönetin.";
+        return View("~/Views/Paneller/User/NotificationInbox.cshtml", model);
+    }
+
+    [HttpPost("bildirimlerim/temizle")]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> ClearNotificationInbox(string? status = null, string? type = null, string? searchTerm = null, CancellationToken cancellationToken = default)
+    {
+        if (CanAccessUserPanel())
+        {
+            await _userPanelService.ClearNotificationInboxAsync(GetCurrentUserId(), cancellationToken);
+            TempData["UserNotificationInboxSuccess"] = "Tüm bildirimler temizlendi.";
+        }
+
+        return RedirectToAction(nameof(NotificationInbox), new { status, type, searchTerm, page = 1 });
+    }
+
     [HttpGet("guvenlik-ve-giris")]
     public async Task<IActionResult> Security(CancellationToken cancellationToken)
     {
@@ -645,11 +676,23 @@ public class UserPanelController : Controller
             }, cancellationToken);
 
             await _userPanelService.SaveProfileImageAsync(userId, $"secure:{saved.FileId}", "secure-upload", cancellationToken);
-            return ProfileSaveResult(true, "Profil görseliniz kaydedildi.", reload: true);
+            var imageUrl = await _secureFileService.CreateAccessUrlAsync(saved.FileId, userId, "user", cancellationToken);
+            return ProfileSaveResult(true, "Profil görseliniz kaydedildi.", reload: false, fileId: saved.FileId, imageUrl: imageUrl);
+        }
+        catch (InvalidOperationException ex) when (ex.Message.Contains("yazma izni", StringComparison.OrdinalIgnoreCase))
+        {
+            Log.Warning(ex, "Profile image upload denied for user {UserId}. Root: configured via SecureStorage:RootPath", userId);
+            return ProfileSaveResult(false, "Profil görseli kaydedilemedi: sunucuda depolama klasörüne yazma izni yok. Site yöneticisine bildirin.");
+        }
+        catch (UnauthorizedAccessException ex)
+        {
+            Log.Warning(ex, "Profile image upload access denied for user {UserId}", userId);
+            return ProfileSaveResult(false, "Profil görseli kaydedilemedi: sunucuda depolama klasörüne yazma izni yok. Site yöneticisine bildirin.");
         }
         catch (Exception ex)
         {
-            return ProfileSaveResult(false, $"Profil görseli yüklenemedi: {ex.Message}");
+            Log.Warning(ex, "Profile image upload failed for user {UserId}", userId);
+            return ProfileSaveResult(false, "Profil görseli yüklenemedi. Lütfen daha sonra tekrar deneyin.");
         }
     }
 
@@ -670,7 +713,7 @@ public class UserPanelController : Controller
         }
 
         await _userPanelService.SaveProfileImageAsync(GetCurrentUserId(), $"secure:{fileId}", "secure-upload", cancellationToken);
-        return ProfileSaveResult(true, "Profil görseliniz kaydedildi.", reload: true);
+        return ProfileSaveResult(true, "Profil görseliniz güncellendi.", reload: false);
     }
 
     [HttpPost("profil-bilgilerim/profil-resmi-sil")]
@@ -688,7 +731,7 @@ public class UserPanelController : Controller
         return ProfileSaveResult(
             deleted,
             deleted ? "Profil görseli silindi." : "Profil görseli silinemedi.",
-            reload: deleted);
+            reload: false);
     }
 
     [HttpPost("mesajlarim/gonder")]
@@ -844,11 +887,17 @@ public class UserPanelController : Controller
            || (Request.Headers.Accept.Any(h =>
                h?.Contains("application/json", StringComparison.OrdinalIgnoreCase) == true));
 
-    private IActionResult ProfileSaveResult(bool success, string message, string? returnUrl = null, bool reload = false)
+    private IActionResult ProfileSaveResult(
+        bool success,
+        string message,
+        string? returnUrl = null,
+        bool reload = false,
+        long? fileId = null,
+        string? imageUrl = null)
     {
         if (IsPanelAjaxRequest())
         {
-            return new JsonResult(new { success, message, reload })
+            return new JsonResult(new { success, message, reload, fileId, imageUrl })
             {
                 ContentType = "application/json; charset=utf-8",
             };

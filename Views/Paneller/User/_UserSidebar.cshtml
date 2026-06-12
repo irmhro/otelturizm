@@ -21,7 +21,7 @@
     var dashboardActive = IsCurrent("Dashboard") || IsPath("/panel/user", "/panel/user/dashboard");
     var tripOpen = IsCurrent("Reservations", "ReservationReview", "Reviews") || IsPath("/panel/user/rezervasyonlarim", "/panel/user/yorumlarim");
     var financeOpen = IsCurrent("Invoices", "PaymentMethods") || IsPath("/panel/user/faturalarim", "/panel/user/odeme-yontemleri");
-    var accountOpen = IsCurrent("Profile", "Notifications", "Security") || IsPath("/panel/user/profil-bilgilerim", "/panel/user/bildirim-tercihleri", "/panel/user/guvenlik-ve-giris");
+    var accountOpen = IsCurrent("Profile", "Notifications", "NotificationInbox", "Security") || IsPath("/panel/user/profil-bilgilerim", "/panel/user/bildirim-tercihleri", "/panel/user/bildirimlerim", "/panel/user/notifications", "/panel/user/guvenlik-ve-giris");
 }
 <aside class="admin-sidebar" id="appSidebar" aria-label="Kullanıcı menüsü">
     <div class="sidebar-header">
@@ -30,6 +30,7 @@
             <div class="logo-sep"></div>
             <span class="logo-turizm">Portal</span>
         </a>
+        <button type="button" class="sidebar-close-mobile" id="userSidebarClose" data-user-sidebar-close aria-label="Menüyü kapat">Kapat</button>
     </div>
 
     <div class="sidebar-scroll">
@@ -58,12 +59,15 @@
         <span class="sidebar-group-label">Seyahatlerim</span>
         <div class="nav-menu-item @(tripOpen ? "open active" : "")" data-nav-group>
             <button type="button" class="nav-main-link" data-user-nav-toggle aria-expanded="@(tripOpen ? "true" : "false")">
-                <div class="nav-link-left"><i class="fas fa-suitcase ic-trip"></i><span>Rezervasyonlarım</span></div>
-                @if (reservationCount > 0)
-                {
-                    <span class="ap-nav-badge">@reservationCount</span>
-                }
-                <i class="fas fa-chevron-down chevron-icon"></i>
+                <div class="nav-link-left">
+                    <i class="fas fa-suitcase ic-trip"></i>
+                    <span>Rezervasyonlarım</span>
+                    @if (reservationCount > 0)
+                    {
+                        <span class="ap-nav-badge" aria-label="@reservationCount rezervasyon">@reservationCount</span>
+                    }
+                </div>
+                <i class="fas fa-chevron-down chevron-icon" aria-hidden="true"></i>
             </button>
             <div class="sub-links-container">
                 <a class="@ActivePath("/panel/user/rezervasyonlarim")" href="/panel/user/rezervasyonlarim">Aktif & Geçmiş Seyahatler</a>
@@ -74,11 +78,14 @@
         <span class="sidebar-group-label">Keşif & Planlama</span>
         <div class="nav-menu-item @(IsCurrent("Favorites") ? "active" : "")">
             <a class="nav-main-link" href="/panel/user/favorilerim">
-                <div class="nav-link-left"><i class="fas fa-heart ic-fav"></i><span>Favori Otellerim</span></div>
-                @if (favoriteCount > 0)
-                {
-                    <span class="ap-nav-badge">@favoriteCount</span>
-                }
+                <div class="nav-link-left">
+                    <i class="fas fa-heart ic-fav"></i>
+                    <span>Favori Otellerim</span>
+                    @if (favoriteCount > 0)
+                    {
+                        <span class="ap-nav-badge" aria-label="@favoriteCount favori otel">@favoriteCount</span>
+                    }
+                </div>
             </a>
         </div>
         <div class="nav-menu-item @(IsCurrent("Loyalty") ? "active" : "")">
@@ -102,15 +109,18 @@
         <span class="sidebar-group-label">Müşteri İlişkileri</span>
         <div class="nav-menu-item @(IsCurrent("Messages") ? "active" : "")">
             <a class="nav-main-link" href="/panel/user/mesajlarim">
-                <div class="nav-link-left"><i class="fas fa-headset ic-support"></i><span>Mesajlarım</span></div>
-                @if (messageCount > 0)
-                {
-                    <span class="ap-nav-badge">@messageCount</span>
-                }
+                <div class="nav-link-left">
+                    <i class="fas fa-headset ic-support"></i>
+                    <span>Mesajlarım</span>
+                    @if (messageCount > 0)
+                    {
+                        <span class="ap-nav-badge" aria-label="@messageCount okunmamış mesaj">@messageCount</span>
+                    }
+                </div>
             </a>
         </div>
         <div class="nav-menu-item">
-            <a class="nav-main-link" href="/yardim-merkezi" target="_blank" rel="noopener">
+            <a class="nav-main-link" href="/yardim-merkezi">
                 <div class="nav-link-left"><i class="fas fa-circle-question ic-support"></i><span>Yardım Merkezi</span></div>
             </a>
         </div>
@@ -123,6 +133,7 @@
             </button>
             <div class="sub-links-container">
                 <a class="@ActivePath("/panel/user/profil-bilgilerim")" href="/panel/user/profil-bilgilerim">Kişisel Bilgiler</a>
+                <a class="@ActivePath("/panel/user/bildirimlerim", "/panel/user/notifications")" href="/panel/user/bildirimlerim">Bildirimlerim</a>
                 <a class="@ActivePath("/panel/user/bildirim-tercihleri")" href="/panel/user/bildirim-tercihleri">Bildirim Tercihleri</a>
                 <a class="@ActivePath("/panel/user/guvenlik-ve-giris")" href="/panel/user/guvenlik-ve-giris">Güvenlik ve Giriş</a>
             </div>
@@ -131,7 +142,7 @@
 
     <div class="admin-sidebar-footer">
         <div class="admin-sidebar-footer-actions">
-            <a href="/oteller" class="ap-btn-sidebar primary">
+            <a href="/hotel" class="ap-btn-sidebar primary">
                 <i class="fas fa-magnifying-glass"></i> Otel Ara
             </a>
             <a href="/" class="ap-btn-sidebar">

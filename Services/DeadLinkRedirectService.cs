@@ -58,15 +58,15 @@ public sealed class DeadLinkRedirectService : IDeadLinkRedirectService
             }
         }
 
-        // Basit sezgisel düzeltmeler (legacy URL)
-        if (normalized.StartsWith("/hotel/", StringComparison.OrdinalIgnoreCase))
+        // Legacy Turkish hotel paths → canonical /hotel
+        if (normalized.StartsWith("/oteller", StringComparison.OrdinalIgnoreCase))
         {
-            return "/oteller" + normalized.Substring("/hotel".Length);
+            return "/hotel" + normalized.Substring("/oteller".Length);
         }
 
         if (string.Equals(normalized, "/hotels", StringComparison.OrdinalIgnoreCase))
         {
-            return "/oteller";
+            return "/hotel";
         }
 
         return null;

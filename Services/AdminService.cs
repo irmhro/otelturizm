@@ -1267,7 +1267,7 @@ public class AdminService : IAdminService
             ["bad_list"] = "-",
             ["price_drop_amount"] = "750 TL",
             ["discount_rate"] = "%12",
-            ["hotel_link"] = "https://otelturizm.com/oteller/216-eagle-palace",
+            ["hotel_link"] = "https://otelturizm.com/hotel/216-eagle-palace",
             ["favorite_link"] = "https://otelturizm.com/kullanici/favoriler",
             ["reservation_link"] = "https://otelturizm.com/kullanici/rezervasyonlarim",
             ["message_link"] = "https://otelturizm.com/kullanici/mesajlar"

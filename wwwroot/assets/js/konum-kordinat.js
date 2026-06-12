@@ -57,7 +57,7 @@
 
   const sendToServer = async (payload) => {
     try {
-      await fetch('/oteller/konum-kaydet', {
+      await fetch('/hotel/konum-kaydet', {
         method: 'POST',
         credentials: 'same-origin',
         headers: {

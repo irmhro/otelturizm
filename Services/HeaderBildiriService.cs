@@ -1,4 +1,5 @@
 using Microsoft.Data.SqlClient;
+using otelturizmnew.Models;
 using otelturizmnew.Models.Paneller.Common;
 using otelturizmnew.Services.Abstractions;
 using System.Globalization;
@@ -17,13 +18,14 @@ public class HeaderBildiriService : IHeaderBildiriService
         _hotelCompletenessService = hotelCompletenessService;
     }
 
-    public async Task<HeaderBildiriViewModel> GetForPanelAsync(string panelKey, long userId, CancellationToken cancellationToken = default)
+    public async Task<HeaderBildiriViewModel> GetForPanelAsync(string panelKey, long userId, int? maxItems = null, CancellationToken cancellationToken = default)
     {
         var safeKey = NormalizePanelKey(panelKey);
         var model = new HeaderBildiriViewModel
         {
             PanelKey = safeKey,
-            PanelLabel = ResolvePanelLabel(safeKey)
+            PanelLabel = ResolvePanelLabel(safeKey),
+            InboxUrl = ResolveInboxUrl(safeKey)
         };
 
         if (userId <= 0)
@@ -61,12 +63,14 @@ public class HeaderBildiriService : IHeaderBildiriService
                 AbsoluteTimeLabel = "Bugun",
                 Url = "#",
                 IsPlaceholder = true,
-                IsRead = true
+                IsRead = true,
+                EventTimeUtc = DateTime.UtcNow
             });
         }
         else
         {
             await ApplyReadStateAsync(connection, safeKey, userId, model, cancellationToken);
+            FinalizeItems(model, maxItems);
         }
 
         return model;
@@ -125,6 +129,73 @@ public class HeaderBildiriService : IHeaderBildiriService
             await transaction.RollbackAsync(cancellationToken);
             throw;
         }
+    }
+
+    public async Task ClearAllAsync(string panelKey, long userId, CancellationToken cancellationToken = default)
+    {
+        if (userId <= 0)
+        {
+            return;
+        }
+
+        var normalizedPanel = NormalizePanelKey(panelKey);
+        var model = await GetForPanelAsync(normalizedPanel, userId, maxItems: null, cancellationToken);
+        var itemKeys = model.Items
+            .Where(static item => !item.IsPlaceholder && !string.IsNullOrWhiteSpace(item.ItemKey))
+            .Select(static item => item.ItemKey)
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToList();
+
+        if (itemKeys.Count > 0)
+        {
+            await MarkAsReadAsync(normalizedPanel, userId, itemKeys, cancellationToken);
+        }
+
+        if (!string.Equals(normalizedPanel, PanelHeaderAudience.User, StringComparison.OrdinalIgnoreCase))
+        {
+            return;
+        }
+
+        await using var connection = await OpenConnectionAsync(cancellationToken);
+        await using var command = new SqlCommand(@"
+            UPDATE [dbo].[SISTEM_ICI_BILDIRIMLER]
+            SET [OKUNDU_MU] = 1,
+                [OKUNMA_TARIHI] = SYSUTCDATETIME(),
+                [ARSIVLENDI_MI] = 1
+            WHERE [KULLANICI_ID] = @userId
+              AND COALESCE([ARSIVLENDI_MI], 0) = 0;", connection);
+        command.Parameters.AddWithValue("@userId", userId);
+        await command.ExecuteNonQueryAsync(cancellationToken);
+    }
+
+    private static void FinalizeItems(HeaderBildiriViewModel model, int? maxItems)
+    {
+        var realItems = model.Items
+            .Where(static item => !item.IsPlaceholder)
+            .OrderByDescending(static item => item.EventTimeUtc ?? DateTime.MinValue)
+            .ThenBy(static item => item.ItemKey, StringComparer.OrdinalIgnoreCase)
+            .ToList();
+
+        model.AllItemsCount = realItems.Count;
+        model.UnreadCount = realItems.Count(static item => !item.IsRead);
+        if (maxItems is > 0 && realItems.Count > maxItems.Value)
+        {
+            model.Items = realItems.Take(maxItems.Value).ToList();
+            return;
+        }
+
+        model.Items = realItems;
+    }
+
+    private static string ResolveInboxUrl(string panelKey)
+    {
+        return panelKey switch
+        {
+            PanelHeaderAudience.Partner => "/panel/partner",
+            PanelHeaderAudience.Firma => "/panel/firma",
+            PanelHeaderAudience.Sales => "/panel/satis/rezervasyonlarim",
+            _ => "/panel/user/bildirimlerim"
+        };
     }
 
     private static string NormalizePanelKey(string? panelKey)
@@ -191,7 +262,8 @@ public class HeaderBildiriService : IHeaderBildiriService
             Tone = tone,
             TimeLabel = timeLabel,
             AbsoluteTimeLabel = ResolveAbsoluteTimeLabel(eventTimeUtc, timeLabel),
-            Url = string.IsNullOrWhiteSpace(url) ? "#" : url
+            Url = string.IsNullOrWhiteSpace(url) ? "#" : url,
+            EventTimeUtc = eventTimeUtc ?? DateTime.UtcNow
         });
     }
 
@@ -513,7 +585,16 @@ public class HeaderBildiriService : IHeaderBildiriService
             }
         }
 
-        var completenessItems = await _hotelCompletenessService.GetPartnerManagedHotelsCompletenessAsync(userId, cancellationToken);
+        var completenessItems = new List<PartnerHotelCompletenessViewModel>();
+        try
+        {
+            completenessItems = await _hotelCompletenessService.GetPartnerManagedHotelsCompletenessAsync(userId, cancellationToken);
+        }
+        catch (SqlException)
+        {
+            // Canlı şema geride kaldığında header bildirimleri patlamasın.
+        }
+
         foreach (var hotel in completenessItems.Where(x => x.MissingCount > 0))
         {
             var topMissing = hotel.MissingItems.FirstOrDefault();

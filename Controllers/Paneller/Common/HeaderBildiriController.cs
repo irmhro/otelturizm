@@ -47,13 +47,16 @@ public class HeaderBildiriController : ControllerBase
             return Unauthorized();
         }
 
-        var model = await _headerBildiriService.GetForPanelAsync(panelKey ?? PanelHeaderAudience.User, userId, cancellationToken);
+        var model = await _headerBildiriService.GetForPanelAsync(panelKey ?? PanelHeaderAudience.User, userId, HeaderBildiriViewModel.DropdownItemLimit, cancellationToken);
         return Ok(new
         {
             panelKey = model.PanelKey,
             panelLabel = model.PanelLabel,
             unreadCount = model.UnreadCount,
             totalCount = model.TotalCount,
+            allItemsCount = model.AllItemsCount,
+            hasMoreItems = model.HasMoreItems,
+            inboxUrl = model.InboxUrl,
             items = model.Items.Select(item => new
             {
                 itemKey = item.ItemKey,
@@ -67,6 +70,21 @@ public class HeaderBildiriController : ControllerBase
                 isPlaceholder = item.IsPlaceholder
             })
         });
+    }
+
+    [HttpPost("temizle")]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> ClearAll([FromBody] HeaderBildiriClearRequest? request, CancellationToken cancellationToken)
+    {
+        var userId = GetCurrentUserId();
+        if (userId <= 0)
+        {
+            return Unauthorized();
+        }
+
+        var panelKey = request?.PanelKey ?? PanelHeaderAudience.User;
+        await _headerBildiriService.ClearAllAsync(panelKey, userId, cancellationToken);
+        return Ok(new { success = true });
     }
 
     private long GetCurrentUserId()

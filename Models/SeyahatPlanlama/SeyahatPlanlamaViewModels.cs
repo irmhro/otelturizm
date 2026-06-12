@@ -43,7 +43,7 @@ public class TravelBudgetFormViewModel
     public int Nights { get; set; } = 2;
     public decimal BudgetTry { get; set; } = 6000m;
     public bool Submitted { get; set; }
-    public string SearchUrl { get; set; } = "/oteller";
+    public string SearchUrl { get; set; } = "/hotel";
 }
 
 public class TravelBudgetEstimateViewModel

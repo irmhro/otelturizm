@@ -11,7 +11,7 @@
     var title = ViewData["Title"] as string ?? shell?.PanelTitle ?? "Satış Paneli";
     var salesUserRaw = Context.User.FindFirstValue(AuthClaimTypes.UserId) ?? Context.User.FindFirstValue(ClaimTypes.NameIdentifier);
     var salesUserId = long.TryParse(salesUserRaw, out var parsedSalesUserId) ? parsedSalesUserId : 0;
-    var headerBildiri = await HeaderBildiriService.GetForPanelAsync(PanelHeaderAudience.Sales, salesUserId, Context.RequestAborted);
+    var headerBildiri = await HeaderBildiriService.GetForPanelAsync(PanelHeaderAudience.Sales, salesUserId, HeaderBildiriViewModel.DropdownItemLimit, Context.RequestAborted);
 }
 <!DOCTYPE html>
 <html lang="tr">

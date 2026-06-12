@@ -24,7 +24,7 @@
             @foreach (var hotel in items)
             {
                 var imageUrl = string.IsNullOrWhiteSpace(hotel.ImageUrl) ? placeholder : hotel.ImageUrl;
-                var detailUrl = $"/oteller/{Uri.EscapeDataString(hotel.Slug)}";
+                var detailUrl = $"/hotel/{Uri.EscapeDataString(hotel.Slug)}";
                 <a class="od-similar-card" href="@detailUrl">
                     <span class="od-similar-card__media">
                         <img src="@imageUrl" alt="@hotel.Name" loading="lazy" decoding="async" />

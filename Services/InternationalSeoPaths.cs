@@ -9,7 +9,7 @@ public static class InternationalSeoPaths
 
     private static readonly Dictionary<string, CultureRoute> CultureRoutes = new(StringComparer.OrdinalIgnoreCase)
     {
-        ["tr"] = new CultureRoute("", "oteller"),
+        ["tr"] = new CultureRoute("", "hotel"),
         ["en"] = new CultureRoute("en", "hotels"),
         ["de"] = new CultureRoute("de", "hotels"),
         ["fr"] = new CultureRoute("fr", "hotels"),
@@ -83,7 +83,7 @@ public static class InternationalSeoPaths
             }
         }
 
-        if (segments.Length >= 1 && string.Equals(segments[0], "oteller", StringComparison.OrdinalIgnoreCase))
+        if (segments.Length >= 1 && IsTurkishHotelSegment(segments[0]))
         {
             return "tr";
         }
@@ -112,7 +112,7 @@ public static class InternationalSeoPaths
                 : (GuessListingOrDetail(slug), slug, slug);
         }
 
-        if (string.Equals(segments[0], "oteller", StringComparison.OrdinalIgnoreCase))
+        if (IsTurkishHotelSegment(segments[0]))
         {
             if (segments.Length == 1)
             {
@@ -149,6 +149,10 @@ public static class InternationalSeoPaths
     }
 
     private static string NormalizeSlug(string slug) => slug.Trim().Trim('/').ToLowerInvariant();
+
+    private static bool IsTurkishHotelSegment(string segment)
+        => string.Equals(segment, "hotel", StringComparison.OrdinalIgnoreCase)
+           || string.Equals(segment, "oteller", StringComparison.OrdinalIgnoreCase);
 
     private sealed record CultureRoute(string Prefix, string ListSegment);
 }

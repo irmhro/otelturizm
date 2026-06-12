@@ -41,10 +41,17 @@ public class HotelCompletenessService : IHotelCompletenessService
             return null;
         }
 
-        await using var connection = new SqlConnection(_connectionString);
-        await connection.OpenAsync(cancellationToken);
-        var payload = await LoadHotelPayloadAsync(connection, hotelId, cancellationToken);
-        return payload is null ? null : MapPartnerViewModel(hotelId, payload.Value.Form, payload.Value.RoomCount, payload.Value.HotelPhotoCount, payload.Value.HotelName);
+        try
+        {
+            await using var connection = new SqlConnection(_connectionString);
+            await connection.OpenAsync(cancellationToken);
+            var payload = await LoadHotelPayloadAsync(connection, hotelId, cancellationToken);
+            return payload is null ? null : MapPartnerViewModel(hotelId, payload.Value.Form, payload.Value.RoomCount, payload.Value.HotelPhotoCount, payload.Value.HotelName);
+        }
+        catch (SqlException)
+        {
+            return null;
+        }
     }
 
     public async Task<List<PartnerHotelCompletenessViewModel>> GetPartnerManagedHotelsCompletenessAsync(long userId, CancellationToken cancellationToken = default)
@@ -78,13 +85,20 @@ public class HotelCompletenessService : IHotelCompletenessService
         var results = new List<PartnerHotelCompletenessViewModel>();
         foreach (var hotelId in hotelIds)
         {
-            var payload = await LoadHotelPayloadAsync(connection, hotelId, cancellationToken);
-            if (payload is null)
+            try
             {
-                continue;
-            }
+                var payload = await LoadHotelPayloadAsync(connection, hotelId, cancellationToken);
+                if (payload is null)
+                {
+                    continue;
+                }
 
-            results.Add(MapPartnerViewModel(hotelId, payload.Value.Form, payload.Value.RoomCount, payload.Value.HotelPhotoCount, payload.Value.HotelName));
+                results.Add(MapPartnerViewModel(hotelId, payload.Value.Form, payload.Value.RoomCount, payload.Value.HotelPhotoCount, payload.Value.HotelName));
+            }
+            catch (SqlException)
+            {
+                // Tek otel sorgusu başarısız olsa bile diğerlerini göster.
+            }
         }
 
         return results.OrderBy(x => x.CompletenessScore).ThenByDescending(x => x.MissingCount).ToList();

@@ -332,6 +332,26 @@
         border-radius: 999px;
     }
 
+    .otelliste-page .otelliste-travel-pref-block {
+        margin-bottom: 4px;
+        padding: 10px;
+        border-radius: 12px;
+    }
+
+    .otelliste-page .otelliste-travel-pref-btn {
+        padding: 10px 12px;
+    }
+
+    .otelliste-page .otelliste-travel-pref-btn-icon {
+        width: 36px;
+        height: 36px;
+        font-size: 15px;
+    }
+
+    .otelliste-page .otelliste-travel-pref-btn-copy strong {
+        font-size: 13px;
+    }
+
     /* M-v2: yatay kompakt kart */
     .otelliste-page .otelliste-hotel-grid {
         grid-template-columns: 1fr;

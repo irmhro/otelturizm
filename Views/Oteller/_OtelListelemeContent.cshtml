@@ -34,7 +34,7 @@
         mapListingUrl += "?" + string.Join("&", mapQueryParts);
     }
     var allHotelsUrl = InternationalSeoPaths.BuildPublicPath(listingPathLang, InternationalSeoPaths.PageKindListing, null, null)
-        ?? Url.Action("OtelListeleme", "Oteller") ?? "/oteller";
+        ?? Url.Action("OtelListeleme", "Oteller") ?? "/hotel";
     var resultCountDisplay = Model.TotalCount > 0 ? Model.TotalCount : hotels.Count;
     var titleText = string.IsNullOrWhiteSpace(Model.SearchLabel) ? "Oteller" : Model.SearchLabel;
     var criteriaChips = new List<string>();
@@ -50,10 +50,10 @@
     var headlineTitle = string.IsNullOrWhiteSpace(Model.SearchTerm)
         ? "Oteller"
         : (isLongSearch ? "Arama Sonuçları" : titleText);
-    var listingAction = Url.Action("OtelListeleme", "Oteller") ?? "/oteller";
+    var listingAction = Url.Action("OtelListeleme", "Oteller") ?? "/hotel";
     string BuildConceptFilterUrl(string etiket) =>
         Url.Action("OtelListeleme", "Oteller", new { q = Model.SearchTerm, city = (string?)null, etiket, kampanya = Model.CampaignSlug, page = 1 })
-        ?? $"/oteller?etiket={Uri.EscapeDataString(etiket)}";
+        ?? $"/hotel?etiket={Uri.EscapeDataString(etiket)}";
     var conceptFilters = new (string Slug, string Label, string Icon)[]
     {
         ("akilli-fiyat", "En İyi Fiyat", "fa-fire"),
@@ -256,7 +256,8 @@
                         var campaignSlugsSafe = hotel.CampaignSlugs ?? new List<string>();
                         var amenityText = string.Join(" ", amenitiesSafe.Select(NormalizeToken));
                         var smartRouteText = string.Join(" ", (hotel.SmartRouteSlugs ?? new List<string>()).Select(NormalizeToken));
-                        var keywords = NormalizeToken($"{hotel.Name} {hotel.City} {hotel.District} {hotel.Neighborhood} {hotel.PropertyType} {string.Join(" ", amenitiesSafe)}");
+                        var travelMatchText = NormalizeToken($"{hotel.ListingLeadRoomName} {hotel.ListingMaxRoomName} {hotel.Summary} {string.Join(" ", hotel.Tags ?? new List<string>())} {amenityText} {smartRouteText}");
+                        var keywords = NormalizeToken($"{hotel.Name} {hotel.City} {hotel.District} {hotel.Neighborhood} {hotel.PropertyType} {string.Join(" ", amenitiesSafe)} {hotel.ListingLeadRoomName} {hotel.ListingMaxRoomName}");
                         var locationText = string.IsNullOrWhiteSpace(hotel.Neighborhood)
                             ? $"{hotel.District} · {hotel.City}"
                             : $"{hotel.Neighborhood} · {hotel.District} · {hotel.City}";
@@ -287,6 +288,7 @@
                                  data-rating="@hotel.Rating.ToString(CultureInfo.InvariantCulture)"
                                  data-stars="@(hotel.StarCount ?? 0)"
                                  data-amenities="@amenityText"
+                                 data-travel-match="@travelMatchText"
                                  data-smart-routes="@smartRouteText"
                                  data-campaign-slugs="@string.Join(" ", campaignSlugsSafe.Where(x => !string.IsNullOrWhiteSpace(x)).Select(NormalizeToken).Distinct())"
                                  data-featured="@(hotel.IsFeatured ? "1" : "0")"
@@ -511,6 +513,15 @@
         </div>
     </div>
 </section>
+
+@if (Model.UserTravelPreferences?.HasActionablePreferences == true)
+{
+<script type="application/json" id="otellisteTravelPreferences">
+@Html.Raw(System.Text.Json.JsonSerializer.Serialize(
+    Model.UserTravelPreferences,
+    new System.Text.Json.JsonSerializerOptions { PropertyNamingPolicy = System.Text.Json.JsonNamingPolicy.CamelCase }))
+</script>
+}
 
 <script type="application/json" id="otellisteLocationMap">
 @Html.Raw(System.Text.Json.JsonSerializer.Serialize(new

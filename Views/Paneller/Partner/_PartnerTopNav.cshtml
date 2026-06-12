@@ -12,7 +12,7 @@
     var selectedHotelName = string.IsNullOrWhiteSpace(Model.SelectedHotelName) ? "Partner Oteli" : Model.SelectedHotelName;
     var partnerUserRaw = Context.User.FindFirstValue(AuthClaimTypes.UserId) ?? Context.User.FindFirstValue(ClaimTypes.NameIdentifier);
     var partnerUserId = long.TryParse(partnerUserRaw, out var parsedPartnerUserId) ? parsedPartnerUserId : 0;
-    var headerBildiri = await HeaderBildiriService.GetForPanelAsync(PanelHeaderAudience.Partner, partnerUserId, Context.RequestAborted);
+    var headerBildiri = await HeaderBildiriService.GetForPanelAsync(PanelHeaderAudience.Partner, partnerUserId, HeaderBildiriViewModel.DropdownItemLimit, Context.RequestAborted);
 }
 <header class="global-topbar" role="banner">
     <div class="topbar-left">

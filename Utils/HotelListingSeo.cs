@@ -28,7 +28,7 @@ public static class HotelListingSeo
         IQueryCollection query,
         string? culture)
     {
-        var path = requestPath.HasValue ? requestPath.Value! : "/oteller";
+        var path = requestPath.HasValue ? requestPath.Value! : "/hotel";
         if (!path.StartsWith('/'))
         {
             path = "/" + path;

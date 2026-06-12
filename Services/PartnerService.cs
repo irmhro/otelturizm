@@ -235,6 +235,7 @@ public class PartnerService : IPartnerService
             null,
             cancellationToken);
         model.RecentReservations = recentReservations.Items;
+        await EnsurePartnerPenaltyColumnAsync(connection, cancellationToken);
         const string dashboardPolicySql = @"
             SELECT
                 (
@@ -265,26 +266,38 @@ public class PartnerService : IPartnerService
                 }
             }
         }
-        var conversations = await LoadReservationConversationsAsync(connection, context.SelectedHotel.HotelId, cancellationToken);
-        var selectedConversationId = conversationId ?? conversations.FirstOrDefault()?.ConversationId;
-        foreach (var item in conversations)
+        try
         {
-            item.IsSelected = item.ConversationId == selectedConversationId;
-        }
+            var conversations = await LoadReservationConversationsAsync(connection, context.SelectedHotel.HotelId, cancellationToken);
+            var selectedConversationId = conversationId ?? conversations.FirstOrDefault()?.ConversationId;
+            foreach (var item in conversations)
+            {
+                item.IsSelected = item.ConversationId == selectedConversationId;
+            }
 
-        model.SelectedConversationId = selectedConversationId;
-        model.Conversations = conversations;
-        if (selectedConversationId.HasValue)
-        {
-            model.ConversationMessages = await LoadConversationMessagesAsync(connection, context.SelectedHotel.HotelId, selectedConversationId.Value, cancellationToken);
-            await MarkConversationAsReadAsync(connection, context.SelectedHotel.HotelId, selectedConversationId.Value, cancellationToken);
+            model.SelectedConversationId = selectedConversationId;
+            model.Conversations = conversations;
+            if (selectedConversationId.HasValue)
+            {
+                model.ConversationMessages = await LoadConversationMessagesAsync(connection, context.SelectedHotel.HotelId, selectedConversationId.Value, cancellationToken);
+                await MarkConversationAsReadAsync(connection, context.SelectedHotel.HotelId, selectedConversationId.Value, cancellationToken);
+            }
+
+            model.MessageForm = new PartnerGuestMessageRequest
+            {
+                HotelId = context.SelectedHotel.HotelId,
+                ConversationId = model.SelectedConversationId,
+                ReservationId = model.Conversations.FirstOrDefault(static item => item.IsSelected)?.ReservationId ?? 0
+            };
         }
-        model.MessageForm = new PartnerGuestMessageRequest
+        catch (SqlException ex)
         {
-            HotelId = context.SelectedHotel.HotelId,
-            ConversationId = model.SelectedConversationId,
-            ReservationId = model.Conversations.FirstOrDefault(static item => item.IsSelected)?.ReservationId ?? 0
-        };
+            _logger.LogWarning(ex, "Partner dashboard conversation panel skipped for hotel {HotelId}", context.SelectedHotel.HotelId);
+            model.MessageForm = new PartnerGuestMessageRequest
+            {
+                HotelId = context.SelectedHotel.HotelId
+            };
+        }
         model.QuickActions = new List<PartnerQuickActionViewModel>
         {
             new() { Title = "Yeni fiyat guncelle", Description = "Takvim uzerinden gunluk veya toplu fiyat aksiyonu acin.", IconClass = "fa-calendar-days", Url = $"/panel/partner/takvim-fiyatlar?otelId={context.SelectedHotel.HotelId}", ToneClass = "info" },
@@ -292,7 +305,15 @@ public class PartnerService : IPartnerService
             new() { Title = "Galeri guncelle", Description = "Yeni gorsel yukle veya kapak secimini degistir.", IconClass = "fa-images", Url = $"/panel/partner/fotograflar?otelId={context.SelectedHotel.HotelId}#fotograf-yukle", ToneClass = "warning" },
             new() { Title = "Destek talebi ac", Description = "Operasyon, odeme veya teknik sorunlar icin aninda talep olustur.", IconClass = "fa-headset", Url = $"/panel/partner/724-destek?otelId={context.SelectedHotel.HotelId}", ToneClass = "danger" }
         };
-        model.HotelCompleteness = await _hotelCompletenessService.GetPartnerHotelCompletenessAsync(context.SelectedHotel.HotelId, cancellationToken);
+        try
+        {
+            model.HotelCompleteness = await _hotelCompletenessService.GetPartnerHotelCompletenessAsync(context.SelectedHotel.HotelId, cancellationToken);
+        }
+        catch (SqlException ex)
+        {
+            _logger.LogWarning(ex, "Partner dashboard hotel completeness skipped for hotel {HotelId}", context.SelectedHotel.HotelId);
+        }
+
         return model;
     }
 
@@ -7488,34 +7509,48 @@ END";
                    AND ((ofm.[TOPLAM_ODA_SAYISI] - ofm.[SATILAN_ODA_SAYISI] - ofm.[BLOKE_ODA_SAYISI]) <= 2 OR ofm.[KAPALI_SATIS] = 1)) AS low_stock_alerts,
                 (SELECT COUNT(*) FROM [dbo].[YORUMLAR] y WHERE y.[OTEL_ID] = @hotelId AND COALESCE(y.[OTEL_YANITI], '') = '') AS unanswered_reviews;";
 
-        await using (var shellCommand = new SqlCommand(shellMetricsSql, connection))
+        try
         {
-            shellCommand.CommandTimeout = 60;
-            shellCommand.Parameters.AddWithValue("@hotelId", selectedHotel.HotelId);
-            shellCommand.Parameters.AddWithValue("@partnerId", selectedHotel.PartnerId);
-            await using var reader = await shellCommand.ExecuteReaderAsync(cancellationToken);
-            if (await reader.ReadAsync(cancellationToken))
+            await using (var shellCommand = new SqlCommand(shellMetricsSql, connection))
             {
-                pendingReservations = SafeInt(reader, 0);
-                openSupportTickets = SafeInt(reader, 1);
-                lowStockAlerts = SafeInt(reader, 2);
-                unansweredReviews = SafeInt(reader, 3);
+                shellCommand.CommandTimeout = 60;
+                shellCommand.Parameters.AddWithValue("@hotelId", selectedHotel.HotelId);
+                shellCommand.Parameters.AddWithValue("@partnerId", selectedHotel.PartnerId);
+                await using var reader = await shellCommand.ExecuteReaderAsync(cancellationToken);
+                if (await reader.ReadAsync(cancellationToken))
+                {
+                    pendingReservations = SafeInt(reader, 0);
+                    openSupportTickets = SafeInt(reader, 1);
+                    lowStockAlerts = SafeInt(reader, 2);
+                    unansweredReviews = SafeInt(reader, 3);
+                }
             }
+        }
+        catch (SqlException ex)
+        {
+            _logger.LogWarning(ex, "Partner shell metrics skipped for hotel {HotelId}", selectedHotel.HotelId);
         }
 
         // Partner panelindeki favori sayacı kalıcı olarak doğru olsun diye,
         // oteller.favori_sayisi gibi "cache" alanlara bağlı kalmayıp gerçek kaynaktan hesaplıyoruz.
-        const string favoriteCountSql = @"
-            SELECT COUNT(DISTINCT uf.[KULLANICI_ID])
-            FROM [dbo].[KULLANICI_FAVORI_OTELLER] uf
-            WHERE uf.[OTEL_ID] = @hotelId
-              AND COALESCE(uf.[AKTIF_MI], 1) = 1
-              AND uf.[KALDIRILMA_TARIHI] IS NULL;";
-        await using (var favoriteCommand = new SqlCommand(favoriteCountSql, connection))
+        try
         {
-            favoriteCommand.Parameters.AddWithValue("@hotelId", selectedHotel.HotelId);
-            var rawFavorite = await favoriteCommand.ExecuteScalarAsync(cancellationToken);
-            favoriteCount = rawFavorite is null || rawFavorite == DBNull.Value ? 0 : Convert.ToInt32(rawFavorite, CultureInfo.InvariantCulture);
+            const string favoriteCountSql = @"
+                SELECT COUNT(DISTINCT uf.[KULLANICI_ID])
+                FROM [dbo].[KULLANICI_FAVORI_OTELLER] uf
+                WHERE uf.[OTEL_ID] = @hotelId
+                  AND COALESCE(uf.[AKTIF_MI], 1) = 1
+                  AND uf.[KALDIRILMA_TARIHI] IS NULL;";
+            await using (var favoriteCommand = new SqlCommand(favoriteCountSql, connection))
+            {
+                favoriteCommand.Parameters.AddWithValue("@hotelId", selectedHotel.HotelId);
+                var rawFavorite = await favoriteCommand.ExecuteScalarAsync(cancellationToken);
+                favoriteCount = rawFavorite is null || rawFavorite == DBNull.Value ? 0 : Convert.ToInt32(rawFavorite, CultureInfo.InvariantCulture);
+            }
+        }
+        catch (SqlException ex)
+        {
+            _logger.LogWarning(ex, "Partner favorite count skipped for hotel {HotelId}", selectedHotel.HotelId);
         }
 
         // Eğer DB'de favori_sayisi kolonu varsa, uyumlu kalsın diye (sessizce) senkronize et.

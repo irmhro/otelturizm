@@ -72,6 +72,14 @@
         backdrop.addEventListener('click', closeMobileSidebar);
     }
 
+    var sidebarCloseBtn = document.getElementById('userSidebarClose');
+    if (sidebarCloseBtn) {
+        sidebarCloseBtn.addEventListener('click', function (e) {
+            e.stopPropagation();
+            closeMobileSidebar();
+        });
+    }
+
     if (themeOpen) {
         themeOpen.addEventListener('click', function (e) {
             e.preventDefault();
@@ -116,6 +124,12 @@
     }
 
     document.querySelectorAll('.kullanici-panel-shell .sub-links-container a').forEach(function (link) {
+        link.addEventListener('click', function () {
+            if (isMobile()) closeMobileSidebar();
+        });
+    });
+
+    document.querySelectorAll('.kullanici-panel-shell .nav-main-link[href]').forEach(function (link) {
         link.addEventListener('click', function () {
             if (isMobile()) closeMobileSidebar();
         });

@@ -1,8 +1,10 @@
 /* Admin Panel v6 — mobil */
+@import url("./user-mobile-bundle.css");
+
 @media (max-width: 991px) {
     .kullanici-panel-shell {
-        --page-content-gutter: 16px;
-        --page-content-inset: 32px;
+        --page-content-gutter: 12px;
+        --page-content-inset: 0;
         --ap-topbar-sticky-h: var(--ap-topbar-height, 52px);
     }
 
@@ -11,19 +13,117 @@
     }
 
     .kullanici-panel-shell .admin-sidebar {
-        width: 90vw;
-        max-width: 90vw;
+        width: min(320px, calc(100vw - 40px));
+        max-width: min(320px, calc(100vw - 40px));
         overflow-x: hidden;
         transform: translateX(-100%);
+        box-shadow: 8px 0 32px rgba(15, 23, 42, 0.12);
     }
 
     .kullanici-panel-shell.mobile-open .admin-sidebar {
         transform: translateX(0);
     }
 
+    .kullanici-panel-shell .sidebar-header {
+        justify-content: space-between;
+        gap: 10px;
+        padding-left: 16px;
+        padding-right: 12px;
+    }
+
+    .kullanici-panel-shell .sidebar-header .logo-wordmark-wrapper {
+        min-width: 0;
+        flex: 1 1 auto;
+    }
+
+    .kullanici-panel-shell .sidebar-close-mobile {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+        min-height: 36px;
+        padding: 0 10px;
+        border: 0;
+        border-radius: 8px;
+        background: transparent;
+        color: var(--ap-primary-red, #dc2626);
+        font-size: 13px;
+        font-weight: 800;
+        line-height: 1;
+        font-family: inherit;
+        cursor: pointer;
+        transition: background-color 0.15s ease, color 0.15s ease;
+    }
+
+    .kullanici-panel-shell .sidebar-close-mobile:hover,
+    .kullanici-panel-shell .sidebar-close-mobile:focus-visible {
+        background: #fff1f2;
+        color: #b91c1c;
+        outline: none;
+    }
+
     .kullanici-panel-shell .sidebar-scroll {
         overflow-x: hidden;
         min-width: 0;
+        padding: 10px 10px 16px;
+    }
+
+    .kullanici-panel-shell .sidebar-user-line {
+        margin: 0 0 16px;
+        padding: 7px 10px;
+        border-radius: 10px;
+        gap: 8px;
+    }
+
+    .kullanici-panel-shell .sidebar-user-line .header-avatar {
+        width: 32px;
+        height: 32px;
+        font-size: 13px;
+    }
+
+    .kullanici-panel-shell .sidebar-user-line strong {
+        font-size: var(--user-font-md, 13px);
+        font-weight: 600;
+        line-height: 1.2;
+    }
+
+    .kullanici-panel-shell .sidebar-user-line span {
+        font-size: 11px;
+        line-height: 1.2;
+    }
+
+    .kullanici-panel-shell .sidebar-group-label {
+        margin: 0;
+        padding: 6px 4px 2px;
+        font-size: 10px;
+        font-weight: 700;
+        letter-spacing: 0.05em;
+        line-height: 1.1;
+    }
+
+    .kullanici-panel-shell .sidebar-user-line + .sidebar-group-label {
+        padding-top: 0;
+    }
+
+    .kullanici-panel-shell .nav-menu-item + .sidebar-group-label {
+        padding-top: 14px;
+    }
+
+    .kullanici-panel-shell .nav-menu-item {
+        margin-bottom: 0;
+    }
+
+    .kullanici-panel-shell .nav-main-link,
+    .kullanici-panel-shell button.nav-main-link {
+        min-width: 0;
+        min-height: 40px;
+        padding: 4px 10px;
+        border-radius: 8px;
+        font-size: var(--user-font-md, 13px);
+        font-weight: var(--user-font-md-weight, 600);
+        gap: 6px;
+        line-height: 1.15;
+        box-sizing: border-box;
     }
 
     .kullanici-panel-shell .sidebar-user-line > div {
@@ -36,19 +136,54 @@
         max-width: 100%;
     }
 
-    .kullanici-panel-shell .nav-main-link {
-        min-width: 0;
-    }
-
     .kullanici-panel-shell .nav-link-left {
         min-width: 0;
         overflow: hidden;
+        gap: 6px;
     }
 
-    .kullanici-panel-shell .nav-link-left > span {
+    .kullanici-panel-shell .nav-link-left i {
+        font-size: 13px;
+        width: 16px;
+    }
+
+    .kullanici-panel-shell .nav-link-left > span:not(.ap-nav-badge) {
         overflow: hidden;
         text-overflow: ellipsis;
         white-space: nowrap;
+        min-width: 0;
+        flex: 0 1 auto;
+    }
+
+    .kullanici-panel-shell .ap-nav-badge {
+        min-width: 20px;
+        height: 20px;
+        padding: 0 6px;
+        font-size: 10px;
+        font-weight: 800;
+    }
+
+    .kullanici-panel-shell .sub-links-container {
+        margin-left: 12px;
+        margin-top: 0;
+        padding-left: 10px;
+    }
+
+    .kullanici-panel-shell .nav-menu-item.open .sub-links-container {
+        gap: 0;
+    }
+
+    .kullanici-panel-shell .sub-links-container a {
+        min-height: 34px;
+        padding: 4px 8px;
+        font-size: 12px;
+        font-weight: 500;
+        line-height: 1.25;
+        border-radius: 6px;
+    }
+
+    .kullanici-panel-shell .admin-sidebar-footer {
+        padding: 12px;
     }
 
     .kullanici-panel-shell .main-layout {
@@ -99,10 +234,6 @@
         padding-bottom: calc(72px + env(safe-area-inset-bottom));
         gap: 16px;
         overflow-x: clip;
-    }
-
-    .kullanici-panel-shell .ap-page-header h1 {
-        font-size: 20px;
     }
 
     .kullanici-panel-shell .kpi-grid-pro {
@@ -190,12 +321,62 @@
         color: var(--ap-primary-red, #DC2626);
         background: #FFF5F5;
     }
+
+    /* fontmd — ortak mobil buton (fontlar.md §8, MOBIL_TEK_EKRAN 44px) */
+    .kullanici-panel-shell .btn-primary-ap,
+    .kullanici-panel-shell .btn-outline-ap {
+        min-height: var(--user-btn-min-h, 44px);
+        height: auto;
+        padding: 0 var(--user-btn-px, 14px);
+        font-size: var(--user-font-md, 13px);
+        font-weight: var(--user-font-md-weight, 600);
+        border-radius: var(--user-btn-radius, 8px);
+        gap: var(--user-btn-gap, 6px);
+        box-sizing: border-box;
+    }
+
+    .kullanici-panel-shell .btn-primary-ap.btn-sm,
+    .kullanici-panel-shell .btn-outline-ap.btn-sm {
+        min-height: var(--user-btn-min-h-compact, 40px);
+        padding: 0 12px;
+    }
+
+    .kullanici-panel-shell .ap-page-hero-actions,
+    .kullanici-panel-shell .ap-page-toolbar-actions,
+    .kullanici-panel-shell .ap-page-filter-actions {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+        gap: var(--user-actions-gap, 8px);
+        width: 100%;
+        min-width: 0;
+    }
+
+    .kullanici-panel-shell .ap-page-hero-actions .btn-primary-ap,
+    .kullanici-panel-shell .ap-page-hero-actions .btn-outline-ap,
+    .kullanici-panel-shell .ap-page-toolbar-actions .btn-primary-ap,
+    .kullanici-panel-shell .ap-page-toolbar-actions .btn-outline-ap,
+    .kullanici-panel-shell .ap-page-filter-actions .btn-primary-ap,
+    .kullanici-panel-shell .ap-page-filter-actions .btn-outline-ap {
+        width: 100%;
+        min-width: 0;
+        max-width: 100%;
+        justify-content: center;
+        white-space: nowrap;
+    }
+
+    .kullanici-panel-shell .ap-page-header h1 {
+        font-size: var(--user-page-h1, 20px);
+    }
+
+    .kullanici-panel-shell .ap-page-pretitle {
+        font-size: var(--user-page-pretitle, 11px);
+    }
 }
 
 @media (max-width: 520px) {
     .kullanici-panel-shell {
-        --page-content-gutter: 14px;
-        --page-content-inset: 28px;
+        --page-content-gutter: 10px;
+        --page-content-inset: 0;
     }
 }
 

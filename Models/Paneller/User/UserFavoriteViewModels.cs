@@ -9,6 +9,7 @@ public class UserFavoritesPageViewModel
     public int TotalPages { get; set; } = 1;
     public string SearchTerm { get; set; } = string.Empty;
     public string Sort { get; set; } = "latest-reservation";
+    public List<string> RouteSearchHints { get; set; } = new();
     public bool HasPreviousPage => Page > 1;
     public bool HasNextPage => Page < TotalPages;
     public List<UserFavoriteHotelCardViewModel> Hotels { get; set; } = new();
@@ -52,6 +53,7 @@ public class UserFavoriteHotelCardViewModel
     public string ReviewGivenText { get; set; } = string.Empty;
     public string ReviewPendingText { get; set; } = string.Empty;
     public string UserAverageRatingText { get; set; } = string.Empty;
+    public List<string> SmartRouteLabels { get; set; } = new();
     public bool PriceAlertEnabled { get; set; }
     public string? PriceAlertTargetText { get; set; }
     public string? PriceAlertDateRangeText { get; set; }

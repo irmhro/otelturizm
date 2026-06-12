@@ -36,69 +36,75 @@ public class WeatherService : IWeatherService
             "&daily=weather_code,temperature_2m_max,temperature_2m_min,precipitation_sum" +
             "&timezone=Europe%2FIstanbul&forecast_days=5";
 
-        using var forecastResponse = await _breaker.ExecuteAsync("weather-forecast", async ct => await _httpClient.GetAsync(forecastUrl, ct), cancellationToken: cancellationToken)
-            ?? throw new HttpRequestException("Weather forecast request blocked by circuit breaker.");
-        if (!forecastResponse.IsSuccessStatusCode)
+        try
         {
-            return null;
-        }
-
-        await using var forecastStream = await forecastResponse.Content.ReadAsStreamAsync(cancellationToken);
-        using var forecastDocument = await JsonDocument.ParseAsync(forecastStream, cancellationToken: cancellationToken);
-
-        if (!forecastDocument.RootElement.TryGetProperty("daily", out var daily))
-        {
-            return null;
-        }
-
-        var dates = daily.GetProperty("time").EnumerateArray().Select(x => x.GetString() ?? string.Empty).ToList();
-        var weatherCodes = daily.GetProperty("weather_code").EnumerateArray().Select(x => x.GetInt32()).ToList();
-        var maxTemps = daily.GetProperty("temperature_2m_max").EnumerateArray().Select(x => x.GetDouble()).ToList();
-        var minTemps = daily.GetProperty("temperature_2m_min").EnumerateArray().Select(x => x.GetDouble()).ToList();
-        var precipitation = daily.GetProperty("precipitation_sum").EnumerateArray().Select(x => x.GetDouble()).ToList();
-
-        var indices = new[] { 0, 1, 2 }
-            .Where(index => index < dates.Count && index < weatherCodes.Count && index < maxTemps.Count && index < minTemps.Count && index < precipitation.Count)
-            .ToList();
-
-        if (indices.Count == 0)
-        {
-            return null;
-        }
-
-        var model = new HotelWeatherWidgetViewModel
-        {
-            LocationLabel = string.IsNullOrWhiteSpace(district) ? city : $"{district}, {city}",
-            Summary = "Bugün dahil 3 günlük ilçe bazlı hava tahmini"
-        };
-
-        foreach (var index in indices)
-        {
-            var (conditionText, iconClass) = MapWeatherCode(weatherCodes[index]);
-            var date = DateTime.TryParse(dates[index], out var parsedDate)
-                ? parsedDate.ToString("dd MMMM ddd", new CultureInfo("tr-TR"))
-                : dates[index];
-
-            model.Days.Add(new HotelWeatherDayViewModel
+            using var forecastResponse = await _breaker.ExecuteAsync("weather-forecast", async ct => await _httpClient.GetAsync(forecastUrl, ct), cancellationToken: cancellationToken);
+            if (forecastResponse is null || !forecastResponse.IsSuccessStatusCode)
             {
-                PeriodLabel = index switch
-                {
-                    0 => "Bugün",
-                    1 => "Yarın",
-                    2 => "3. Gün",
-                    _ => $"{index + 1} Günlük"
-                },
-                DateLabel = date,
-                ConditionText = conditionText,
-                IconClass = iconClass,
-                TemperatureText = $"{Math.Round(maxTemps[index], 0, MidpointRounding.AwayFromZero):0}° / {Math.Round(minTemps[index], 0, MidpointRounding.AwayFromZero):0}°",
-                PrecipitationText = precipitation[index] > 0
-                    ? $"Yağış {precipitation[index]:0.#} mm"
-                    : "Yağış beklenmiyor"
-            });
-        }
+                return null;
+            }
 
-        return model;
+            await using var forecastStream = await forecastResponse.Content.ReadAsStreamAsync(cancellationToken);
+            using var forecastDocument = await JsonDocument.ParseAsync(forecastStream, cancellationToken: cancellationToken);
+
+            if (!forecastDocument.RootElement.TryGetProperty("daily", out var daily))
+            {
+                return null;
+            }
+
+            var dates = daily.GetProperty("time").EnumerateArray().Select(x => x.GetString() ?? string.Empty).ToList();
+            var weatherCodes = daily.GetProperty("weather_code").EnumerateArray().Select(x => x.GetInt32()).ToList();
+            var maxTemps = daily.GetProperty("temperature_2m_max").EnumerateArray().Select(x => x.GetDouble()).ToList();
+            var minTemps = daily.GetProperty("temperature_2m_min").EnumerateArray().Select(x => x.GetDouble()).ToList();
+            var precipitation = daily.GetProperty("precipitation_sum").EnumerateArray().Select(x => x.GetDouble()).ToList();
+
+            var indices = new[] { 0, 1, 2 }
+                .Where(index => index < dates.Count && index < weatherCodes.Count && index < maxTemps.Count && index < minTemps.Count && index < precipitation.Count)
+                .ToList();
+
+            if (indices.Count == 0)
+            {
+                return null;
+            }
+
+            var model = new HotelWeatherWidgetViewModel
+            {
+                LocationLabel = string.IsNullOrWhiteSpace(district) ? city : $"{district}, {city}",
+                Summary = "Bugün dahil 3 günlük ilçe bazlı hava tahmini"
+            };
+
+            foreach (var index in indices)
+            {
+                var (conditionText, iconClass) = MapWeatherCode(weatherCodes[index]);
+                var date = DateTime.TryParse(dates[index], out var parsedDate)
+                    ? parsedDate.ToString("dd MMMM ddd", new CultureInfo("tr-TR"))
+                    : dates[index];
+
+                model.Days.Add(new HotelWeatherDayViewModel
+                {
+                    PeriodLabel = index switch
+                    {
+                        0 => "Bugün",
+                        1 => "Yarın",
+                        2 => "3. Gün",
+                        _ => $"{index + 1} Günlük"
+                    },
+                    DateLabel = date,
+                    ConditionText = conditionText,
+                    IconClass = iconClass,
+                    TemperatureText = $"{Math.Round(maxTemps[index], 0, MidpointRounding.AwayFromZero):0}° / {Math.Round(minTemps[index], 0, MidpointRounding.AwayFromZero):0}°",
+                    PrecipitationText = precipitation[index] > 0
+                        ? $"Yağış {precipitation[index]:0.#} mm"
+                        : "Yağış beklenmiyor"
+                });
+            }
+
+            return model;
+        }
+        catch
+        {
+            return null;
+        }
     }
 
     private async Task<(double Latitude, double Longitude)?> ResolveLocationAsync(string district, string city, decimal? latitude, decimal? longitude, CancellationToken cancellationToken)
@@ -139,61 +145,67 @@ public class WeatherService : IWeatherService
         foreach (var query in queries.Distinct(StringComparer.OrdinalIgnoreCase))
         {
             var url = $"https://geocoding-api.open-meteo.com/v1/search?name={Uri.EscapeDataString(query)}&count=8&language=tr&format=json";
-            using var response = await _breaker.ExecuteAsync("weather-geocoding", async ct => await _httpClient.GetAsync(url, ct), cancellationToken: cancellationToken)
-                ?? throw new HttpRequestException("Weather geocoding request blocked by circuit breaker.");
-            if (!response.IsSuccessStatusCode)
+            try
             {
-                continue;
-            }
-
-            await using var stream = await response.Content.ReadAsStreamAsync(cancellationToken);
-            using var document = await JsonDocument.ParseAsync(stream, cancellationToken: cancellationToken);
-
-            if (!document.RootElement.TryGetProperty("results", out var results) || results.ValueKind != JsonValueKind.Array)
-            {
-                continue;
-            }
-
-            JsonElement? bestMatch = null;
-            var districtLower = district?.Trim().ToLowerInvariant() ?? string.Empty;
-            var cityLower = city?.Trim().ToLowerInvariant() ?? string.Empty;
-
-            foreach (var item in results.EnumerateArray())
-            {
-                var name = item.TryGetProperty("name", out var nameProp) ? (nameProp.GetString() ?? string.Empty).ToLowerInvariant() : string.Empty;
-                var admin2 = item.TryGetProperty("admin2", out var admin2Prop) ? (admin2Prop.GetString() ?? string.Empty).ToLowerInvariant() : string.Empty;
-                var admin1 = item.TryGetProperty("admin1", out var admin1Prop) ? (admin1Prop.GetString() ?? string.Empty).ToLowerInvariant() : string.Empty;
-                var country = item.TryGetProperty("country", out var countryProp) ? (countryProp.GetString() ?? string.Empty).ToLowerInvariant() : string.Empty;
-                var countryCode = item.TryGetProperty("country_code", out var codeProp) ? (codeProp.GetString() ?? string.Empty) : string.Empty;
-
-                var isTurkey =
-                    string.Equals(countryCode, "TR", StringComparison.OrdinalIgnoreCase)
-                    || country.Contains("tur", StringComparison.OrdinalIgnoreCase)
-                    || country.Contains("tür", StringComparison.OrdinalIgnoreCase);
-
-                if (!isTurkey)
+                using var response = await _breaker.ExecuteAsync("weather-geocoding", async ct => await _httpClient.GetAsync(url, ct), cancellationToken: cancellationToken);
+                if (response is null || !response.IsSuccessStatusCode)
                 {
                     continue;
                 }
 
-                if (!string.IsNullOrWhiteSpace(districtLower) &&
-                    (name.Contains(districtLower, StringComparison.OrdinalIgnoreCase) || admin2.Contains(districtLower, StringComparison.OrdinalIgnoreCase)))
+                await using var stream = await response.Content.ReadAsStreamAsync(cancellationToken);
+                using var document = await JsonDocument.ParseAsync(stream, cancellationToken: cancellationToken);
+
+                if (!document.RootElement.TryGetProperty("results", out var results) || results.ValueKind != JsonValueKind.Array)
                 {
-                    if (string.IsNullOrWhiteSpace(cityLower) || admin1.Contains(cityLower, StringComparison.OrdinalIgnoreCase) || admin2.Contains(cityLower, StringComparison.OrdinalIgnoreCase))
-                    {
-                        bestMatch = item;
-                        break;
-                    }
+                    continue;
                 }
 
-                bestMatch ??= item;
-            }
+                JsonElement? bestMatch = null;
+                var districtLower = district?.Trim().ToLowerInvariant() ?? string.Empty;
+                var cityLower = city?.Trim().ToLowerInvariant() ?? string.Empty;
 
-            if (bestMatch.HasValue &&
-                bestMatch.Value.TryGetProperty("latitude", out var latitudeProp) &&
-                bestMatch.Value.TryGetProperty("longitude", out var longitudeProp))
+                foreach (var item in results.EnumerateArray())
+                {
+                    var name = item.TryGetProperty("name", out var nameProp) ? (nameProp.GetString() ?? string.Empty).ToLowerInvariant() : string.Empty;
+                    var admin2 = item.TryGetProperty("admin2", out var admin2Prop) ? (admin2Prop.GetString() ?? string.Empty).ToLowerInvariant() : string.Empty;
+                    var admin1 = item.TryGetProperty("admin1", out var admin1Prop) ? (admin1Prop.GetString() ?? string.Empty).ToLowerInvariant() : string.Empty;
+                    var country = item.TryGetProperty("country", out var countryProp) ? (countryProp.GetString() ?? string.Empty).ToLowerInvariant() : string.Empty;
+                    var countryCode = item.TryGetProperty("country_code", out var codeProp) ? (codeProp.GetString() ?? string.Empty) : string.Empty;
+
+                    var isTurkey =
+                        string.Equals(countryCode, "TR", StringComparison.OrdinalIgnoreCase)
+                        || country.Contains("tur", StringComparison.OrdinalIgnoreCase)
+                        || country.Contains("tür", StringComparison.OrdinalIgnoreCase);
+
+                    if (!isTurkey)
+                    {
+                        continue;
+                    }
+
+                    if (!string.IsNullOrWhiteSpace(districtLower) &&
+                        (name.Contains(districtLower, StringComparison.OrdinalIgnoreCase) || admin2.Contains(districtLower, StringComparison.OrdinalIgnoreCase)))
+                    {
+                        if (string.IsNullOrWhiteSpace(cityLower) || admin1.Contains(cityLower, StringComparison.OrdinalIgnoreCase) || admin2.Contains(cityLower, StringComparison.OrdinalIgnoreCase))
+                        {
+                            bestMatch = item;
+                            break;
+                        }
+                    }
+
+                    bestMatch ??= item;
+                }
+
+                if (bestMatch.HasValue &&
+                    bestMatch.Value.TryGetProperty("latitude", out var latitudeProp) &&
+                    bestMatch.Value.TryGetProperty("longitude", out var longitudeProp))
+                {
+                    return (latitudeProp.GetDouble(), longitudeProp.GetDouble());
+                }
+            }
+            catch
             {
-                return (latitudeProp.GetDouble(), longitudeProp.GetDouble());
+                continue;
             }
         }
 

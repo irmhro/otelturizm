@@ -15,10 +15,153 @@
     const sortMobile = document.getElementById('otellisteSortMobile');
 
     let locationMap = { cities: [], districts: {}, neighborhoods: {} };
+    let travelPrefs = null;
+    let travelPrefActive = false;
+    let travelPrefRelaxed = false;
     try {
         const mapNode = document.getElementById('otellisteLocationMap');
         if (mapNode?.textContent) locationMap = JSON.parse(mapNode.textContent);
     } catch (_) { /* ignore */ }
+    try {
+        const travelNode = document.getElementById('otellisteTravelPreferences');
+        if (travelNode?.textContent) travelPrefs = JSON.parse(travelNode.textContent);
+    } catch (_) { /* ignore */ }
+
+    const TRAVEL_PREF_TOKEN_MAP = {
+        room: {
+            'standart oda': ['standart', 'standard', 'ekonomi', 'classic'],
+            'deluxe oda': ['deluxe', 'superior', 'premium'],
+            'suit oda': ['suit', 'suite', 'jakuzi'],
+            'aile odasi': ['aile', 'family', 'triple', 'connected'],
+            'sessiz kat': ['sessiz', 'quiet', 'sakin'],
+            'sigara icilmeyen oda': ['sigara', 'smoke', 'sigara icilmez', 'non smoking']
+        },
+        bed: {
+            'tek buyuk yatak': ['king', 'queen', 'double', 'tek', 'cift kisilik'],
+            'iki ayri yatak': ['twin', 'iki', 'ayri', 'single'],
+            'cift kisilik yatak': ['double', 'cift', 'queen'],
+            'aile yatagi': ['aile', 'family', 'triple'],
+            'ek yatak uygun olsun': ['ek yatak', 'extra', 'sofa']
+        },
+        purpose: {
+            'is': ['is', 'business', 'kongre', 'toplanti', 'merkez', 'sehir'],
+            'tatil': ['tatil', 'holiday', 'havuz', 'plaj', 'spa', 'dinlen'],
+            'aile ziyareti': ['aile', 'family'],
+            'saglik': ['spa', 'wellness', 'termal', 'saglik'],
+            'etkinlik': ['etkinlik', 'kongre', 'dugun', 'event']
+        },
+        lang: {
+            'turkce': ['turkce', 'turkish'],
+            'ingilizce': ['english', 'ingilizce'],
+            'almanca': ['german', 'almanca', 'deutsch'],
+            'fransizca': ['french', 'fransizca'],
+            'arapca': ['arabic', 'arapca'],
+            'rusca': ['russian', 'rusca']
+        }
+    };
+
+    function prefIsActive(value) {
+        const v = normalize(value);
+        return !!v && v !== 'fark etmez' && v !== 'karisik';
+    }
+
+    function parseTravelPurposes(value) {
+        const raw = (value || '').trim();
+        if (!raw || normalize(raw) === 'karisik') return [];
+        return raw.split('|').map(part => part.trim()).filter(Boolean);
+    }
+
+    function prefSearchTokens(category, value) {
+        const key = normalize(value);
+        if (!key) return [];
+        const mapped = TRAVEL_PREF_TOKEN_MAP[category]?.[key];
+        if (mapped?.length) return mapped.map(normalize);
+        return key.split(/\s+/).filter(Boolean);
+    }
+
+    function cardTravelHaystack(card) {
+        return normalize(
+            (card.getAttribute('data-travel-match') || '') + ' ' +
+            (card.getAttribute('data-keywords') || '') + ' ' +
+            (card.getAttribute('data-amenities') || '')
+        );
+    }
+
+    function cardMatchesTravelPreference(card, relaxed) {
+        if (!travelPrefActive || !travelPrefs) return true;
+
+        const haystack = cardTravelHaystack(card);
+        const checks = [];
+
+        if (prefIsActive(travelPrefs.roomPreference)) {
+            checks.push(prefSearchTokens('room', travelPrefs.roomPreference));
+        }
+        if (prefIsActive(travelPrefs.bedPreference)) {
+            checks.push(prefSearchTokens('bed', travelPrefs.bedPreference));
+        }
+        const travelPurposes = parseTravelPurposes(travelPrefs.travelPurpose);
+        if (travelPurposes.length) {
+            const purposeTokens = travelPurposes.flatMap(purpose => prefSearchTokens('purpose', purpose));
+            if (purposeTokens.length) checks.push(purposeTokens);
+        }
+        if (prefIsActive(travelPrefs.spokenLanguages)) {
+            checks.push(prefSearchTokens('lang', travelPrefs.spokenLanguages));
+        }
+        if (travelPrefs.specialRequests) {
+            const words = normalize(travelPrefs.specialRequests).split(/\s+/).filter(w => w.length > 2);
+            if (words.length) checks.push(words);
+        }
+
+        if (!checks.length) return true;
+
+        const matchGroup = (tokens) => tokens.some(token => haystack.includes(token));
+        if (relaxed) {
+            return checks.some(matchGroup);
+        }
+        return checks.every(matchGroup);
+    }
+
+    function setTravelPrefButtons(active) {
+        page.querySelectorAll('[data-travel-pref-apply]').forEach(btn => {
+            btn.classList.toggle('is-active', active);
+            btn.setAttribute('aria-pressed', active ? 'true' : 'false');
+        });
+    }
+
+    function showTravelPrefToast(message) {
+        page.querySelectorAll('.otelliste-travel-pref-toast').forEach(node => {
+            node.textContent = message || '';
+            node.classList.toggle('is-visible', !!message);
+        });
+    }
+
+    function toggleTravelPrefSearch() {
+        if (!travelPrefs?.hasActionablePreferences) return;
+        travelPrefActive = !travelPrefActive;
+        travelPrefRelaxed = false;
+        setTravelPrefButtons(travelPrefActive);
+        if (!travelPrefActive) {
+            showTravelPrefToast('');
+            applyFilters();
+            return;
+        }
+
+        applyFilters();
+        let visible = cards().filter(card => !card.hidden).length;
+        if (visible === 0) {
+            travelPrefRelaxed = true;
+            applyFilters();
+            visible = cards().filter(card => !card.hidden).length;
+            showTravelPrefToast(
+                visible > 0
+                    ? 'Tam eşleşme bulunamadı; yakın sonuçlar gösteriliyor.'
+                    : 'Seyahat tercihlerinize uygun otel bulunamadı.'
+            );
+            return;
+        }
+
+        showTravelPrefToast('Seyahat tercihlerinize uygun oteller listeleniyor.');
+    }
 
     function normalize(value) {
         return (value || '')
@@ -166,10 +309,12 @@
         if (state.stars.length) n++;
         if (state.smartRoutes.length) n++;
         if (state.priceFilterActive) n++;
+        if (travelPrefActive) n++;
         return n;
     }
 
     function cardMatches(card, state) {
+        if (!cardMatchesTravelPreference(card, travelPrefRelaxed)) return false;
         if (state.keyword) {
             const keywords = card.getAttribute('data-keywords') || '';
             if (!keywords.includes(state.keyword)) return false;
@@ -260,6 +405,10 @@
     }
 
     function resetFilters() {
+        travelPrefActive = false;
+        travelPrefRelaxed = false;
+        setTravelPrefButtons(false);
+        showTravelPrefToast('');
         ['desktop', 'mobile'].forEach(scope => {
             const root = getScopeRoot(scope);
             if (!root) return;
@@ -442,6 +591,10 @@
     sortMobile?.addEventListener('change', () => {
         syncSort(sortMobile, sortDesktop);
         applyFilters();
+    });
+
+    page.querySelectorAll('[data-travel-pref-apply]').forEach(btn => {
+        btn.addEventListener('click', toggleTravelPrefSearch);
     });
 
     page.querySelectorAll('.otelliste-filter-reset').forEach(btn => btn.addEventListener('click', resetFilters));

@@ -45,7 +45,7 @@ public class DeneyimCardViewModel
     public string Accent { get; set; } = "#E30A17";
     public string Gradient { get; set; } = "linear-gradient(145deg, #1a1919 0%, #003b95 100%)";
     public string ImageUrl { get; set; } = string.Empty;
-    public string LinkUrl { get; set; } = "/oteller";
+    public string LinkUrl { get; set; } = "/hotel";
     public bool IsFeatured { get; set; }
     public bool IsWide { get; set; }
 }
@@ -72,7 +72,7 @@ public class DeneyimSmartRouteViewModel
     public string Hashtag { get; set; } = string.Empty;
     public string SearchQuery { get; set; } = string.Empty;
     public string ColorClass { get; set; } = "sage";
-    public string LinkUrl { get; set; } = "/oteller";
+    public string LinkUrl { get; set; } = "/hotel";
 }
 
 public class DeneyimSpotlightViewModel
@@ -82,7 +82,7 @@ public class DeneyimSpotlightViewModel
     public string Subtitle { get; set; } = string.Empty;
     public string Location { get; set; } = string.Empty;
     public string Duration { get; set; } = string.Empty;
-    public string LinkUrl { get; set; } = "/oteller";
+    public string LinkUrl { get; set; } = "/hotel";
     public string Accent { get; set; } = "#E30A17";
     public string Emoji { get; set; } = "✨";
     public string ImageUrl { get; set; } = string.Empty;

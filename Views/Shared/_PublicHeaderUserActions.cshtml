@@ -143,14 +143,14 @@ else
 {
     if (headerContext == "corporate")
     {
-        <a href="/oteller" class="action-btn">@SharedLocalizer["Nav.Hotels"].Value</a>
+        <a href="/hotel" class="action-btn">@SharedLocalizer["Nav.Hotels"].Value</a>
         <a href="/partner-giris" class="action-btn">@SharedLocalizer["Nav.Login"].Value</a>
         <a href="/partner-giris?sekme=kayit" class="action-btn action-btn-soft">@SharedLocalizer["Nav.Register"].Value</a>
         <a href="/firma" class="action-btn primary">@SharedLocalizer["Nav.Firma"].Value</a>
     }
     else if (headerContext == "firma")
     {
-        <a href="/oteller" class="action-btn">@SharedLocalizer["Nav.Hotels"].Value</a>
+        <a href="/hotel" class="action-btn">@SharedLocalizer["Nav.Hotels"].Value</a>
         <a href="/firma-giris" class="action-btn">@SharedLocalizer["Nav.FirmaLogin"].Value</a>
         <a href="/firma-giris?sekme=kayit" class="action-btn action-btn-soft">@SharedLocalizer["Nav.FirmaRegister"].Value</a>
         <a href="/panel/firma/rezervasyonlar" class="action-btn">@SharedLocalizer["Nav.Reservations"].Value</a>
@@ -158,7 +158,7 @@ else
     }
     else
     {
-        <a href="/oteller" class="action-btn">@SharedLocalizer["Nav.Hotels"].Value</a>
+        <a href="/hotel" class="action-btn">@SharedLocalizer["Nav.Hotels"].Value</a>
         <a href="/kullanici-giris" class="action-btn">@SharedLocalizer["Nav.Login"].Value</a>
         <a href="/kullanici-giris?sekme=kayit" class="action-btn action-btn-soft">@SharedLocalizer["Nav.Register"].Value</a>
         <a asp-controller="Home" asp-action="Kurumsal" class="action-btn primary">@SharedLocalizer["Nav.Corporate"].Value</a>

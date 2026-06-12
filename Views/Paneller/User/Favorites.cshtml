@@ -6,6 +6,8 @@
     var alertCount = Model.Hotels.Count(x => x.PriceAlertEnabled);
     var reservationCount = Model.Hotels.Sum(x => x.ReservationCount);
     var pendingReviewCount = Model.Hotels.Sum(x => x.ReviewPendingCount);
+    var pageStart = Model.TotalCount == 0 ? 0 : ((Model.Page - 1) * Model.PageSize) + 1;
+    var pageEnd = Math.Min(Model.TotalCount, Model.Page * Model.PageSize);
     var sortOptions = new Dictionary<string, string>
     {
         ["latest-reservation"] = "Son rezervasyon otellerim",
@@ -32,9 +34,15 @@
             <h1 class="page-title">Favorilerim</h1>
             <p class="text-muted mb-0">Rezervasyon yaptığın oteller otomatik favorilerine eklenir; son konakladığın ve sık tercih ettiğin otellere hızlı dön.</p>
         </div>
-        <div class="favorites-hero-actions">
-            <a class="btn btn-primary btn-pill" href="/oteller"><i class="fas fa-magnifying-glass me-2"></i>Otel Ara</a>
-            <a class="btn btn-outline-primary btn-pill" href="/panel/user/rezervasyonlarim"><i class="fas fa-calendar-check me-2"></i>Rezervasyonlarım</a>
+        <div class="favorites-hero-actions ap-page-hero-actions">
+            <a class="btn btn-primary-ap favorites-hero-cta" href="/hotel">
+                <i class="fas fa-magnifying-glass" aria-hidden="true"></i>
+                <span>Otel Ara</span>
+            </a>
+            <a class="btn btn-outline-ap favorites-hero-link" href="/panel/user/rezervasyonlarim">
+                <i class="fas fa-calendar-check" aria-hidden="true"></i>
+                <span>Rezervasyonlarım</span>
+            </a>
         </div>
     </section>
 
@@ -47,11 +55,27 @@
 
     <section class="favorite-filter-panel">
         <form method="get" action="/panel/user/favorilerim" class="favorite-filter-form">
-            <div>
-                <label class="form-label" for="favoriteSearch">Otel, il veya ilçe ara</label>
-                <input class="form-control" id="favoriteSearch" type="search" name="searchTerm" value="@Model.SearchTerm" placeholder="Demo Test Otel, Kartal..." />
+            <div class="favorite-filter-field favorite-filter-field--search">
+                <label class="form-label" for="favoriteSearch">Otel, il, ilçe veya akıllı rota ara</label>
+                <div class="input-icon">
+                    <span class="input-icon-addon"><i class="fas fa-search" aria-hidden="true"></i></span>
+                    <input class="form-control"
+                           id="favoriteSearch"
+                           type="search"
+                           name="searchTerm"
+                           value="@Model.SearchTerm"
+                           placeholder="Otel adı, İstanbul, spa, aile tatili..."
+                           autocomplete="off"
+                           list="favoriteSearchHints" />
+                </div>
+                <datalist id="favoriteSearchHints">
+                    @foreach (var hint in Model.RouteSearchHints)
+                    {
+                        <option value="@hint"></option>
+                    }
+                </datalist>
             </div>
-            <div>
+            <div class="favorite-filter-field favorite-filter-field--sort">
                 <label class="form-label" for="favoriteSort">Listeleme</label>
                 <select class="form-select" id="favoriteSort" name="sort">
                     @foreach (var option in sortOptions)
@@ -60,8 +84,10 @@
                     }
                 </select>
             </div>
-            <button class="btn btn-primary" type="submit"><i class="fas fa-filter me-2"></i>Filtrele</button>
-            <a class="btn btn-outline-primary" href="/panel/user/favorilerim">Temizle</a>
+            <div class="favorite-filter-actions ap-page-filter-actions">
+                <button class="btn btn-primary-ap" type="submit"><i class="fas fa-filter" aria-hidden="true"></i> Filtrele</button>
+                <a class="btn btn-outline-ap" href="/panel/user/favorilerim">Temizle</a>
+            </div>
         </form>
     </section>
 
@@ -72,7 +98,7 @@
                 <div class="empty-icon"><i class="far fa-heart"></i></div>
                 <p class="empty-title">Bu filtrede favori otel bulunamadı</p>
                 <p class="empty-subtitle text-muted">Yeni rezervasyon yaptığın oteller otomatik favorilerine eklenir; dilersen otel detayından da favori ekleyebilirsin.</p>
-                <div class="empty-action"><a href="/oteller" class="btn btn-primary">Otel Keşfet</a></div>
+                <div class="empty-action"><a href="/hotel" class="btn btn-primary">Otel Keşfet</a></div>
             </div>
         </section>
     }
@@ -80,17 +106,20 @@
     {
         <section class="favorite-list-card">
             <div class="favorite-list-head">
-                <div>
-                    <h2>Favori Oteller</h2>
-                    <p>@Model.TotalCount kayıt içinden sayfa başı @Model.PageSize otel listeleniyor.</p>
-                </div>
-                <span>Sayfa @Model.Page / @Model.TotalPages</span>
+                <h2 class="favorite-list-title">Favori Oteller</h2>
+                <span class="favorite-list-meta">
+                    @if (Model.TotalCount > 0)
+                    {
+                        @($"{pageStart}-{pageEnd} / {Model.TotalCount} · ")
+                    }
+                    Sayfa @Model.Page / @Model.TotalPages
+                </span>
             </div>
             <div class="favorite-list">
             @foreach (var hotel in Model.Hotels)
             {
                 <article class="favorite-row">
-                    <a href="/oteller/@hotel.Slug" class="favorite-row-media">
+                    <a href="/hotel/@hotel.Slug" class="favorite-row-media">
                         @if (!string.IsNullOrWhiteSpace(hotel.ImageUrl))
                         {
                             <img src="@hotel.ImageUrl" alt="@hotel.Name" />
@@ -102,12 +131,12 @@
                     </a>
                     <div class="favorite-row-main">
                         <div class="favorite-row-title">
-                            <h3><a href="/oteller/@hotel.Slug">@hotel.Name</a></h3>
+                            <h3><a href="/hotel/@hotel.Slug">@hotel.Name</a></h3>
                             <p><i class="fas fa-location-dot"></i>@hotel.District, @hotel.City</p>
                         </div>
                         <div class="favorite-row-meta">
-                            <span><i class="far fa-calendar-check"></i>@hotel.LastReservationDateText</span>
-                            <span><i class="far fa-heart"></i>@hotel.AddedDateText</span>
+                            <span><i class="far fa-calendar-check" aria-hidden="true"></i>@hotel.ReservationCountText</span>
+                            <span><i class="far fa-heart" aria-hidden="true"></i>@hotel.FavoriteAddedAt.ToString("dd MMM yyyy", System.Globalization.CultureInfo.GetCultureInfo("tr-TR")) favori</span>
                         </div>
                         @if (!string.IsNullOrWhiteSpace(hotel.AvailabilityNote))
                         {
@@ -168,7 +197,7 @@
                         {
                             <span class="favorite-alert-pill">Alarm aktif</span>
                         }
-                        <a href="/oteller/@hotel.Slug" class="favorite-action favorite-action--primary"><i class="fas fa-calendar-check"></i>Rezervasyon Yap</a>
+                        <a href="/hotel/@hotel.Slug" class="favorite-action favorite-action--primary"><i class="fas fa-calendar-check"></i>Rezervasyon Yap</a>
                         <button type="button"
                                 class="favorite-action favorite-action--outline"
                                 data-alert-config
@@ -193,10 +222,34 @@
             }
             </div>
             <div class="favorite-pagination">
-                <span>@Model.TotalCount kayıt · Sayfa @Model.Page / @Model.TotalPages</span>
-                <div>
-                    <a class="btn btn-outline-primary btn-sm @(Model.HasPreviousPage ? "" : "disabled")" href="/panel/user/favorilerim?page=@(Model.Page - 1)&sort=@Model.Sort&searchTerm=@System.Uri.EscapeDataString(Model.SearchTerm)">Önceki</a>
-                    <a class="btn btn-outline-primary btn-sm @(Model.HasNextPage ? "" : "disabled")" href="/panel/user/favorilerim?page=@(Model.Page + 1)&sort=@Model.Sort&searchTerm=@System.Uri.EscapeDataString(Model.SearchTerm)">Sonraki</a>
+                <div class="favorite-pagination-meta">
+                    @if (Model.TotalCount > 0)
+                    {
+                        @($"{pageStart}-{pageEnd} arası · {Model.TotalCount} kayıt · ")
+                    }
+                    else
+                    {
+                        @:0 kayıt · 
+                    }
+                    Sayfa @Model.Page / @Model.TotalPages
+                </div>
+                <div class="favorite-pagination-actions">
+                    <a asp-action="Favorites"
+                       asp-route-page="@(Math.Max(1, Model.Page - 1))"
+                       asp-route-sort="@Model.Sort"
+                       asp-route-searchTerm="@Model.SearchTerm"
+                       class="btn btn-outline-ap @(!Model.HasPreviousPage ? "disabled" : string.Empty)"
+                       aria-disabled="@(!Model.HasPreviousPage ? "true" : "false")">
+                        <i class="fas fa-chevron-left" aria-hidden="true"></i> Önceki
+                    </a>
+                    <a asp-action="Favorites"
+                       asp-route-page="@(Math.Min(Model.TotalPages, Model.Page + 1))"
+                       asp-route-sort="@Model.Sort"
+                       asp-route-searchTerm="@Model.SearchTerm"
+                       class="btn btn-outline-ap @(!Model.HasNextPage ? "disabled" : string.Empty)"
+                       aria-disabled="@(!Model.HasNextPage ? "true" : "false")">
+                        Sonraki <i class="fas fa-chevron-right" aria-hidden="true"></i>
+                    </a>
                 </div>
             </div>
         </section>
@@ -208,32 +261,36 @@
         @Html.AntiForgeryToken()
         <input type="hidden" name="HotelId" id="favoriteAlertHotelId" />
         <div class="favorite-alert-form-head">
-            <div>
+            <div class="favorite-alert-form-copy">
                 <p class="page-pretitle">FİYAT ALARMI</p>
                 <h3 id="favoriteAlertHotelName">Fiyat alarmı ayarı</h3>
             </div>
-            <button type="button" class="btn btn-icon btn-outline-primary" data-close-alert-dialog aria-label="Kapat"><i class="fas fa-xmark"></i></button>
+            <button type="button" class="favorite-alert-close btn btn-outline-ap" data-close-alert-dialog aria-label="Kapat">
+                <i class="fas fa-xmark" aria-hidden="true"></i>
+            </button>
         </div>
         <label class="favorite-alert-checkbox">
             <input type="checkbox" name="Enabled" id="favoriteAlertEnabled" value="true" />
             <span>Bu otel için fiyat alarmı aktif olsun</span>
         </label>
         <input type="hidden" name="Enabled" value="false" />
-        <label class="form-label" for="favoriteAlertTargetPrice">Beklenen maksimum gece fiyatı (TRY)</label>
-        <input class="form-control" type="number" name="TargetPriceText" id="favoriteAlertTargetPrice" min="1" step="0.01" required />
+        <div class="favorite-alert-field">
+            <label class="form-label" for="favoriteAlertTargetPrice">Beklenen maksimum gece fiyatı (TRY)</label>
+            <input class="form-control" type="number" name="TargetPriceText" id="favoriteAlertTargetPrice" min="1" step="0.01" required />
+        </div>
         <div class="favorite-alert-date-grid">
-            <div>
+            <div class="favorite-alert-field">
                 <label class="form-label" for="favoriteAlertStartDate">Başlangıç tarihi</label>
                 <input class="form-control" type="date" name="StartDateText" id="favoriteAlertStartDate" min="@minDate" required />
             </div>
-            <div>
+            <div class="favorite-alert-field">
                 <label class="form-label" for="favoriteAlertEndDate">Bitiş tarihi</label>
                 <input class="form-control" type="date" name="EndDateText" id="favoriteAlertEndDate" min="@minDate" required />
             </div>
         </div>
         <div class="favorite-alert-actions">
-            <button type="button" class="btn btn-outline-primary" data-close-alert-dialog>Vazgeç</button>
-            <button type="submit" class="btn btn-primary">Kaydet</button>
+            <button type="button" class="btn btn-outline-ap" data-close-alert-dialog>Vazgeç</button>
+            <button type="submit" class="btn btn-primary-ap">Kaydet</button>
         </div>
     </form>
 </dialog>

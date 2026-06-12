@@ -7,10 +7,12 @@ using SqlConnection = Microsoft.Data.SqlClient.SqlConnection;
 using SqlCommand = Microsoft.Data.SqlClient.SqlCommand;
 using SqlTransaction = Microsoft.Data.SqlClient.SqlTransaction;
 using SqlException = Microsoft.Data.SqlClient.SqlException;
+using otelturizmnew.Models.Anasayfa;
 using otelturizmnew.Models.Email;
 using otelturizmnew.Models.Messages;
 using otelturizmnew.Models.Oteller;
 using otelturizmnew.Models.Paneller.User;
+using otelturizmnew.Models.Paneller.Common;
 using otelturizmnew.Services.Abstractions;
 
 namespace otelturizmnew.Services;
@@ -25,6 +27,7 @@ public class UserPanelService : IUserPanelService
     private readonly ISecureFileService _secureFileService;
     private readonly IHotelPointsService _hotelPointsService;
     private readonly IPaymentCardService _paymentCardService;
+    private readonly IHeaderBildiriService _headerBildiriService;
     private readonly string _publicBaseUrl;
 
     public UserPanelService(
@@ -35,7 +38,8 @@ public class UserPanelService : IUserPanelService
         IHotelPricingReadService hotelPricingReadService,
         ISecureFileService secureFileService,
         IHotelPointsService hotelPointsService,
-        IPaymentCardService paymentCardService)
+        IPaymentCardService paymentCardService,
+        IHeaderBildiriService headerBildiriService)
     {
         _connectionString = configuration.GetConnectionString("DefaultConnection")
             ?? throw new InvalidOperationException("DefaultConnection tanimli degil.");
@@ -46,6 +50,7 @@ public class UserPanelService : IUserPanelService
         _secureFileService = secureFileService;
         _hotelPointsService = hotelPointsService;
         _paymentCardService = paymentCardService;
+        _headerBildiriService = headerBildiriService;
         _publicBaseUrl = (configuration["App:PublicBaseUrl"] ?? "https://localhost:7223").TrimEnd('/');
     }
 
@@ -1160,6 +1165,80 @@ INNER JOIN agg ON agg.[OTEL_ID] = o.id;";
         return await ResolveProfileImageUrlAsync(userId, raw, cancellationToken);
     }
 
+    public async Task<HomeDrawerUserCardViewModel> GetHomeDrawerUserCardAsync(long userId, string accountType, CancellationToken cancellationToken = default)
+    {
+        var model = new HomeDrawerUserCardViewModel();
+        if (userId <= 0)
+        {
+            return model;
+        }
+
+        model.ProfileImageUrl = await GetProfileImageUrlAsync(userId, cancellationToken);
+
+        await using var connection = await OpenConnectionAsync(cancellationToken);
+        await using var userCommand = new SqlCommand("""
+            SELECT TOP (1) [OLUSTURULMA_TARIHI], [FIRMA_ID]
+            FROM [dbo].[KULLANICILAR]
+            WHERE id = @userId;
+            """, connection);
+        userCommand.Parameters.AddWithValue("@userId", userId);
+        await using var reader = await userCommand.ExecuteReaderAsync(cancellationToken);
+        long? firmaId = null;
+        if (await reader.ReadAsync(cancellationToken))
+        {
+            if (!reader.IsDBNull(0))
+            {
+                model.MembershipDateText = reader.GetDateTime(0)
+                    .ToLocalTime()
+                    .ToString("dd.MM.yyyy", CultureInfo.GetCultureInfo("tr-TR"));
+            }
+
+            if (!reader.IsDBNull(1))
+            {
+                var rawFirmaId = Convert.ToInt64(reader.GetValue(1), CultureInfo.InvariantCulture);
+                if (rawFirmaId > 0)
+                {
+                    firmaId = rawFirmaId;
+                }
+            }
+        }
+
+        await reader.CloseAsync();
+
+        var normalizedAccountType = (accountType ?? string.Empty).Trim().ToLowerInvariant();
+        if (normalizedAccountType == "partner")
+        {
+            await using var partnerCommand = new SqlCommand("""
+                SELECT TOP (1) COALESCE(NULLIF([FIRMA_UNVANI], N''), N'')
+                FROM [dbo].[PARTNER_DETAYLARI]
+                WHERE [KULLANICI_ID] = @userId
+                ORDER BY id DESC;
+                """, connection);
+            partnerCommand.Parameters.AddWithValue("@userId", userId);
+            var partnerCompany = Convert.ToString(await partnerCommand.ExecuteScalarAsync(cancellationToken), CultureInfo.InvariantCulture);
+            if (!string.IsNullOrWhiteSpace(partnerCompany))
+            {
+                model.CompanyName = partnerCompany.Trim();
+            }
+        }
+        else if (normalizedAccountType == "firma" && firmaId is > 0)
+        {
+            await using var firmaCommand = new SqlCommand("""
+                SELECT TOP (1) COALESCE(NULLIF([FIRMA_ADI], N''), N'')
+                FROM [dbo].[FIRMALAR]
+                WHERE id = @firmaId;
+                """, connection);
+            firmaCommand.Parameters.AddWithValue("@firmaId", firmaId.Value);
+            var firmaName = Convert.ToString(await firmaCommand.ExecuteScalarAsync(cancellationToken), CultureInfo.InvariantCulture);
+            if (!string.IsNullOrWhiteSpace(firmaName))
+            {
+                model.CompanyName = firmaName.Trim();
+            }
+        }
+
+        return model;
+    }
+
     private async Task<string> ResolveProfileImageUrlAsync(long userId, string? storedValue, CancellationToken cancellationToken)
     {
         var normalized = (storedValue ?? string.Empty).Trim();
@@ -1188,7 +1267,50 @@ INNER JOIN agg ON agg.[OTEL_ID] = o.id;";
         => new() { "Türkçe", "İngilizce", "Almanca", "Fransızca", "Arapça", "Rusça" };
 
     private static List<string> BuildTravelPurposeOptions()
-        => new() { "İş", "Tatil", "Aile ziyareti", "Sağlık", "Etkinlik", "Karışık" };
+        => new() { "İş", "Tatil", "Aile ziyareti", "Sağlık", "Etkinlik" };
+
+    internal const char TravelPurposeDelimiter = '|';
+
+    internal static IReadOnlyList<string> ParseTravelPurposes(string? raw)
+    {
+        if (string.IsNullOrWhiteSpace(raw))
+        {
+            return Array.Empty<string>();
+        }
+
+        var trimmed = raw.Trim();
+        if (string.Equals(trimmed, "Karışık", StringComparison.OrdinalIgnoreCase))
+        {
+            return Array.Empty<string>();
+        }
+
+        var parts = trimmed.Contains(TravelPurposeDelimiter, StringComparison.Ordinal)
+            ? trimmed.Split(TravelPurposeDelimiter, StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+            : new[] { trimmed };
+
+        return parts
+            .Where(part => !string.IsNullOrWhiteSpace(part)
+                           && !string.Equals(part, "Karışık", StringComparison.OrdinalIgnoreCase))
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToList();
+    }
+
+    internal static string JoinTravelPurposes(IEnumerable<string>? values)
+    {
+        if (values is null)
+        {
+            return string.Empty;
+        }
+
+        var joined = values
+            .Select(value => value?.Trim())
+            .Where(value => !string.IsNullOrWhiteSpace(value)
+                            && !string.Equals(value, "Karışık", StringComparison.OrdinalIgnoreCase))
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToList();
+
+        return joined.Count == 0 ? string.Empty : string.Join(TravelPurposeDelimiter, joined);
+    }
 
     private async Task<List<UserUploadedProfileAvatarViewModel>> LoadUploadedProfileAvatarsAsync(SqlConnection connection, long userId, CancellationToken cancellationToken)
     {
@@ -1344,7 +1466,7 @@ INNER JOIN agg ON agg.[OTEL_ID] = o.id;";
             command.Parameters.AddWithValue("@phoneE164", string.IsNullOrWhiteSpace(normalizedPhone) ? DBNull.Value : (object)normalizedPhone);
             command.Parameters.AddWithValue("@phoneChanged", phoneChanged ? 1 : 0);
             command.Parameters.AddWithValue("@identityNumber", form.IdentityNumber?.Trim() ?? string.Empty);
-            command.Parameters.AddWithValue("@birthDate", DateTime.TryParse(form.BirthDateText, out var birthDate) ? birthDate : DBNull.Value);
+            command.Parameters.AddWithValue("@birthDate", TryParseProfileBirthDate(form.BirthDateText, out var birthDate) ? birthDate : DBNull.Value);
             command.Parameters.AddWithValue("@gender", form.Gender?.Trim() ?? string.Empty);
             command.Parameters.AddWithValue("@nationality", form.Nationality?.Trim() ?? string.Empty);
             command.Parameters.AddWithValue("@address", form.Address?.Trim() ?? string.Empty);
@@ -1355,7 +1477,7 @@ INNER JOIN agg ON agg.[OTEL_ID] = o.id;";
             command.Parameters.AddWithValue("@roomPreference", form.RoomPreference?.Trim() ?? string.Empty);
             command.Parameters.AddWithValue("@bedPreference", form.BedPreference?.Trim() ?? string.Empty);
             command.Parameters.AddWithValue("@spokenLanguages", form.SpokenLanguages?.Trim() ?? string.Empty);
-            command.Parameters.AddWithValue("@travelPurpose", form.TravelPurpose?.Trim() ?? string.Empty);
+            command.Parameters.AddWithValue("@travelPurpose", JoinTravelPurposes(ParseTravelPurposes(form.TravelPurpose)));
             command.Parameters.AddWithValue("@specialRequests", form.SpecialRequests?.Trim() ?? string.Empty);
             if (hasGeoIds)
             {
@@ -1400,6 +1522,25 @@ INNER JOIN agg ON agg.[OTEL_ID] = o.id;";
         }
     }
 
+    private static bool TryParseProfileBirthDate(string? birthDateText, out DateTime birthDate)
+    {
+        birthDate = default;
+        if (string.IsNullOrWhiteSpace(birthDateText))
+        {
+            return false;
+        }
+
+        var trimmed = birthDateText.Trim();
+        var tr = CultureInfo.GetCultureInfo("tr-TR");
+        if (DateTime.TryParseExact(trimmed, "dd.MM.yyyy", tr, DateTimeStyles.None, out birthDate))
+        {
+            return true;
+        }
+
+        return DateTime.TryParse(trimmed, tr, DateTimeStyles.None, out birthDate)
+            || DateTime.TryParse(trimmed, CultureInfo.InvariantCulture, DateTimeStyles.None, out birthDate);
+    }
+
     public async Task<bool> SaveTravelPreferencesAsync(long userId, UserTravelPreferencesForm form, CancellationToken cancellationToken = default)
     {
         if (userId <= 0)
@@ -1421,11 +1562,74 @@ INNER JOIN agg ON agg.[OTEL_ID] = o.id;";
         command.Parameters.AddWithValue("@roomPreference", (form.RoomPreference ?? string.Empty).Trim());
         command.Parameters.AddWithValue("@bedPreference", (form.BedPreference ?? string.Empty).Trim());
         command.Parameters.AddWithValue("@spokenLanguages", (form.SpokenLanguages ?? string.Empty).Trim());
-        command.Parameters.AddWithValue("@travelPurpose", (form.TravelPurpose ?? string.Empty).Trim());
+        command.Parameters.AddWithValue("@travelPurpose", JoinTravelPurposes(ParseTravelPurposes(form.TravelPurpose)));
         command.Parameters.AddWithValue("@specialRequests", (form.SpecialRequests ?? string.Empty).Trim());
         command.Parameters.AddWithValue("@userId", userId);
         return await command.ExecuteNonQueryAsync(cancellationToken) > 0;
     }
+
+    public async Task<UserTravelPreferencesSearchViewModel?> GetTravelPreferencesForSearchAsync(long userId, CancellationToken cancellationToken = default)
+    {
+        if (userId <= 0)
+        {
+            return null;
+        }
+
+        await using var connection = await OpenConnectionAsync(cancellationToken);
+        await using var command = new SqlCommand("""
+            SELECT TOP (1)
+                COALESCE([TERCIH_EDILEN_ODA_TIPI], ''),
+                COALESCE([YATAK_TERCIHI], ''),
+                COALESCE([KONUSULAN_DILLER], ''),
+                COALESCE([SEYAHAT_AMACI], ''),
+                COALESCE([OZEL_ISTEKLER], '')
+            FROM [dbo].[KULLANICILAR]
+            WHERE id = @userId;
+            """, connection);
+        command.Parameters.AddWithValue("@userId", userId);
+        await using var reader = await command.ExecuteReaderAsync(cancellationToken);
+        if (!await reader.ReadAsync(cancellationToken))
+        {
+            return null;
+        }
+
+        var model = new UserTravelPreferencesSearchViewModel
+        {
+            RoomPreference = NullIfEmpty(reader.IsDBNull(0) ? null : reader.GetString(0)),
+            BedPreference = NullIfEmpty(reader.IsDBNull(1) ? null : reader.GetString(1)),
+            SpokenLanguages = NullIfEmpty(reader.IsDBNull(2) ? null : reader.GetString(2)),
+            TravelPurpose = NullIfEmpty(reader.IsDBNull(3) ? null : reader.GetString(3)),
+            SpecialRequests = NullIfEmpty(reader.IsDBNull(4) ? null : reader.GetString(4)),
+        };
+
+        var summaryParts = new List<string>();
+        if (IsActionableTravelPreference(model.RoomPreference)) summaryParts.Add(model.RoomPreference!);
+        if (IsActionableTravelPreference(model.BedPreference)) summaryParts.Add(model.BedPreference!);
+        foreach (var purpose in ParseTravelPurposes(model.TravelPurpose))
+        {
+            summaryParts.Add(purpose);
+        }
+        if (IsActionableTravelPreference(model.SpokenLanguages)) summaryParts.Add(model.SpokenLanguages!);
+        if (!string.IsNullOrWhiteSpace(model.SpecialRequests))
+        {
+            var shortSpecial = model.SpecialRequests.Length > 28
+                ? model.SpecialRequests[..28].Trim() + "…"
+                : model.SpecialRequests.Trim();
+            summaryParts.Add(shortSpecial);
+        }
+
+        model.SummaryText = string.Join(" · ", summaryParts);
+        model.HasActionablePreferences = summaryParts.Count > 0;
+        return model.HasActionablePreferences ? model : null;
+    }
+
+    private static string? NullIfEmpty(string? value)
+        => string.IsNullOrWhiteSpace(value) ? null : value.Trim();
+
+    private static bool IsActionableTravelPreference(string? value)
+        => !string.IsNullOrWhiteSpace(value)
+           && !string.Equals(value.Trim(), "Fark etmez", StringComparison.OrdinalIgnoreCase)
+           && !string.Equals(value.Trim(), "Karışık", StringComparison.OrdinalIgnoreCase);
 
     public async Task<(bool Success, string Message)> RequestEmailUpdateAsync(
         long userId,
@@ -1862,6 +2066,162 @@ INNER JOIN agg ON agg.[OTEL_ID] = o.id;";
         }
 
         return model;
+    }
+
+    public async Task<UserNotificationInboxPageViewModel> GetNotificationInboxAsync(
+        long userId,
+        string? statusFilter = null,
+        string? typeFilter = null,
+        string? searchTerm = null,
+        int page = 1,
+        int pageSize = 10,
+        CancellationToken cancellationToken = default)
+    {
+        page = Math.Max(1, page);
+        pageSize = Math.Clamp(pageSize, 5, 50);
+
+        var normalizedStatus = (statusFilter ?? "all").Trim().ToLowerInvariant();
+        if (normalizedStatus is not ("all" or "unread" or "read"))
+        {
+            normalizedStatus = "all";
+        }
+
+        var search = (searchTerm ?? string.Empty).Trim();
+        var type = (typeFilter ?? string.Empty).Trim();
+
+        var model = new UserNotificationInboxPageViewModel
+        {
+            StatusFilter = normalizedStatus,
+            TypeFilter = type,
+            SearchTerm = search,
+            Page = page,
+            PageSize = pageSize
+        };
+
+        var headerModel = await _headerBildiriService.GetForPanelAsync(PanelHeaderAudience.User, userId, maxItems: null, cancellationToken);
+        var merged = headerModel.Items
+            .Where(static item => !item.IsPlaceholder)
+            .Select(item => new UserNotificationInboxRowViewModel
+            {
+                ItemKey = item.ItemKey,
+                Source = "panel",
+                Title = item.Title,
+                Message = item.Description,
+                TypeText = "Panel",
+                Tone = item.Tone,
+                IconClass = item.IconClass,
+                Url = item.Url,
+                TimeText = item.TimeLabel,
+                AbsoluteTimeText = item.AbsoluteTimeLabel,
+                IsRead = item.IsRead,
+                SystemNotificationId = null
+            })
+            .ToList();
+
+        model.PanelUnreadCount = merged.Count(static item => !item.IsRead);
+
+        await using var connection = await OpenConnectionAsync(cancellationToken);
+        var systemRows = new List<UserNotificationInboxRowViewModel>();
+        await using (var command = new SqlCommand(@"
+            SELECT id, [BASLIK], [MESAJ], [BILDIRIM_TURU], COALESCE([IKON], 'fa-bell'), COALESCE([RENK], 'info'),
+                   COALESCE([AKSIYON_URL], '#'), COALESCE([OKUNDU_MU], 0), [OLUSTURULMA_TARIHI]
+            FROM [dbo].[SISTEM_ICI_BILDIRIMLER]
+            WHERE [KULLANICI_ID] = @userId
+              AND COALESCE([ARSIVLENDI_MI], 0) = 0
+            ORDER BY [OLUSTURULMA_TARIHI] DESC, id DESC;", connection))
+        {
+            command.Parameters.AddWithValue("@userId", userId);
+            await using var reader = await command.ExecuteReaderAsync(cancellationToken);
+            while (await reader.ReadAsync(cancellationToken))
+            {
+                var createdAt = reader.GetDateTime(8);
+                var isRead = !reader.IsDBNull(7) && reader.GetBoolean(7);
+                systemRows.Add(new UserNotificationInboxRowViewModel
+                {
+                    ItemKey = $"system:{reader.GetInt64(0)}",
+                    SystemNotificationId = reader.GetInt64(0),
+                    Source = "system",
+                    Title = reader.GetString(1),
+                    Message = reader.GetString(2),
+                    TypeText = reader.GetString(3),
+                    IconClass = reader.GetString(4),
+                    Tone = reader.GetString(5),
+                    Url = reader.GetString(6),
+                    TimeText = RelativeTimeLabel(createdAt),
+                    AbsoluteTimeText = createdAt.ToLocalTime().ToString("dd.MM.yyyy HH:mm", CultureInfo.GetCultureInfo("tr-TR")),
+                    IsRead = isRead
+                });
+            }
+        }
+
+        model.SystemUnreadCount = systemRows.Count(static item => !item.IsRead);
+        merged.AddRange(systemRows);
+
+        model.TypeOptions = merged
+            .Select(static item => item.TypeText)
+            .Where(static value => !string.IsNullOrWhiteSpace(value))
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .OrderBy(static value => value, StringComparer.OrdinalIgnoreCase)
+            .ToList();
+
+        IEnumerable<UserNotificationInboxRowViewModel> filtered = merged;
+        if (normalizedStatus == "unread")
+        {
+            filtered = filtered.Where(static item => !item.IsRead);
+        }
+        else if (normalizedStatus == "read")
+        {
+            filtered = filtered.Where(static item => item.IsRead);
+        }
+
+        if (!string.IsNullOrWhiteSpace(type))
+        {
+            filtered = filtered.Where(item => string.Equals(item.TypeText, type, StringComparison.OrdinalIgnoreCase));
+        }
+
+        if (!string.IsNullOrWhiteSpace(search))
+        {
+            filtered = filtered.Where(item =>
+                item.Title.Contains(search, StringComparison.OrdinalIgnoreCase)
+                || item.Message.Contains(search, StringComparison.OrdinalIgnoreCase)
+                || item.TypeText.Contains(search, StringComparison.OrdinalIgnoreCase)
+                || item.AbsoluteTimeText.Contains(search, StringComparison.OrdinalIgnoreCase));
+        }
+
+        var ordered = filtered
+            .OrderByDescending(static item => ParseInboxSortTime(item))
+            .ThenBy(static item => item.ItemKey, StringComparer.OrdinalIgnoreCase)
+            .ToList();
+
+        model.UnreadCount = merged.Count(static item => !item.IsRead);
+        model.TotalCount = ordered.Count;
+        model.Items = ordered
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
+            .ToList();
+
+        return model;
+    }
+
+    public Task ClearNotificationInboxAsync(long userId, CancellationToken cancellationToken = default)
+        => _headerBildiriService.ClearAllAsync(PanelHeaderAudience.User, userId, cancellationToken);
+
+    private static DateTime ParseInboxSortTime(UserNotificationInboxRowViewModel item)
+    {
+        if (DateTime.TryParseExact(item.AbsoluteTimeText, "dd.MM.yyyy HH:mm", CultureInfo.GetCultureInfo("tr-TR"), DateTimeStyles.None, out var parsed))
+        {
+            return parsed;
+        }
+
+        return DateTime.MinValue;
+    }
+
+    private static string RelativeTimeLabel(DateTime valueUtc)
+    {
+        var diff = DateTime.UtcNow - valueUtc.ToUniversalTime();
+        if (diff.TotalMinutes < 60) return $"{Math.Max(1, (int)diff.TotalMinutes)} dk once";
+        if (diff.TotalHours < 24) return $"{(int)diff.TotalHours} saat once";
+        return $"{(int)diff.TotalDays} gun once";
     }
 
     public async Task<bool> SaveNotificationsAsync(long userId, UserNotificationPreferencesForm form, CancellationToken cancellationToken = default)
@@ -2898,7 +3258,7 @@ INNER JOIN agg ON agg.[OTEL_ID] = o.id;";
     {
         var list = new List<UserLoyaltyOfferViewModel>();
         await using var command = new SqlCommand(@"
-            SELECT TOP (4) [BASLIK], [ACIKLAMA], [KAMPANYA_KODU], COALESCE([BUTON_URL], '/oteller'), [GECERLILIK_BITIS]
+            SELECT TOP (4) [BASLIK], [ACIKLAMA], [KAMPANYA_KODU], COALESCE([BUTON_URL], '/hotel'), [GECERLILIK_BITIS]
             FROM [dbo].[KULLANICI_OZEL_TEKLIFLERI]
             WHERE [AKTIF_MI] = 1
               AND ([KULLANICI_ID] = @userId OR [KULLANICI_ID] IS NULL)
@@ -2997,7 +3357,7 @@ INNER JOIN agg ON agg.[OTEL_ID] = o.id;";
                 DistrictText = $"{reader.GetString(2)} / {reader.GetString(3)}",
                 ImageUrl = string.IsNullOrWhiteSpace(reader.GetString(5)) ? "/uploads/logo/logo.png" : reader.GetString(5),
                 RatingText = SafeDecimal(reader, 4) > 0 ? $"{SafeDecimal(reader, 4):0.0} puan" : "Yeni liste",
-                Url = $"/oteller/{BuildSlug(hotelName, hotelCode)}"
+                Url = $"/hotel/{BuildSlug(hotelName, hotelCode)}"
             });
         }
 

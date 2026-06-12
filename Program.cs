@@ -48,6 +48,19 @@ Log.Logger = new LoggerConfiguration()
 
 builder.Host.UseSerilog();
 
+var secureStorageRoot = SecureStoragePaths.ResolveRoot(builder.Configuration, builder.Environment);
+if (!SecureStoragePaths.TryEnsureWritable(secureStorageRoot, out var secureStorageError))
+{
+    Log.Warning(
+        "Secure storage root yazilamaz: {Root}. Profil gorseli ve guvenli dosya yuklemeleri basarisiz olabilir. Detay: {Detail}",
+        secureStorageRoot,
+        secureStorageError);
+}
+else
+{
+    Log.Information("Secure storage root hazir: {Root}", secureStorageRoot);
+}
+
 // Dev ortamında bazı makinelerde HTTPS/HTTP2 bağlantıları (net::ERR_*) yüzünden css/js düşebiliyor.
 // launchSettings.json'daki portları kullan
 builder.WebHost.ConfigureKestrel(options =>
@@ -740,7 +753,7 @@ app.Use((context, next) =>
     return next();
 });
 
-// Canonical lowercase paths for Turkish SEO routes (e.g. /Oteller → /oteller).
+// Canonical lowercase paths for Turkish SEO routes (e.g. /Oteller → /hotel).
 app.Use(async (context, next) =>
 {
     var path = context.Request.Path.Value;
@@ -749,7 +762,11 @@ app.Use(async (context, next) =>
         string? redirectTarget = null;
         if (path.StartsWith("/Oteller", StringComparison.Ordinal))
         {
-            redirectTarget = "/oteller" + path["/Oteller".Length..];
+            redirectTarget = "/hotel" + path["/Oteller".Length..];
+        }
+        else if (path.StartsWith("/oteller", StringComparison.OrdinalIgnoreCase))
+        {
+            redirectTarget = "/hotel" + path["/oteller".Length..];
         }
         else if (path.StartsWith("/Kampanyalar", StringComparison.Ordinal))
         {

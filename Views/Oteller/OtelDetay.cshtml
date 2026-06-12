@@ -274,6 +274,14 @@
             ? Math.Round(initialTotal / initialNightCount / initialRooms, 0)
             : 0m;
     }
+    var initialNormalNightly = initialHasDawn && initialNightCount > 0 && initialRooms > 0
+        ? Math.Round(initialOriginalTotal / initialNightCount / initialRooms, 0)
+        : (initialInclusiveNightly > 0m
+            ? initialInclusiveNightly
+            : (Model.LowestRoomPrice > 0m ? Model.GuestInclusiveNightlyFromStoredNet(Model.LowestRoomPrice) : 0m));
+    var initialDiscountedNightly = initialNightCount > 0 && initialRooms > 0 && initialTotal > 0m
+        ? Math.Round(initialTotal / initialNightCount / initialRooms, 0)
+        : initialNormalNightly;
     var hotelImagePlaceholder = "/assets/img/placeholder-hotel.jpg";
     string ResolveRoomImageUrl(string? url) =>
         !string.IsNullOrWhiteSpace(url) ? url
@@ -609,6 +617,19 @@
                 <span>@headerLocationText</span>
             </a>
         </div>
+        <div class="detail-header-about-top">
+            <div class="detail-about__head-row">
+                <div class="tabler-section-titles">
+                    <h2>@SharedLocalizer["Detail.About.Title"].Value</h2>
+                </div>
+            </div>
+            @if (Model.Weather is not null && Model.Weather.Days.Count > 0)
+            {
+                <div class="detail-about__weather-row">
+                    @await Html.PartialAsync("_OtelDetayWeatherStrip", (Model.Weather, weatherThemeClass, "standalone", "weatherAboutOpen"))
+                </div>
+            }
+        </div>
         <partial name="~/Views/Oteller/_OtelDetayBusinessTrust.cshtml" model="Model" />
         <div class="detail-title-subnav" aria-label="Hızlı gezinme">
             @if (!string.IsNullOrWhiteSpace(Model.VideoUrl))
@@ -875,19 +896,6 @@
 <section class="detail-grid od-detail__layout">
     <div class="detail-content od-detail__main">
         <article class="content-card detail-about-card od-section od-section--about">
-            <div class="section-head tabler-section-head detail-about__head">
-                <div class="detail-about__head-row">
-                    <div class="tabler-section-titles">
-                        <h2>@SharedLocalizer["Detail.About.Title"].Value</h2>
-                    </div>
-                </div>
-            </div>
-            @if (Model.Weather is not null && Model.Weather.Days.Count > 0)
-            {
-                <div class="detail-about__weather-row">
-                    @await Html.PartialAsync("_OtelDetayWeatherStrip", (Model.Weather, weatherThemeClass, "standalone", "weatherAboutOpen"))
-                </div>
-            }
             <div class="detail-about__body">
                 @if (!string.IsNullOrWhiteSpace(longDescription))
                 {
@@ -1298,34 +1306,36 @@
                                     var nightlyDisplay = Model.GuestInclusiveNightlyFromStoredNet(room.Price);
                                     var stayTotal = nightlyDisplay * initialNightCount;
 
-                                    if (hasRoomDiscount)
-                                    {
-                                        <div class="room-price-discount-stack">
-                                            <span class="room-price-old">₺@baseDisplay.ToString("N0")</span>
+                                    <div class="room-price-main-row">
+                                        @if (hasRoomDiscount)
+                                        {
+                                            <div class="room-price-discount-stack">
+                                                <span class="room-price-old">₺@baseDisplay.ToString("N0")</span>
+                                                <strong>₺@nightlyDisplay.ToString("N0")</strong>
+                                                <span class="room-price-discount-pill">
+                                                    %@discountPercent
+                                                    @if (room.DiscountId.HasValue && !string.IsNullOrWhiteSpace(room.DiscountName))
+                                                    {
+                                                        <button type="button"
+                                                                class="discount-info-btn"
+                                                                data-discount-open
+                                                                data-discount-title="@room.DiscountName"
+                                                                data-discount-desc="@room.DiscountShortDescription"
+                                                                data-discount-image="@room.DiscountImageUrl"
+                                                                aria-label="İndirim detayını görüntüle">
+                                                            <i class="fas fa-circle-info" aria-hidden="true"></i>
+                                                        </button>
+                                                    }
+                                                </span>
+                                            </div>
+                                        }
+                                        else
+                                        {
                                             <strong>₺@nightlyDisplay.ToString("N0")</strong>
-                                            <span class="room-price-discount-pill">
-                                                %@discountPercent
-                                                @if (room.DiscountId.HasValue && !string.IsNullOrWhiteSpace(room.DiscountName))
-                                                {
-                                                    <button type="button"
-                                                            class="discount-info-btn"
-                                                            data-discount-open
-                                                            data-discount-title="@room.DiscountName"
-                                                            data-discount-desc="@room.DiscountShortDescription"
-                                                            data-discount-image="@room.DiscountImageUrl"
-                                                            aria-label="İndirim detayını görüntüle">
-                                                        <i class="fas fa-circle-info" aria-hidden="true"></i>
-                                                    </button>
-                                                }
-                                            </span>
-                                        </div>
-                                    }
-                                    else
-                                    {
-                                        <strong>₺@nightlyDisplay.ToString("N0")</strong>
-                                    }
+                                        }
 
-                                    <span class="room-price-inclusive-label" title="@SharedLocalizer["Detail.Room.TaxesIncluded"].Value">@SharedLocalizer["Detail.Room.TaxesIncluded"].Value</span>
+                                        <span class="room-price-inclusive-label" title="@SharedLocalizer["Detail.Room.TaxesIncluded"].Value">@SharedLocalizer["Detail.Room.TaxesIncluded"].Value</span>
+                                    </div>
                                     <small class="room-price-total">@string.Format(i18nRoomTotalLine, initialNightCount): ₺@stayTotal.ToString("N0")</small>
                                 }
                                 else
@@ -1572,9 +1582,11 @@
                         </div>
                         <div class="booking-price-line booking-price-line--total" id="bookingPriceTotalRow" @(showBookingTotalRow ? null : "hidden")>
                             <span class="booking-price-unit">@SharedLocalizer["Detail.Booking.Total"].Value</span>
-                            <strong id="bookingPrice" class="booking-price-total">@(showBookingTotalRow ? $"₺{initialTotal:N0}" : "—")</strong>
+                            <div class="booking-price-total-group">
+                                <strong id="bookingPrice" class="booking-price-total">@(showBookingTotalRow ? $"₺{initialTotal:N0}" : "—")</strong>
+                                <span class="booking-price-dawn-pill" id="bookingPriceDawnPill" @(initialHasDawn ? null : "hidden")>@(initialHasDawn ? $"Şafak sürprizi −%{initialDawnPercent} · ₺{initialDawnDiscount:N0}" : "")</span>
+                            </div>
                         </div>
-                        <div class="booking-price-dawn-pill" id="bookingPriceDawnPill" @(initialHasDawn ? null : "hidden")>@(initialHasDawn ? $"Şafak sürprizi −%{initialDawnPercent} · ₺{initialDawnDiscount:N0}" : "")</div>
                         <div class="booking-price-meta">
                             <span class="booking-price-tax-badge">@SharedLocalizer["Detail.Room.TaxesIncluded"].Value</span>
                             <small class="booking-price-tax-note">@SharedLocalizer["Detail.Booking.TaxesNote"].Value</small>
@@ -1611,11 +1623,13 @@
                                 <div class="multi-room-item-dates">
                                     <label>
                                         <span>Giriş Tarihi</span>
-                                        <input type="date" data-field="checkIn" lang="tr-TR" min="@todayDate" value="@checkInDefault" title="@reservationForm.CheckInDate.ToString("dd/MM/yyyy")" />
+                                        <input type="date" data-field="checkIn" lang="tr-TR" min="@todayDate" value="@checkInDefault" title="@reservationForm.CheckInDate.ToString("dd/MM/yyyy")" aria-label="@reservationForm.CheckInDate.ToString("dd/MM/yyyy")" />
+                                        <small class="multi-room-date-hint" data-date-hint>@reservationForm.CheckInDate.ToString("dd/MM/yyyy")</small>
                                     </label>
                                     <label>
                                         <span>Çıkış Tarihi</span>
-                                        <input type="date" data-field="checkOut" lang="tr-TR" min="@checkOutMinDefault" value="@checkOutDefault" title="@reservationForm.CheckOutDate.ToString("dd/MM/yyyy")" />
+                                        <input type="date" data-field="checkOut" lang="tr-TR" min="@checkOutMinDefault" value="@checkOutDefault" title="@reservationForm.CheckOutDate.ToString("dd/MM/yyyy")" aria-label="@reservationForm.CheckOutDate.ToString("dd/MM/yyyy")" />
+                                        <small class="multi-room-date-hint" data-date-hint>@reservationForm.CheckOutDate.ToString("dd/MM/yyyy")</small>
                                     </label>
                                 </div>
                                 <label class="multi-room-item-type">
@@ -1828,19 +1842,30 @@
     </aside>
 
     <div class="mobile-booking-bar od-mobile-bottom-dock od-sticky-cta mob-sticky-cta fe-world-safe-bottom" id="mobileBookingBar" role="region" aria-label="@SharedLocalizer["Booking.MobileSummary"].Value">
+        <div class="mobile-booking-bar__row mobile-booking-bar__row--room">
+            <button type="button" class="mobile-booking-room-pick" id="mobileBookingRoomPick" aria-haspopup="dialog" aria-controls="rezervasyonAksiyon" aria-label="Oda tipini değiştir">
+                <span class="mobile-booking-room-name" id="mobileBookingRoomName">@selectedRoomSeed?.Name</span>
+                <i class="fas fa-chevron-down mobile-booking-room-chev" aria-hidden="true"></i>
+            </button>
+            <div class="mobile-booking-normal-nightly" aria-label="Gecelik normal fiyat">
+                <span class="mobile-booking-normal-label">@SharedLocalizer["Detail.Booking.FromNight"].Value</span>
+                <strong id="mobileBookingNormalNightly" class="mobile-booking-normal-price">@(initialNormalNightly > 0m ? $"₺{initialNormalNightly:N0}" : "—")</strong>
+            </div>
+        </div>
         <div class="mobile-booking-bar__row mobile-booking-bar__row--price">
             <div class="mobile-booking-price-stack">
-                <div class="mobile-booking-room-row">
-                    <span class="mobile-booking-room-name" id="mobileBookingRoomName">@selectedRoomSeed?.Name</span>
+                <div class="mobile-booking-dawn-row" id="mobileBookingDawnRow" @(initialHasDawn ? null : "hidden")>
+                    <span class="mobile-booking-dawn-label">Şafak sürprizi</span>
+                    <span class="mobile-booking-dawn-pill" id="mobileBookingDawn">@(initialHasDawn ? $"−%{initialDawnPercent} · ₺{initialDawnDiscount:N0}" : "")</span>
                 </div>
                 <div class="mobile-booking-price-main">
                     <div class="mobile-booking-price-labels">
                         <span class="mobile-booking-label">@SharedLocalizer["Detail.Booking.Total"].Value</span>
+                        <small class="mobile-booking-nightly-sub" id="mobileBookingNightlySub" @(initialHasDawn && initialDiscountedNightly > 0 ? null : "hidden")>@(initialHasDawn && initialDiscountedNightly > 0 ? $"₺{initialDiscountedNightly:N0} / gece" : "")</small>
                     </div>
                     <div class="mobile-booking-total-wrap">
                         <del class="mobile-booking-original" id="mobileBookingOriginal" @(initialHasDawn ? null : "hidden aria-hidden=\"true\"")>@(initialHasDawn ? $"₺{initialOriginalTotal:N0}" : "")</del>
-                        <strong id="mobileBookingPrice" class="mobile-booking-total">@(initialTotal > 0m ? $"₺{initialTotal:N0}" : (Model.LowestRoomPrice > 0m ? $"₺{Model.GuestInclusiveNightlyFromStoredNet(Model.LowestRoomPrice):N0}" : "—"))</strong>
-                        <span class="mobile-booking-dawn-pill" id="mobileBookingDawn" @(initialHasDawn ? null : "hidden")>@(initialHasDawn ? $"Şafak −%{initialDawnPercent} · ₺{initialDawnDiscount:N0}" : "")</span>
+                        <strong id="mobileBookingPrice" class="mobile-booking-total">@(initialTotal > 0m ? $"₺{initialTotal:N0}" : "—")</strong>
                     </div>
                 </div>
             </div>
@@ -2116,6 +2141,13 @@
 
 @if (Model.IsLoggedInUser)
 {
+    var profileBirthDisplay = string.Empty;
+    if (!string.IsNullOrWhiteSpace(Model.ProfilePrompt.BirthDateText)
+        && DateTime.TryParse(Model.ProfilePrompt.BirthDateText, System.Globalization.CultureInfo.InvariantCulture, System.Globalization.DateTimeStyles.None, out var profileBirthParsed))
+    {
+        profileBirthDisplay = profileBirthParsed.ToString("dd.MM.yyyy", System.Globalization.CultureInfo.InvariantCulture);
+    }
+
     <section class="detail-modal detail-profile-modal" id="profileCompletionModal" hidden aria-hidden="true" role="dialog" aria-modal="true" aria-labelledby="profileCompletionModalTitle">
         <div class="detail-profile-modal__shell fe-world-safe-bottom">
             <header class="detail-modal-head detail-profile-modal__head">
@@ -2125,105 +2157,64 @@
                 </div>
                 <button type="button" class="detail-modal-close detail-profile-modal__close fe-world-touch-target" data-close-modal="profileCompletionModal" aria-label="@SharedLocalizer["Btn.Close"].Value"><i class="fas fa-times" aria-hidden="true"></i></button>
             </header>
-            <p class="detail-modal-copy detail-profile-modal__lead">Rezervasyonu tamamlayabilmemiz için e-posta, telefon, doğum tarihi, cinsiyet, il ve ilçe alanlarının eksiksiz olması gerekiyor. Mahalle isteğe bağlıdır. 18 yaşını bugün dolduran kullanıcı bugün rezervasyon yapamaz; en erken yarın işlem yapabilir.</p>
+            <p class="detail-modal-copy detail-profile-modal__lead">Rezervasyonu tamamlayabilmemiz için doğum tarihi, il ve ilçe bilgilerinizin eksiksiz olması gerekir. Doğum tarihini gün.ay.yıl (ör. 28.09.1990) formatında girin.</p>
 
-            <form id="profileCompletionForm" class="detail-profile-form" lang="tr-TR" method="post" action="/oteller/@Model.Slug/profil-bilgilerini-tamamla">
+            <form id="profileCompletionForm" class="detail-profile-form" lang="tr-TR" method="post" action="/hotel/@Model.Slug/profil-bilgilerini-tamamla">
                 @Html.AntiForgeryToken()
-                <div class="detail-profile-form__fields">
-                    <label>
-                        <span>Ad</span>
-                        <input type="text" name="FirstName" value="@Model.ProfilePrompt.FirstName" required autocomplete="given-name" />
-                    </label>
-                    <label>
-                        <span>Soyad</span>
-                        <input type="text" name="LastName" value="@Model.ProfilePrompt.LastName" required autocomplete="family-name" />
-                    </label>
-                    <label class="detail-profile-form-field@(Model.ProfilePrompt.EmailVerified ? " detail-profile-form-field--locked" : "")">
-                        <span>
-                            E-posta
-                            @if (Model.ProfilePrompt.EmailVerified)
-                            {
-                                <small class="detail-profile-form-lock-hint">Onaylı · değiştirilemez</small>
-                            }
-                        </span>
-                        @if (Model.ProfilePrompt.EmailVerified)
-                        {
-                            <input type="hidden" name="Email" value="@Model.ProfilePrompt.Email" />
-                            <input type="email"
-                                   class="detail-profile-form-input--locked"
-                                   value="@Model.ProfilePrompt.Email"
-                                   readonly
-                                   aria-readonly="true"
-                                   tabindex="-1"
-                                   autocomplete="email" />
-                        }
-                        else
-                        {
-                            <input type="email" name="Email" value="@Model.ProfilePrompt.Email" required autocomplete="email" />
-                        }
-                    </label>
-                    <label>
-                        <span>Telefon</span>
-                        <input type="text" name="Phone" value="@Model.ProfilePrompt.Phone" required inputmode="tel" autocomplete="tel" />
-                    </label>
-                    <label lang="tr-TR">
+                <input type="hidden" name="FirstName" value="@Model.ProfilePrompt.FirstName" />
+                <input type="hidden" name="LastName" value="@Model.ProfilePrompt.LastName" />
+                <input type="hidden" name="Email" value="@Model.ProfilePrompt.Email" />
+                <input type="hidden" name="Phone" value="@Model.ProfilePrompt.Phone" />
+                <input type="hidden" name="Gender" value="@Model.ProfilePrompt.Gender" />
+                <input type="hidden" name="Address" value="@Model.ProfilePrompt.Address" />
+                <input type="hidden" name="Neighborhood" value="@Model.ProfilePrompt.Neighborhood" />
+                <input type="hidden" name="IdentityNumber" value="" />
+                <input type="hidden" name="PostalCode" value="" />
+                <input type="hidden" name="RoomPreference" value="" />
+                <input type="hidden" name="BedPreference" value="" />
+                <input type="hidden" name="SpokenLanguages" value="" />
+                <input type="hidden" name="TravelPurpose" value="" />
+                <input type="hidden" name="SpecialRequests" value="" />
+
+                <div class="detail-profile-form__fields detail-profile-form__fields--compact">
+                    <label class="detail-profile-form-field detail-profile-form-field--birth" lang="tr-TR">
                         <span>Doğum Tarihi</span>
-                        <input type="date"
+                        <input type="text"
+                               id="profileBirthDateInput"
                                name="BirthDateText"
+                               class="detail-profile-form-birth-input"
                                lang="tr-TR"
                                autocomplete="bday"
-                               value="@Model.ProfilePrompt.BirthDateText"
+                               inputmode="numeric"
+                               placeholder="28.09.1990"
+                               value="@profileBirthDisplay"
                                required
-                               max="@reservationAdultCutoffText"
-                               title="gg/aa/yyyy" />
+                               maxlength="10"
+                               pattern="\d{2}\.\d{2}\.\d{4}"
+                               title="gg.aa.yyyy (ör. 28.09.1990)"
+                               data-cutoff-iso="@reservationAdultCutoffText" />
                     </label>
-                    <label>
-                        <span>Cinsiyet</span>
-                        <select name="Gender" required>
-                            <option value="">Seçiniz</option>
-                            <option value="Erkek" selected="@(Model.ProfilePrompt.Gender == "Erkek")">Erkek</option>
-                            <option value="Kadın" selected="@(Model.ProfilePrompt.Gender == "Kadın")">Kadın</option>
-                            <option value="Belirtmek İstemiyorum" selected="@(Model.ProfilePrompt.Gender == "Belirtmek İstemiyorum")">Belirtmek İstemiyorum</option>
-                        </select>
-                    </label>
-                    <label>
-                        <span>Uyruk</span>
-                        <select name="Nationality" id="detailCountrySelect">
-                            <option value="">Yükleniyor...</option>
-                        </select>
-                    </label>
-                    <label>
+                    <label class="detail-profile-form-field detail-profile-form-field--city">
                         <span>İl</span>
                         <select name="City" id="detailProvinceSelect" required data-selected-text="@Model.ProfilePrompt.City">
                             <option value="">Yükleniyor...</option>
                         </select>
                     </label>
-                    <label>
+                    <label class="detail-profile-form-field detail-profile-form-field--district">
                         <span>İlçe</span>
                         <select name="District" id="detailDistrictSelect" required data-selected-text="@Model.ProfilePrompt.District">
                             <option value="">Önce il seçiniz</option>
                         </select>
                     </label>
-                    <label>
-                        <span>
-                            Mahalle
-                            <small class="detail-profile-form-optional-hint">Opsiyonel</small>
-                        </span>
-                        <select name="Neighborhood" id="detailNeighborhoodSelect" data-selected-text="@Model.ProfilePrompt.Neighborhood">
-                            <option value="">Mahalle seçiniz (opsiyonel)</option>
-                        </select>
-                    </label>
-                    <label class="detail-profile-form-span">
-                        <span>Açık Adres</span>
-                        <textarea name="Address" rows="3">@Model.ProfilePrompt.Address</textarea>
-                    </label>
-                    <input type="hidden" name="IdentityNumber" value="" />
-                    <input type="hidden" name="PostalCode" value="" />
-                    <input type="hidden" name="RoomPreference" value="" />
-                    <input type="hidden" name="BedPreference" value="" />
-                    <input type="hidden" name="SpokenLanguages" value="" />
-                    <input type="hidden" name="TravelPurpose" value="" />
-                    <input type="hidden" name="SpecialRequests" value="" />
+                </div>
+
+                <div class="detail-profile-form-hidden" hidden aria-hidden="true">
+                    <select name="Nationality" id="detailCountrySelect">
+                        <option value="">Yükleniyor...</option>
+                    </select>
+                    <select id="detailNeighborhoodSelect" data-selected-text="@Model.ProfilePrompt.Neighborhood">
+                        <option value="">Mahalle seçiniz (opsiyonel)</option>
+                    </select>
                 </div>
                 <footer class="detail-profile-form__footer">
                     <div class="detail-modal-actions detail-profile-modal__actions">
@@ -3050,6 +3041,10 @@
                 openBookingSheet();
             });
 
+            document.getElementById('mobileBookingRoomPick')?.addEventListener('click', function () {
+                openMobileRoomPicker();
+            });
+
             bookingModalClose?.addEventListener('click', function () {
                 closeBookingSheet();
             });
@@ -3213,6 +3208,22 @@
                 if (!checkOutEl.value || checkOutEl.value <= checkInEl.value) {
                     checkOutEl.value = minCheckOutText;
                 }
+
+                [checkInEl, checkOutEl].forEach(function (el) {
+                    if (!el || !window.otelturizmBookingDates?.formatDateTr) {
+                        return;
+                    }
+                    const formatted = window.otelturizmBookingDates.formatDateTr(el.value);
+                    if (!formatted) {
+                        return;
+                    }
+                    el.title = formatted;
+                    el.setAttribute('aria-label', formatted);
+                    const hint = el.parentElement?.querySelector('[data-date-hint]');
+                    if (hint) {
+                        hint.textContent = formatted;
+                    }
+                });
             }
 
             function bindRoomItemEvents(item) {
@@ -3275,6 +3286,22 @@
                     return iso;
                 }
                 return parts[2] + '/' + parts[1] + '/' + parts[0];
+            }
+
+            function isValidStayRange(checkIn, checkOut) {
+                return !!(checkIn && checkOut && checkOut > checkIn);
+            }
+
+            function nightsBetweenIso(checkIn, checkOut) {
+                if (!isValidStayRange(checkIn, checkOut)) {
+                    return 0;
+                }
+                const start = parseIsoDate(checkIn);
+                const end = parseIsoDate(checkOut);
+                if (!start || !end) {
+                    return 0;
+                }
+                return Math.max(0, Math.round((end.getTime() - start.getTime()) / 86400000));
             }
 
             function updateRoomItemSummary(item) {
@@ -3564,12 +3591,7 @@
             }
 
             function countNights(checkIn, checkOut) {
-                const start = parseIsoDate(checkIn);
-                const end = parseIsoDate(checkOut);
-                if (!start || !end) {
-                    return 0;
-                }
-                return Math.max(0, Math.round((end.getTime() - start.getTime()) / 86400000));
+                return nightsBetweenIso(checkIn, checkOut);
             }
 
             function formatConfirmTemplate(template, value) {
@@ -3676,6 +3698,66 @@
                 return parsed;
             }
 
+            function parseTurkishBirthDate(value) {
+                if (!value || typeof value !== 'string') {
+                    return null;
+                }
+
+                const trimmed = value.trim();
+                const dotted = /^(\d{2})\.(\d{2})\.(\d{4})$/.exec(trimmed);
+                if (dotted) {
+                    const day = Number(dotted[1]);
+                    const month = Number(dotted[2]);
+                    const year = Number(dotted[3]);
+                    const parsed = new Date(year, month - 1, day);
+                    if (Number.isNaN(parsed.getTime())
+                        || parsed.getFullYear() !== year
+                        || parsed.getMonth() !== month - 1
+                        || parsed.getDate() !== day) {
+                        return null;
+                    }
+                    parsed.setHours(0, 0, 0, 0);
+                    return parsed;
+                }
+
+                return parseIsoDate(trimmed);
+            }
+
+            function formatTurkishBirthDate(date) {
+                if (!(date instanceof Date) || Number.isNaN(date.getTime())) {
+                    return '';
+                }
+
+                const day = String(date.getDate()).padStart(2, '0');
+                const month = String(date.getMonth() + 1).padStart(2, '0');
+                return day + '.' + month + '.' + date.getFullYear();
+            }
+
+            function maskProfileBirthDateInput(input) {
+                if (!input) {
+                    return;
+                }
+
+                input.addEventListener('input', function () {
+                    const digits = input.value.replace(/\D/g, '').slice(0, 8);
+                    let formatted = digits.slice(0, 2);
+                    if (digits.length > 2) {
+                        formatted += '.' + digits.slice(2, 4);
+                    }
+                    if (digits.length > 4) {
+                        formatted += '.' + digits.slice(4, 8);
+                    }
+                    input.value = formatted;
+                });
+
+                input.addEventListener('blur', function () {
+                    const parsed = parseTurkishBirthDate(input.value);
+                    if (parsed) {
+                        input.value = formatTurkishBirthDate(parsed);
+                    }
+                });
+            }
+
             function validateProfileCompletionData(formData) {
                 const email = (formData.get('Email') || '').toString().trim();
                 const firstName = (formData.get('FirstName') || '').toString().trim();
@@ -3706,10 +3788,10 @@
                     return 'Rezervasyon için doğum tarihi zorunludur.';
                 }
 
-                const birthDate = parseIsoDate(birthDateText);
+                const birthDate = parseTurkishBirthDate(birthDateText);
                 const cutoffDate = parseIsoDate(reservationAdultCutoffDate);
                 if (!birthDate || !cutoffDate) {
-                    return 'Doğum tarihi geçerli bir formatta girilmelidir.';
+                    return 'Doğum tarihi gg.aa.yyyy formatında girilmelidir (ör. 28.09.1990).';
                 }
 
                 if (birthDate.getTime() > cutoffDate.getTime()) {
@@ -3860,10 +3942,7 @@
                 const items = roomNodes.map(getRoomItemData);
                 const hasMissingRequiredInfo = roomNodes.length === 0
                     || items.some(function (x) {
-                        return !x.roomTypeId
-                            || !x.checkIn
-                            || !x.checkOut
-                            || new Date(x.checkOut).getTime() <= new Date(x.checkIn).getTime();
+                        return !x.roomTypeId || !isValidStayRange(x.checkIn, x.checkOut);
                     })
                     || adults < 1;
                 if (hasMissingRequiredInfo) {
@@ -4155,26 +4234,43 @@
             function updateMobileBookingSummary(summary) {
                 const data = summary || {};
                 const roomNameEl = document.getElementById('mobileBookingRoomName');
+                const roomPickBtn = document.getElementById('mobileBookingRoomPick');
+                const normalNightlyEl = document.getElementById('mobileBookingNormalNightly');
                 const originalEl = document.getElementById('mobileBookingOriginal');
+                const dawnRowEl = document.getElementById('mobileBookingDawnRow');
                 const dawnEl = document.getElementById('mobileBookingDawn');
+                const nightlySubEl = document.getElementById('mobileBookingNightlySub');
                 const total = Number(data.totalAmount || 0);
                 const originalTotal = Number(data.originalTotalAmount || 0);
                 const dawnDiscount = Number(data.dawnSurpriseDiscountAmount || 0);
                 const dawnPercent = Number(data.dawnSurprisePercent || 0);
+                const nights = Math.max(1, Number(data.nightsForNightly || 1));
+                const rooms = Math.max(1, Number(data.roomsForNightly || 1));
                 const roomName = (data.roomName || '').toString().trim();
                 const hasDawn = dawnDiscount > 0 && dawnPercent > 0 && originalTotal > total;
+                const discountedNightly = total > 0 ? Math.round(total / nights / rooms) : 0;
+                const normalNightly = hasDawn && originalTotal > 0
+                    ? Math.round(originalTotal / nights / rooms)
+                    : discountedNightly;
                 const earnPoints = data.earnPoints;
 
                 if (roomNameEl) {
                     if (roomName) {
                         roomNameEl.textContent = roomName;
-                        roomNameEl.hidden = false;
                         roomNameEl.title = roomName;
                     } else {
-                        roomNameEl.textContent = '';
-                        roomNameEl.hidden = true;
+                        roomNameEl.textContent = 'Oda seçin';
                         roomNameEl.removeAttribute('title');
                     }
+                }
+
+                if (roomPickBtn) {
+                    roomPickBtn.hidden = false;
+                    roomPickBtn.disabled = false;
+                }
+
+                if (normalNightlyEl) {
+                    normalNightlyEl.textContent = normalNightly > 0 ? formatMoney(normalNightly) : '—';
                 }
 
                 if (mobileBookingPrice) {
@@ -4193,13 +4289,27 @@
                     }
                 }
 
+                if (dawnRowEl) {
+                    dawnRowEl.hidden = !hasDawn;
+                }
+
                 if (dawnEl) {
                     if (hasDawn) {
-                        dawnEl.textContent = 'Şafak −%' + dawnPercent + ' · ' + formatMoney(dawnDiscount);
+                        dawnEl.textContent = '−%' + dawnPercent + ' · ' + formatMoney(dawnDiscount);
                         dawnEl.hidden = false;
                     } else {
                         dawnEl.textContent = '';
                         dawnEl.hidden = true;
+                    }
+                }
+
+                if (nightlySubEl) {
+                    if (hasDawn && discountedNightly > 0) {
+                        nightlySubEl.textContent = formatMoney(discountedNightly) + ' / gece';
+                        nightlySubEl.hidden = false;
+                    } else {
+                        nightlySubEl.textContent = '';
+                        nightlySubEl.hidden = true;
                     }
                 }
 
@@ -4210,6 +4320,73 @@
                 } else if (Object.prototype.hasOwnProperty.call(data, 'totalAmount')) {
                     updateMobileBookingLoyalty(0);
                 }
+            }
+
+            function openBookingSheetFocusRoomType(index) {
+                setActiveRoomIndex(index);
+                openBookingSheet();
+                window.setTimeout(function () {
+                    const nodes = getRoomItemNodes();
+                    const target = nodes[index] || nodes[0];
+                    const select = target?.querySelector('[data-field="roomType"]');
+                    if (select instanceof HTMLSelectElement) {
+                        select.focus();
+                    }
+                }, 280);
+            }
+
+            function openMobileRoomPicker() {
+                if (!isMobileBookingMode()) {
+                    scrollToBookingArea();
+                    return;
+                }
+
+                const nodes = getRoomItemNodes();
+                if (nodes.length <= 1) {
+                    openBookingSheetFocusRoomType(0);
+                    return;
+                }
+
+                if (!infoModal || !infoModalText || !infoModalActions) {
+                    openBookingSheetFocusRoomType(0);
+                    return;
+                }
+
+                infoModalText.textContent = 'Hangi oda için oda tipini değiştirmek istiyorsunuz?';
+                const titleEl = document.getElementById('detailInfoModalTitle');
+                if (titleEl) {
+                    titleEl.innerHTML = '<span class="detail-modal-title-icon" aria-hidden="true"><i class="fas fa-bed"></i></span><span>Oda seçimi</span>';
+                }
+                infoModal.classList.add('is-room-pick');
+
+                const activeIndex = nodes.findIndex(function (node) { return node.classList.contains('is-active'); });
+                const defaultIndex = activeIndex >= 0 ? activeIndex : 0;
+                infoModalActions.innerHTML =
+                    '<label class="room-pick-select-wrap">' +
+                    '<span class="room-pick-select-label">Hangi oda güncellensin?</span>' +
+                    '<select id="mobileRoomPickSelect" class="room-pick-select">' +
+                    nodes.map(function (_n, idx) {
+                        const selected = idx === defaultIndex ? ' selected' : '';
+                        return '<option value="' + idx + '"' + selected + '>Oda ' + (idx + 1) + '</option>';
+                    }).join('') +
+                    '</select></label>' +
+                    '<button type="button" class="detail-modal-primary" id="mobileRoomPickConfirmBtn">Devam</button>' +
+                    '<button type="button" class="detail-modal-secondary" data-close-modal="detailInfoModal">Vazgeç</button>';
+
+                openModal(infoModal);
+                document.getElementById('mobileRoomPickConfirmBtn')?.addEventListener('click', function () {
+                    const selectEl = document.getElementById('mobileRoomPickSelect');
+                    const idx = parseInt(selectEl?.value || '0', 10);
+                    closeModal(infoModal);
+                    infoModal.classList.remove('is-room-pick');
+                    openBookingSheetFocusRoomType(Number.isFinite(idx) ? idx : 0);
+                });
+                infoModalActions.querySelectorAll('[data-close-modal]').forEach(function (btn) {
+                    btn.addEventListener('click', function () {
+                        closeModal(infoModal);
+                        infoModal.classList.remove('is-room-pick');
+                    });
+                });
             }
 
             function syncRoomsJsonAndHiddenFields() {
@@ -4409,7 +4586,7 @@
 
                 const items = roomNodes.map(getRoomItemData);
                 const invalid = items.some(function (x) {
-                    return !x.roomTypeId || !x.checkIn || !x.checkOut || new Date(x.checkOut).getTime() <= new Date(x.checkIn).getTime();
+                    return !x.roomTypeId || !isValidStayRange(x.checkIn, x.checkOut);
                 });
                 if (invalid) {
                     return;
@@ -4518,8 +4695,7 @@
                         const node = roomNodes[perRoom.length] || null;
                         const opt = node?.querySelector('[data-field="roomType"]')?.selectedOptions?.[0];
                         const netNightly = parseFloat(opt?.dataset.price || '0');
-                        const diffMs = new Date(item.checkOut).getTime() - new Date(item.checkIn).getTime();
-                        const nights = Math.max(1, Math.round(diffMs / 86400000));
+                        const nights = Math.max(1, nightsBetweenIso(item.checkIn, item.checkOut));
                         const rc = Math.max(1, parseInt(item.roomCount || 1, 10) || 1);
                         const subtotal = (netNightly * nights) * rc;
                         // Vergiler bilgilendirme icin "fiyatin icinden" hesaplanir; toplam tutara eklenmez.
@@ -4552,7 +4728,7 @@
 
                 const firstItem = items[0];
                 const nightsForNightly = firstItem
-                    ? Math.max(1, Math.round((new Date(firstItem.checkOut).getTime() - new Date(firstItem.checkIn).getTime()) / 86400000))
+                    ? Math.max(1, nightsBetweenIso(firstItem.checkIn, firstItem.checkOut))
                     : 1;
                 const roomsForNightly = firstItem ? Math.max(1, parseInt(firstItem.roomCount || 1, 10) || 1) : 1;
 
@@ -4566,7 +4742,9 @@
                     originalTotalAmount: totals.originalTotalAmount,
                     dawnSurprisePercent: totals.dawnSurprisePercent,
                     dawnSurpriseDiscountAmount: totals.dawnSurpriseDiscountAmount,
-                    earnPoints: earnPoints
+                    earnPoints: earnPoints,
+                    nightsForNightly: nightsForNightly,
+                    roomsForNightly: roomsForNightly
                 });
 
                 breakdown.innerHTML = buildMultiRoomBreakdownHtml(perRoom, totals);
@@ -5333,6 +5511,7 @@
             });
 
             bindProfileAddressSelectOverflowFix();
+            maskProfileBirthDateInput(document.getElementById('profileBirthDateInput'));
 
             openProfileCompletionFromBanner?.addEventListener('click', function () {
                 openProfileCompletionModal('Rezervasyonunuza kaldığınız yerden devam etmek için eksik profil bilgilerinizi tamamlayın.');
@@ -5540,10 +5719,7 @@
                 const items = roomNodes.map(getRoomItemData);
                 const hasMissingRequiredInfo = roomNodes.length === 0
                     || items.some(function (x) {
-                        return !x.roomTypeId
-                            || !x.checkIn
-                            || !x.checkOut
-                            || new Date(x.checkOut).getTime() <= new Date(x.checkIn).getTime();
+                        return !x.roomTypeId || !isValidStayRange(x.checkIn, x.checkOut);
                     })
                     || adults < 1;
                 if (hasMissingRequiredInfo) {
@@ -5615,10 +5791,21 @@
                     const response = await fetch(profileCompletionForm.action, {
                         method: 'POST',
                         body: formData,
-                        credentials: 'same-origin',
-                        headers: { 'X-Requested-With': 'XMLHttpRequest' }
+                        credentials: 'same-origin'
                     });
-                    const payload = await response.json();
+                    const contentType = (response.headers.get('content-type') || '').toLowerCase();
+                    let payload = null;
+                    if (contentType.includes('application/json')) {
+                        try {
+                            payload = await response.json();
+                        } catch {
+                            throw new Error('Sunucu yanıtı işlenemedi. Sayfayı yenileyip tekrar deneyin.');
+                        }
+                    } else if (response.status === 400 && contentType.includes('text/html')) {
+                        throw new Error('Oturum süresi dolmuş olabilir. Sayfayı yenileyip tekrar deneyin.');
+                    } else {
+                        throw new Error('Sunucu yanıtı işlenemedi. Sayfayı yenileyip tekrar deneyin.');
+                    }
                     if (!response.ok || !payload.success) {
                         throw new Error(payload.message || 'Bilgiler kaydedilemedi.');
                     }
@@ -5639,7 +5826,11 @@
                 } catch (error) {
                     profileFeedback.hidden = false;
                     profileFeedback.className = 'detail-modal-feedback error';
-                    profileFeedback.textContent = error.message || 'Bilgiler kaydedilemedi.';
+                    let message = error?.message || 'Bilgiler kaydedilemedi.';
+                    if (error instanceof TypeError || message === 'Failed to fetch' || message === 'NetworkError when attempting to fetch resource.') {
+                        message = 'Bağlantı kurulamadı. İnternet bağlantınızı kontrol edip tekrar deneyin.';
+                    }
+                    profileFeedback.textContent = message;
                 }
             });
 

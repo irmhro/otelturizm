@@ -37,7 +37,7 @@
                     foreach (var hotel in hotels)
                     {
                         var image = !string.IsNullOrWhiteSpace(hotel.ImageUrl) ? hotel.ImageUrl : fallbackImages[index % fallbackImages.Length];
-                        var detailUrl = string.IsNullOrWhiteSpace(hotel.DetailSlug) ? "/oteller" : $"/oteller/{Uri.EscapeDataString(hotel.DetailSlug)}";
+                        var detailUrl = string.IsNullOrWhiteSpace(hotel.DetailSlug) ? "/hotel" : $"/hotel/{Uri.EscapeDataString(hotel.DetailSlug)}";
                         var location = !string.IsNullOrWhiteSpace(hotel.LocationText) ? hotel.LocationText : $"{hotel.District}, {hotel.City}".Trim(' ', ',');
                         var hasDiscount = hotel.HasDiscount && hotel.OriginalPrice.HasValue && hotel.DiscountedPrice.HasValue;
                         <article class="hotel-card">
@@ -82,7 +82,7 @@
                     for (var i = 0; i < 4; i++)
                     {
                         <article class="hotel-card">
-                            <a href="/oteller" class="home-premium-card-link">
+                            <a href="/hotel" class="home-premium-card-link">
                                 <div class="img-holder"><img src="@fallbackImages[i % fallbackImages.Length]" alt="@fallbackNames[i]" loading="lazy" decoding="async" /><span class="badge-lux">★★★★★</span></div>
                                 <div class="hotel-card-body">
                                     <h3 class="hotel-title">@fallbackNames[i]</h3>

@@ -5,7 +5,7 @@ namespace otelturizmnew.Infrastructure;
 
 /// <summary>
 /// Path prefix is the source of truth for public SEO routes.
-/// Turkish canonical paths (/oteller, /kampanyalar, /) are always tr-TR.
+/// Turkish canonical paths (/hotel, /kampanyalar, /) are always tr-TR.
 /// Cookie, Accept-Language and ?lang= are ignored (no silent locale drift).
 /// </summary>
 public sealed class RoutePrefixRequestCultureProvider : IRequestCultureProvider

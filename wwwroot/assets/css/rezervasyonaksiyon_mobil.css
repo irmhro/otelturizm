@@ -109,12 +109,36 @@
         font-variant-numeric: tabular-nums;
     }
 
-    .oteldetay-page .rezervasyon-aksiyon .booking-price-total {
-        font-size: 26px;
-        font-weight: 900;
-        line-height: 1.05;
-        color: var(--od-crimson, #E30A17);
+    .oteldetay-page .rezervasyon-aksiyon .booking-price-head--ota .booking-price-total-group {
+        display: inline-flex;
+        align-items: center;
+        justify-content: flex-end;
+        flex-wrap: wrap;
+        gap: 6px;
+        flex: 0 0 auto;
+        max-width: 100%;
+    }
+
+    .oteldetay-page .rezervasyon-aksiyon .booking-price-head--ota .booking-price-total {
+        font-size: 18px;
+        font-weight: 800;
+        line-height: 1.1;
+        color: var(--od-dark, #1A1919);
         font-variant-numeric: tabular-nums;
+    }
+
+    .oteldetay-page .rezervasyon-aksiyon .booking-price-head--ota .booking-price-dawn-pill {
+        display: inline-flex;
+        align-items: center;
+        margin-top: 0;
+        padding: 3px 8px;
+        border-radius: 999px;
+        background: #fef3c7;
+        color: #92400e;
+        font-size: 10px;
+        font-weight: 800;
+        line-height: 1.2;
+        white-space: nowrap;
     }
 
     .oteldetay-page .rezervasyon-aksiyon .booking-price-meta {
@@ -430,26 +454,36 @@
     }
 
     .oteldetay-page .rezervasyon-aksiyon .od-booking-counters-desktop-row {
-        display: flex !important;
-        flex-direction: column !important;
-        align-items: stretch !important;
-        gap: 0 !important;
+        display: grid !important;
+        grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+        gap: 10px !important;
         width: 100% !important;
         max-width: 100% !important;
         margin: 0 0 4px !important;
     }
 
-    .oteldetay-page .rezervasyon-aksiyon .od-booking-counters-desktop-row .multi-room {
-        display: block !important;
-        width: 100% !important;
-        max-width: 100% !important;
+    .oteldetay-page .rezervasyon-aksiyon .od-booking-counters-desktop-row .multi-room,
+    .oteldetay-page .rezervasyon-aksiyon .od-booking-counters-desktop-row .multi-room-item:only-child {
+        display: contents !important;
     }
 
-    .oteldetay-page .rezervasyon-aksiyon .od-booking-counters-desktop-row .multi-room-item {
-        display: grid !important;
-        width: 100% !important;
-        max-width: 100% !important;
+    .oteldetay-page .rezervasyon-aksiyon .od-booking-counters-desktop-row .multi-room-head,
+    .oteldetay-page .rezervasyon-aksiyon .od-booking-counters-desktop-row .multi-room-item-grid,
+    .oteldetay-page .rezervasyon-aksiyon .od-booking-counters-desktop-row .multi-room-toast {
+        grid-column: 1 / -1;
     }
+
+    .oteldetay-page .rezervasyon-aksiyon .od-booking-counters-desktop-row:has(.multi-room-item:not(:only-child)) {
+        display: flex !important;
+        flex-direction: column !important;
+        gap: 0 !important;
+    }
+
+    .oteldetay-page .rezervasyon-aksiyon .od-booking-counters-desktop-row:has(.multi-room-item:not(:only-child)) .multi-room,
+    .oteldetay-page .rezervasyon-aksiyon .od-booking-counters-desktop-row:has(.multi-room-item:not(:only-child)) .multi-room-item {
+        display: block !important;
+    }
+
 
     .oteldetay-page .rezervasyon-aksiyon .multi-room {
         width: 100%;
@@ -468,8 +502,8 @@
 
     .oteldetay-page .rezervasyon-aksiyon .multi-room-item {
         display: grid;
-        grid-template-columns: minmax(0, 1fr) minmax(108px, 34%);
-        column-gap: 10px;
+        grid-template-columns: 1fr;
+        column-gap: 0;
         row-gap: 10px;
         width: 100%;
         max-width: 100%;
@@ -526,32 +560,30 @@
 
     .oteldetay-page .rezervasyon-aksiyon .multi-room-item-type {
         display: flex;
-        flex-direction: row;
-        align-items: center;
-        justify-content: space-between;
-        gap: 10px;
-        grid-column: 1;
+        flex-direction: column;
+        align-items: stretch;
+        gap: 4px;
+        grid-column: 1 / -1;
         width: 100%;
         min-width: 0;
     }
 
     .oteldetay-page .rezervasyon-aksiyon .multi-room-item-type > span {
-        flex: 0 0 auto;
+        flex: none;
         margin: 0;
-        white-space: nowrap;
+        white-space: normal;
     }
 
     .oteldetay-page .rezervasyon-aksiyon .multi-room-item-type select {
-        flex: 1 1 auto;
+        width: 100%;
         min-width: 0;
-        width: auto;
         max-width: 100%;
     }
 
     .oteldetay-page .rezervasyon-aksiyon .od-booking-counters-band--item {
-        grid-column: 2;
+        grid-column: 1;
         grid-row: auto;
-        align-self: end;
+        align-self: stretch;
         margin-top: 0;
         width: 100%;
         min-width: 0;

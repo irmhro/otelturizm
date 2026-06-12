@@ -15,7 +15,7 @@ public class SeyahatPlanlamaService : ISeyahatPlanlamaService
             Title = "İstanbul",
             Subtitle = "Tarih, gastronomi ve Boğaz manzarası",
             SearchQuery = "İstanbul",
-            HotelsUrl = "/oteller?q=%C4%B0stanbul",
+            HotelsUrl = "/hotel?q=%C4%B0stanbul",
             ThemeClass = "plan-theme-istanbul",
             IconClass = "fas fa-mosque",
             TypicalNights = 2,
@@ -27,7 +27,7 @@ public class SeyahatPlanlamaService : ISeyahatPlanlamaService
             Title = "Antalya",
             Subtitle = "Akdeniz sahili ve aile dostu tesisler",
             SearchQuery = "Antalya",
-            HotelsUrl = "/oteller?q=Antalya",
+            HotelsUrl = "/hotel?q=Antalya",
             ThemeClass = "plan-theme-antalya",
             IconClass = "fas fa-umbrella-beach",
             TypicalNights = 3,
@@ -39,7 +39,7 @@ public class SeyahatPlanlamaService : ISeyahatPlanlamaService
             Title = "Kapadokya",
             Subtitle = "Balon turu ve butik konaklama",
             SearchQuery = "Kapadokya",
-            HotelsUrl = "/oteller?q=Kapadokya",
+            HotelsUrl = "/hotel?q=Kapadokya",
             ThemeClass = "plan-theme-kapadokya",
             IconClass = "fas fa-hot-air-balloon",
             TypicalNights = 2,
@@ -51,7 +51,7 @@ public class SeyahatPlanlamaService : ISeyahatPlanlamaService
             Title = "Bodrum",
             Subtitle = "Marina, plaj kulüpleri ve yaz kaçamağı",
             SearchQuery = "Bodrum",
-            HotelsUrl = "/oteller?q=Bodrum",
+            HotelsUrl = "/hotel?q=Bodrum",
             ThemeClass = "plan-theme-bodrum",
             IconClass = "fas fa-ship",
             TypicalNights = 3,
@@ -117,7 +117,7 @@ public class SeyahatPlanlamaService : ISeyahatPlanlamaService
         {
             Title = "İstanbul hafta sonu",
             Description = "Şehir otelleri ve erken çıkış fırsatları",
-            Url = "/oteller?q=%C4%B0stanbul&etiket=hafta-sonu-firsatlari",
+            Url = "/hotel?q=%C4%B0stanbul&etiket=hafta-sonu-firsatlari",
             BadgeText = "Cuma–Pazar",
             ThemeClass = "plan-weekend-city"
         },
@@ -125,7 +125,7 @@ public class SeyahatPlanlamaService : ISeyahatPlanlamaService
         {
             Title = "Antalya kaçamağı",
             Description = "Sahil otelleri ve aile paketleri",
-            Url = "/oteller?q=Antalya&etiket=hafta-sonu-firsatlari",
+            Url = "/hotel?q=Antalya&etiket=hafta-sonu-firsatlari",
             BadgeText = "2 gece+",
             ThemeClass = "plan-weekend-sea"
         },
@@ -167,7 +167,7 @@ public class SeyahatPlanlamaService : ISeyahatPlanlamaService
     {
         var dest = CuratedRoutes.FirstOrDefault(d => d.Key == destKey) ?? CuratedRoutes[0];
         var q = Uri.EscapeDataString(dest.SearchQuery);
-        var url = $"/oteller?q={q}";
+        var url = $"/hotel?q={q}";
         if (!fitsBudget || budgetTry < dest.MinNightlyTry * Math.Max(1, nights) * 0.95m)
         {
             url += "&etiket=butceme-uygun-oteller";

@@ -55,6 +55,7 @@ public class PartnerPanelController : Controller
         try
         {
             var model = await _partnerService.GetDashboardAsync(GetUserId(), otelId, dateFrom, dateTo, status, paymentMethod, pageSize, conversationId, cancellationToken);
+            ViewData["PartnerShell"] = model.Shell;
             ViewData["Title"] = "Partner Paneli";
             ViewData["PageCssPath"] = "partnerpanel_dashboard_masaustu";
             ViewData["PageCssMobilePath"] = "partnerpanel_dashboard_mobil";

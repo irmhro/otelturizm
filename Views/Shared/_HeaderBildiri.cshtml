@@ -1,8 +1,9 @@
 @model otelturizmnew.Models.Paneller.Common.HeaderBildiriViewModel
 @{
     var dropdownId = $"header-bildiri-{Model.PanelKey}";
+    var realItemCount = Model.Items.Count(x => !x.IsPlaceholder);
 }
-<div class="header-bildiri" data-header-bildiri data-panel-key="@Model.PanelKey" data-unread-count="@Model.UnreadCount">
+<div class="header-bildiri" data-header-bildiri data-panel-key="@Model.PanelKey" data-unread-count="@Model.UnreadCount" data-inbox-url="@Model.InboxUrl">
     <button type="button" class="header-bildiri-btn" data-header-bildiri-toggle aria-expanded="false" aria-controls="@dropdownId" aria-label="Bildirimler">
         <i class="far fa-bell"></i>
         @if (Model.UnreadCount > 0)
@@ -14,9 +15,9 @@
     <div id="@dropdownId" class="header-bildiri-dropdown" data-header-bildiri-dropdown>
         <div class="header-bildiri-head">
             <strong>@Model.PanelLabel panel bildirimleri</strong>
-            <span>@Model.UnreadCount okunmamis</span>
+            <span data-header-bildiri-unread-label>@Model.UnreadCount okunmamis</span>
         </div>
-        <ul class="header-bildiri-list">
+        <ul class="header-bildiri-list" data-header-bildiri-list>
             @foreach (var item in Model.Items)
             {
                 <li class="header-bildiri-item @($"tone-{item.Tone}") @(item.IsRead ? "is-read" : "is-unread")"
@@ -36,5 +37,19 @@
                 </li>
             }
         </ul>
+        <div class="header-bildiri-foot">
+            @if (Model.HasMoreItems && !string.IsNullOrWhiteSpace(Model.InboxUrl))
+            {
+                <a class="header-bildiri-view-all" href="@Model.InboxUrl" data-header-bildiri-view-all>
+                    Tüm bildirimler (@Model.AllItemsCount)
+                </a>
+            }
+            @if (realItemCount > 0)
+            {
+                <button type="button" class="header-bildiri-clear" data-header-bildiri-clear>
+                    Bildirimleri temizle
+                </button>
+            }
+        </div>
     </div>
 </div>

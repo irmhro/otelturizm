@@ -11,15 +11,15 @@ public class KonseptOtelLandingController : Controller
     [HttpGet("/havuzlu-oteller")]
     [OutputCache(PolicyName = "public-short")]
     public IActionResult HavuzluOteller()
-        => RedirectPermanent("/oteller?etiket=havuzlu-oteller");
+        => RedirectPermanent("/hotel?etiket=havuzlu-oteller");
 
     [HttpGet("/hafta-sonu-firsatlari")]
     [OutputCache(PolicyName = "public-short")]
     public IActionResult HaftaSonuFirsatlari()
-        => RedirectPermanent("/oteller?etiket=hafta-sonu-firsatlari");
+        => RedirectPermanent("/hotel?etiket=hafta-sonu-firsatlari");
 
     [HttpGet("/evcil-hayvan-dostu-oteller")]
     [OutputCache(PolicyName = "public-short")]
     public IActionResult EvcilHayvanDostuOteller()
-        => RedirectPermanent("/oteller?etiket=evcil-hayvan-dostu");
+        => RedirectPermanent("/hotel?etiket=evcil-hayvan-dostu");
 }

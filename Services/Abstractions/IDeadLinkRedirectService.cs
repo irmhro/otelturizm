@@ -5,6 +5,6 @@ namespace otelturizmnew.Services.Abstractions;
 /// </summary>
 public interface IDeadLinkRedirectService
 {
-    /// <summary>Eşleşme varsa hedef path (ör. /oteller), yoksa null.</summary>
+    /// <summary>Eşleşme varsa hedef path (ör. /hotel), yoksa null.</summary>
     string? TryResolvePermanentRedirect(string originalPath);
 }

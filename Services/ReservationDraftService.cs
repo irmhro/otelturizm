@@ -159,8 +159,8 @@ public class ReservationDraftService : IReservationDraftService
             TotalText = FormatMoney(totalAmount),
             Message = BuildStatusMessage(resolvedStatus),
             RequiresProfileCompletion = requiresProfileCompletion,
-            ResumeUrl = $"/oteller/{hotelSlug}?continueDraft=1",
-            ProfileCompletionUrl = $"/oteller/{hotelSlug}?continueDraft=1&openProfile=1"
+            ResumeUrl = $"/hotel/{hotelSlug}?continueDraft=1",
+            ProfileCompletionUrl = $"/hotel/{hotelSlug}?continueDraft=1&openProfile=1"
         };
     }
 

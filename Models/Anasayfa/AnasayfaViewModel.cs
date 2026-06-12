@@ -23,7 +23,7 @@ public class AdminHomepageSectionViewModel
     public int SortOrder { get; set; }
     public bool IsFeaturedRoute { get; set; }
     public bool AllowEmptyFallback { get; set; }
-    public string SeeAllUrl { get; set; } = "/oteller";
+    public string SeeAllUrl { get; set; } = "/hotel";
 }
 
 public class HomeCategorySectionViewModel
@@ -39,7 +39,7 @@ public class HomeHotelSectionRenderModel
     public string SectionKey { get; set; } = string.Empty;
     public string Title { get; set; } = string.Empty;
     public string? Subtitle { get; set; }
-    public string SeeAllUrl { get; set; } = "/oteller";
+    public string SeeAllUrl { get; set; } = "/hotel";
     public List<HomeHotelCardViewModel> Hotels { get; set; } = new();
     public string[] FallbackImages { get; set; } = Array.Empty<string>();
     public bool AllowEmptyFallback { get; set; }

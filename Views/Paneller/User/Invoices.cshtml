@@ -2,29 +2,63 @@
 @{
     Layout = "~/Views/Paneller/User/_UserPanelLayout.cshtml";
     ViewData["Title"] = "Faturalarım";
+    var invoiceCount = Model.Rows.Count;
 }
 
 <div class="user-invoices-page">
-    <section class="user-invoices-hero">
-        <div>
+    <section class="user-invoices-hero user-invoices-hero--compact">
+        <div class="user-invoices-hero-copy">
             <div class="page-pretitle">FİNANS</div>
-            <h1>Faturalarım</h1>
+            <h1 class="page-title">Faturalarım</h1>
             <p class="text-muted mb-0">Tamamlanan konaklamalarınıza ait otel tarafından yüklenen fatura belgelerini indirin.</p>
         </div>
-        <a class="btn btn-outline-primary btn-pill" href="/panel/user/odeme-yontemleri"><i class="fas fa-credit-card me-2"></i>Fatura bilgilerim</a>
+        <div class="user-invoices-hero-actions ap-page-hero-actions">
+            <a class="btn btn-outline-ap" href="/panel/user/odeme-yontemleri">
+                <i class="fas fa-credit-card" aria-hidden="true"></i>
+                <span>Fatura bilgilerim</span>
+            </a>
+            <a class="btn btn-outline-ap" href="/panel/user/rezervasyonlarim">
+                <i class="fas fa-calendar-check" aria-hidden="true"></i>
+                <span>Rezervasyonlarım</span>
+            </a>
+        </div>
     </section>
 
     @if (Model.TableMissing)
     {
-        <div class="user-invoices-empty">
-            <i class="fas fa-database me-2"></i>Fatura tablosu henüz hazır değil. Migration uygulandıktan sonra liste görünecek.
-        </div>
+        <section class="user-invoices-empty-card user-invoices-empty-card--warn">
+            <div class="empty user-invoices-empty">
+                <div class="empty-icon" aria-hidden="true"><i class="fas fa-database"></i></div>
+                <p class="empty-title">Fatura listesi hazırlanıyor</p>
+                <p class="empty-subtitle text-muted">Fatura tablosu henüz hazır değil. Migration uygulandıktan sonra tamamlanan konaklamalarınızın faturaları burada listelenecek.</p>
+                <div class="empty-action">
+                    <a class="btn btn-outline-ap" href="/panel/user/rezervasyonlarim">
+                        <i class="fas fa-calendar-check" aria-hidden="true"></i>
+                        <span>Rezervasyonlarım</span>
+                    </a>
+                </div>
+            </div>
+        </section>
     }
-    else if (Model.Rows.Count == 0)
+    else if (invoiceCount == 0)
     {
-        <div class="user-invoices-empty">
-            <i class="fas fa-file-invoice me-2"></i>Tamamlanan konaklamanız için henüz yüklenmiş fatura bulunmuyor.
-        </div>
+        <section class="user-invoices-empty-card">
+            <div class="empty user-invoices-empty">
+                <div class="empty-icon" aria-hidden="true"><i class="fas fa-file-invoice"></i></div>
+                <p class="empty-title">Henüz fatura yok</p>
+                <p class="empty-subtitle text-muted">Tamamlanan konaklamanız için otel tarafından yüklenmiş fatura bulunmuyor. Fatura yüklendiğinde buradan indirebilirsiniz.</p>
+                <div class="empty-action">
+                    <a class="btn btn-primary-ap" href="/panel/user/rezervasyonlarim">
+                        <i class="fas fa-calendar-check" aria-hidden="true"></i>
+                        <span>Rezervasyonlarım</span>
+                    </a>
+                    <a class="btn btn-outline-ap" href="/panel/user/odeme-yontemleri">
+                        <i class="fas fa-credit-card" aria-hidden="true"></i>
+                        <span>Fatura bilgilerim</span>
+                    </a>
+                </div>
+            </div>
+        </section>
     }
     else
     {
@@ -62,11 +96,13 @@
                                 <td class="text-end" data-label="İşlem">
                                     @if (row.HasInvoice && !string.IsNullOrWhiteSpace(row.DownloadUrl))
                                     {
-                                        @if (row.IsPdf)
-                                        {
-                                            <a class="btn btn-sm btn-outline-primary btn-pill" href="@row.DownloadUrl" target="_blank" rel="noopener">Görüntüle</a>
-                                        }
-                                        <a class="btn btn-sm btn-primary btn-pill user-invoice-btn-download" href="@row.DownloadUrl" target="_blank" rel="noopener">İndir</a>
+                                        <div class="user-invoice-actions-inline">
+                                            @if (row.IsPdf)
+                                            {
+                                                <a class="btn btn-sm btn-outline-ap" href="@row.DownloadUrl" target="_blank" rel="noopener">Görüntüle</a>
+                                            }
+                                            <a class="btn btn-sm btn-primary-ap user-invoice-btn-download" href="@row.DownloadUrl" target="_blank" rel="noopener">İndir</a>
+                                        </div>
                                     }
                                 </td>
                             </tr>
@@ -76,44 +112,69 @@
             </div>
         </div>
 
-        <div class="user-invoices-mobile-list">
-            @foreach (var row in Model.Rows)
-            {
-                <article class="user-invoice-card @(row.HasInvoice ? "user-invoice-card--ok" : "user-invoice-card--wait")">
-                    <div class="user-invoice-card-top">
-                        <div>
-                            <strong>@row.HotelName</strong>
-                            <small>@row.ReservationNo · @row.StayText</small>
-                        </div>
-                        @if (row.HasInvoice)
-                        {
-                            <span class="user-invoice-badge user-invoice-badge--ok"><i class="fas fa-circle-check"></i>Var</span>
-                        }
-                        else
-                        {
-                            <span class="user-invoice-badge user-invoice-badge--wait"><i class="fas fa-clock"></i>Bekliyor</span>
-                        }
-                    </div>
-                    <div class="user-invoice-card-meta">
-                        <span><i class="fas fa-coins me-2"></i>@row.TotalText</span>
-                        @if (!string.IsNullOrWhiteSpace(row.UploadedAtText))
-                        {
-                            <span><i class="fas fa-cloud-arrow-up me-2"></i>@row.UploadedAtText</span>
-                        }
-                    </div>
-                    <div class="user-invoice-card-actions">
-                        <a class="btn btn-outline-primary btn-pill" href="/panel/user/rezervasyonlarim">Rezervasyon</a>
-                        @if (row.HasInvoice && !string.IsNullOrWhiteSpace(row.DownloadUrl))
-                        {
-                            @if (row.IsPdf)
+        <section class="user-invoices-list-card" aria-label="Fatura listesi">
+            <div class="user-invoices-list-head">
+                <h2 class="user-invoices-list-title">Faturalarım</h2>
+                <span class="user-invoices-list-meta">@invoiceCount kayıt</span>
+            </div>
+            <div class="user-invoices-mobile-list">
+                @foreach (var row in Model.Rows)
+                {
+                    <article class="user-invoice-card @(row.HasInvoice ? "user-invoice-card--ok" : "user-invoice-card--wait")">
+                        <div class="user-invoice-card-top">
+                            <div class="user-invoice-card-titles">
+                                <strong class="user-invoice-card-hotel">@row.HotelName</strong>
+                                <small class="user-invoice-card-stay">@row.StayText</small>
+                            </div>
+                            @if (row.HasInvoice)
                             {
-                                <a class="btn btn-outline-primary btn-pill user-invoice-btn-touch" href="@row.DownloadUrl" target="_blank" rel="noopener"><i class="fas fa-eye me-2"></i>Görüntüle</a>
+                                <span class="user-invoice-badge user-invoice-badge--ok"><i class="fas fa-circle-check" aria-hidden="true"></i>Yüklendi</span>
                             }
-                            <a class="btn btn-primary btn-pill user-invoice-btn-download" href="@row.DownloadUrl" target="_blank" rel="noopener"><i class="fas fa-download me-2"></i>İndir</a>
-                        }
-                    </div>
-                </article>
-            }
-        </div>
+                            else
+                            {
+                                <span class="user-invoice-badge user-invoice-badge--wait"><i class="fas fa-clock" aria-hidden="true"></i>Bekleniyor</span>
+                            }
+                        </div>
+                        <div class="user-invoice-card-meta">
+                            <span><i class="fas fa-hashtag" aria-hidden="true"></i>Rez. @row.ReservationNo</span>
+                            <span><i class="fas fa-coins" aria-hidden="true"></i>@row.TotalText</span>
+                            @if (!string.IsNullOrWhiteSpace(row.UploadedAtText))
+                            {
+                                <span><i class="fas fa-cloud-arrow-up" aria-hidden="true"></i>@row.UploadedAtText</span>
+                            }
+                        </div>
+                        <div class="user-invoice-card-actions">
+                            @if (row.HasInvoice && !string.IsNullOrWhiteSpace(row.DownloadUrl))
+                            {
+                                <div class="user-invoice-card-downloads ap-page-hero-actions">
+                                    @if (row.IsPdf)
+                                    {
+                                        <a class="btn btn-outline-ap user-invoice-btn-touch" href="@row.DownloadUrl" target="_blank" rel="noopener">
+                                            <i class="fas fa-eye" aria-hidden="true"></i>
+                                            <span>Görüntüle</span>
+                                        </a>
+                                    }
+                                    <a class="btn btn-primary-ap user-invoice-btn-download @(row.IsPdf ? string.Empty : "user-invoice-btn-download--solo")" href="@row.DownloadUrl" target="_blank" rel="noopener">
+                                        <i class="fas fa-download" aria-hidden="true"></i>
+                                        <span>İndir</span>
+                                    </a>
+                                </div>
+                            }
+                            else
+                            {
+                                <p class="user-invoice-card-wait text-muted mb-0">
+                                    <i class="fas fa-hourglass-half" aria-hidden="true"></i>
+                                    Otel faturayı yüklediğinde buradan indirebilirsiniz.
+                                </p>
+                            }
+                            <a class="btn btn-outline-ap user-invoice-btn-reservation" href="/panel/user/rezervasyonlarim">
+                                <i class="fas fa-calendar-check" aria-hidden="true"></i>
+                                <span>Rezervasyon</span>
+                            </a>
+                        </div>
+                    </article>
+                }
+            </div>
+        </section>
     }
 </div>

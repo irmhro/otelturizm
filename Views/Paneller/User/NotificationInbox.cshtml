@@ -1,0 +1,204 @@
+@model otelturizmnew.Models.Paneller.User.UserNotificationInboxPageViewModel
+@{
+    Layout = "~/Views/Paneller/User/_UserPanelLayout.cshtml";
+    ViewData["Title"] = "Bildirimlerim";
+    var pageStart = Model.TotalCount == 0 ? 0 : ((Model.Page - 1) * Model.PageSize) + 1;
+    var pageEnd = Math.Min(Model.TotalCount, Model.Page * Model.PageSize);
+}
+
+<div class="user-notification-inbox-page">
+    @if (TempData["UserNotificationInboxSuccess"] is string successMessage && !string.IsNullOrWhiteSpace(successMessage))
+    {
+        <div class="inbox-alert inbox-alert--success"><i class="fas fa-check-circle"></i><span>@successMessage</span></div>
+    }
+
+    <section class="inbox-page-hero inbox-page-hero--compact">
+        <div class="inbox-page-hero-copy">
+            <div class="page-pretitle">Bildirim merkezi</div>
+            <p class="inbox-page-hero-lead mb-0">Rezervasyon, fatura, mesaj ve sistem bildirimlerini tek ekranda görüntüle; okunmamışları filtrele veya tümünü temizle.</p>
+        </div>
+        <div class="inbox-page-hero-actions">
+            <form method="post" asp-action="ClearNotificationInbox" class="m-0">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="status" value="@Model.StatusFilter" />
+                <input type="hidden" name="type" value="@Model.TypeFilter" />
+                <input type="hidden" name="searchTerm" value="@Model.SearchTerm" />
+                <button type="submit" class="btn btn-outline-ap inbox-hero-link" @(Model.TotalCount == 0 ? "disabled" : null)>
+                    <i class="fas fa-broom" aria-hidden="true"></i>
+                    <span>Bildirimleri temizle</span>
+                </button>
+            </form>
+            <a class="btn btn-outline-ap inbox-hero-link" asp-action="Notifications">
+                <i class="fas fa-sliders" aria-hidden="true"></i>
+                <span>Bildirim tercihleri</span>
+            </a>
+            <a class="btn btn-primary-ap inbox-hero-cta" href="/panel/user/rezervasyonlarim">
+                <i class="fas fa-calendar-check" aria-hidden="true"></i>
+                <span>Rezervasyonlarım</span>
+            </a>
+        </div>
+    </section>
+
+    <section class="inbox-stat-grid" aria-label="Bildirim özeti">
+        <article class="inbox-stat inbox-stat--all">
+            <span><i class="fas fa-bell" aria-hidden="true"></i></span>
+            <div><strong>@Model.TotalCount</strong><small>Toplam kayıt</small></div>
+        </article>
+        <article class="inbox-stat inbox-stat--unread">
+            <span><i class="fas fa-envelope-open-text" aria-hidden="true"></i></span>
+            <div><strong>@Model.UnreadCount</strong><small>Okunmamış</small></div>
+        </article>
+        <article class="inbox-stat inbox-stat--panel">
+            <span><i class="fas fa-layer-group" aria-hidden="true"></i></span>
+            <div><strong>@Model.PanelUnreadCount</strong><small>Panel uyarısı</small></div>
+        </article>
+        <article class="inbox-stat inbox-stat--system">
+            <span><i class="fas fa-server" aria-hidden="true"></i></span>
+            <div><strong>@Model.SystemUnreadCount</strong><small>Sistem bildirimi</small></div>
+        </article>
+    </section>
+
+    <section class="inbox-filter-card">
+        <div class="inbox-filter-shell">
+            <div class="inbox-filter-top">
+                <span class="inbox-count-chip">@pageStart-@pageEnd / @Model.TotalCount kayıt</span>
+            </div>
+
+            <nav class="inbox-status-tabs inbox-status-tabs--scroll" aria-label="Bildirim durumu">
+                <a asp-action="NotificationInbox" asp-route-status="all" asp-route-type="@Model.TypeFilter" asp-route-searchTerm="@Model.SearchTerm" asp-route-page="1" class="inbox-tab @(Model.StatusFilter == "all" ? "is-active" : string.Empty)">Tümü</a>
+                <a asp-action="NotificationInbox" asp-route-status="unread" asp-route-type="@Model.TypeFilter" asp-route-searchTerm="@Model.SearchTerm" asp-route-page="1" class="inbox-tab @(Model.StatusFilter == "unread" ? "is-active" : string.Empty)">
+                    Okunmamış
+                    @if (Model.UnreadCount > 0)
+                    {
+                        <span class="inbox-tab-count">@Model.UnreadCount</span>
+                    }
+                </a>
+                <a asp-action="NotificationInbox" asp-route-status="read" asp-route-type="@Model.TypeFilter" asp-route-searchTerm="@Model.SearchTerm" asp-route-page="1" class="inbox-tab @(Model.StatusFilter == "read" ? "is-active" : string.Empty)">Okunmuş</a>
+            </nav>
+
+            <details class="inbox-filter-drawer">
+                <summary><i class="fas fa-filter" aria-hidden="true"></i> Arama ve filtre</summary>
+                <form method="get" asp-action="NotificationInbox" class="inbox-filter-form">
+                    <input type="hidden" name="status" value="@Model.StatusFilter" />
+                    <input type="hidden" name="page" value="1" />
+                    <div class="inbox-filter-field inbox-filter-field--search">
+                        <label class="form-label">Başlık, içerik veya tür</label>
+                        <div class="input-icon">
+                            <span class="input-icon-addon"><i class="fas fa-search" aria-hidden="true"></i></span>
+                            <input class="form-control" type="search" name="searchTerm" value="@Model.SearchTerm" placeholder="Örn. rezervasyon, fatura, mesaj" />
+                        </div>
+                    </div>
+                    <div class="inbox-filter-field">
+                        <label class="form-label">Bildirim türü</label>
+                        <select class="form-select" name="type">
+                            <option value="">Tüm türler</option>
+                            @foreach (var option in Model.TypeOptions)
+                            {
+                                <option value="@option" selected="@(string.Equals(Model.TypeFilter, option, StringComparison.OrdinalIgnoreCase))">@option</option>
+                            }
+                        </select>
+                    </div>
+                    <div class="inbox-filter-actions">
+                        <button type="submit" class="btn btn-primary-ap"><i class="fas fa-filter" aria-hidden="true"></i> Filtrele</button>
+                        <a asp-action="NotificationInbox" class="btn btn-outline-ap">Temizle</a>
+                    </div>
+                </form>
+            </details>
+        </div>
+    </section>
+
+    <section class="inbox-table-card">
+        <div class="inbox-table-head">
+            <h2>Bildirim geçmişi</h2>
+            <span class="inbox-table-meta">Sayfa @Model.Page / @Model.TotalPages</span>
+        </div>
+
+        @if (Model.Items.Count == 0)
+        {
+            <div class="empty inbox-empty">
+                <div class="empty-icon"><i class="fas fa-bell-slash" aria-hidden="true"></i></div>
+                <p class="empty-title">Kayıt bulunamadı</p>
+                <p class="empty-subtitle text-muted">
+                    @if (!string.IsNullOrWhiteSpace(Model.SearchTerm) || !string.IsNullOrWhiteSpace(Model.TypeFilter) || Model.StatusFilter != "all")
+                    {
+                        @:Seçili filtreye uygun bildirim yok. Filtreleri temizleyip tekrar deneyin.
+                    }
+                    else
+                    {
+                        @:Henüz bildirim görünmüyor. Rezervasyon, mesaj veya sistem hareketlerinde burada listelenecek.
+                    }
+                </p>
+                <div class="empty-action">
+                    <a asp-action="NotificationInbox" class="btn btn-primary-ap">Tüm bildirimler</a>
+                </div>
+            </div>
+        }
+        else
+        {
+            <div class="table-responsive inbox-table-wrap">
+                <table class="inbox-table">
+                    <thead>
+                        <tr>
+                            <th scope="col">Bildirim</th>
+                            <th scope="col">Tür</th>
+                            <th scope="col">Kaynak</th>
+                            <th scope="col">Zaman</th>
+                            <th scope="col">Durum</th>
+                            <th scope="col">Aksiyon</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var item in Model.Items)
+                        {
+                            <tr class="inbox-row inbox-row--@item.Tone @(item.IsRead ? "is-read" : "is-unread")">
+                                <td data-label="Bildirim">
+                                    <div class="inbox-row-main">
+                                        <span class="inbox-row-icon tone-@item.Tone"><i class="fas @item.IconClass" aria-hidden="true"></i></span>
+                                        <div>
+                                            <strong>@item.Title</strong>
+                                            <p>@item.Message</p>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td data-label="Tür"><span class="inbox-type-chip">@item.TypeText</span></td>
+                                <td data-label="Kaynak">@(item.Source == "system" ? "Sistem" : "Panel")</td>
+                                <td data-label="Zaman">
+                                    <span class="inbox-time-primary">@item.TimeText</span>
+                                    <small class="inbox-time-secondary">@item.AbsoluteTimeText</small>
+                                </td>
+                                <td data-label="Durum">
+                                    <span class="inbox-status-chip @(item.IsRead ? "is-read" : "is-unread")">@(item.IsRead ? "Okundu" : "Yeni")</span>
+                                </td>
+                                <td data-label="Aksiyon">
+                                    @if (!string.IsNullOrWhiteSpace(item.Url) && item.Url != "#")
+                                    {
+                                        <a class="btn btn-outline-ap btn-sm" href="@item.Url">Görüntüle</a>
+                                    }
+                                    else
+                                    {
+                                        <span class="text-muted">—</span>
+                                    }
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+
+            @if (Model.TotalPages > 1)
+            {
+                <nav class="inbox-pagination" aria-label="Bildirim sayfaları">
+                    @if (Model.Page > 1)
+                    {
+                        <a class="btn btn-outline-ap btn-sm" asp-action="NotificationInbox" asp-route-status="@Model.StatusFilter" asp-route-type="@Model.TypeFilter" asp-route-searchTerm="@Model.SearchTerm" asp-route-page="@(Model.Page - 1)">Önceki</a>
+                    }
+                    <span class="inbox-pagination-label">Sayfa @Model.Page / @Model.TotalPages</span>
+                    @if (Model.Page < Model.TotalPages)
+                    {
+                        <a class="btn btn-outline-ap btn-sm" asp-action="NotificationInbox" asp-route-status="@Model.StatusFilter" asp-route-type="@Model.TypeFilter" asp-route-searchTerm="@Model.SearchTerm" asp-route-page="@(Model.Page + 1)">Sonraki</a>
+                    }
+                </nav>
+            }
+        }
+    </section>
+</div>

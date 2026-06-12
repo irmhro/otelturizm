@@ -1,27 +1,18 @@
 @import url("./user-mobile-bundle.css");
 
 @media (max-width: 1100px) {
-  .reservation-filter-form {
+  .kullanici-panel-shell .reservation-filter-form {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
-  .reservation-filter-field--search,
-  .reservation-filter-actions {
+  .kullanici-panel-shell .reservation-filter-field--search,
+  .kullanici-panel-shell .reservation-filter-actions {
     grid-column: 1 / -1;
-  }
-
-  .reservation-filter-actions {
-    justify-content: stretch;
-  }
-
-  .reservation-filter-actions .btn {
-    flex: 1 1 0;
-    min-height: var(--user-mob-touch, 44px);
   }
 }
 
-@media (max-width: 900px) {
-  .user-reservations-page {
+@media (max-width: 991px) {
+  .kullanici-panel-shell .user-reservations-page {
     gap: 14px;
     min-width: 0;
     max-width: 100%;
@@ -29,7 +20,7 @@
     padding-bottom: max(16px, env(safe-area-inset-bottom, 0px));
   }
 
-  .reservation-hero--compact {
+  .kullanici-panel-shell .reservation-hero--compact {
     flex-direction: column;
     align-items: stretch;
     gap: 10px;
@@ -40,131 +31,169 @@
     box-shadow: none;
   }
 
-  .reservation-hero-copy {
+  .kullanici-panel-shell .reservation-hero-copy {
     display: none;
   }
 
-  .reservation-hero-actions {
+  .kullanici-panel-shell .reservation-hero-actions {
     display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 8px;
-  }
-
-  .reservation-hero-cta {
-    grid-column: 1 / -1;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    gap: var(--user-actions-gap, 8px);
     width: 100%;
-    min-height: var(--user-mob-touch, 48px);
-    font-weight: 800;
-    justify-content: center;
+    min-width: 0;
   }
 
-  .reservation-hero-link {
-    min-height: var(--user-mob-touch, 44px);
-    font-size: 13px;
+  .kullanici-panel-shell .reservation-hero-cta,
+  .kullanici-panel-shell .reservation-hero-link,
+  .kullanici-panel-shell .reservation-hero-export {
+    min-height: var(--user-btn-min-h, 44px);
+    height: auto;
+    padding: 0 var(--user-btn-px, 14px);
+    font-size: var(--user-font-md, 13px);
+    font-weight: var(--user-font-md-weight, 600);
+    border-radius: var(--user-btn-radius, 8px);
+    width: 100%;
+    min-width: 0;
+    max-width: 100%;
     justify-content: center;
+    white-space: nowrap;
+    box-sizing: border-box;
   }
 
-  .reservation-stat-grid {
+  .kullanici-panel-shell .reservation-hero-export {
+    grid-column: 1 / -1;
+  }
+
+  .kullanici-panel-shell .reservation-stat-grid {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 8px;
+    gap: var(--user-actions-gap, 8px);
     overflow: visible;
     padding-bottom: 0;
   }
 
-  .reservation-stat {
+  .kullanici-panel-shell .reservation-stat {
     min-width: 0;
-    grid-template-columns: 36px minmax(0, 1fr);
-    gap: 10px;
-    padding: 12px;
+    grid-template-columns: 34px minmax(0, 1fr);
+    gap: 8px;
+    padding: 10px;
     border-radius: 12px;
   }
 
-  .reservation-stat > span {
-    width: 36px;
-    height: 36px;
+  .kullanici-panel-shell .reservation-stat > span {
+    width: 34px;
+    height: 34px;
     border-radius: 10px;
+    font-size: var(--user-font-md, 13px);
   }
 
-  .reservation-stat strong {
-    font-size: 20px;
+  .kullanici-panel-shell .reservation-stat strong {
+    font-size: var(--user-stat-value, 18px);
   }
 
-  .reservation-stat small {
-    font-size: 11px;
+  .kullanici-panel-shell .reservation-stat small {
+    font-size: var(--user-stat-label, 11px);
     line-height: 1.25;
+    font-weight: 600;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
 
-  .reservation-filter-card,
-  .reservation-list-card {
+  .kullanici-panel-shell .reservation-filter-card,
+  .kullanici-panel-shell .reservation-list-card {
     min-width: 0;
     max-width: 100%;
-    border-radius: 14px;
+    border-radius: 12px;
   }
 
-  .reservation-filter-shell {
-    padding: 12px;
+  .kullanici-panel-shell .reservation-filter-shell {
+    padding: 10px;
   }
 
-  .reservation-filter-top {
+  .kullanici-panel-shell .reservation-filter-top {
     justify-content: flex-start;
     margin-bottom: 8px;
   }
 
-  .reservation-status-tabs--scroll {
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 8px;
-    overflow: visible;
-    padding-bottom: 0;
-    margin-bottom: 12px;
+  .kullanici-panel-shell .reservation-count-chip {
+    font-size: var(--user-font-xs, 11px);
+    min-height: 26px;
+    padding: 0 9px;
   }
 
-  .reservation-tab {
+  .kullanici-panel-shell .reservations-status-tabs,
+  .kullanici-panel-shell .reservation-status-tabs--scroll {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: var(--user-actions-gap, 8px);
+    overflow: visible;
+    padding-bottom: 0;
+    margin-bottom: 10px;
+    flex-wrap: unset;
+  }
+
+  .kullanici-panel-shell .reservations-tab,
+  .kullanici-panel-shell .reservation-tab {
     justify-content: center;
-    min-height: var(--user-mob-touch, 44px);
-    padding: 0 10px;
-    font-size: 13px;
+    min-height: var(--user-btn-min-h-compact, 40px);
+    padding: 0 var(--user-btn-px, 14px);
+    font-size: var(--user-font-md, 13px);
+    font-weight: var(--user-font-md-weight, 600);
     white-space: normal;
     text-align: center;
     line-height: 1.2;
+    border-radius: var(--user-btn-radius, 8px);
   }
 
-  .reservation-filter-drawer summary {
-    min-height: var(--user-mob-touch, 44px);
+  .kullanici-panel-shell .reservation-filter-drawer summary {
+    min-height: var(--user-btn-min-h, 44px);
+    font-size: var(--user-font-md, 13px);
   }
 
-  .reservation-policy-note {
-    margin-top: 10px;
-    font-size: 12px;
-    line-height: 1.5;
-  }
-
-  .reservation-filter-form {
+  .kullanici-panel-shell .reservation-filter-form {
     grid-template-columns: 1fr;
+    gap: 8px;
   }
 
-  .reservation-filter-form .form-control,
-  .reservation-filter-form .form-select,
-  .reservation-filter-form .btn {
-    min-height: var(--user-mob-touch, 44px);
+  .kullanici-panel-shell .reservation-filter-form .form-label {
+    margin: 0;
+    font-size: var(--user-font-xs, 11px);
+    font-weight: 700;
+    color: #64748b;
   }
 
-  .reservation-table-wrap {
+  .kullanici-panel-shell .reservation-filter-form .form-control,
+  .kullanici-panel-shell .reservation-filter-form .form-select {
+    min-height: var(--user-btn-min-h, 44px);
+    font-size: var(--user-font-input, 16px);
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
+  }
+
+  .kullanici-panel-shell .reservation-policy-note {
+    margin-top: 8px;
+    font-size: var(--user-font-xs, 11px);
+    line-height: 1.45;
+    padding: 8px 10px;
+  }
+
+  .kullanici-panel-shell .reservation-table-wrap {
     display: none;
   }
 
-  .reservation-mobile-list {
+  .kullanici-panel-shell .reservation-mobile-list {
     display: grid;
     gap: 10px;
     padding: 12px;
     min-width: 0;
   }
 
-  .reservation-mobile-card {
+  .kullanici-panel-shell .reservation-mobile-card {
     display: grid;
     grid-template-columns: 76px minmax(0, 1fr);
-    gap: 12px;
+    gap: 10px 12px;
     align-items: start;
     padding: 12px;
     border: 1px solid rgba(148, 163, 184, 0.18);
@@ -174,7 +203,7 @@
     overflow: hidden;
   }
 
-  .reservation-mobile-media {
+  .kullanici-panel-shell .reservation-mobile-media {
     display: block;
     width: 76px;
     height: 76px;
@@ -185,14 +214,14 @@
     text-decoration: none;
   }
 
-  .reservation-mobile-media img {
+  .kullanici-panel-shell .reservation-mobile-media img {
     width: 100%;
     height: 100%;
     object-fit: cover;
     display: block;
   }
 
-  .reservation-mobile-media > span {
+  .kullanici-panel-shell .reservation-mobile-media > span {
     display: grid;
     place-items: center;
     width: 100%;
@@ -201,7 +230,7 @@
     font-size: 1.2rem;
   }
 
-  .reservation-mobile-body {
+  .kullanici-panel-shell .reservation-mobile-body {
     display: flex;
     flex-direction: column;
     gap: 8px;
@@ -209,55 +238,55 @@
     padding: 0;
   }
 
-  .reservation-mobile-top {
+  .kullanici-panel-shell .reservation-mobile-top {
     display: flex;
     align-items: flex-start;
     justify-content: space-between;
     gap: 8px;
   }
 
-  .reservation-mobile-top > div:first-child {
+  .kullanici-panel-shell .reservation-mobile-top > div:first-child {
     min-width: 0;
     flex: 1 1 auto;
   }
 
-  .reservation-mobile-top strong {
+  .kullanici-panel-shell .reservation-mobile-top strong {
     display: -webkit-box;
     -webkit-line-clamp: 2;
     -webkit-box-orient: vertical;
     overflow: hidden;
-    font-size: 15px;
+    font-size: var(--user-card-title, 15px);
     font-weight: 900;
     line-height: 1.25;
     color: #0f172a;
   }
 
-  .reservation-mobile-top small {
+  .kullanici-panel-shell .reservation-mobile-top small {
     display: block;
     margin-top: 2px;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
     color: #64748b;
-    font-size: 12px;
+    font-size: var(--user-font-sm, 12px);
     font-weight: 600;
   }
 
-  .reservation-mobile-top .reservation-status {
+  .kullanici-panel-shell .reservation-mobile-top .reservation-status {
     flex-shrink: 0;
-    font-size: 11px;
+    font-size: var(--user-font-xs, 11px);
     min-height: 24px;
     padding: 0 8px;
   }
 
-  .reservation-mobile-meta {
+  .kullanici-panel-shell .reservation-mobile-meta {
     display: flex;
     flex-direction: column;
     gap: 4px;
-    font-size: 12px;
+    font-size: var(--user-font-sm, 12px);
   }
 
-  .reservation-mobile-meta span {
+  .kullanici-panel-shell .reservation-mobile-meta span {
     display: flex;
     align-items: center;
     gap: 6px;
@@ -266,21 +295,21 @@
     line-height: 1.35;
   }
 
-  .reservation-mobile-meta span i {
+  .kullanici-panel-shell .reservation-mobile-meta span i {
     flex-shrink: 0;
     width: 14px;
     color: #94a3b8;
     text-align: center;
   }
 
-  .reservation-mobile-footer {
+  .kullanici-panel-shell .reservation-mobile-footer {
     display: flex;
     flex-direction: column;
     gap: 10px;
     margin-top: 2px;
   }
 
-  .reservation-mobile-price {
+  .kullanici-panel-shell .reservation-mobile-price {
     display: flex;
     align-items: baseline;
     justify-content: space-between;
@@ -289,130 +318,185 @@
     border-top: 1px solid rgba(148, 163, 184, 0.16);
   }
 
-  .reservation-mobile-price small {
+  .kullanici-panel-shell .reservation-mobile-price small {
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
     color: #64748b;
-    font-size: 11px;
+    font-size: var(--user-font-xs, 11px);
     font-weight: 700;
   }
 
-  .reservation-mobile-price strong {
+  .kullanici-panel-shell .reservation-mobile-price strong {
     flex-shrink: 0;
-    font-size: 18px;
+    font-size: var(--user-stat-value, 18px);
     font-weight: 900;
     color: #0f172a;
   }
 
-  .reservation-mobile-actions--primary {
+  .kullanici-panel-shell .reservation-mobile-actions--primary {
     display: grid;
     grid-template-columns: 1fr 1fr;
-    gap: 8px;
+    gap: var(--user-actions-gap, 8px);
   }
 
-  .reservation-mobile-actions--secondary {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 8px;
+  .kullanici-panel-shell .reservation-mobile-actions--secondary {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: var(--user-actions-gap, 8px);
   }
 
-  .reservation-mobile-actions .btn {
-    min-height: var(--user-mob-touch, 44px);
+  .kullanici-panel-shell .reservation-mobile-actions .btn {
+    width: 100%;
+    min-height: var(--user-btn-min-h, 44px);
+    padding: 0 var(--user-btn-px, 14px);
+    font-size: var(--user-font-md, 13px);
+    font-weight: var(--user-font-md-weight, 600);
+    border-radius: var(--user-btn-radius, 8px);
+    justify-content: center;
+    box-sizing: border-box;
   }
 
-  .reservation-mobile-actions--primary .btn {
-    flex: 1 1 0;
-  }
-
-  .reservation-mobile-actions--secondary .btn {
-    flex: 1 1 calc(50% - 4px);
-    min-width: 0;
-  }
-
-  .reservation-mobile-cancel {
-    flex: 1 1 100%;
+  .kullanici-panel-shell .reservation-mobile-cancel {
+    grid-column: 1 / -1;
     font-weight: 800;
   }
 
-  .reservation-list-head {
-    padding: 12px 14px;
+  .kullanici-panel-shell .reservation-list-head {
+    padding: 10px 12px;
+    align-items: center;
+    flex-direction: row;
+    gap: 8px;
   }
 
-  .reservation-list-title {
-    font-size: 15px;
+  .kullanici-panel-shell .reservation-list-title {
+    font-size: var(--user-card-title, 15px);
+    min-width: 0;
+    flex: 1 1 auto;
   }
 
-  .reservation-list-meta {
-    font-size: 11px;
+  .kullanici-panel-shell .reservation-list-meta {
+    font-size: var(--user-font-xs, 11px);
+    font-weight: 600;
   }
 
-  .reservation-empty {
+  .kullanici-panel-shell .reservation-empty {
     padding: 28px 16px max(24px, env(safe-area-inset-bottom, 0px));
   }
 
-  .reservation-empty .btn {
-    width: 100%;
-    min-height: var(--user-mob-touch, 44px);
+  .kullanici-panel-shell .reservation-empty .empty-subtitle {
+    font-size: var(--user-page-subtitle, 13px);
+    line-height: 1.5;
   }
 
-  .reservation-pager {
-    align-items: stretch;
+  .kullanici-panel-shell .reservation-empty .empty-action {
+    display: flex;
     flex-direction: column;
+    width: 100%;
+    max-width: none;
+    gap: var(--user-actions-gap, 8px);
+  }
+
+  .kullanici-panel-shell .reservation-empty .btn {
+    min-height: var(--user-btn-min-h, 44px);
+    width: 100%;
+    padding: 0 var(--user-btn-px, 14px);
+    font-size: var(--user-font-md, 13px);
+    font-weight: var(--user-font-md-weight, 600);
+    border-radius: var(--user-btn-radius, 8px);
+    justify-content: center;
+    box-sizing: border-box;
+  }
+
+  .kullanici-panel-shell .reservation-pager {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
     gap: 10px;
+    padding: 10px 12px;
+    min-width: 0;
   }
 
-  .reservation-pager .btn-list {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 8px;
+  .kullanici-panel-shell .reservation-pager-meta {
+    font-size: var(--user-font-xs, 11px);
+    font-weight: 600;
+    line-height: 1.4;
+    text-align: center;
+    color: #64748b;
+  }
+
+  .kullanici-panel-shell .reservation-pager-actions {
+    display: flex;
+    flex-direction: row;
+    align-items: stretch;
+    gap: var(--user-actions-gap, 8px);
     width: 100%;
+    min-width: 0;
+    flex-shrink: 1;
   }
 
-  .reservation-pager .btn {
-    width: 100%;
-    min-height: var(--user-mob-touch, 44px);
+  .kullanici-panel-shell .reservation-pager-actions .btn,
+  .kullanici-panel-shell .reservation-pager-actions .btn-outline-ap {
+    flex: 1 1 0;
+    min-width: 0;
+    width: auto;
+    max-width: none;
+    min-height: var(--user-btn-min-h, 44px);
+    height: auto;
+    padding: 0 var(--user-btn-px, 14px);
+    justify-content: center;
+    font-size: var(--user-font-md, 13px);
+    font-weight: var(--user-font-md-weight, 600);
+    border-radius: var(--user-btn-radius, 8px);
+    box-sizing: border-box;
+    white-space: nowrap;
   }
 
-  .reservation-dialog {
+  .kullanici-panel-shell .reservation-dialog {
     width: min(760px, calc(100vw - 16px));
     max-height: calc(100dvh - 16px);
   }
 
-  .reservation-dialog-card {
+  .kullanici-panel-shell .reservation-dialog-card {
     padding: 16px;
   }
 
-  .reservation-dialog-grid {
+  .kullanici-panel-shell .reservation-dialog-grid {
     grid-template-columns: 1fr;
   }
 
-  .reservation-dialog-panels,
-  .reservation-dialog-notes {
+  .kullanici-panel-shell .reservation-dialog-panels,
+  .kullanici-panel-shell .reservation-dialog-notes {
     grid-template-columns: 1fr;
   }
 
-  .reservation-update-grid {
+  .kullanici-panel-shell .reservation-update-grid {
     grid-template-columns: 1fr;
   }
 }
 
-@media (max-width: 560px) {
-  .reservation-hero-actions {
-    grid-template-columns: 1fr;
+@media (max-width: 480px) {
+  .kullanici-panel-shell .reservation-stat-grid {
+    gap: 6px;
   }
 
-  .reservation-status-tabs--scroll {
-    grid-template-columns: 1fr;
+  .kullanici-panel-shell .reservation-stat {
+    padding: 9px 8px;
   }
 
-  .reservation-mobile-card {
+  .kullanici-panel-shell .reservation-stat small {
+    white-space: normal;
+    overflow: visible;
+    text-overflow: unset;
+  }
+
+  .kullanici-panel-shell .reservation-mobile-card {
     grid-template-columns: 68px minmax(0, 1fr);
     gap: 10px;
     padding: 10px;
   }
 
-  .reservation-mobile-media {
+  .kullanici-panel-shell .reservation-mobile-media {
     width: 68px;
     height: 68px;
   }

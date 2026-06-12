@@ -54,7 +54,7 @@ public class HomeController : Controller
             ["potentialAction"] = new Dictionary<string, object?>
             {
                 ["@type"] = "SearchAction",
-                ["target"] = $"{publicBase}/oteller?q={{search_term_string}}",
+                ["target"] = $"{publicBase}/hotel?q={{search_term_string}}",
                 ["query-input"] = "required name=search_term_string"
             }
         };

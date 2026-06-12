@@ -6,7 +6,7 @@
     var userRaw = Context.User.FindFirstValue(AuthClaimTypes.UserId)
         ?? Context.User.FindFirstValue(ClaimTypes.NameIdentifier);
     var userId = long.TryParse(userRaw, out var parsedUserId) ? parsedUserId : 0;
-    var headerBildiri = await HeaderBildiriService.GetForPanelAsync(PanelHeaderAudience.User, userId, Context.RequestAborted);
+    var headerBildiri = await HeaderBildiriService.GetForPanelAsync(PanelHeaderAudience.User, userId, HeaderBildiriViewModel.DropdownItemLimit, Context.RequestAborted);
     var fullName = Context.User.FindFirst("otelturizm:full_name")?.Value ?? Context.User.Identity?.Name ?? "Kullanıcı";
     var email = Context.User.FindFirstValue(ClaimTypes.Email) ?? string.Empty;
     var initial = string.IsNullOrWhiteSpace(fullName) ? "K" : fullName.Trim()[0].ToString().ToUpperInvariant();
@@ -30,7 +30,7 @@
             <i class="fas fa-palette"></i>
         </button>
         <partial name="~/Views/Shared/_HeaderBildiri.cshtml" model="headerBildiri" />
-        <a class="btn-quick-add" href="/oteller">
+        <a class="btn-quick-add" href="/hotel">
             <i class="fas fa-plus"></i>
             <span class="ap-hide-mobile">Otel Keşfet</span>
         </a>

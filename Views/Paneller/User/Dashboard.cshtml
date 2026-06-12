@@ -20,7 +20,7 @@
             <p>Yaklaşan konaklamalar, favori oteller, mesajlar ve tasarruf bilgileri canlı verilerle özetlenir.</p>
         </div>
         <div class="dashboard-header-actions d-flex gap-2">
-            <a class="btn-primary-ap" href="/oteller"><i class="fas fa-magnifying-glass"></i> Otel Keşfet</a>
+            <a class="btn-primary-ap" href="/hotel"><i class="fas fa-magnifying-glass"></i> Otel Keşfet</a>
             <a class="btn-outline-ap" href="/panel/user/rezervasyonlarim"><i class="fas fa-calendar-check"></i> Rezervasyonlarım</a>
         </div>
     </div>
@@ -92,7 +92,7 @@
                             <i class="fas fa-calendar-xmark"></i>
                             <strong>Rezervasyon bulunmuyor</strong>
                             <p>Otel arayarak ilk rezervasyonunu oluşturabilirsin.</p>
-                            <a class="btn-primary-ap" href="/oteller">Otel Ara</a>
+                            <a class="btn-primary-ap" href="/hotel">Otel Ara</a>
                         </div>
                     </div>
                 }
@@ -136,7 +136,7 @@
                                     </td>
                                     <td class="text-end fw-bold">@reservation.TotalText</td>
                                     <td class="text-end">
-                                        <a href="/oteller/@reservation.HotelSlug" class="btn-outline-ap" style="height:28px;font-size:11px;padding:0 10px;">Detay</a>
+                                        <a href="/hotel/@reservation.HotelSlug" class="btn-outline-ap" style="height:28px;font-size:11px;padding:0 10px;">Detay</a>
                                         <a href="/panel/user/mesajlarim" class="btn-primary-ap" style="height:28px;font-size:11px;padding:0 10px;">Mesaj</a>
                                     </td>
                                 </tr>
@@ -197,7 +197,7 @@
                     <div class="dashboard-favorite-grid">
                         @foreach (var hotel in Model.FavoriteHotels.Take(5))
                         {
-                            <a class="dashboard-favorite-card" href="/oteller/@hotel.HotelSlug">
+                            <a class="dashboard-favorite-card" href="/hotel/@hotel.HotelSlug">
                                 <div class="dashboard-favorite-card-media">
                                     @if (!string.IsNullOrWhiteSpace(hotel.ImageUrl))
                                     {

@@ -107,7 +107,7 @@
                     </div>
                 </div>
                 <div class="search-engine-shell">
-                <form class="search-engine search-engine-pro" method="get" action="/oteller" data-search-pro-form>
+                <form class="search-engine search-engine-pro" method="get" action="/hotel" data-search-pro-form>
                     <div class="search-pro-row search-pro-row-trip">
                         <div class="search-pro-field search-pro-destination input-group input-destination">
                             <label for="home-q"><i class="fas fa-location-dot"></i> Nereye gitmek istersiniz ?</label>
@@ -263,7 +263,7 @@
                     <div class="dawn-surprise-result" id="dawnSurpriseResult" hidden>
                         <div class="dawn-surprise-percent-badge"><span id="dawnSurprisePercentValue">0</span>%</div>
                         <p class="dawn-surprise-result-text">Ek indirim rezervasyon toplamından düşülecek. İndiriminiz 1 saat boyunca tarayıcınızda saklanır.</p>
-                        <a class="dawn-surprise-go-hotels" href="/oteller">Otelleri Keşfet</a>
+                        <a class="dawn-surprise-go-hotels" href="/hotel">Otelleri Keşfet</a>
                     </div>
                 </div>
             </div>
@@ -296,7 +296,7 @@
                 <p class="deal-body">Seçili ultra lüks resortlarda bu gece yarısına özel sınırlı kontenjan ve premium transfer hediyeli.</p>
                 <div class="deal-foot"><span class="deal-timer"><i class="far fa-clock"></i> Sayaç: 04sa : 12dk kaldı</span><span class="deal-cta">Yer Ayır →</span></div>
             </a>
-            <a class="deal-card" href="/oteller?filter=weekend">
+            <a class="deal-card" href="/hotel?filter=weekend">
                 <div class="deal-head"><h3>Kapadokya Hafta Sonu Premium Paket</h3><span class="deal-tag deal-tag-gold">Club Özel</span></div>
                 <p class="deal-body">Mağara suit konaklamalarında ücretsiz sabah balonu turu ikramı ve havalimanı karşılama dahil.</p>
                 <div class="deal-foot"><span class="deal-timer"><i class="far fa-clock"></i> Sayaç: 08sa : 44dk kaldı</span><span class="deal-cta deal-cta-light">Detayları Gör →</span></div>
@@ -362,7 +362,7 @@
 
         <div class="section-headline">
             <span class="headline-left">Bölgelere Göre Keşfet</span>
-            <a href="/oteller/harita" class="headline-link">Tüm Haritayı Gör →</a>
+            <a href="/hotel/harita" class="headline-link">Tüm Haritayı Gör →</a>
         </div>
         <section class="destinations-grid">
             @if (popularDestinations.Count > 0)
@@ -374,7 +374,7 @@
                         ? destinationFallbackImages[destIndex % destinationFallbackImages.Length]
                         : dest.ImageUrl;
                     var destListingUrl = string.IsNullOrWhiteSpace(dest.ListingUrl)
-                        ? $"/oteller?q={Uri.EscapeDataString(dest.City)}"
+                        ? $"/hotel?q={Uri.EscapeDataString(dest.City)}"
                         : dest.ListingUrl;
                     var recentNames = dest.RecentHotelNames?.Where(n => !string.IsNullOrWhiteSpace(n)).Take(3).ToList() ?? new List<string>();
                     var destAria = recentNames.Count > 0
@@ -403,7 +403,7 @@
             }
             else
             {
-                <a class="dest-card" href="/oteller">
+                <a class="dest-card" href="/hotel">
                     <div class="dest-meta">
                         <h4>Tüm Oteller</h4>
                         <p>Yayında otelleri keşfedin</p>
@@ -593,16 +593,16 @@
         <section class="eco-ribbon eco-ribbon-stack">
             <div class="eco-meta"><span>🌱</span> Çevre dostu eko-lüks tesisler</div>
             <div class="eco-pills">
-                <a class="eco-pill" href="/oteller?etiket=sifir-atik">#SıfırAtıkSertifikalı</a>
-                <a class="eco-pill" href="/oteller?etiket=gunes-enerjili">#GüneşEnerjiliTesisler</a>
-                <a class="eco-pill" href="/oteller?etiket=karbon-notr">#KarbonNötrKonaklama</a>
+                <a class="eco-pill" href="/hotel?etiket=sifir-atik">#SıfırAtıkSertifikalı</a>
+                <a class="eco-pill" href="/hotel?etiket=gunes-enerjili">#GüneşEnerjiliTesisler</a>
+                <a class="eco-pill" href="/hotel?etiket=karbon-notr">#KarbonNötrKonaklama</a>
             </div>
         </section>
 
         <h2 class="section-headline"><span class="headline-left">OtelTurizm Dergi'den Keşif</span></h2>
         <section class="blog-grid">
             <article class="blog-card">
-                <a class="blog-card-link" href="/oteller/bodrum">
+                <a class="blog-card-link" href="/hotel/bodrum">
                     <div class="blog-img-box"><img src="https://images.unsplash.com/photo-1540555700478-4be289fbecef?w=400&auto=format&fit=crop&q=80" alt="Bodrum koyları" /></div>
                     <span class="blog-tag">Rotalar & Keşif</span>
                     <h4>Bodrum'un Bilinmeyen Akvaryum Koyları</h4>
@@ -610,7 +610,7 @@
                 </a>
             </article>
             <article class="blog-card">
-                <a class="blog-card-link" href="/oteller/kapadokya">
+                <a class="blog-card-link" href="/hotel/kapadokya">
                     <div class="blog-img-box"><img src="https://images.unsplash.com/photo-1520250497591-112f2f40a3f4?w=400&auto=format&fit=crop&q=80" alt="Kapadokya taş işçiliği" /></div>
                     <span class="blog-tag">Kültür & Mimari</span>
                     <h4>Kapadokya Taş İşçiliğinin Bin Yıllık Sırrı</h4>
@@ -618,7 +618,7 @@
                 </a>
             </article>
             <article class="blog-card">
-                <a class="blog-card-link" href="/oteller/istanbul">
+                <a class="blog-card-link" href="/hotel/istanbul">
                     <div class="blog-img-box"><img src="https://images.unsplash.com/photo-1584132967334-10e028bd69f7?w=400&auto=format&fit=crop&q=80" alt="Karaköy restoranları" /></div>
                     <span class="blog-tag">Gurme Rehberi</span>
                     <h4>Karaköy'ün En İyi Tarihi Restoran Haritası</h4>

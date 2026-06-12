@@ -64,13 +64,13 @@
         box-sizing: border-box;
     }
 
-    .oteldetay-page.otel-detail-template-v41.od-detail .od-section--about .detail-about__weather-row {
+    .oteldetay-page.otel-detail-template-v41.od-detail .detail-header-about-top .detail-about__weather-row {
         width: 100% !important;
         padding-inline: 0 !important;
         margin: 0 !important;
     }
 
-    .oteldetay-page.otel-detail-template-v41.od-detail .od-section--about .detail-about__weather-row .detail-weather-strip--standalone {
+    .oteldetay-page.otel-detail-template-v41.od-detail .detail-header-about-top .detail-about__weather-row .detail-weather-strip--standalone {
         width: 100% !important;
         max-width: none !important;
         border-radius: 0 !important;
@@ -202,11 +202,11 @@
 
     .oteldetay-page.otel-detail-template-v41.od-detail #roomsCard .select-room-btn,
     .oteldetay-page.otel-detail-template-v41.od-detail #roomsCard .room-select-btn {
-        min-height: 44px !important;
-        min-width: 112px !important;
-        padding: 0 16px !important;
-        font-size: 13px !important;
-        font-weight: 800 !important;
+        min-height: 34px !important;
+        min-width: 0 !important;
+        padding: 0 12px !important;
+        font-size: 0.74rem !important;
+        font-weight: 700 !important;
         border-radius: 999px !important;
         white-space: nowrap !important;
     }

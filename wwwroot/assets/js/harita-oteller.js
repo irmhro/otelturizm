@@ -26,7 +26,7 @@
         config = {};
     }
 
-    var hotelDetailPathPattern = config.hotelDetailPathPattern || '/oteller/{slug}';
+    var hotelDetailPathPattern = config.hotelDetailPathPattern || '/hotel/{slug}';
 
     function buildHotelDetailUrl(slug) {
         return hotelDetailPathPattern.replace('{slug}', encodeURIComponent(String(slug || '').trim()));

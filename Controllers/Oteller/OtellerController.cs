@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.AspNetCore.OutputCaching;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Configuration;
+using System.Globalization;
 using System.Linq;
 using System.Security.Claims;
 using otelturizmnew.Constants;
@@ -17,7 +18,7 @@ using otelturizmnew.Utils;
 
 namespace otelturizmnew.Controllers.Oteller;
 
-[Route("oteller")]
+[Route("hotel")]
 [Route("en/hotels")]
 [Route("de/hotels")]
 [Route("fr/hotels")]
@@ -104,6 +105,7 @@ public class OtellerController : Controller
         var ctxBoost = Request.Cookies.TryGetValue("Otelturizm.SearchCtx", out var cx) ? cx.ToString() : null;
         var model = await _hotelService.GetHotelListingPageAsync(searchTerm, etiketN, kampanyaN, page <= 0 ? 1 : page, ctxBoost, minPrice, maxPrice, ilceId, sehirId, cancellationToken);
         await ApplyFavoriteStatesAsync(model, cancellationToken);
+        await ApplyListingTravelPreferencesAsync(model, cancellationToken);
         ApplyListingLoyaltyTouchpoints(model);
         var listingMeta = _internationalSeo.BuildListingMeta(
             listingCulture,
@@ -295,7 +297,7 @@ public class OtellerController : Controller
             var userId = GetCurrentUserId();
             if (userId > 0)
             {
-                model.ProfilePrompt = await BuildProfilePromptAsync(userId, $"/oteller/{slug}?continueDraft=1", cancellationToken);
+                model.ProfilePrompt = await BuildProfilePromptAsync(userId, $"/hotel/{slug}?continueDraft=1", cancellationToken);
                 var conversationAccess = await _messageCenterService.CanStartHotelConversationAsync(userId, model.Id, cancellationToken);
                 model.HasCompletedReservationAtHotel = conversationAccess.Allowed;
                 model.ConversationInfoMessage = conversationAccess.Message;
@@ -348,7 +350,7 @@ public class OtellerController : Controller
             if (!string.IsNullOrWhiteSpace(validationError))
             {
                 TempData["PublicReservationInfo"] = validationError;
-                return Redirect($"/oteller/{slug}");
+                return Redirect($"/hotel/{slug}");
             }
 
             if (!_velocityGuard.TryAllowReservationAttempt(HttpContext, out var velocityMsg))
@@ -358,7 +360,7 @@ public class OtellerController : Controller
                     "RESERVATION_VELOCITY_BLOCK slug={Slug} ip={Ip}",
                     slug,
                     HttpContext.Connection.RemoteIpAddress?.ToString());
-                return Redirect($"/oteller/{slug}");
+                return Redirect($"/hotel/{slug}");
             }
 
             var risk = _velocityGuard.ComputeRiskScore01(HttpContext);
@@ -412,7 +414,7 @@ public class OtellerController : Controller
                 return Redirect(result.RedirectUrl);
             }
 
-            return Redirect($"/oteller/{slug}");
+            return Redirect($"/hotel/{slug}");
         }
         catch (Exception ex)
         {
@@ -420,14 +422,14 @@ public class OtellerController : Controller
             _logger.LogError(ex, "Public reservation start failed. cid={CorrelationId} slug={Slug}", correlationId, slug);
             TempData["PublicReservationInfo"] = "Rezervasyon başlatılamadı. Lütfen tekrar deneyin."
                                                + (string.IsNullOrWhiteSpace(correlationId) ? string.Empty : $" (Takip: {correlationId})");
-            return Redirect($"/oteller/{slug}");
+            return Redirect($"/hotel/{slug}");
         }
     }
 
     [HttpGet("{slug}/rezervasyon")]
     public IActionResult ReservationGetFallback(string slug)
     {
-        return Redirect($"/oteller/{slug}");
+        return Redirect($"/hotel/{slug}");
     }
 
     [HttpPost("{slug}/profil-bilgilerini-tamamla")]
@@ -867,6 +869,23 @@ public class OtellerController : Controller
         }
     }
 
+    private async Task ApplyListingTravelPreferencesAsync(HotelListingPageViewModel model, CancellationToken cancellationToken)
+    {
+        if (!CanAccessUserFeatures())
+        {
+            return;
+        }
+
+        var userId = GetCurrentUserId();
+        if (userId <= 0)
+        {
+            return;
+        }
+
+        model.LoyaltyUserSignedIn = true;
+        model.UserTravelPreferences = await _userPanelService.GetTravelPreferencesForSearchAsync(userId, cancellationToken);
+    }
+
     private void ApplyListingLoyaltyTouchpoints(otelturizmnew.Models.Oteller.HotelListingPageViewModel model)
     {
         foreach (var hotel in model.Hotels)
@@ -1012,7 +1031,23 @@ public class OtellerController : Controller
         => birthDate.Date <= DateTime.Today.AddYears(-18).AddDays(-1);
 
     private static bool TryParseBirthDate(string? birthDateText, out DateTime birthDate)
-        => DateTime.TryParse(birthDateText, out birthDate);
+    {
+        birthDate = default;
+        if (string.IsNullOrWhiteSpace(birthDateText))
+        {
+            return false;
+        }
+
+        var trimmed = birthDateText.Trim();
+        var tr = CultureInfo.GetCultureInfo("tr-TR");
+        if (DateTime.TryParseExact(trimmed, "dd.MM.yyyy", tr, DateTimeStyles.None, out birthDate))
+        {
+            return true;
+        }
+
+        return DateTime.TryParse(trimmed, tr, DateTimeStyles.None, out birthDate)
+            || DateTime.TryParse(trimmed, CultureInfo.InvariantCulture, DateTimeStyles.None, out birthDate);
+    }
 
     private string? GetCurrentReservationSessionKey()
         => Request.Cookies.TryGetValue(ReservationDraftCookieName, out var key) ? key : null;

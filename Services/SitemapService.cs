@@ -448,7 +448,7 @@ public sealed class SitemapService : ISitemapService
                 hotels.Add(new RegionalHotelRow(
                     city,
                     district,
-                    BuildAbsoluteUrl("/oteller/" + slug),
+                    BuildAbsoluteUrl("/hotel/" + slug),
                     DateTime.SpecifyKind(reader.GetDateTime(4), DateTimeKind.Utc)));
             }
         }
@@ -516,8 +516,8 @@ public sealed class SitemapService : ISitemapService
         return
         [
             CreateStatic("/", "daily", 1.0m, now),
-            CreateStatic("/oteller", "daily", 0.9m, now),
-            CreateStatic("/oteller/harita", "weekly", 0.75m, now),
+            CreateStatic("/hotel", "daily", 0.9m, now),
+            CreateStatic("/hotel/harita", "weekly", 0.75m, now),
             CreateStatic("/en/hotels", "daily", 0.85m, now),
             CreateStatic("/de/hotels", "daily", 0.85m, now),
             CreateStatic("/en/hotels/istanbul", "daily", 0.85m, now),
@@ -611,7 +611,7 @@ public sealed class SitemapService : ISitemapService
 
             entries.Add(new SitemapUrlEntry
             {
-                Location = BuildAbsoluteUrl("/oteller/" + slug),
+                Location = BuildAbsoluteUrl("/hotel/" + slug),
                 LastModifiedUtc = DateTime.SpecifyKind(lastModifiedUtc, DateTimeKind.Utc),
                 ChangeFrequency = "daily",
                 Priority = 0.85m,
@@ -685,7 +685,7 @@ public sealed class SitemapService : ISitemapService
                 continue;
             }
 
-            var roomUrl = BuildAbsoluteUrl($"/oteller/{hotelSlug}?room={roomTypeId}");
+            var roomUrl = BuildAbsoluteUrl($"/hotel/{hotelSlug}?room={roomTypeId}");
             entries.Add(new SitemapUrlEntry
             {
                 Location = roomUrl,
@@ -830,7 +830,7 @@ public sealed class SitemapService : ISitemapService
             {
                 entries.Add(new SitemapUrlEntry
                 {
-                    Location = BuildAbsoluteUrl("/oteller/" + citySlug),
+                    Location = BuildAbsoluteUrl("/hotel/" + citySlug),
                     LastModifiedUtc = DateTime.SpecifyKind(lastModifiedUtc, DateTimeKind.Utc),
                     ChangeFrequency = "daily",
                     Priority = 0.8m
@@ -841,7 +841,7 @@ public sealed class SitemapService : ISitemapService
             {
                 entries.Add(new SitemapUrlEntry
                 {
-                    Location = BuildAbsoluteUrl("/oteller?q=" + Uri.EscapeDataString(district)),
+                    Location = BuildAbsoluteUrl("/hotel?q=" + Uri.EscapeDataString(district)),
                     LastModifiedUtc = DateTime.SpecifyKind(lastModifiedUtc, DateTimeKind.Utc),
                     ChangeFrequency = "daily",
                     Priority = 0.65m
@@ -917,7 +917,7 @@ public sealed class SitemapService : ISitemapService
                 hotel = new HotelOfferFeedHotel
                 {
                     Name = hotelName,
-                    Url = BuildAbsoluteUrl("/oteller/" + hotelSlug),
+                    Url = BuildAbsoluteUrl("/hotel/" + hotelSlug),
                     City = city,
                     District = district,
                     ImageUrl = imageUrl,
@@ -933,7 +933,7 @@ public sealed class SitemapService : ISitemapService
                 RoomName = roomName,
                 Price = price,
                 Currency = "TRY",
-                Url = BuildAbsoluteUrl($"/oteller/{hotelSlug}?room={roomTypeId}"),
+                Url = BuildAbsoluteUrl($"/hotel/{hotelSlug}?room={roomTypeId}"),
                 LastModifiedUtc = DateTime.SpecifyKind(lastModifiedUtc, DateTimeKind.Utc)
             });
         }
@@ -1201,7 +1201,7 @@ public sealed class SitemapService : ISitemapService
             return absoluteUrl;
         }
 
-        if (uri.AbsolutePath.StartsWith("/oteller", StringComparison.OrdinalIgnoreCase)
+        if (uri.AbsolutePath.StartsWith("/hotel", StringComparison.OrdinalIgnoreCase)
             && LocaleToCultureCode(locale) is { } cultureCode)
         {
             var localizedPath = InternationalSeoPaths.LocalizePath(uri.AbsolutePath, cultureCode);

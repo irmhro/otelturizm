@@ -9,163 +9,169 @@
     }
 }
 
-<section class="messages-layout">
-    <aside class="message-list-panel">
-        <div class="message-list-head">
-            <div>
-                <p class="message-panel-kicker">MESAJ MERKEZI</p>
-                <h2>Yazışmalar</h2>
-            </div>
-            <span class="thread-count-pill">@Model.Threads.Count konuşma</span>
-        </div>
-
-        <div class="thread-overview-grid">
-            <article>
-                <strong>@Model.Threads.Count</strong>
-                <span>Toplam konuşma</span>
-            </article>
-            <article>
-                <strong>@unreadTotal</strong>
-                <span>Okunmamış mesaj</span>
-            </article>
-        </div>
-
-        <div class="message-list-scroll">
-            @if (Model.Threads.Count == 0)
-            {
-                <div class="message-item active">
-                    <div class="message-avatar blue">OT</div>
-                    <div>
-                        <h3>Henüz konuşma yok</h3>
-                        <p>Firma ve otel yazışmaların burada listelenir.</p>
-                    </div>
+<div class="user-messages-page">
+    <section class="messages-layout">
+        <aside class="message-list-panel messages-list-card">
+            <div class="message-list-head">
+                <div class="messages-list-head-copy">
+                    <p class="message-panel-kicker">MESAJ MERKEZI</p>
+                    <h2>Yazışmalar</h2>
                 </div>
-            }
-            else
-            {
-                foreach (var thread in Model.Threads)
-                {
-                    <a class="message-item @(thread.IsActive ? "active" : string.Empty)" href="@thread.RouteUrl">
-                        <div class="message-avatar @thread.AvatarTone">@thread.AvatarText</div>
-                        <div class="message-thread-copy">
-                            <h3>@thread.Title</h3>
-                            <strong>@thread.Subtitle</strong>
-                            <p>@thread.Preview</p>
-                        </div>
-                        @if (thread.UnreadCount > 0)
-                        {
-                            <span class="thread-unread-badge">@thread.UnreadCount</span>
-                        }
-                    </a>
-                }
-            }
-        </div>
-    </aside>
-
-    <div class="chat-panel">
-        <div class="chat-head">
-            <div class="chat-head-copy">
-                <p class="message-panel-kicker">AKTIF GORUSME</p>
-                <h2>@Model.SelectedTitle</h2>
-                <p>@Model.SelectedSubtitle</p>
+                <span class="thread-count-pill">@Model.Threads.Count konuşma</span>
             </div>
+
+            <section class="messages-stat-grid" aria-label="Mesaj özeti">
+                <article class="messages-stat">
+                    <span><i class="fas fa-comments" aria-hidden="true"></i></span>
+                    <div><strong>@Model.Threads.Count</strong><small>Toplam konuşma</small></div>
+                </article>
+                <article class="messages-stat messages-stat--unread">
+                    <span><i class="fas fa-envelope" aria-hidden="true"></i></span>
+                    <div><strong>@unreadTotal</strong><small>Okunmamış mesaj</small></div>
+                </article>
+            </section>
+
+            <div class="message-list-scroll">
+                @if (Model.Threads.Count == 0)
+                {
+                    <div class="empty messages-empty">
+                        <div class="empty-icon"><i class="far fa-comment-dots" aria-hidden="true"></i></div>
+                        <p class="empty-title">Henüz konuşma yok</p>
+                        <p class="empty-subtitle text-muted">Rezervasyon yaptığın oteller ve destek ekipleri ile yazışmaların burada listelenir.</p>
+                        <div class="empty-action">
+                            <a href="/panel/user/rezervasyonlarim" class="btn btn-primary-ap">
+                                <i class="fas fa-calendar-check" aria-hidden="true"></i>
+                                <span>Rezervasyonlarım</span>
+                            </a>
+                        </div>
+                    </div>
+                }
+                else
+                {
+                    foreach (var thread in Model.Threads)
+                    {
+                        <a class="message-item message-thread-card @(thread.IsActive ? "active" : string.Empty)" href="@thread.RouteUrl">
+                            <div class="message-avatar @thread.AvatarTone">@thread.AvatarText</div>
+                            <div class="message-thread-copy">
+                                <h3>@thread.Title</h3>
+                                <strong>@thread.Subtitle</strong>
+                                <p>@thread.Preview</p>
+                            </div>
+                            @if (thread.UnreadCount > 0)
+                            {
+                                <span class="thread-unread-badge">@thread.UnreadCount</span>
+                            }
+                        </a>
+                    }
+                }
+            </div>
+        </aside>
+
+        <div class="chat-panel">
+            <div class="chat-head">
+                <div class="chat-head-copy">
+                    <p class="message-panel-kicker">AKTIF GORUSME</p>
+                    <h2>@Model.SelectedTitle</h2>
+                    <p>@Model.SelectedSubtitle</p>
+                </div>
+                @if (Model.SelectedConversationId.HasValue)
+                {
+                    <span class="chat-status-chip">
+                        <i class="fas fa-circle"></i>
+                        Aktif
+                    </span>
+                }
+            </div>
+
+            @if (TempData["UserMessageStatus"] is string successMessage)
+            {
+                <div class="message-status success">@successMessage</div>
+            }
+            @if (TempData["UserMessageError"] is string errorMessage)
+            {
+                <div class="message-status error">@errorMessage</div>
+            }
+
+            <div class="chat-body">
+                @if (Model.Messages.Count == 0)
+                {
+                    <div class="bubble incoming">
+                        <p>Bu konuşmada henüz mesaj bulunmuyor.</p>
+                        <span>Şimdi</span>
+                    </div>
+                }
+                else
+                {
+                    foreach (var message in Model.Messages)
+                    {
+                        <div class="bubble @(message.IsOutgoing ? "outgoing" : "incoming") @(message.IsDeleted ? "deleted" : string.Empty)">
+                            <div class="bubble-meta">
+                                <strong>@message.SenderName</strong>
+                                <span>@message.TimeText</span>
+                            </div>
+                            @if (message.IsDeleted)
+                            {
+                                <p class="deleted-text">@message.DeletedText</p>
+                            }
+                            else if (!string.IsNullOrWhiteSpace(message.MessageText))
+                            {
+                                <p>@message.MessageText</p>
+                            }
+
+                            @if (message.Attachments.Count > 0)
+                            {
+                                <div class="message-attachments">
+                                    @foreach (var attachment in message.Attachments)
+                                    {
+                                        <a href="@attachment.AccessUrl" class="message-attachment-card" target="_blank" rel="noopener">
+                                            @if (attachment.IsImage)
+                                            {
+                                                <img src="@attachment.AccessUrl" alt="@attachment.DisplayName" />
+                                            }
+                                            else
+                                            {
+                                                <div class="attachment-icon"><i class="fas fa-file-shield"></i></div>
+                                            }
+                                            <div>
+                                                <strong>@attachment.DisplayName</strong>
+                                                <small>@attachment.SizeText</small>
+                                            </div>
+                                        </a>
+                                    }
+                                </div>
+                            }
+
+                        </div>
+                    }
+                }
+            </div>
+
             @if (Model.SelectedConversationId.HasValue)
             {
-                <span class="chat-status-chip">
-                    <i class="fas fa-circle"></i>
-                    Aktif
-                </span>
-            }
-        </div>
-
-        @if (TempData["UserMessageStatus"] is string successMessage)
-        {
-            <div class="message-status success">@successMessage</div>
-        }
-        @if (TempData["UserMessageError"] is string errorMessage)
-        {
-            <div class="message-status error">@errorMessage</div>
-        }
-
-        <div class="chat-body">
-            @if (Model.Messages.Count == 0)
-            {
-                <div class="bubble incoming">
-                    <p>Bu konuşmada henüz mesaj bulunmuyor.</p>
-                    <span>Şimdi</span>
-                </div>
+                <form method="post" asp-action="SendMessage" enctype="multipart/form-data" class="chat-input-row chat-input-form message-composer">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" name="ConversationId" value="@Model.SelectedConversationId" />
+                    <textarea name="Message" placeholder="Mesajını yaz..." maxlength="2000"></textarea>
+                    <div class="chat-compose-actions">
+                        <label class="attachment-picker">
+                            <i class="fas fa-paperclip"></i>
+                            <span>Belge / Görsel</span>
+                            <input type="file" name="attachments" multiple accept=".jpg,.jpeg,.png,.webp,.pdf,.doc,.docx,.xls,.xlsx,.txt" />
+                        </label>
+                        <button type="submit" class="send-btn btn btn-primary-ap"><i class="fas fa-paper-plane"></i> Gönder</button>
+                    </div>
+                </form>
             }
             else
             {
-                foreach (var message in Model.Messages)
-                {
-                    <div class="bubble @(message.IsOutgoing ? "outgoing" : "incoming") @(message.IsDeleted ? "deleted" : string.Empty)">
-                        <div class="bubble-meta">
-                            <strong>@message.SenderName</strong>
-                            <span>@message.TimeText</span>
-                        </div>
-                        @if (message.IsDeleted)
-                        {
-                            <p class="deleted-text">@message.DeletedText</p>
-                        }
-                        else if (!string.IsNullOrWhiteSpace(message.MessageText))
-                        {
-                            <p>@message.MessageText</p>
-                        }
-
-                        @if (message.Attachments.Count > 0)
-                        {
-                            <div class="message-attachments">
-                                @foreach (var attachment in message.Attachments)
-                                {
-                                    <a href="@attachment.AccessUrl" class="message-attachment-card" target="_blank" rel="noopener">
-                                        @if (attachment.IsImage)
-                                        {
-                                            <img src="@attachment.AccessUrl" alt="@attachment.DisplayName" />
-                                        }
-                                        else
-                                        {
-                                            <div class="attachment-icon"><i class="fas fa-file-shield"></i></div>
-                                        }
-                                        <div>
-                                            <strong>@attachment.DisplayName</strong>
-                                            <small>@attachment.SizeText</small>
-                                        </div>
-                                    </a>
-                                }
-                            </div>
-                        }
-
+                <div class="chat-input-row chat-input-idle message-composer message-composer--idle">
+                    <div class="chat-idle-note">
+                        <i class="fas fa-lock"></i>
+                        <span>Mesaj göndermek için önce bir konuşma seçin</span>
                     </div>
-                }
+                    <button type="button" class="send-btn btn btn-primary-ap" disabled><i class="fas fa-paper-plane"></i> Gönder</button>
+                </div>
             }
         </div>
-
-        @if (Model.SelectedConversationId.HasValue)
-        {
-            <form method="post" asp-action="SendMessage" enctype="multipart/form-data" class="chat-input-row chat-input-form">
-                @Html.AntiForgeryToken()
-                <input type="hidden" name="ConversationId" value="@Model.SelectedConversationId" />
-                <textarea name="Message" placeholder="Mesajını yaz..." maxlength="2000"></textarea>
-                <div class="chat-compose-actions">
-                    <label class="attachment-picker">
-                        <i class="fas fa-paperclip"></i>
-                        <span>Belge / Görsel</span>
-                        <input type="file" name="attachments" multiple accept=".jpg,.jpeg,.png,.webp,.pdf,.doc,.docx,.xls,.xlsx,.txt" />
-                    </label>
-                    <button type="submit" class="send-btn"><i class="fas fa-paper-plane"></i> Gönder</button>
-                </div>
-            </form>
-        }
-        else
-        {
-            <div class="chat-input-row chat-input-idle">
-                <div class="chat-idle-note">
-                    <i class="fas fa-lock"></i>
-                    <span>Mesaj göndermek için önce bir konuşma seçin</span>
-                </div>
-                <button type="button" class="send-btn" disabled><i class="fas fa-paper-plane"></i> Gonder</button>
-            </div>
-        }
-    </div>
-</section>
+    </section>
+</div>

@@ -42,6 +42,24 @@
 }
 
 <div class="otelliste-filters" data-filter-scope="@scope">
+    @if (Model.UserTravelPreferences?.HasActionablePreferences == true)
+    {
+        <div class="otelliste-travel-pref-block">
+            <button type="button"
+                    class="otelliste-travel-pref-btn"
+                    data-travel-pref-apply
+                    aria-pressed="false">
+                <span class="otelliste-travel-pref-btn-icon" aria-hidden="true"><i class="fas fa-compass"></i></span>
+                <span class="otelliste-travel-pref-btn-copy">
+                    <strong>Seyahat tercihlerime göre ara</strong>
+                    <small>@Model.UserTravelPreferences.SummaryText</small>
+                </span>
+            </button>
+            <a class="otelliste-travel-pref-edit" href="/panel/user/profil-bilgilerim">Tercihleri düzenle</a>
+            <div class="otelliste-travel-pref-toast" id="otellisteTravelPrefToast-@scope" role="status" aria-live="polite"></div>
+        </div>
+    }
+
     <div class="otelliste-filter-group">
         <label for="@(prefix)keyword">Konum / Otel Ara</label>
         <input type="search"

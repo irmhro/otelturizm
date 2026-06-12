@@ -3404,13 +3404,23 @@
         font-variant-numeric: tabular-nums;
     }
 
-    .oteldetay-page .booking-price-total {
+    .oteldetay-page .booking-price-head--ota .booking-price-total-group {
+        display: inline-flex;
+        align-items: center;
+        justify-content: flex-end;
+        flex-wrap: wrap;
+        gap: 8px;
         flex: 0 0 auto;
-        font-size: 28px;
-        font-weight: 900;
-        line-height: 1.05;
-        color: var(--od-crimson, #E30A17);
-        letter-spacing: -0.02em;
+        max-width: 100%;
+    }
+
+    .oteldetay-page .booking-price-head--ota .booking-price-total {
+        flex: 0 0 auto;
+        font-size: 16px;
+        font-weight: 700;
+        line-height: 1.2;
+        color: var(--od-dark, #1A1919);
+        letter-spacing: 0;
         font-variant-numeric: tabular-nums;
     }
 
@@ -3436,7 +3446,7 @@
         font-variant-numeric: tabular-nums;
     }
 
-    .oteldetay-page .booking-price-dawn-pill {
+    .oteldetay-page .booking-price-head--ota .booking-price-dawn-pill {
         display: inline-flex;
         align-items: center;
         font-size: 10px;
@@ -3448,7 +3458,8 @@
         border: 1px solid rgba(245, 158, 11, 0.22);
         border-radius: 999px;
         padding: 3px 8px;
-        margin-top: 2px;
+        margin-top: 0;
+        white-space: nowrap;
     }
 
     .oteldetay-page .booking-price-dawn-pill[hidden] {
@@ -3519,8 +3530,10 @@
     .oteldetay-page .od-booking-counters-desktop-row {
         display: grid;
         grid-template-columns: repeat(3, minmax(0, 1fr));
-        gap: 12px;
-        margin-bottom: 12px;
+        gap: 10px;
+        width: 100%;
+        max-width: 100%;
+        margin-bottom: 10px;
     }
 
     .oteldetay-page .od-booking-counters-desktop-row .multi-room,
@@ -3554,14 +3567,17 @@
     .oteldetay-page .od-booking-counters-desktop-row .guest-row {
         min-height: auto !important;
         margin: 0 !important;
-        padding: 10px 12px !important;
-        border: 1px solid var(--od-border, #EBE9E4) !important;
-        border-radius: 14px !important;
-        background: #fff !important;
+        padding: 0 !important;
+        border: 0 !important;
+        border-radius: 0 !important;
+        background: transparent !important;
+        box-shadow: none !important;
         display: flex !important;
         flex-direction: column !important;
         align-items: stretch !important;
-        gap: 8px !important;
+        gap: 4px !important;
+        width: 100%;
+        min-width: 0;
     }
 
     .oteldetay-page .od-booking-counters-band--item .multi-room-quantity > span,
@@ -3575,8 +3591,64 @@
 
     .oteldetay-page .od-booking-counters-desktop-row .guest-controls,
     .oteldetay-page .od-booking-counters-band--item .room-quantity-control {
+        display: flex;
+        align-items: center;
         justify-content: space-between;
+        gap: 6px;
         width: 100%;
+        min-height: 40px;
+        padding: 3px 10px;
+        border: 1px solid var(--od-border, #EBE9E4);
+        border-radius: 10px;
+        background: #fff;
+        box-sizing: border-box;
+    }
+
+    .oteldetay-page .od-booking-counters-desktop-row .guest-controls strong {
+        font-size: 13px;
+        font-weight: 700;
+        min-width: 20px;
+        text-align: center;
+    }
+
+    .oteldetay-page .od-booking-counters-desktop-row .guest-btn,
+    .oteldetay-page .od-booking-counters-desktop-row .room-quantity-control button {
+        width: 34px;
+        height: 34px;
+        min-width: 34px;
+        min-height: 34px;
+        border-radius: 10px;
+        font-size: 14px;
+    }
+
+    .oteldetay-page .od-booking-counters-desktop-row .multi-room-item {
+        border: 0 !important;
+        border-radius: 0 !important;
+        padding: 0 !important;
+        background: transparent !important;
+        box-shadow: none !important;
+    }
+
+    .oteldetay-page .od-booking-counters-desktop-row .multi-room-item-type {
+        display: flex;
+        flex-direction: column;
+        align-items: stretch;
+        gap: 4px;
+    }
+
+    .oteldetay-page .od-booking-counters-desktop-row .multi-room-item-grid input,
+    .oteldetay-page .od-booking-counters-desktop-row .multi-room-item-grid select {
+        min-height: 40px;
+        font-size: 13px;
+    }
+
+    .oteldetay-page.otel-detail-template-v41.otel-detail-tabler .od-booking-counters-desktop-row .multi-room-item,
+    .oteldetay-page.otel-detail-template-v41.otel-detail-tabler .od-booking-counters-desktop-row .guest-row {
+        border: 0 !important;
+        border-radius: 0 !important;
+        padding: 0 !important;
+        background: transparent !important;
+        box-shadow: none !important;
     }
 
     .oteldetay-page .od-booking-counters-desktop-row:has(.multi-room-item:not(:only-child)) {

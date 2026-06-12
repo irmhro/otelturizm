@@ -14,6 +14,7 @@ public class SecureFileService : ISecureFileService
 {
     private readonly string _connectionString;
     private readonly IWebHostEnvironment _environment;
+    private readonly string _secureStorageRoot;
     private readonly IUploadScanService _uploadScanService;
     private readonly IUploadAuditService _uploadAuditService;
     private readonly IHttpContextAccessor _httpContextAccessor;
@@ -35,6 +36,7 @@ public class SecureFileService : ISecureFileService
         _connectionString = configuration.GetConnectionString("DefaultConnection")
             ?? throw new InvalidOperationException("DefaultConnection tanimli degil.");
         _environment = environment;
+        _secureStorageRoot = SecureStoragePaths.ResolveRoot(configuration, environment);
         _uploadScanService = uploadScanService;
         _uploadAuditService = uploadAuditService;
         _httpContextAccessor = httpContextAccessor;
@@ -66,8 +68,17 @@ public class SecureFileService : ISecureFileService
         var storedName = $"{DateTime.UtcNow:yyyyMMddHHmmss}-{Guid.NewGuid():N}{storedExtension}";
         var root = request.HotelId.HasValue && request.HotelId.Value > 0
             ? MediaStoragePaths.HotelFilesDirectory(_environment.WebRootPath, request.HotelId.Value, safeCategory)
-            : BuildSecureRoot(safeCategory, request);
-        Directory.CreateDirectory(root);
+            : SecureStoragePaths.BuildCategoryRoot(_secureStorageRoot, safeCategory, request.OwnerUserId);
+        try
+        {
+            Directory.CreateDirectory(root);
+        }
+        catch (UnauthorizedAccessException ex)
+        {
+            throw new InvalidOperationException(
+                "Guvenli depolama klasorune yazma izni yok. SecureStorage:RootPath yapilandirmasini veya IIS klasor izinlerini kontrol edin.",
+                ex);
+        }
         var absolutePath = Path.Combine(root, storedName);
 
         if (isImage)
@@ -385,23 +396,6 @@ public class SecureFileService : ISecureFileService
         }
 
         File.Move(tempPath, absolutePath);
-    }
-
-    private string BuildSecureRoot(string safeCategory, SecureFileSaveRequest request)
-    {
-        if (string.Equals(safeCategory, "profile", StringComparison.OrdinalIgnoreCase)
-            && request.OwnerUserId.HasValue
-            && request.OwnerUserId.Value > 0)
-        {
-            return Path.Combine(
-                _environment.ContentRootPath,
-                "App_Data",
-                "secure-storage",
-                "profile",
-                request.OwnerUserId.Value.ToString(CultureInfo.InvariantCulture));
-        }
-
-        return Path.Combine(_environment.ContentRootPath, "App_Data", "secure-storage", safeCategory);
     }
 
     private static string NormalizeCategory(string? category)

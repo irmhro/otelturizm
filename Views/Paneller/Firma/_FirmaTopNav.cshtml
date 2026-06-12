@@ -12,7 +12,7 @@
         : "B2B";
     var firmaUserRaw = Context.User.FindFirstValue(AuthClaimTypes.UserId) ?? Context.User.FindFirstValue(ClaimTypes.NameIdentifier);
     var firmaUserId = long.TryParse(firmaUserRaw, out var parsedFirmaUserId) ? parsedFirmaUserId : 0;
-    var headerBildiri = await HeaderBildiriService.GetForPanelAsync(PanelHeaderAudience.Firma, firmaUserId, Context.RequestAborted);
+    var headerBildiri = await HeaderBildiriService.GetForPanelAsync(PanelHeaderAudience.Firma, firmaUserId, HeaderBildiriViewModel.DropdownItemLimit, Context.RequestAborted);
 }
 <header class="global-topbar" role="banner">
     <div class="topbar-left">

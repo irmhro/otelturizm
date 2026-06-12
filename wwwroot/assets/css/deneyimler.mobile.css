@@ -1,35 +1,65 @@
 @media (max-width: 900px) {
-    .deneyimler-page {
-        --home-type-btn: 12px;
-        --home-btn-min-height: 40px;
-        --page-content-inset: 32px;
+    .deneyimler-page,
+    .deneyimler-page.anasayfa-page {
+        --page-content-inset: 0;
+        --page-content-gutter: 16px;
+        --dxp-shell: 100%;
+        --home-type-btn: 13px;
+        --home-btn-min-height: 44px;
         --home-header-sticky-h: var(--home-header-bar-h, 56px);
         --dxp-card-media-h: var(--home-card-media-h, 180px);
+        --dxp-spotlight-media-h: 156px;
     }
 
     .deneyimler-page.anasayfa-page main.public-premium-main {
         background: linear-gradient(180deg, #f3f2ef 0%, #faf9f7 42%, var(--bg-warm, #fcfbfa) 100%);
     }
 
-    .dxp-shell {
-        padding-left: 16px;
-        padding-right: 16px;
+    .deneyimler-page .dxp-page {
+        width: 100%;
+        max-width: 100%;
+    }
+
+    .deneyimler-page .dxp-shell {
+        width: 100%;
+        max-width: 100%;
+        margin-left: 0;
+        margin-right: 0;
+        padding-left: var(--page-content-gutter, 16px);
+        padding-right: var(--page-content-gutter, 16px);
+        box-sizing: border-box;
         overflow-x: clip;
     }
 
     .dxp-hero {
-        padding-top: 12px;
+        padding-top: 10px;
+        padding-bottom: 20px;
     }
 
     .dxp-hero__grid {
         grid-template-columns: 1fr;
-        gap: 16px;
+        gap: 14px;
+    }
+
+    .dxp-hero__title {
+        font-size: clamp(1.55rem, 6.4vw, 2rem);
+        line-height: 1.08;
+        margin-bottom: 10px;
+    }
+
+    .dxp-hero__lead {
+        max-width: none;
+        font-size: 14px;
+        line-height: 1.55;
+        margin-bottom: 14px;
     }
 
     .dxp-hero__mosaic {
-        min-height: 220px;
-        margin-top: 4px;
+        width: 100%;
         max-width: none;
+        min-height: 210px;
+        margin-top: 2px;
+        border-radius: 16px;
     }
 
     .dxp-mosaic-card--1 {
@@ -48,14 +78,35 @@
     .dxp-hero__actions {
         flex-direction: column;
         align-items: stretch;
+        gap: 8px;
+        margin-bottom: 16px;
     }
 
     .dxp-hero__actions .dxp-btn {
         width: 100%;
+        min-height: 44px;
+        font-size: 13px;
+        font-weight: 700;
     }
 
     .dxp-stats {
-        gap: 12px 18px;
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 8px 10px;
+    }
+
+    .dxp-stat {
+        min-width: 0;
+        text-align: center;
+    }
+
+    .dxp-stat__value {
+        font-size: 1.1rem;
+    }
+
+    .dxp-stat__label {
+        font-size: 9px;
+        letter-spacing: 0.03em;
     }
 
     .dxp-category-nav {
@@ -115,6 +166,15 @@
         display: none;
     }
 
+    .dxp-section__title {
+        font-size: clamp(1.05rem, 4.8vw, 1.25rem);
+    }
+
+    .dxp-section__head {
+        gap: 8px;
+        margin-bottom: 12px;
+    }
+
     .dxp-mood-grid {
         grid-template-columns: repeat(3, minmax(0, 1fr));
         gap: 8px;
@@ -125,16 +185,35 @@
         padding: 12px 10px;
     }
 
+    .dxp-spotlight {
+        margin-bottom: 20px;
+    }
+
     .dxp-spotlight__link {
         grid-template-columns: 1fr;
-        gap: 12px;
+        gap: 10px;
+        padding: 10px;
+        border-radius: 14px;
     }
 
     .dxp-spotlight__media {
         grid-column: 1;
         grid-row: auto;
-        min-height: var(--dxp-card-media-h);
-        border-radius: 12px;
+        width: 100%;
+        height: var(--dxp-spotlight-media-h, 156px);
+        max-height: var(--dxp-spotlight-media-h, 156px);
+        min-height: 0;
+        aspect-ratio: 16 / 10;
+        border-radius: 10px;
+    }
+
+    .dxp-spotlight__media img {
+        width: 100%;
+        height: 100%;
+        min-height: 0;
+        max-height: 100%;
+        object-fit: cover;
+        object-position: center;
     }
 
     .dxp-spotlight__badge {
@@ -142,11 +221,65 @@
         flex-direction: row;
         align-self: flex-start;
         min-width: 0;
-        padding: 8px 12px;
+        padding: 5px 10px;
+        border-radius: 999px;
+        font-size: 10px;
+        font-weight: 700;
+        letter-spacing: 0.05em;
+        gap: 6px;
+    }
+
+    .dxp-spotlight__badge span:first-child {
+        font-size: 14px;
+        line-height: 1;
     }
 
     .dxp-spotlight__body {
         grid-column: 1;
+        min-width: 0;
+        padding: 0 2px;
+    }
+
+    .dxp-spotlight__title {
+        margin: 0 0 4px;
+        font-size: 15px;
+        font-weight: 800;
+        line-height: 1.25;
+        letter-spacing: -0.02em;
+    }
+
+    .dxp-spotlight__subtitle {
+        margin: 0 0 8px;
+        font-size: 13px;
+        font-weight: 500;
+        line-height: 1.45;
+    }
+
+    .dxp-spotlight__meta {
+        margin-bottom: 10px;
+        gap: 6px 12px;
+        font-size: 12px;
+        font-weight: 600;
+    }
+
+    .dxp-spotlight__cta {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 6px;
+        width: 100%;
+        min-height: 42px;
+        padding: 0 14px;
+        border-radius: 8px;
+        font-size: 13px;
+        font-weight: 700;
+        color: #fff;
+        background: linear-gradient(135deg, #e30a17 0%, #ff385c 100%);
+        box-shadow: 0 8px 20px rgba(227, 10, 23, 0.22);
+    }
+
+    .dxp-spotlight__cta i {
+        color: #fff;
     }
 
     .dxp-campaigns {
@@ -219,7 +352,12 @@
     }
 
     .dxp-hero__title {
-        font-size: clamp(1.45rem, 7vw, 1.85rem);
+        font-size: clamp(1.35rem, 6vw, 1.75rem);
+    }
+
+    .dxp-spotlight__media {
+        height: 142px;
+        max-height: 142px;
     }
 
     .dxp-ticker__track {

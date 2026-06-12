@@ -10,11 +10,16 @@ public static class PanelHeaderAudience
 
 public sealed class HeaderBildiriViewModel
 {
+    public const int DropdownItemLimit = 7;
+
     public string PanelKey { get; set; } = PanelHeaderAudience.User;
     public string PanelLabel { get; set; } = "Kullanici";
     public List<HeaderBildiriItemViewModel> Items { get; set; } = new();
-    public int TotalCount => Items.Count(static item => !item.IsPlaceholder);
-    public int UnreadCount => Items.Count(static item => !item.IsPlaceholder && !item.IsRead);
+    public int AllItemsCount { get; set; }
+    public int UnreadCount { get; set; }
+    public int TotalCount => AllItemsCount > 0 ? AllItemsCount : Items.Count(static item => !item.IsPlaceholder);
+    public bool HasMoreItems => AllItemsCount > Items.Count(static item => !item.IsPlaceholder);
+    public string InboxUrl { get; set; } = "/panel/user/bildirimlerim";
 }
 
 public sealed class HeaderBildiriItemViewModel
@@ -29,10 +34,16 @@ public sealed class HeaderBildiriItemViewModel
     public string Url { get; set; } = "#";
     public bool IsRead { get; set; }
     public bool IsPlaceholder { get; set; }
+    public DateTime? EventTimeUtc { get; set; }
 }
 
 public sealed class HeaderBildiriReadRequest
 {
     public string PanelKey { get; set; } = PanelHeaderAudience.User;
     public List<string> ItemKeys { get; set; } = new();
+}
+
+public sealed class HeaderBildiriClearRequest
+{
+    public string PanelKey { get; set; } = PanelHeaderAudience.User;
 }

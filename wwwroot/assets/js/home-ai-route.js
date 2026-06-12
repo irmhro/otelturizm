@@ -220,7 +220,7 @@
 
     submitBtn?.addEventListener('click', () => {
         const q = buildQuery();
-        const url = q ? `/oteller?q=${encodeURIComponent(q)}` : '/oteller';
+        const url = q ? `/hotel?q=${encodeURIComponent(q)}` : '/hotel';
         window.location.href = url;
     });
 

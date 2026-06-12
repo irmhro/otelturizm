@@ -153,6 +153,44 @@
 .header-bildiri-item.is-unread strong::after { content: " yeni"; margin-left: 6px; color: #1d4ed8; font-size: .7rem; font-weight: 800; text-transform: uppercase; letter-spacing: .04em; }
 .header-bildiri-item.is-read { opacity: 0.84; }
 
+.header-bildiri-foot {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    margin-top: 0.65rem;
+    padding-top: 0.65rem;
+    border-top: 1px solid rgba(15, 23, 42, 0.08);
+}
+
+.header-bildiri-view-all {
+    display: inline-flex;
+    align-items: center;
+    text-decoration: none;
+    font-size: 0.76rem;
+    font-weight: 700;
+    color: #1d4ed8;
+}
+
+.header-bildiri-clear {
+    border: 0;
+    background: transparent;
+    color: #64748b;
+    font-size: 0.76rem;
+    font-weight: 700;
+    cursor: pointer;
+    padding: 0;
+}
+
+.header-bildiri-clear:hover {
+    color: #0f172a;
+}
+
+.header-bildiri-clear:disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+}
+
 @media (max-width: 768px) {
     .header-bildiri-btn {
         width: 42px;

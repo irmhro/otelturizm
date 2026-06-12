@@ -445,7 +445,7 @@ public class HotelService : IHotelService
                     ImageUrl = leadHotelId > 0
                         ? NormalizeHotelImageUrl(leadHotelId, imageUrl)
                         : NormalizeImageUrl(imageUrl),
-                    ListingUrl = $"/oteller?q={Uri.EscapeDataString(city)}"
+                    ListingUrl = $"/hotel?q={Uri.EscapeDataString(city)}"
                 });
             }
         }
@@ -520,7 +520,7 @@ public class HotelService : IHotelService
                         : campaignReader.GetString(2),
                     ImageUrl = NormalizeImageUrl(imageUrl),
                     Slug = campaignSlug,
-                    TargetUrl = $"/oteller?kampanya={Uri.EscapeDataString(campaignSlug)}",
+                    TargetUrl = $"/hotel?kampanya={Uri.EscapeDataString(campaignSlug)}",
                     DetailUrl = $"/kampanyalar/{Uri.EscapeDataString(campaignSlug)}",
                     BadgeText = campaignReader.IsDBNull(4) ? "Aktif Kampanya" : campaignReader.GetString(4)
                 });
@@ -3613,8 +3613,8 @@ public class HotelService : IHotelService
     private static List<HotelListingQuickLinkViewModel> BuildListingQuickLinks(string city, string activeTag)
     {
         var baseUrl = string.IsNullOrWhiteSpace(city) || string.Equals(city, "Tüm bölgeler", StringComparison.OrdinalIgnoreCase)
-            ? "/oteller"
-            : $"/oteller?q={Uri.EscapeDataString(city)}";
+            ? "/hotel"
+            : $"/hotel?q={Uri.EscapeDataString(city)}";
         var tagSeparator = baseUrl.Contains('?', StringComparison.Ordinal) ? "&" : "?";
 
         return new List<HotelListingQuickLinkViewModel>
@@ -4247,7 +4247,7 @@ public class HotelService : IHotelService
             SortOrder = 10,
             IsFeaturedRoute = true,
             AllowEmptyFallback = true,
-            SeeAllUrl = "/oteller"
+            SeeAllUrl = "/hotel"
         };
     }
 
@@ -4255,15 +4255,15 @@ public class HotelService : IHotelService
     {
         if (string.Equals(sectionCode, "ozel-rotalar", StringComparison.OrdinalIgnoreCase))
         {
-            return "/oteller";
+            return "/hotel";
         }
 
         if (string.Equals(sectionCode, "custom", StringComparison.OrdinalIgnoreCase))
         {
-            return "/oteller";
+            return "/hotel";
         }
 
-        return $"/oteller?etiket={Uri.EscapeDataString(sectionCode)}";
+        return $"/hotel?etiket={Uri.EscapeDataString(sectionCode)}";
     }
 
     private async Task<List<HomeHotelCardViewModel>> LoadSupplementalHomeHotelCardsAsync(

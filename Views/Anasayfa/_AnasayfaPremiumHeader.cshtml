@@ -1,5 +1,6 @@
 @using System.Security.Claims
 @using otelturizmnew.Constants
+@inject otelturizmnew.Services.Abstractions.IUserPanelService UserPanelService
 @{
     var headerPath = Context.Request.Path.Value ?? "/";
     var isHomeActive = headerPath == "/" || string.Equals(headerPath, "/anasayfa", StringComparison.OrdinalIgnoreCase);
@@ -29,6 +30,12 @@
         "sales" => SharedLocalizer["Nav.Panel.Sales"].Value,
         _ => SharedLocalizer["Nav.Account"].Value
     };
+    var homeDrawerUserCard = homeAuthenticated
+        ? await UserPanelService.GetHomeDrawerUserCardAsync(currentUserId, homeAccountType, Context.RequestAborted)
+        : null;
+    var homeDrawerInitial = string.IsNullOrWhiteSpace(homeFullName)
+        ? "K"
+        : homeFullName.Trim()[0].ToString().ToUpperInvariant();
     var nonce = Context.Items["CspNonce"] as string;
 
     var pathHasLocalePrefix = InternationalSeoPaths.HasLocalePathPrefix(headerPath);
@@ -47,7 +54,7 @@
         }
 
         var path = Context.Request.Path.HasValue ? Context.Request.Path.Value! : "/";
-        var targetPath = path.StartsWith("/oteller", StringComparison.OrdinalIgnoreCase) || pathHasLocalePrefix
+        var targetPath = path.StartsWith("/hotel", StringComparison.OrdinalIgnoreCase) || pathHasLocalePrefix
             ? InternationalSeoPaths.LocalizePath(path, two)
             : path;
 
@@ -77,7 +84,6 @@
         </div>
         <div class="utility-right">
             <a href="/yardim-merkezi">Yardım &amp; Destek</a>
-            <a href="/rezervasyon-sorgula" class="utility-reservation-link">★ Rezervasyon Sorgula</a>
         </div>
     </div>
 </div>
@@ -90,7 +96,7 @@
         <nav aria-label="Ana menü">
             <ul class="nav-menu">
                 <li><a class="@(isHomeActive ? "active" : null)" href="/">Keşfet</a></li>
-                <li><a href="/oteller?etiket=koleksiyonlar">Koleksiyonlar</a></li>
+                <li><a href="/hotel?etiket=koleksiyonlar">Koleksiyonlar</a></li>
                 <li><a href="/kampanyalar">Fırsatlar</a></li>
                 <li><a href="/deneyimler">Deneyimler</a></li>
             </ul>
@@ -148,10 +154,24 @@
         @if (homeAuthenticated)
         {
             <div class="home-drawer-user-card">
-                <span class="home-drawer-user-dot" aria-hidden="true"></span>
+                @if (!string.IsNullOrWhiteSpace(homeDrawerUserCard?.ProfileImageUrl))
+                {
+                    <img src="@homeDrawerUserCard.ProfileImageUrl" alt="" class="home-drawer-user-avatar" width="40" height="40" loading="lazy" decoding="async" />
+                }
+                else
+                {
+                    <span class="home-drawer-user-avatar" aria-hidden="true">@homeDrawerInitial</span>
+                }
                 <div class="home-drawer-user-copy">
                     <strong>@homeFullName</strong>
-                    <small>@homePanelLabel</small>
+                    @if (!string.IsNullOrWhiteSpace(homeDrawerUserCard?.CompanyName))
+                    {
+                        <span class="home-drawer-user-company">@homeDrawerUserCard.CompanyName</span>
+                    }
+                    @if (!string.IsNullOrWhiteSpace(homeDrawerUserCard?.MembershipDateText))
+                    {
+                        <small class="home-drawer-user-member">Üyelik: @homeDrawerUserCard.MembershipDateText</small>
+                    }
                 </div>
             </div>
             <div class="home-mobile-actions">
@@ -188,13 +208,13 @@
                 <a href="/deneyimler" class="home-menu-feature-btn home-menu-feature-btn--link">
                     <i class="fas fa-compass"></i> Deneyimler
                 </a>
-                <a href="/oteller"><i class="fas fa-hotel"></i> Oteller</a>
+                <a href="/hotel"><i class="fas fa-hotel"></i> Oteller</a>
                 <a href="/kurumsal"><i class="fas fa-building"></i> Kurumsal</a>
                 @if (isKurumsalPage)
                 {
                     <a href="/firma"><i class="fas fa-briefcase"></i> Firma</a>
                 }
-                <a href="/oteller/harita"><i class="fas fa-globe"></i> Destinasyonlar</a>
+                <a href="/hotel/harita"><i class="fas fa-globe"></i> Destinasyonlar</a>
                 <a href="/panel/user/favorilerim"><i class="fas fa-heart"></i> Favorilerim</a>
             </div>
         </div>
@@ -202,9 +222,9 @@
         <div class="home-menu-section">
             <div class="home-menu-title"><i class="fas fa-fire"></i> ÖZEL FIRSATLAR</div>
             <div class="home-menu-list">
-                <a href="/oteller?etiket=butik-oteller"><i class="fas fa-spa"></i> Butik</a>
-                <a href="/oteller?etiket=aile-otelleri"><i class="fas fa-users"></i> Aile</a>
-                <a href="/oteller?etiket=butceme-uygun-oteller"><i class="fas fa-chart-line"></i> Bütçeme Uygun</a>
+                <a href="/hotel?etiket=butik-oteller"><i class="fas fa-spa"></i> Butik</a>
+                <a href="/hotel?etiket=aile-otelleri"><i class="fas fa-users"></i> Aile</a>
+                <a href="/hotel?etiket=butceme-uygun-oteller"><i class="fas fa-chart-line"></i> Bütçeme Uygun</a>
             </div>
         </div>
 

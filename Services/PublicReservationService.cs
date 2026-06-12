@@ -346,8 +346,8 @@ public class PublicReservationService : IPublicReservationService
             AccommodationTaxAmount = accommodationTaxAmount > 0m ? accommodationTaxAmount : null,
             TaxAmount = taxAmount > 0m ? taxAmount : null,
             TotalAmount = totalAmount > 0m ? totalAmount : null,
-            ReturnUrl = $"/oteller/{hotelSlug}?continueDraft=1",
-            ProfileCompletionUrl = $"/oteller/{hotelSlug}?continueDraft=1&openProfile=1",
+            ReturnUrl = $"/hotel/{hotelSlug}?continueDraft=1",
+            ProfileCompletionUrl = $"/hotel/{hotelSlug}?continueDraft=1&openProfile=1",
             Notes = string.IsNullOrWhiteSpace(form.RoomsJson)
                 ? "Otel detay otomatik taslak kaydi."
                 : "Otel detay otomatik taslak kaydi. RoomsJson=" + form.RoomsJson
@@ -415,7 +415,7 @@ public class PublicReservationService : IPublicReservationService
             return new PublicReservationResult
             {
                 Message = occupancyValidationMessage,
-                RedirectUrl = $"/oteller/{hotel.Slug}"
+                RedirectUrl = $"/hotel/{hotel.Slug}"
             };
         }
 
@@ -424,11 +424,11 @@ public class PublicReservationService : IPublicReservationService
         {
             if (selection.RoomTypeId <= 0)
             {
-                return new PublicReservationResult { Message = "Oda tipi secilmeden rezervasyon baslatilamaz.", RedirectUrl = $"/oteller/{hotel.Slug}" };
+                return new PublicReservationResult { Message = "Oda tipi secilmeden rezervasyon baslatilamaz.", RedirectUrl = $"/hotel/{hotel.Slug}" };
             }
             if (selection.CheckOutDate <= selection.CheckInDate)
             {
-                return new PublicReservationResult { Message = "Cikis tarihi giris tarihinden sonra olmalidir.", RedirectUrl = $"/oteller/{hotel.Slug}" };
+                return new PublicReservationResult { Message = "Cikis tarihi giris tarihinden sonra olmalidir.", RedirectUrl = $"/hotel/{hotel.Slug}" };
             }
 
             var pricing = await BuildPriceSummaryAsync(connection, selection.RoomTypeId, selection.CheckInDate, selection.CheckOutDate, Math.Max(1, selection.RoomCount), cancellationToken);
@@ -455,7 +455,7 @@ public class PublicReservationService : IPublicReservationService
                     Message = string.IsNullOrWhiteSpace(pricing.AvailabilityMessage)
                         ? "Secilen tarih araliginda uygun oda veya fiyat bulunamadi."
                         : pricing.AvailabilityMessage,
-                    RedirectUrl = $"/oteller/{hotel.Slug}"
+                    RedirectUrl = $"/hotel/{hotel.Slug}"
                 };
             }
             perRoomPricing.Add((selection, pricing));
@@ -472,7 +472,7 @@ public class PublicReservationService : IPublicReservationService
             return new PublicReservationResult
             {
                 Message = paymentPlanError ?? "Odeme plani gecersiz.",
-                RedirectUrl = $"/oteller/{hotel.Slug}"
+                RedirectUrl = $"/hotel/{hotel.Slug}"
             };
         }
 
@@ -497,8 +497,8 @@ public class PublicReservationService : IPublicReservationService
             AccommodationTaxAmount = perRoomPricing.Sum(x => x.Pricing.AccommodationTaxAmount),
             TaxAmount = perRoomPricing.Sum(x => x.Pricing.TaxAmount),
             TotalAmount = totalAmountOverall,
-            ReturnUrl = $"/oteller/{hotel.Slug}?continueDraft=1",
-            ProfileCompletionUrl = $"/oteller/{hotel.Slug}?continueDraft=1&openProfile=1",
+            ReturnUrl = $"/hotel/{hotel.Slug}?continueDraft=1",
+            ProfileCompletionUrl = $"/hotel/{hotel.Slug}?continueDraft=1&openProfile=1",
             Notes = (string.IsNullOrWhiteSpace(form.RoomsJson)
                 ? "Public otel detay sayfasindan baslatildi."
                 : "Public otel detay sayfasindan baslatildi. RoomsJson=" + form.RoomsJson) + dawnNote,
@@ -513,7 +513,7 @@ public class PublicReservationService : IPublicReservationService
             return new PublicReservationResult
             {
                 Message = "Rezervasyonunuz kaydedildi. Devam etmek icin once giris yapiniz.",
-                RedirectUrl = $"/kullanici-giris?ReturnUrl={Uri.EscapeDataString($"/oteller/{hotel.Slug}?continueDraft=1")}"
+                RedirectUrl = $"/kullanici-giris?ReturnUrl={Uri.EscapeDataString($"/hotel/{hotel.Slug}?continueDraft=1")}"
             };
         }
 
@@ -536,13 +536,13 @@ public class PublicReservationService : IPublicReservationService
             return new PublicReservationResult
             {
                 Message = "Rezervasyon taslak olarak kaydedildi. Lutfen profil bilgilerinizi tamamlayin.",
-                RedirectUrl = $"/oteller/{hotel.Slug}?continueDraft=1&openProfile=1"
+                RedirectUrl = $"/hotel/{hotel.Slug}?continueDraft=1&openProfile=1"
             };
         }
 
         var phoneVerificationRequirement = await _phoneVerificationService.GetReservationRequirementAsync(
             authenticatedUserId,
-            $"/oteller/{hotel.Slug}?continueDraft=1",
+            $"/hotel/{hotel.Slug}?continueDraft=1",
             cancellationToken);
         if (!phoneVerificationRequirement.IsAllowed)
         {
@@ -572,7 +572,7 @@ public class PublicReservationService : IPublicReservationService
                 return new PublicReservationResult
                 {
                     Message = "Kayitli kart secimi zorunludur.",
-                    RedirectUrl = $"/oteller/{hotel.Slug}"
+                    RedirectUrl = $"/hotel/{hotel.Slug}"
                 };
             }
 
@@ -581,7 +581,7 @@ public class PublicReservationService : IPublicReservationService
                 return new PublicReservationResult
                 {
                     Message = "Secilen kayitli kart bulunamadi veya kullanilamaz.",
-                    RedirectUrl = $"/oteller/{hotel.Slug}"
+                    RedirectUrl = $"/hotel/{hotel.Slug}"
                 };
             }
         }
@@ -933,7 +933,7 @@ public class PublicReservationService : IPublicReservationService
             return new PublicReservationResult
             {
                 Message = $"Rezervasyon olusturulurken hata olustu: {ex.Message}",
-                RedirectUrl = $"/oteller/{hotel.Slug}"
+                RedirectUrl = $"/hotel/{hotel.Slug}"
             };
         }
     }
@@ -1888,7 +1888,7 @@ public class PublicReservationService : IPublicReservationService
         await using var command = new SqlCommand(sql, connection, transaction);
         command.Parameters.AddWithValue("@userId", userId);
         command.Parameters.AddWithValue("@hotelId", hotelId);
-        command.Parameters.AddWithValue("@sourceUrl", string.IsNullOrWhiteSpace(hotelSlug) ? $"/oteller/{hotelId}" : $"/oteller/{hotelSlug}");
+        command.Parameters.AddWithValue("@sourceUrl", string.IsNullOrWhiteSpace(hotelSlug) ? $"/hotel/{hotelId}" : $"/hotel/{hotelSlug}");
         await command.ExecuteNonQueryAsync(cancellationToken);
     }
 

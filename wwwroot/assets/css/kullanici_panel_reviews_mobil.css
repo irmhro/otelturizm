@@ -1,186 +1,482 @@
 @import url("./user-mobile-bundle.css");
 
 @media (max-width: 1100px) {
-  .reviews-filter-form {
+  .kullanici-panel-shell .reviews-filter-form {
     grid-template-columns: 1fr;
-  }
-
-  .reviews-filter-actions {
-    justify-content: stretch;
-  }
-
-  .reviews-filter-actions .btn {
-    flex: 1 1 0;
-    min-height: var(--user-mob-touch, 44px);
   }
 }
 
-@media (max-width: 900px) {
-  .reviews-page,
-  .user-reviews-page,
-  .reservation-review-page {
+@media (max-width: 991px) {
+  .kullanici-panel-shell .user-reviews-page,
+  .kullanici-panel-shell .reservation-review-page {
+    gap: 14px;
+    min-width: 0;
+    max-width: 100%;
+    overflow-x: clip;
     padding-bottom: max(16px, env(safe-area-inset-bottom, 0px));
   }
 
-  .reviews-page-hero {
+  .kullanici-panel-shell .reviews-page-hero--compact {
+    flex-direction: column;
     align-items: stretch;
-    flex-direction: column;
-    padding: 16px;
-    border-radius: 14px;
+    gap: 10px;
+    padding: 0;
+    border: 0;
+    border-radius: 0;
+    background: transparent;
+    box-shadow: none;
   }
 
-  .reviews-page-hero .page-title {
-    font-size: 24px;
+  .kullanici-panel-shell .reviews-page-hero-copy {
+    display: none;
   }
 
-  .reviews-page-hero-actions {
-    justify-content: stretch;
-  }
-
-  .reviews-page-hero-actions .btn {
-    flex: 1 1 160px;
-    min-height: var(--user-mob-touch, 44px);
-  }
-
-  .reviews-filter-card .card-header {
-    align-items: flex-start;
-    flex-direction: column;
-    gap: 8px;
-  }
-
-  .reviews-status-tabs {
+  .kullanici-panel-shell .reviews-page-hero-actions {
     display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-
-  .reviews-tab {
-    justify-content: center;
-    min-height: var(--user-mob-touch, 44px);
-  }
-
-  .review-row-card {
-    grid-template-columns: 96px minmax(0, 1fr);
-    padding: 12px;
-  }
-
-  .review-row-media {
-    width: 96px;
-  }
-
-  .review-row-top {
-    flex-direction: column;
-    align-items: stretch;
-  }
-
-  .review-row-status {
-    align-self: flex-start;
-  }
-
-  .review-row-actions {
-    flex-direction: column;
-    align-items: stretch;
-  }
-
-  .review-row-actions .btn,
-  .review-row-actions .review-edit-summary {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    gap: var(--user-actions-gap, 8px);
     width: 100%;
-    justify-content: center;
-    min-height: var(--user-mob-touch, 44px);
-  }
-
-  .review-delete-inline .btn {
-    width: 100%;
-    min-height: var(--user-mob-touch, 44px);
-  }
-
-  .reviews-empty {
-    padding: 28px 16px max(24px, env(safe-area-inset-bottom, 0px));
-  }
-
-  .reviews-empty .btn {
-    min-height: var(--user-mob-touch, 44px);
-    width: 100%;
-    max-width: 320px;
-  }
-
-  .reviews-pager {
-    align-items: stretch;
-    flex-direction: column;
-  }
-
-  .reviews-pager .btn-list,
-  .reviews-pager .btn {
-    width: 100%;
-  }
-
-  .reviews-pager .btn {
-    flex: 1 1 0;
-    min-height: var(--user-mob-touch, 44px);
-  }
-
-  .reservation-review-hero,
-  .review-form-grid,
-  .user-review-grid {
-    grid-template-columns: 1fr;
-  }
-
-  .review-form-head,
-  .user-review-actions {
-    flex-direction: column;
-  }
-
-  .reservation-review-meta {
     min-width: 0;
   }
 
-  .reservation-review-hero {
+  .kullanici-panel-shell .reviews-hero-cta,
+  .kullanici-panel-shell .reviews-hero-link {
+    min-height: var(--user-btn-min-h, 44px);
+    height: auto;
+    padding: 0 var(--user-btn-px, 14px);
+    font-size: var(--user-font-md, 13px);
+    font-weight: var(--user-font-md-weight, 600);
+    border-radius: var(--user-btn-radius, 8px);
+    width: 100%;
+    min-width: 0;
+    max-width: 100%;
+    justify-content: center;
+    white-space: nowrap;
+    box-sizing: border-box;
+  }
+
+  .kullanici-panel-shell .reviews-hero-cta {
+    grid-column: 1 / -1;
+    width: 100%;
+  }
+
+  .kullanici-panel-shell .reviews-stat-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 8px;
+    overflow: visible;
+    padding-bottom: 0;
+  }
+
+  .kullanici-panel-shell .reviews-stat {
+    min-width: 0;
+    grid-template-columns: 34px minmax(0, 1fr);
+    gap: 8px;
+    padding: 10px;
+    border-radius: 12px;
+  }
+
+  .kullanici-panel-shell .reviews-stat > span {
+    width: 34px;
+    height: 34px;
+    border-radius: 10px;
+    font-size: var(--user-font-md, 13px);
+  }
+
+  .kullanici-panel-shell .reviews-stat strong {
+    font-size: var(--user-stat-value, 18px);
+  }
+
+  .kullanici-panel-shell .reviews-stat small {
+    font-size: var(--user-stat-label, 11px);
+    line-height: 1.25;
+    font-weight: 600;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .kullanici-panel-shell .reviews-filter-card,
+  .kullanici-panel-shell .reviews-list-card {
+    min-width: 0;
+    max-width: 100%;
+    border-radius: 12px;
+  }
+
+  .kullanici-panel-shell .reviews-filter-shell {
+    padding: 10px;
+  }
+
+  .kullanici-panel-shell .reviews-filter-top {
+    justify-content: flex-start;
+    margin-bottom: 8px;
+  }
+
+  .kullanici-panel-shell .reviews-count-chip {
+    font-size: var(--user-font-xs, 11px);
+    min-height: 26px;
+    padding: 0 9px;
+  }
+
+  .kullanici-panel-shell .reviews-status-tabs--scroll {
+    display: flex;
+    flex-wrap: nowrap;
+    gap: var(--user-actions-gap, 8px);
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    padding-bottom: 2px;
+    margin-bottom: 10px;
+  }
+
+  .kullanici-panel-shell .reviews-status-tabs--scroll::-webkit-scrollbar {
+    display: none;
+  }
+
+  .kullanici-panel-shell .reviews-tab {
+    flex: 0 0 auto;
+    flex-direction: row;
+    align-items: center;
+    justify-content: center;
+    min-height: var(--user-btn-min-h-compact, 40px);
+    padding: 0 var(--user-btn-px, 14px);
+    font-size: var(--user-font-md, 13px);
+    font-weight: var(--user-font-md-weight, 600);
+    white-space: nowrap;
+    text-align: center;
+    line-height: 1.2;
+    gap: var(--user-btn-gap, 6px);
+  }
+
+  .kullanici-panel-shell .reviews-tab-count {
+    margin-left: 0;
+    min-width: 18px;
+    min-height: 18px;
+    font-size: var(--user-font-xs, 11px);
+  }
+
+  .kullanici-panel-shell .reviews-filter-drawer summary {
+    min-height: var(--user-btn-min-h, 44px);
+    font-size: var(--user-font-md, 13px);
+  }
+
+  .kullanici-panel-shell .reviews-filter-form .form-control {
+    min-height: var(--user-btn-min-h, 44px);
+    font-size: var(--user-font-input, 16px);
+  }
+
+  .kullanici-panel-shell .reviews-filter-form .form-label {
+    font-size: var(--user-font-xs, 11px);
+    font-weight: 700;
+    color: #64748b;
+  }
+
+  .kullanici-panel-shell .reviews-policy-note {
+    margin-top: 8px;
+    font-size: var(--user-font-xs, 11px);
+    line-height: 1.45;
+    padding: 8px 10px;
+  }
+
+  .kullanici-panel-shell .reviews-list-head {
+    padding: 10px 12px;
+    align-items: center;
+    flex-direction: row;
+    gap: 8px;
+  }
+
+  .kullanici-panel-shell .reviews-list-head h2 {
+    font-size: var(--user-card-title, 15px);
+  }
+
+  .kullanici-panel-shell .reviews-list-meta {
+    font-size: var(--user-font-xs, 11px);
+    font-weight: 600;
+  }
+
+  .kullanici-panel-shell .reviews-list-horizontal {
+    gap: 10px;
+    padding: 12px;
+  }
+
+  .kullanici-panel-shell .review-row-card {
+    grid-template-columns: 72px minmax(0, 1fr);
+    gap: 10px;
+    padding: 12px;
+    border-radius: 14px;
+  }
+
+  .kullanici-panel-shell .review-row-media {
+    width: 72px;
+    aspect-ratio: 1;
+    border-radius: 10px;
+  }
+
+  .kullanici-panel-shell .review-row-top {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 6px;
+  }
+
+  .kullanici-panel-shell .review-row-titles strong {
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    font-size: var(--user-card-title, 15px);
+    line-height: 1.25;
+  }
+
+  .kullanici-panel-shell .review-row-titles small {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-size: var(--user-font-sm, 12px);
+    font-weight: var(--user-font-md-weight, 600);
+  }
+
+  .kullanici-panel-shell .review-row-status {
+    align-self: flex-start;
+    font-size: var(--user-font-xs, 11px);
+    min-height: 24px;
+    padding: 0 8px;
+  }
+
+  .kullanici-panel-shell .review-row-meta {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 4px;
+    font-size: var(--user-font-sm, 12px);
+  }
+
+  .kullanici-panel-shell .review-row-meta span {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    min-width: 0;
+    line-height: 1.35;
+  }
+
+  .kullanici-panel-shell .review-row-meta span i {
+    flex-shrink: 0;
+    width: 14px;
+    color: #94a3b8;
+    text-align: center;
+  }
+
+  .kullanici-panel-shell .review-snippet-block {
+    padding: 9px 10px;
+  }
+
+  .kullanici-panel-shell .review-snippet-text {
+    font-size: var(--user-page-subtitle, 13px);
+  }
+
+  .kullanici-panel-shell .review-row-actions--primary .btn {
+    width: 100%;
+    min-height: var(--user-btn-min-h, 44px);
+    padding: 0 var(--user-btn-px, 14px);
+    font-size: var(--user-font-md, 13px);
+    font-weight: var(--user-font-md-weight, 600);
+    border-radius: var(--user-btn-radius, 8px);
+    justify-content: center;
+  }
+
+  .kullanici-panel-shell .review-row-actions--secondary {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+  }
+
+  .kullanici-panel-shell .review-row-actions--secondary .btn,
+  .kullanici-panel-shell .review-row-actions--secondary .review-edit-summary {
+    width: 100%;
+    min-height: var(--user-btn-min-h, 44px);
+    padding: 0 var(--user-btn-px, 14px);
+    font-size: var(--user-font-md, 13px);
+    font-weight: var(--user-font-md-weight, 600);
+    border-radius: var(--user-btn-radius, 8px);
+    justify-content: center;
+  }
+
+  .kullanici-panel-shell .review-delete-inline {
+    display: block;
+  }
+
+  .kullanici-panel-shell .review-delete-inline .btn {
+    width: 100%;
+    min-height: var(--user-btn-min-h, 44px);
+    padding: 0 var(--user-btn-px, 14px);
+    font-size: var(--user-font-md, 13px);
+    font-weight: var(--user-font-md-weight, 600);
+    border-radius: var(--user-btn-radius, 8px);
+  }
+
+  .kullanici-panel-shell .review-edit-details {
+    grid-column: 1 / -1;
+  }
+
+  .kullanici-panel-shell .review-closed-inline,
+  .kullanici-panel-shell .review-locked-inline {
+    grid-column: 1 / -1;
+    font-size: var(--user-font-xs, 11px);
+  }
+
+  .kullanici-panel-shell .reviews-empty {
+    padding: 28px 16px max(16px, env(safe-area-inset-bottom, 0px));
+  }
+
+  .kullanici-panel-shell .reviews-empty .empty-subtitle {
+    font-size: var(--user-page-subtitle, 13px);
+    line-height: 1.5;
+  }
+
+  .kullanici-panel-shell .reviews-empty .empty-action {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    max-width: none;
+    margin-top: var(--user-actions-gap, 8px);
+    margin-bottom: var(--user-actions-gap, 8px);
+    gap: var(--user-actions-gap, 8px);
+  }
+
+  .kullanici-panel-shell .reviews-empty .empty-action .btn,
+  .kullanici-panel-shell .reviews-empty .btn {
+    min-height: var(--user-btn-min-h, 44px);
+    width: 100%;
+    max-width: none;
+    padding: 0 var(--user-btn-px, 14px);
+    font-size: var(--user-font-md, 13px);
+    font-weight: var(--user-font-md-weight, 600);
+    border-radius: var(--user-btn-radius, 8px);
+    justify-content: center;
+    box-sizing: border-box;
+  }
+
+  .kullanici-panel-shell .reviews-pager {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 10px;
+    padding: 10px 12px;
+    min-width: 0;
+  }
+
+  .kullanici-panel-shell .reviews-pager-meta {
+    font-size: var(--user-font-xs, 11px);
+    font-weight: 600;
+    line-height: 1.4;
+    text-align: center;
+  }
+
+  .kullanici-panel-shell .reviews-pager-actions {
+    display: flex;
+    flex-direction: row;
+    align-items: stretch;
+    gap: var(--user-actions-gap, 8px);
+    width: 100%;
+    min-width: 0;
+    flex-shrink: 1;
+  }
+
+  .kullanici-panel-shell .reviews-pager-actions .btn,
+  .kullanici-panel-shell .reviews-pager-actions .btn-outline-ap {
+    flex: 1 1 0;
+    min-width: 0;
+    width: auto;
+    max-width: none;
+    min-height: var(--user-btn-min-h, 44px);
+    height: auto;
+    padding: 0 var(--user-btn-px, 14px);
+    justify-content: center;
+    font-size: var(--user-font-md, 13px);
+    font-weight: var(--user-font-md-weight, 600);
+    border-radius: var(--user-btn-radius, 8px);
+    box-sizing: border-box;
+    white-space: nowrap;
+  }
+
+  .kullanici-panel-shell .reservation-review-hero,
+  .kullanici-panel-shell .review-form-grid,
+  .kullanici-panel-shell .user-review-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .kullanici-panel-shell .review-form-head,
+  .kullanici-panel-shell .user-review-actions {
+    flex-direction: column;
+  }
+
+  .kullanici-panel-shell .reservation-review-meta {
+    min-width: 0;
+  }
+
+  .kullanici-panel-shell .reservation-review-hero {
     padding: 14px;
   }
 
-  .reservation-review-hero h1 {
-    font-size: 21px;
+  .kullanici-panel-shell .reservation-review-hero h1 {
+    font-size: var(--user-page-h1, 20px);
   }
 
-  .reservation-review-meta span {
+  .kullanici-panel-shell .reservation-review-meta span {
     align-items: flex-start;
     flex-direction: column;
     gap: 2px;
   }
 
-  .star-rating {
+  .kullanici-panel-shell .star-rating {
     flex-wrap: wrap;
   }
 
-  .star-option span {
+  .kullanici-panel-shell .star-option span {
     width: 44px;
     height: 44px;
     min-width: 44px;
     min-height: 44px;
   }
 
-  .star-rating-value {
+  .kullanici-panel-shell .star-rating-value {
     width: 100%;
     margin-left: 0;
   }
 
-  .review-form-grid .form-control,
-  .review-form-grid textarea,
-  .user-review-actions .btn {
-    min-height: var(--user-mob-touch, 44px);
+  .kullanici-panel-shell .review-form-grid .form-control,
+  .kullanici-panel-shell .review-form-grid textarea,
+  .kullanici-panel-shell .user-review-actions .btn {
+    min-height: var(--user-btn-min-h, 44px);
     width: 100%;
   }
 }
 
 @media (max-width: 560px) {
-  .reviews-status-tabs {
+  .kullanici-panel-shell .reviews-stat-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 6px;
+  }
+
+  .kullanici-panel-shell .reviews-stat {
+    grid-template-columns: 1fr;
+    text-align: center;
+    padding: 10px 8px;
+  }
+
+  .kullanici-panel-shell .reviews-stat > span {
+    margin: 0 auto;
+  }
+
+  .kullanici-panel-shell .reviews-stat small {
+    white-space: normal;
+    overflow: visible;
+    text-overflow: unset;
+  }
+
+  .kullanici-panel-shell .review-row-card {
     grid-template-columns: 1fr;
   }
 
-  .review-row-card {
-    grid-template-columns: 1fr;
-  }
-
-  .review-row-media {
+  .kullanici-panel-shell .review-row-media {
     width: 100%;
     aspect-ratio: 16 / 9;
   }
