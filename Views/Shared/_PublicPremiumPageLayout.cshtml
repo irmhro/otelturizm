@@ -222,6 +222,10 @@
     {
         <script src="~/assets/js/popupmesaj.js" asp-append-version="true" defer></script>
     }
+    @if (developmentGateEnabled)
+    {
+        <script src="~/assets/js/layout/development-gate.js" asp-append-version="true"></script>
+    }
     <script nonce="@nonce">
         (() => {
             const btn = document.getElementById('homeMenuToggle');

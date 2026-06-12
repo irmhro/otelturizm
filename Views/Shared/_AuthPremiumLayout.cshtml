@@ -95,6 +95,10 @@
     <script src="~/assets/js/auth-address-lookup.js" asp-append-version="true"></script>
     <script src="~/assets/js/kullanici_login.js" asp-append-version="true"></script>
     <script src="~/assets/js/route-picker-modal.js" asp-append-version="true"></script>
+    @if (developmentGateEnabled)
+    {
+        <script src="~/assets/js/layout/development-gate.js" asp-append-version="true"></script>
+    }
     @await RenderSectionAsync("Scripts", required: false)
 </body>
 </html>
